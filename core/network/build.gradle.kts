@@ -1,11 +1,11 @@
 plugins {
-    alias(libs.plugins.komikku.android.library)
-    alias(libs.plugins.komikku.android.hilt)
+    alias(libs.plugins.otakureader.android.library)
+    alias(libs.plugins.otakureader.android.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "app.komikku.core.network"
+    namespace = "app.otakureader.core.network"
 }
 
 dependencies {

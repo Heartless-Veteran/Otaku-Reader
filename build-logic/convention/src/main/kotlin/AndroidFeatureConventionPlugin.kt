@@ -14,8 +14,8 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply {
-                apply("komikku.android.library")
-                apply("komikku.android.hilt")
+                apply("otakureader.android.library")
+                apply("otakureader.android.hilt")
                 apply("org.jetbrains.kotlin.plugin.compose")
             }
 

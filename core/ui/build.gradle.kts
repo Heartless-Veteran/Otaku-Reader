@@ -1,10 +1,10 @@
 plugins {
-    alias(libs.plugins.komikku.android.library)
+    alias(libs.plugins.otakureader.android.library)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "app.komikku.core.ui"
+    namespace = "app.otakureader.core.ui"
     buildFeatures { compose = true }
 }
 
