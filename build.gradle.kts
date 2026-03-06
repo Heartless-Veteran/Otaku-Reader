@@ -1,7 +1,7 @@
 // Top-level build file — configuration common to all subprojects is in build-logic/convention plugins.
 buildscript {
     repositories {
-        google()
+        maven("https://maven.google.com")
         mavenCentral()
     }
     dependencies {

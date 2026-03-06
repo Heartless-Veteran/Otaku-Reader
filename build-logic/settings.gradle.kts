@@ -1,7 +1,7 @@
 pluginManagement {
     repositories {
         mavenCentral()
-        google()
+        maven("https://maven.google.com")
         gradlePluginPortal()
     }
 }
@@ -9,7 +9,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
-        google()
+        maven("https://maven.google.com")
     }
     versionCatalogs {
         create("libs") {
