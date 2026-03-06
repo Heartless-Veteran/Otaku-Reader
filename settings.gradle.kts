@@ -12,6 +12,7 @@ pluginManagement {
                 includeGroupByRegex("com\\.google\\.devtools.*")
                 includeGroupByRegex("com\\.google\\.firebase.*")
                 includeGroupByRegex("com\\.google\\.gms.*")
+                includeGroupByRegex("com\\.google\\.testing\\.platform.*")
                 includeGroupByRegex("androidx.*")
             }
         }
@@ -31,6 +32,7 @@ dependencyResolutionManagement {
                 includeGroupByRegex("com\\.google\\.devtools.*")
                 includeGroupByRegex("com\\.google\\.firebase.*")
                 includeGroupByRegex("com\\.google\\.gms.*")
+                includeGroupByRegex("com\\.google\\.testing\\.platform.*")
                 includeGroupByRegex("androidx.*")
             }
         }
