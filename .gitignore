@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+.DS_Store
+
+# Android
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Google Services / Signing
+google-services.json
+keystore.properties
+*.jks
+*.keystore
+
+# Room schemas (keep these in VCS for migration tracking)
+# !**/schemas/*.json
+
+# Distribution / package
+dist/
