@@ -7,7 +7,7 @@ import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
 /**
- * Application class for Otaku Reader.
+ * Application class for Komikku.
  * Initializes Hilt dependency injection and WorkManager with Hilt integration.
  */
 @HiltAndroidApp

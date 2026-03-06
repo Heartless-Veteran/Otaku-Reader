@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -30,28 +31,22 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
-            appPreferences.themeMode.collect { mode ->
-                _state.update { it.copy(themeMode = mode) }
-            }
-        }
-        viewModelScope.launch {
-            appPreferences.useDynamicColor.collect { value ->
-                _state.update { it.copy(useDynamicColor = value) }
-            }
-        }
-        viewModelScope.launch {
-            appPreferences.readerMode.collect { mode ->
-                _state.update { it.copy(readerMode = mode) }
-            }
-        }
-        viewModelScope.launch {
-            appPreferences.notificationsEnabled.collect { value ->
-                _state.update { it.copy(notificationsEnabled = value) }
-            }
-        }
-        viewModelScope.launch {
-            appPreferences.updateCheckInterval.collect { value ->
-                _state.update { it.copy(updateCheckInterval = value) }
+            combine(
+                appPreferences.themeMode,
+                appPreferences.useDynamicColor,
+                appPreferences.readerMode,
+                appPreferences.notificationsEnabled,
+                appPreferences.updateCheckInterval
+            ) { themeMode, dynamicColor, readerMode, notificationsEnabled, updateInterval ->
+                SettingsState(
+                    themeMode = themeMode,
+                    useDynamicColor = dynamicColor,
+                    readerMode = readerMode,
+                    notificationsEnabled = notificationsEnabled,
+                    updateCheckInterval = updateInterval
+                )
+            }.collect { newState ->
+                _state.update { newState }
             }
         }
     }

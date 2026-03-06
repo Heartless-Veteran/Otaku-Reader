@@ -15,7 +15,7 @@ import app.komikku.core.database.entity.MangaEntity
 import app.komikku.core.database.entity.ReadingHistoryEntity
 
 /**
- * Main Room database for Otaku Reader.
+ * Main Room database for Komikku.
  * Version history is tracked via Room migrations and exported schemas in /schemas.
  */
 @Database(

@@ -14,7 +14,7 @@ private val LightColorScheme = lightColorScheme()
 private val DarkColorScheme = darkColorScheme()
 
 /**
- * Otaku Reader app theme.
+ * Komikku app theme.
  * Supports dynamic color (Material You) on Android 12+ and manual dark/light mode.
  *
  * @param darkTheme Whether to use dark theme. Defaults to system setting.
