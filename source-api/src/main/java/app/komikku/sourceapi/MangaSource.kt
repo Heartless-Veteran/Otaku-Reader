@@ -4,7 +4,12 @@ import kotlinx.serialization.Serializable
 
 /**
  * Public API contract for manga source extensions.
- * Extensions must implement [MangaSource] to integrate with Otaku Reader.
+ * Extensions must implement [MangaSource] to integrate with Komikku.
+ *
+ * Related types:
+ * - [MangaPage] / [SourceManga] / [SourceChapter] — defined in this file
+ * - [Page] — see Page.kt
+ * - [Filter] / [FilterList] — see Filter.kt (richer hierarchy with Select, TriState, Sort, etc.)
  */
 interface MangaSource {
     /** Unique identifier for this source (e.g., "en.mangadex"). */
@@ -19,7 +24,7 @@ interface MangaSource {
     /** Base URL of the source website. */
     val baseUrl: String
 
-    /** Whether this source requires authentication. */
+    /** Whether this source supports fetching the latest updates feed. */
     val supportsLatest: Boolean get() = true
 
     /** Fetch a paginated list of popular manga. */
@@ -37,17 +42,17 @@ interface MangaSource {
     /** Fetch the page list for a given chapter. */
     suspend fun fetchPageList(chapter: SourceChapter): List<Page>
 
-    /** Search manga by query string. */
+    /** Search manga by query string and optional filters. */
     suspend fun fetchSearchManga(page: Int, query: String, filters: FilterList): MangaPage
 }
 
-/** Paginated result from a source. */
+/** Paginated result from a source query. */
 data class MangaPage(
     val mangas: List<SourceManga>,
     val hasNextPage: Boolean
 )
 
-/** Manga data from a remote source. */
+/** Manga data as returned by a remote source. */
 @Serializable
 data class SourceManga(
     val url: String,
@@ -61,7 +66,7 @@ data class SourceManga(
     val initialized: Boolean = false
 )
 
-/** Chapter data from a remote source. */
+/** Chapter data as returned by a remote source. */
 @Serializable
 data class SourceChapter(
     val url: String,
@@ -70,23 +75,3 @@ data class SourceChapter(
     val chapterNumber: Float = -1f,
     val scanlator: String? = null
 )
-
-/** A single page image within a chapter. */
-@Serializable
-data class Page(
-    val index: Int,
-    val url: String = "",
-    val imageUrl: String? = null
-)
-
-/** Filter list for source search queries. */
-class FilterList(val filters: List<Filter<*>> = emptyList()) {
-    operator fun plus(other: FilterList) = FilterList(filters + other.filters)
-}
-
-/** Base class for search filters. */
-abstract class Filter<T>(val name: String, var state: T) {
-    class Text(name: String, state: String = "") : Filter<String>(name, state)
-    class CheckBox(name: String, state: Boolean = false) : Filter<Boolean>(name, state)
-    class Select(name: String, val values: Array<String>, state: Int = 0) : Filter<Int>(name, state)
-}

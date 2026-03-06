@@ -25,25 +25,14 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import app.komikku.core.navigation.BrowseRoute
 import app.komikku.core.navigation.HistoryRoute
 import app.komikku.core.navigation.LibraryRoute
-import app.komikku.core.navigation.MangaDetailRoute
-import app.komikku.core.navigation.ReaderRoute
 import app.komikku.core.navigation.SettingsRoute
 import app.komikku.core.navigation.UpdatesRoute
 import app.komikku.core.ui.theme.KomikkuTheme
-import app.komikku.feature.browse.BrowseScreen
-import app.komikku.feature.history.HistoryScreen
-import app.komikku.feature.library.LibraryScreen
-import app.komikku.feature.reader.ReaderScreen
-import app.komikku.feature.settings.SettingsScreen
-import app.komikku.feature.updates.UpdatesScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 /** Main entry activity — hosts the Compose navigation graph. */
@@ -73,58 +62,6 @@ private fun KomikkuApp() {
             navController = navController,
             modifier = Modifier.padding(paddingValues)
         )
-    }
-}
-
-@Composable
-private fun KomikkuNavHost(
-    navController: NavHostController,
-    modifier: Modifier = Modifier
-) {
-    NavHost(
-        navController = navController,
-        startDestination = LibraryRoute,
-        modifier = modifier
-    ) {
-        composable<LibraryRoute> {
-            LibraryScreen(
-                onMangaClick = { mangaId ->
-                    navController.navigate(MangaDetailRoute(mangaId))
-                }
-            )
-        }
-
-        composable<UpdatesRoute> {
-            UpdatesScreen(
-                onChapterClick = { mangaId, chapterId ->
-                    navController.navigate(ReaderRoute(mangaId, chapterId))
-                }
-            )
-        }
-
-        composable<BrowseRoute> {
-            BrowseScreen(
-                onMangaClick = { _, _ -> /* Navigate to manga detail */ }
-            )
-        }
-
-        composable<HistoryRoute> {
-            HistoryScreen(
-                onChapterClick = { mangaId, chapterId ->
-                    navController.navigate(ReaderRoute(mangaId, chapterId))
-                }
-            )
-        }
-
-        composable<SettingsRoute> {
-            SettingsScreen()
-        }
-
-        composable<ReaderRoute> { backStackEntry ->
-            ReaderScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
     }
 }
 
