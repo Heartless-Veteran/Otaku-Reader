@@ -17,6 +17,7 @@ data class LibraryState(
     val categories: List<Category> = emptyList(),
     val selectedManga: Set<Long> = emptySet(),
     val searchQuery: String = "",
+    val isSearchMode: Boolean = false,
     val activeCategory: Long = 0L,
     val error: String? = null
 ) : UiState
@@ -28,6 +29,7 @@ sealed interface LibraryEvent : UiEvent {
     data class OnMangaClick(val mangaId: Long) : LibraryEvent
     data class OnMangaLongClick(val mangaId: Long) : LibraryEvent
     data class OnSearchQueryChange(val query: String) : LibraryEvent
+    data class SetSearchMode(val enabled: Boolean) : LibraryEvent
     data class OnCategoryChange(val categoryId: Long) : LibraryEvent
     data object ClearSelection : LibraryEvent
     data class RemoveFromLibrary(val mangaIds: Set<Long>) : LibraryEvent

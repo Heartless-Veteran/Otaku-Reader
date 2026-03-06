@@ -69,6 +69,10 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.OnMangaClick -> handleMangaClick(event.mangaId)
             is LibraryEvent.OnMangaLongClick -> toggleSelection(event.mangaId)
             is LibraryEvent.OnSearchQueryChange -> updateSearch(event.query)
+            is LibraryEvent.SetSearchMode -> {
+                _state.update { it.copy(isSearchMode = event.enabled) }
+                if (!event.enabled) updateSearch("")
+            }
             is LibraryEvent.OnCategoryChange -> _state.update { it.copy(activeCategory = event.categoryId) }
             is LibraryEvent.ClearSelection -> _state.update { it.copy(selectedManga = emptySet()) }
             is LibraryEvent.RemoveFromLibrary -> removeFromLibrary(event.mangaIds)
