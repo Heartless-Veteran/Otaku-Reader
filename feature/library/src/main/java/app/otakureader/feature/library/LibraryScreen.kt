@@ -42,7 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,11 +58,18 @@ fun LibraryScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is LibraryEffect.NavigateToManga -> onMangaClick(effect.mangaId)
-                is LibraryEffect.ShowError -> { /* TODO: Show snackbar */ }
+                is LibraryEffect.ShowError -> {
+                    scope.launch {
+                        snackbarHostState.showSnackbar(effect.message)
+                    }
+                }
                 else -> {}
             }
         }
@@ -69,18 +80,24 @@ fun LibraryScreen(
             TopAppBar(
                 title = { Text("Library") },
                 actions = {
-                    IconButton(onClick = { /* TODO: Search */ }) {
+                    IconButton(onClick = { /* Search - Phase 1 */ }) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
-                    IconButton(onClick = { /* TODO: More options */ }) {
+                    IconButton(onClick = { /* More options - Phase 1 */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More")
                     }
                 }
             )
         },
         bottomBar = {
-            // TODO: Bottom navigation
-        }
+            LibraryBottomNavigation(
+                selectedRoute = "library",
+                onNavigateToLibrary = { /* Already here */ },
+                onNavigateToUpdates = onNavigateToUpdates,
+                onNavigateToBrowse = onNavigateToBrowse
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         LibraryContent(
             state = state,
@@ -202,9 +219,13 @@ private fun UnreadBadge(
             .size(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        // TODO: Implement badge with count
+        // Badge background
+        androidx.compose.foundation.background(
+            color = MaterialTheme.colorScheme.primary,
+            shape = androidx.compose.foundation.shape.CircleShape
+        )
         Text(
-            text = count.toString(),
+            text = if (count > 99) "99+" else count.toString(),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onPrimary
         )

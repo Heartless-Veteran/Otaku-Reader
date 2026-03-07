@@ -1,4 +1,4 @@
-package app.otakureader.core.navigation
+package app.otakureader
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -6,6 +6,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.feature.library.navigation.LIBRARY_ROUTE
 import app.otakureader.feature.library.navigation.libraryScreen
+import app.otakureader.feature.updates.navigation.UPDATES_ROUTE
+import app.otakureader.feature.updates.navigation.updatesScreen
+import app.otakureader.feature.browse.navigation.BROWSE_ROUTE
+import app.otakureader.feature.browse.navigation.browseScreen
+import app.otakureader.feature.reader.navigation.READER_ROUTE
+import app.otakureader.feature.reader.navigation.readerScreen
 
 @Composable
 fun OtakuReaderNavHost(
@@ -20,16 +26,38 @@ fun OtakuReaderNavHost(
     ) {
         libraryScreen(
             onMangaClick = { mangaId ->
-                // TODO: Navigate to manga details
+                navController.navigate("$READER_ROUTE/$mangaId")
             },
             onNavigateToUpdates = {
-                // TODO: Navigate to updates
+                navController.navigate(UPDATES_ROUTE)
             },
             onNavigateToBrowse = {
-                // TODO: Navigate to browse
+                navController.navigate(BROWSE_ROUTE)
             }
         )
         
-        // TODO: Add other screens
+        updatesScreen(
+            onMangaClick = { mangaId ->
+                navController.navigate("$READER_ROUTE/$mangaId")
+            },
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        
+        browseScreen(
+            onMangaClick = { mangaId ->
+                navController.navigate("$READER_ROUTE/$mangaId")
+            },
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+        
+        readerScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
     }
 }
