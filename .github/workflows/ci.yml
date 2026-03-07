@@ -23,7 +23,7 @@ jobs:
           cache: gradle
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9c87d481d55275a4022e6d55671bc5ce3e30f10
+        uses: gradle/actions/setup-gradle@d156388eb19639ec20ade50009f3d199ce1e2808
         with:
           gradle-version: "9.3.1"
 
