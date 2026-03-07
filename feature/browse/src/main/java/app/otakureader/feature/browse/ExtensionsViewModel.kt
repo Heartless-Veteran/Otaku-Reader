@@ -1,0 +1,204 @@
+package app.otakureader.feature.browse
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import app.otakureader.core.common.mvi.UiEffect
+import app.otakureader.core.common.mvi.UiEvent
+import app.otakureader.core.common.mvi.UiState
+import app.otakureader.core.extension.domain.model.Extension
+import app.otakureader.core.extension.domain.repository.ExtensionRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class ExtensionsState(
+    val isLoading: Boolean = false,
+    val searchQuery: String = "",
+    val installedExtensions: List<Extension> = emptyList(),
+    val availableExtensions: List<Extension> = emptyList(),
+    val extensionsWithUpdates: List<Extension> = emptyList(),
+    val updateCount: Int = 0,
+    val error: String? = null
+) : UiState
+
+sealed interface ExtensionsEvent : UiEvent {
+    data object Refresh : ExtensionsEvent
+    data class OnSearchQueryChange(val query: String) : ExtensionsEvent
+    data class InstallExtension(val extension: Extension) : ExtensionsEvent
+    data class UninstallExtension(val extension: Extension) : ExtensionsEvent
+    data class UpdateExtension(val extension: Extension) : ExtensionsEvent
+}
+
+sealed interface ExtensionsEffect : UiEffect {
+    data class ShowSnackbar(val message: String) : ExtensionsEffect
+    data class ShowError(val message: String) : ExtensionsEffect
+}
+
+@HiltViewModel
+class ExtensionsViewModel @Inject constructor(
+    private val extensionRepository: ExtensionRepository
+) : ViewModel() {
+
+    private val _searchQuery = MutableStateFlow("")
+
+    private val _state = MutableStateFlow(ExtensionsState())
+    val state = combine(
+        _state,
+        _searchQuery
+    ) { state, query ->
+        state.copy(
+            searchQuery = query,
+            // Filter extensions based on search query
+            installedExtensions = if (query.isBlank()) {
+                state.installedExtensions
+            } else {
+                state.installedExtensions.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.sources.any { s -> s.name.contains(query, ignoreCase = true) }
+                }
+            },
+            availableExtensions = if (query.isBlank()) {
+                state.availableExtensions
+            } else {
+                state.availableExtensions.filter {
+                    it.name.contains(query, ignoreCase = true)
+                }
+            }
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = ExtensionsState(),
+    )
+
+    private val _effect = Channel<ExtensionsEffect>()
+    val effect = _effect.receiveAsFlow()
+
+    init {
+        loadExtensions()
+    }
+
+    fun onEvent(event: ExtensionsEvent) {
+        when (event) {
+            is ExtensionsEvent.Refresh -> refreshExtensions()
+            is ExtensionsEvent.OnSearchQueryChange -> _searchQuery.value = event.query
+            is ExtensionsEvent.InstallExtension -> installExtension(event.extension)
+            is ExtensionsEvent.UninstallExtension -> uninstallExtension(event.extension)
+            is ExtensionsEvent.UpdateExtension -> updateExtension(event.extension)
+        }
+    }
+
+    private fun loadExtensions() {
+        _state.update { it.copy(isLoading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                // Collect installed extensions
+                extensionRepository.getInstalledExtensions()
+                    .collect { extensions ->
+                        _state.update {
+                            it.copy(
+                                installedExtensions = extensions,
+                                isLoading = false
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load extensions"
+                    )
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                extensionRepository.getAvailableExtensions()
+                    .collect { extensions ->
+                        _state.update { it.copy(availableExtensions = extensions) }
+                    }
+            } catch (e: Exception) {
+                // Don't show error for available extensions
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                extensionRepository.getExtensionsWithUpdates()
+                    .collect { extensions ->
+                        _state.update {
+                            it.copy(
+                                extensionsWithUpdates = extensions,
+                                updateCount = extensions.size
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                // Don't show error for updates
+            }
+        }
+    }
+
+    private fun refreshExtensions() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                extensionRepository.refreshAvailableExtensions()
+                extensionRepository.checkForUpdates()
+                _state.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to refresh extensions"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun installExtension(extension: Extension) {
+        viewModelScope.launch {
+            try {
+                val apkPath = extension.apkPath
+                    ?: throw IllegalStateException("No APK path available")
+                extensionRepository.installExtension(extension.pkgName, apkPath)
+                _effect.send(ExtensionsEffect.ShowSnackbar("Extension installed: ${extension.name}"))
+            } catch (e: Exception) {
+                _effect.send(ExtensionsEffect.ShowError("Failed to install: ${e.message}"))
+            }
+        }
+    }
+
+    private fun uninstallExtension(extension: Extension) {
+        viewModelScope.launch {
+            try {
+                extensionRepository.uninstallExtension(extension.pkgName)
+                _effect.send(ExtensionsEffect.ShowSnackbar("Extension uninstalled: ${extension.name}"))
+            } catch (e: Exception) {
+                _effect.send(ExtensionsEffect.ShowError("Failed to uninstall: ${e.message}"))
+            }
+        }
+    }
+
+    private fun updateExtension(extension: Extension) {
+        viewModelScope.launch {
+            try {
+                val apkPath = extension.apkPath
+                    ?: throw IllegalStateException("No APK path available")
+                extensionRepository.updateExtension(extension.pkgName, apkPath)
+                _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
+            } catch (e: Exception) {
+                _effect.send(ExtensionsEffect.ShowError("Failed to update: ${e.message}"))
+            }
+        }
+    }
+}

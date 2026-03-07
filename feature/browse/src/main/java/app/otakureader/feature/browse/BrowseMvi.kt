@@ -24,6 +24,8 @@ sealed interface BrowseEvent : UiEvent {
     data object Search : BrowseEvent
     data class OnMangaClick(val manga: SourceManga) : BrowseEvent
     data object LoadNextPage : BrowseEvent
+    data object RefreshSources : BrowseEvent
+    data object LoadLatest : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

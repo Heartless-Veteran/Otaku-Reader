@@ -1,50 +1,76 @@
 package app.otakureader.feature.reader
 
+import android.app.Activity
+import android.view.WindowManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.component.EmptyScreen
 import app.otakureader.core.ui.component.LoadingScreen
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import app.otakureader.feature.reader.model.ReaderMode
+import app.otakureader.feature.reader.modes.DualPageReader
+import app.otakureader.feature.reader.modes.SinglePageReader
+import app.otakureader.feature.reader.modes.SmartPanelsReader
+import app.otakureader.feature.reader.modes.WebtoonReader
+import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
+import app.otakureader.feature.reader.ui.FullPageGallery
+import app.otakureader.feature.reader.ui.PageThumbnailStrip
+import app.otakureader.feature.reader.ui.ReaderMenuOverlay
+import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
+import app.otakureader.feature.reader.ui.ZoomIndicator
+import app.otakureader.feature.reader.viewmodel.ReaderEffect
+import app.otakureader.feature.reader.viewmodel.ReaderEvent
+import app.otakureader.feature.reader.viewmodel.TapZone
+import app.otakureader.feature.reader.viewmodel.UltimateReaderViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Reader screen supporting paged (LTR/RTL) and webtoon reading modes.
- * Reading position is persisted via [ReaderViewModel] for exact resume.
+ * Ultimate Reader Screen with full gallery view, tap zones, and all 4 reading modes.
+ * 
+ * Features:
+ * - 4 reading modes: Single Page, Dual Page (spreads), Webtoon (vertical scroll), Smart Panels
+ * - Pinch zoom with double-tap zoom support
+ * - Tap zones for navigation (left=prev, center=menu, right=next)
+ * - Bottom thumbnail strip with expandable gallery
+ * - Brightness and zoom controls
+ * - Settings persistence
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderScreen(
     mangaId: Long,
+    chapterId: Long,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReaderViewModel = hiltViewModel()
+    viewModel: UltimateReaderViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
+    
+    // UI state for overlays
+    var showZoomIndicator by remember { mutableStateOf(false) }
+    var showBrightnessSlider by remember { mutableStateOf(false) }
+    
+    // Handle effects
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
@@ -54,73 +80,189 @@ fun ReaderScreen(
                         snackbarHostState.showSnackbar(effect.message)
                     }
                 }
+                is ReaderEffect.NavigateToChapter -> {
+                    // Handle chapter navigation
+                    snackbarHostState.showSnackbar("Navigating to chapter...")
+                }
             }
         }
     }
-
-    Scaffold(
-        modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            if (state.isMenuVisible) {
-                TopAppBar(
-                    title = { Text(state.chapter?.name.orEmpty()) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back"
-                            )
-                        }
+    
+    // Keep screen on if enabled
+    DisposableEffect(state.keepScreenOn) {
+        val activity = context as? Activity
+        if (state.keepScreenOn) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+    
+    // Handle zoom indicator visibility
+    LaunchedEffect(state.zoomLevel) {
+        if (state.zoomLevel != 1f) {
+            showZoomIndicator = true
+            delay(1500)
+            showZoomIndicator = false
+        }
+    }
+    
+    Box(modifier = modifier.fillMaxSize()) {
+        // Main content based on reading mode
+        when {
+            state.isLoading -> LoadingScreen(Modifier.fillMaxSize())
+            state.pages.isEmpty() -> EmptyScreen(
+                message = state.error ?: "No pages found.",
+                modifier = Modifier.fillMaxSize()
+            )
+            else -> {
+                ReaderContent(
+                    state = state,
+                    onPageChange = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
+                    onPanelChange = { viewModel.onEvent(ReaderEvent.OnPanelChange(it)) },
+                    onTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+                    onDoubleTap = { offset ->
+                        // Double tap zoom handled by ZoomableImage
+                    },
+                    onZoomChange = { zoom ->
+                        viewModel.onEvent(ReaderEvent.OnZoomChange(zoom))
                     }
                 )
             }
         }
-    ) { paddingValues ->
-        when {
-            state.isLoading -> LoadingScreen(Modifier.padding(paddingValues))
-            state.pages.isEmpty() -> EmptyScreen("No pages found.", Modifier.padding(paddingValues))
-            else -> PagedReader(
-                pages = state.pages,
-                currentPage = state.currentPage,
-                onPageChange = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
-                onTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
-                modifier = Modifier.padding(paddingValues)
+        
+        // Tap zone overlay for navigation
+        if (!state.isLoading && state.pages.isNotEmpty() && !state.isMenuVisible) {
+            SimpleTapZoneOverlay(
+                onLeftTap = { viewModel.onEvent(ReaderEvent.PrevPage) },
+                onCenterTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+                onRightTap = { viewModel.onEvent(ReaderEvent.NextPage) },
+                isRtl = state.readingDirection == app.otakureader.feature.reader.model.ReadingDirection.RTL,
+                modifier = Modifier.fillMaxSize()
             )
         }
+        
+        // Menu overlay
+        ReaderMenuOverlay(
+            isVisible = state.isMenuVisible,
+            chapterTitle = state.chapterTitle,
+            currentPage = state.displayPageNumber,
+            totalPages = state.totalPages,
+            currentMode = state.mode,
+            zoomLevel = state.zoomLevel,
+            brightness = state.brightness,
+            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
+            onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
+            onZoomIn = { viewModel.onEvent(ReaderEvent.ZoomIn) },
+            onZoomOut = { viewModel.onEvent(ReaderEvent.ZoomOut) },
+            onResetZoom = { viewModel.onEvent(ReaderEvent.ResetZoom) },
+            onToggleGallery = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
+            onNavigateBack = onNavigateBack,
+            onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) }
+        )
+        
+        // Bottom thumbnail strip
+        PageThumbnailStrip(
+            pages = state.pages,
+            currentPage = state.currentPage,
+            onPageClick = { viewModel.jumpToPage(it) },
+            onExpandClick = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
+            isVisible = !state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+        
+        // Full page gallery
+        FullPageGallery(
+            pages = state.pages,
+            currentPage = state.currentPage,
+            onPageClick = { viewModel.jumpToPage(it) },
+            onDismiss = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
+            isVisible = state.isGalleryOpen
+        )
+        
+        // Zoom indicator
+        ZoomIndicator(
+            zoomLevel = state.zoomLevel,
+            isVisible = showZoomIndicator,
+            modifier = Modifier.align(Alignment.Center)
+        )
+        
+        // Brightness slider overlay
+        BrightnessSliderOverlay(
+            brightness = state.brightness,
+            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
+            isVisible = showBrightnessSlider,
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
+        
+        // Snackbar host
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 
 @Composable
-private fun PagedReader(
-    pages: List<String>,
-    currentPage: Int,
+private fun ReaderContent(
+    state: app.otakureader.feature.reader.viewmodel.ReaderState,
     onPageChange: (Int) -> Unit,
-    onTap: () -> Unit,
-    modifier: Modifier = Modifier
+    onPanelChange: (Int) -> Unit,
+    onTap: (Offset) -> Unit,
+    onDoubleTap: (Offset) -> Unit,
+    onZoomChange: (Float) -> Unit
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = currentPage,
-        pageCount = { pages.size }
-    )
-
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.collect { page ->
-            onPageChange(page)
-        }
-    }
-
-    HorizontalPager(
-        state = pagerState,
-        modifier = modifier.fillMaxSize()
-    ) { pageIndex ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            AsyncImage(
-                model = pages[pageIndex],
-                contentDescription = "Page ${pageIndex + 1}",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
-            )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(androidx.compose.ui.graphics.Color.Black)
+    ) {
+        when (state.mode) {
+            ReaderMode.SINGLE_PAGE -> {
+                SinglePageReader(
+                    pages = state.pages,
+                    currentPage = state.currentPage,
+                    onPageChange = onPageChange,
+                    onTap = onTap,
+                    onDoubleTap = onDoubleTap,
+                    onZoomChange = onZoomChange,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            ReaderMode.DUAL_PAGE -> {
+                DualPageReader(
+                    pages = state.pages,
+                    currentPage = state.currentPage,
+                    onPageChange = onPageChange,
+                    onTap = onTap,
+                    isRtl = state.readingDirection == app.otakureader.feature.reader.model.ReadingDirection.RTL,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            ReaderMode.WEBTOON -> {
+                WebtoonReader(
+                    pages = state.pages,
+                    currentPage = state.currentPage,
+                    onPageChange = onPageChange,
+                    onTap = onTap,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            
+            ReaderMode.SMART_PANELS -> {
+                SmartPanelsReader(
+                    pages = state.pages,
+                    currentPage = state.currentPage,
+                    currentPanel = state.currentPanel,
+                    onPageChange = onPageChange,
+                    onPanelChange = onPanelChange,
+                    onTap = onTap,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
