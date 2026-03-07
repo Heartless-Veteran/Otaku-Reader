@@ -1,5 +1,6 @@
 package app.komikku.data.mapper
 
+import app.komikku.core.database.entity.MangaEntity
 import app.komikku.domain.model.Manga
 import app.komikku.domain.model.MangaStatus
 import org.junit.Assert.assertEquals
