@@ -1,25 +1,19 @@
 package app.otakureader.feature.reader.navigation
 
 import androidx.navigation.NavGraphBuilder
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-
-const val READER_ROUTE = "reader"
-const val READER_MANGA_ID_ARG = "mangaId"
+import androidx.navigation.toRoute
+import app.otakureader.core.navigation.ReaderRoute
+import app.otakureader.feature.reader.ReaderScreen
 
 fun NavGraphBuilder.readerScreen(
     onNavigateBack: () -> Unit,
 ) {
-    composable(
-        route = "$READER_ROUTE/{$READER_MANGA_ID_ARG}",
-        arguments = listOf(
-            navArgument(READER_MANGA_ID_ARG) { type = NavType.LongType }
-        )
-    ) { backStackEntry ->
-        val mangaId = backStackEntry.arguments?.getLong(READER_MANGA_ID_ARG) ?: 0L
+    composable<ReaderRoute> { backStackEntry ->
+        val route = backStackEntry.toRoute<ReaderRoute>()
         ReaderScreen(
-            mangaId = mangaId,
+            mangaId = route.mangaId,
+            chapterId = route.chapterId,
             onNavigateBack = onNavigateBack
         )
     }

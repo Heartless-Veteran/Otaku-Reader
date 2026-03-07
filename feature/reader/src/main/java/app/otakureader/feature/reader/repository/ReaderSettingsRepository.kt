@@ -1,8 +1,15 @@
 package app.otakureader.feature.reader.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.feature.reader.model.ReaderMode
 import app.otakureader.feature.reader.model.ReadingDirection
+import app.otakureader.feature.reader.model.TapZoneConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -14,155 +21,143 @@ import javax.inject.Singleton
  */
 @Singleton
 class ReaderSettingsRepository @Inject constructor(
-    private val preferences: AppPreferences
+    private val preferences: AppPreferences,
+    private val dataStore: DataStore<Preferences>
 ) {
     // ==================== Reader Mode ====================
     
-    val readerMode: Flow<ReaderMode> = preferences.readerMode.map { ordinal ->
+    val readerMode: Flow<ReaderMode> = dataStore.data.map { prefs ->
+        val ordinal = prefs[Keys.READER_MODE] ?: 0
         ReaderMode.entries.getOrNull(ordinal) ?: ReaderMode.SINGLE_PAGE
     }
     
     suspend fun setReaderMode(mode: ReaderMode) {
-        preferences.setReaderMode(mode.ordinal)
+        dataStore.edit { it[Keys.READER_MODE] = mode.ordinal }
     }
     
     // ==================== Brightness ====================
     
-    private val brightnessKey = "reader_brightness"
-    val brightness: Flow<Float> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.floatPreferencesKey(brightnessKey)] ?: 1.0f
+    val brightness: Flow<Float> = dataStore.data.map { prefs ->
+        prefs[Keys.BRIGHTNESS] ?: DEFAULT_BRIGHTNESS
     }
     
     suspend fun setBrightness(brightness: Float) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(brightnessKey)] = 
-                brightness.coerceIn(0.1f, 1.5f)
-        }
+        dataStore.edit { it[Keys.BRIGHTNESS] = brightness.coerceIn(0.1f, 1.5f) }
     }
     
     // ==================== Zoom Settings ====================
     
-    private val zoomLevelKey = "reader_zoom_level"
-    val defaultZoom: Flow<Float> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.floatPreferencesKey(zoomLevelKey)] ?: 1.0f
+    val defaultZoom: Flow<Float> = dataStore.data.map { prefs ->
+        prefs[Keys.ZOOM_LEVEL] ?: DEFAULT_ZOOM
     }
     
     suspend fun setDefaultZoom(zoom: Float) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(zoomLevelKey)] = 
-                zoom.coerceIn(0.5f, 5.0f)
-        }
+        dataStore.edit { it[Keys.ZOOM_LEVEL] = zoom.coerceIn(MIN_ZOOM, MAX_ZOOM) }
     }
     
     // ==================== Double Tap Zoom ====================
     
-    private val doubleTapZoomKey = "reader_double_tap_zoom"
-    val doubleTapZoomEnabled: Flow<Boolean> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.booleanPreferencesKey(doubleTapZoomKey)] ?: true
+    val doubleTapZoomEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.DOUBLE_TAP_ZOOM] ?: true
     }
     
     suspend fun setDoubleTapZoomEnabled(enabled: Boolean) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.booleanPreferencesKey(doubleTapZoomKey)] = enabled
-        }
+        dataStore.edit { it[Keys.DOUBLE_TAP_ZOOM] = enabled }
     }
     
     // ==================== Keep Screen On ====================
     
-    val keepScreenOn: Flow<Boolean> = preferences.keepScreenOn
+    val keepScreenOn: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.KEEP_SCREEN_ON] ?: true
+    }
     
     suspend fun setKeepScreenOn(enabled: Boolean) {
-        preferences.setKeepScreenOn(enabled)
+        dataStore.edit { it[Keys.KEEP_SCREEN_ON] = enabled }
     }
     
     // ==================== Show Page Number ====================
     
-    private val showPageNumberKey = "reader_show_page_number"
-    val showPageNumber: Flow<Boolean> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.booleanPreferencesKey(showPageNumberKey)] ?: true
+    val showPageNumber: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_PAGE_NUMBER] ?: true
     }
     
     suspend fun setShowPageNumber(enabled: Boolean) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.booleanPreferencesKey(showPageNumberKey)] = enabled
-        }
+        dataStore.edit { it[Keys.SHOW_PAGE_NUMBER] = enabled }
     }
     
     // ==================== Reading Direction ====================
     
-    private val readingDirectionKey = "reader_direction"
-    val readingDirection: Flow<ReadingDirection> = preferences.dataStore.data.map { prefs ->
-        val ordinal = prefs[androidx.datastore.preferences.core.intPreferencesKey(readingDirectionKey)] ?: 0
+    val readingDirection: Flow<ReadingDirection> = dataStore.data.map { prefs ->
+        val ordinal = prefs[Keys.READING_DIRECTION] ?: 0
         ReadingDirection.entries.getOrNull(ordinal) ?: ReadingDirection.LTR
     }
     
     suspend fun setReadingDirection(direction: ReadingDirection) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.intPreferencesKey(readingDirectionKey)] = direction.ordinal
-        }
+        dataStore.edit { it[Keys.READING_DIRECTION] = direction.ordinal }
     }
     
     // ==================== Volume Key Navigation ====================
     
-    private val volumeKeyNavKey = "reader_volume_key_nav"
-    val volumeKeyNavigation: Flow<Boolean> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.booleanPreferencesKey(volumeKeyNavKey)] ?: false
+    val volumeKeyNavigation: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.VOLUME_KEY_NAV] ?: false
     }
     
     suspend fun setVolumeKeyNavigation(enabled: Boolean) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.booleanPreferencesKey(volumeKeyNavKey)] = enabled
-        }
+        dataStore.edit { it[Keys.VOLUME_KEY_NAV] = enabled }
     }
     
     // ==================== Fullscreen ====================
     
-    private val fullscreenKey = "reader_fullscreen"
-    val fullscreen: Flow<Boolean> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.booleanPreferencesKey(fullscreenKey)] ?: true
+    val fullscreen: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.FULLSCREEN] ?: true
     }
     
     suspend fun setFullscreen(enabled: Boolean) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.booleanPreferencesKey(fullscreenKey)] = enabled
-        }
+        dataStore.edit { it[Keys.FULLSCREEN] = enabled }
     }
     
     // ==================== Auto-Scroll Speed ====================
     
-    private val autoScrollSpeedKey = "reader_auto_scroll_speed"
-    val autoScrollSpeed: Flow<Float> = preferences.dataStore.data.map { prefs ->
-        prefs[androidx.datastore.preferences.core.floatPreferencesKey(autoScrollSpeedKey)] ?: 100f
+    val autoScrollSpeed: Flow<Float> = dataStore.data.map { prefs ->
+        prefs[Keys.AUTO_SCROLL_SPEED] ?: DEFAULT_AUTO_SCROLL_SPEED
     }
     
     suspend fun setAutoScrollSpeed(speed: Float) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(autoScrollSpeedKey)] = 
-                speed.coerceIn(10f, 500f)
-        }
+        dataStore.edit { it[Keys.AUTO_SCROLL_SPEED] = speed.coerceIn(10f, 500f) }
     }
     
     // ==================== Tap Zone Configuration ====================
     
-    private val tapZoneLeftKey = "reader_tap_zone_left"
-    private val tapZoneCenterKey = "reader_tap_zone_center"
-    private val tapZoneRightKey = "reader_tap_zone_right"
+    val tapZoneConfig: Flow<TapZoneConfig> = dataStore.data.map { prefs ->
+        TapZoneConfig(
+            leftZoneWidth = prefs[Keys.TAP_ZONE_LEFT] ?: 0.25f,
+            centerZoneWidth = prefs[Keys.TAP_ZONE_CENTER] ?: 0.5f,
+            rightZoneWidth = prefs[Keys.TAP_ZONE_RIGHT] ?: 0.25f
+        )
+    }
     
-    val tapZoneConfig: Flow<app.otakureader.feature.reader.model.TapZoneConfig> = 
-        preferences.dataStore.data.map { prefs ->
-            app.otakureader.feature.reader.model.TapZoneConfig(
-                leftZoneWidth = prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneLeftKey)] ?: 0.25f,
-                centerZoneWidth = prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneCenterKey)] ?: 0.5f,
-                rightZoneWidth = prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneRightKey)] ?: 0.25f
-            )
+    suspend fun setTapZoneConfig(config: TapZoneConfig) {
+        dataStore.edit { prefs ->
+            prefs[Keys.TAP_ZONE_LEFT] = config.leftZoneWidth
+            prefs[Keys.TAP_ZONE_CENTER] = config.centerZoneWidth
+            prefs[Keys.TAP_ZONE_RIGHT] = config.rightZoneWidth
         }
+    }
     
-    suspend fun setTapZoneConfig(config: app.otakureader.feature.reader.model.TapZoneConfig) {
-        preferences.dataStore.edit { prefs ->
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneLeftKey)] = config.leftZoneWidth
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneCenterKey)] = config.centerZoneWidth
-            prefs[androidx.datastore.preferences.core.floatPreferencesKey(tapZoneRightKey)] = config.rightZoneWidth
-        }
+    private object Keys {
+        val READER_MODE = intPreferencesKey("reader_mode_setting")
+        val BRIGHTNESS = floatPreferencesKey("reader_brightness")
+        val ZOOM_LEVEL = floatPreferencesKey("reader_zoom_level")
+        val DOUBLE_TAP_ZOOM = booleanPreferencesKey("reader_double_tap_zoom")
+        val KEEP_SCREEN_ON = booleanPreferencesKey("reader_keep_screen_on")
+        val SHOW_PAGE_NUMBER = booleanPreferencesKey("reader_show_page_number")
+        val READING_DIRECTION = intPreferencesKey("reader_direction")
+        val VOLUME_KEY_NAV = booleanPreferencesKey("reader_volume_key_nav")
+        val FULLSCREEN = booleanPreferencesKey("reader_fullscreen")
+        val AUTO_SCROLL_SPEED = floatPreferencesKey("reader_auto_scroll_speed")
+        val TAP_ZONE_LEFT = floatPreferencesKey("reader_tap_zone_left")
+        val TAP_ZONE_CENTER = floatPreferencesKey("reader_tap_zone_center")
+        val TAP_ZONE_RIGHT = floatPreferencesKey("reader_tap_zone_right")
     }
     
     companion object {
@@ -173,10 +168,3 @@ class ReaderSettingsRepository @Inject constructor(
         const val DEFAULT_AUTO_SCROLL_SPEED = 100f
     }
 }
-
-// Extension to access dataStore from AppPreferences
-private val AppPreferences.dataStore: androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
-    get() = javaClass.getDeclaredField("dataStore").let { field ->
-        field.isAccessible = true
-        field.get(this) as androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
-    }

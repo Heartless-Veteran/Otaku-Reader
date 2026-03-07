@@ -5,8 +5,12 @@ import androidx.navigation.compose.composable
 import app.otakureader.core.navigation.SettingsRoute
 import app.otakureader.feature.settings.SettingsScreen
 
-fun NavGraphBuilder.settingsScreen() {
+fun NavGraphBuilder.settingsScreen(
+    onNavigateBack: () -> Unit,
+) {
     composable<SettingsRoute> {
-        SettingsScreen()
+        SettingsScreen(
+            onNavigateBack = onNavigateBack
+        )
     }
 }
