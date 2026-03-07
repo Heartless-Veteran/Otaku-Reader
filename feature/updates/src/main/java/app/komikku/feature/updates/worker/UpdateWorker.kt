@@ -24,15 +24,20 @@ class UpdateWorker @AssistedInject constructor(
             val libraryMangas = mangaRepository.observeLibrary().first()
 
             for (libraryManga in libraryMangas) {
-                // In a full implementation with network sources, we would query the API for new chapters here.
-                // Since the source networking layer is currently stubbed, we perform an actual database operation
-                // that represents a successful update check for this manga by updating its lastUpdate timestamp.
+                // Determine the last chapter number from local DB to use as a baseline
+                val localChapters = chapterRepository.observeChaptersByManga(libraryManga.manga.id).first()
+                val lastChapterNumber = localChapters.maxOfOrNull { it.chapterNumber } ?: 0f
 
-                val updatedManga = libraryManga.manga.copy(
-                    lastUpdate = System.currentTimeMillis()
-                )
+                // TODO: Fetch remote chapters from SourceManager when implemented
+                // val source = sourceManager.get(libraryManga.manga.sourceId)
+                // val remoteChapters = source.getChapterList(libraryManga.manga.toSManga())
+                // val newChapters = remoteChapters.filter { it.chapterNumber > lastChapterNumber }
 
-                mangaRepository.upsertManga(updatedManga)
+                // If there were new chapters, we would upsert them here and update the manga's lastUpdate
+                // if (newChapters.isNotEmpty()) {
+                //     chapterRepository.upsertChapters(newChapters.map { it.toDomain(libraryManga.manga.id) })
+                //     mangaRepository.upsertManga(libraryManga.manga.copy(lastUpdate = System.currentTimeMillis()))
+                // }
             }
 
             Result.success()
