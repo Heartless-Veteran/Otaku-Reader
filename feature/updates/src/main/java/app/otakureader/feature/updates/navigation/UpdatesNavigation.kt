@@ -6,9 +6,13 @@ import app.otakureader.core.navigation.UpdatesRoute
 import app.otakureader.feature.updates.UpdatesScreen
 
 fun NavGraphBuilder.updatesScreen(
-    onChapterClick: (mangaId: Long, chapterId: Long) -> Unit,
+    onMangaClick: (Long) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     composable<UpdatesRoute> {
-        UpdatesScreen(onChapterClick = onChapterClick)
+        UpdatesScreen(
+            onMangaClick = onMangaClick,
+            onNavigateBack = onNavigateBack
+        )
     }
 }
