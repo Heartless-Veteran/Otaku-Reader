@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material3.Button
@@ -35,15 +35,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import app.otakureader.domain.repository.SourceRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel for ExtensionInstallScreen.
  */
-class ExtensionInstallViewModel @javax.inject.Inject constructor(
-    val sourceRepository: SourceRepository
-) : androidx.lifecycle.ViewModel()
+@HiltViewModel
+class ExtensionInstallViewModel @Inject constructor(
+    private val sourceRepository: SourceRepository
+) : ViewModel() {
+
+    suspend fun installFromUrl(url: String): Result<Unit> =
+        sourceRepository.loadExtensionFromUrl(url)
+
+    suspend fun installFromFile(path: String): Result<Unit> =
+        sourceRepository.loadExtension(path)
+}
 
 /**
  * Screen for installing Tachiyomi extensions from URL or file path.
@@ -70,7 +81,7 @@ fun ExtensionInstallScreen(
                 title = { Text("Install Extension") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -105,7 +116,7 @@ fun ExtensionInstallScreen(
                     if (urlText.isNotBlank()) {
                         scope.launch {
                             isLoading = true
-                            val result = viewModel.sourceRepository.loadExtensionFromUrl(urlText)
+                            val result = viewModel.installFromUrl(urlText)
                             isLoading = false
                             result.onSuccess {
                                 installResult = "Extension installed successfully!"
@@ -155,7 +166,7 @@ fun ExtensionInstallScreen(
                     if (filePath.isNotBlank()) {
                         scope.launch {
                             isLoading = true
-                            val result = viewModel.sourceRepository.loadExtension(filePath)
+                            val result = viewModel.installFromFile(filePath)
                             isLoading = false
                             result.onSuccess {
                                 installResult = "Extension installed successfully!"

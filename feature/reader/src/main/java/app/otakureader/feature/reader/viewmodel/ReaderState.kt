@@ -31,7 +31,7 @@ data class ReaderState(
     /** Whether the page gallery/thumbnail view is open */
     val isGalleryOpen: Boolean = false,
 
-    /** Screen brightness level (0.0 - 1.0) */
+    /** Screen brightness level (0.1 - 1.5) */
     val brightness: Float = 1f,
 
     /** Loading state for chapter loading */
@@ -65,11 +65,10 @@ data class ReaderState(
     val showPageNumber: Boolean = true,
 
     /** Current chapter title */
-    val chapterTitle: String = "",
-
-    /** Total pages in chapter (derived from pages.size but cached for UI) */
-    val totalPages: Int = 0
+    val chapterTitle: String = ""
 ) {
+    /** Total pages in chapter (derived from pages.size) */
+    val totalPages: Int get() = pages.size
     /** Computed property for progress percentage */
     val progressPercent: Float
         get() = if (pages.isNotEmpty()) {

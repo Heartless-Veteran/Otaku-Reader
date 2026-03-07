@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.SourceManga
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 
 /**
  * Browse screen for discovering manga from various sources.

@@ -60,7 +60,7 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

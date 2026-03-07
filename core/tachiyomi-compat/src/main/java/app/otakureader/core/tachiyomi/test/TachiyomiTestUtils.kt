@@ -29,7 +29,7 @@ object TachiyomiTestUtils {
             val tempFile = File(context.cacheDir, "test_extension_${System.currentTimeMillis()}.apk")
 
             URL(apkUrl).openStream().use { input ->
-                tempFile.outputStream().use { output -
+                tempFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }

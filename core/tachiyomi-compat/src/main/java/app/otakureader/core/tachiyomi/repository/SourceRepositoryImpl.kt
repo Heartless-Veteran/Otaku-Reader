@@ -6,13 +6,17 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Implementation of SourceRepository using Tachiyomi extension adapters.
@@ -30,13 +34,15 @@ class SourceRepositoryImpl(
     override fun getSources(): Flow<List<MangaSource>> = _sources.asStateFlow()
 
     // Cache for manga pages to avoid repeated network calls
-    private val popularMangaCache = mutableMapOf<String, MutableMap<Int, MangaPage>>()
-    private val latestMangaCache = mutableMapOf<String, MutableMap<Int, MangaPage>>()
-    private val searchCache = mutableMapOf<String, MutableMap<Pair<String, Int>, MangaPage>>()
+    private val popularMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
+    private val latestMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
+    private val searchCache = ConcurrentHashMap<String, ConcurrentHashMap<Pair<String, Int>, MangaPage>>()
+
+    private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         // Load all installed extensions on initialization
-        refreshSources()
+        initScope.launch { refreshSources() }
     }
 
     override suspend fun getSource(sourceId: String): MangaSource? {
@@ -57,7 +63,7 @@ class SourceRepositoryImpl(
                 val mangaPage = source.fetchPopularManga(page)
 
                 // Cache the result
-                popularMangaCache.getOrPut(sourceId) { mutableMapOf() }[page] = mangaPage
+                popularMangaCache.computeIfAbsent(sourceId) { ConcurrentHashMap() }[page] = mangaPage
 
                 Result.success(mangaPage)
             } catch (e: Exception) {
@@ -80,7 +86,7 @@ class SourceRepositoryImpl(
                 val mangaPage = source.fetchLatestUpdates(page)
 
                 // Cache the result
-                latestMangaCache.getOrPut(sourceId) { mutableMapOf() }[page] = mangaPage
+                latestMangaCache.computeIfAbsent(sourceId) { ConcurrentHashMap() }[page] = mangaPage
 
                 Result.success(mangaPage)
             } catch (e: Exception) {
@@ -108,7 +114,7 @@ class SourceRepositoryImpl(
                 )
 
                 // Cache the result
-                searchCache.getOrPut(sourceId) { mutableMapOf() }[cacheKey] = mangaPage
+                searchCache.computeIfAbsent(sourceId) { ConcurrentHashMap() }[cacheKey] = mangaPage
 
                 Result.success(mangaPage)
             } catch (e: Exception) {
@@ -156,7 +162,7 @@ class SourceRepositoryImpl(
                 val tempFile = File(context.cacheDir, "extension_${System.currentTimeMillis()}.apk")
 
                 URL(url).openStream().use { input ->
-                    tempFile.outputStream().use { output -
+                    tempFile.outputStream().use { output ->
                         input.copyTo(output)
                     }
                 }

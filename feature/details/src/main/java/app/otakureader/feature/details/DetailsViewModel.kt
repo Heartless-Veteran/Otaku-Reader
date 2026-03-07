@@ -143,8 +143,7 @@ class DetailsViewModel @Inject constructor(
 
     private fun startReading() {
         viewModelScope.launch {
-            val firstChapter = _state.value.chapters.lastOrNull()
-                ?: _state.value.chapters.firstOrNull()
+            val firstChapter = _state.value.sortedChapters.firstOrNull()
             
             if (firstChapter != null) {
                 _effect.emit(
