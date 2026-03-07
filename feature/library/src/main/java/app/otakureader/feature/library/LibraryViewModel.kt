@@ -2,113 +2,128 @@ package app.otakureader.feature.library
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.otakureader.domain.repository.CategoryRepository
-import app.otakureader.domain.usecase.GetLibraryUseCase
+import app.otakureader.domain.model.Manga
+import app.otakureader.domain.usecase.GetLibraryMangaUseCase
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel for the Library screen.
- * Follows the MVI pattern: exposes [state] as [StateFlow] and [effect] as a Channel.
- * User actions are dispatched via [onEvent].
- */
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    private val getLibraryUseCase: GetLibraryUseCase,
-    private val categoryRepository: CategoryRepository
+    private val getLibraryManga: GetLibraryMangaUseCase,
+    private val toggleFavoriteManga: ToggleFavoriteMangaUseCase
 ) : ViewModel() {
-
+    
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
-
-    private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
-    val effect = _effect.receiveAsFlow()
-
-    private val searchQuery = MutableStateFlow("")
-
-    private var libraryJob: Job? = null
-
+    
+    private val _effect = MutableSharedFlow<LibraryEffect>()
+    val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
+    
     init {
-        observeLibrary()
-        observeCategories()
+        loadLibrary()
     }
-
-    private fun observeLibrary() {
-        libraryJob = viewModelScope.launch {
-            searchQuery
-                .flatMapLatest { query -> getLibraryUseCase(query) }
-                .catch { e -> _state.update { it.copy(error = e.message, isLoading = false) } }
-                .collect { mangaList ->
-                    _state.update { it.copy(manga = mangaList, isLoading = false, error = null) }
-                }
-        }
-    }
-
-    private fun observeCategories() {
-        viewModelScope.launch {
-            categoryRepository.observeCategories().collect { categories ->
-                _state.update { it.copy(categories = categories) }
-            }
-        }
-    }
-
-    /** Dispatch a user event to the ViewModel. */
+    
     fun onEvent(event: LibraryEvent) {
         when (event) {
-            is LibraryEvent.Refresh -> refresh()
-            is LibraryEvent.OnMangaClick -> handleMangaClick(event.mangaId)
-            is LibraryEvent.OnMangaLongClick -> toggleSelection(event.mangaId)
-            is LibraryEvent.OnSearchQueryChange -> updateSearch(event.query)
-            is LibraryEvent.OnCategoryChange -> _state.update { it.copy(activeCategory = event.categoryId) }
-            is LibraryEvent.ClearSelection -> _state.update { it.copy(selectedManga = emptySet()) }
-            is LibraryEvent.RemoveFromLibrary -> removeFromLibrary(event.mangaIds)
+            is LibraryEvent.Refresh -> loadLibrary()
+            is LibraryEvent.OnMangaClick -> onMangaClick(event.mangaId)
+            is LibraryEvent.OnMangaLongClick -> onMangaLongClick(event.mangaId)
+            is LibraryEvent.OnSearchQueryChange -> onSearchQueryChange(event.query)
+            is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
+            is LibraryEvent.ClearSelection -> clearSelection()
+            is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
         }
     }
-
-    private fun refresh() {
+    
+    private fun loadLibrary() {
         _state.update { it.copy(isLoading = true) }
-        libraryJob?.cancel()
-        observeLibrary()
+        
+        getLibraryManga()
+            .map { mangaList ->
+                mangaList.map { it.toLibraryItem() }
+            }
+            .onEach { items ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        mangaList = items,
+                        error = null
+                    )
+                }
+            }
+            .catch { error ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            }
+            .launchIn(viewModelScope)
     }
-
-    private fun handleMangaClick(mangaId: Long) {
+    
+    private fun onMangaClick(mangaId: Long) {
         if (_state.value.selectedManga.isNotEmpty()) {
             toggleSelection(mangaId)
         } else {
             viewModelScope.launch {
-                _effect.send(LibraryEffect.NavigateToManga(mangaId))
+                _effect.emit(LibraryEffect.NavigateToManga(mangaId))
             }
         }
     }
-
+    
+    private fun onMangaLongClick(mangaId: Long) {
+        toggleSelection(mangaId)
+    }
+    
     private fun toggleSelection(mangaId: Long) {
-        _state.update { current ->
-            val selection = current.selectedManga.toMutableSet()
-            if (mangaId in selection) selection.remove(mangaId) else selection.add(mangaId)
-            current.copy(selectedManga = selection)
+        _state.update { state ->
+            val currentSelection = state.selectedManga
+            val newSelection = if (currentSelection.contains(mangaId)) {
+                currentSelection - mangaId
+            } else {
+                currentSelection + mangaId
+            }
+            state.copy(selectedManga = newSelection)
         }
     }
-
-    private fun updateSearch(query: String) {
+    
+    private fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }
-        searchQuery.value = query
     }
-
-    private fun removeFromLibrary(mangaIds: Set<Long>) {
+    
+    private fun onCategorySelected(categoryId: Long?) {
+        _state.update { it.copy(selectedCategory = categoryId) }
+    }
+    
+    private fun clearSelection() {
+        _state.update { it.copy(selectedManga = emptySet()) }
+    }
+    
+    private fun toggleFavorite(mangaId: Long) {
         viewModelScope.launch {
-            // TODO: call use case to remove from library
-            _state.update { it.copy(selectedManga = emptySet()) }
-            _effect.send(LibraryEffect.ShowSnackbar("Removed ${mangaIds.size} manga from library"))
+            toggleFavoriteManga(mangaId)
         }
     }
+    
+    private fun Manga.toLibraryItem() = LibraryMangaItem(
+        id = id,
+        title = title,
+        thumbnailUrl = thumbnailUrl,
+        unreadCount = unreadCount,
+        isFavorite = favorite
+    )
 }

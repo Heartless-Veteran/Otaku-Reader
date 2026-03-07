@@ -1,46 +1,91 @@
 package app.otakureader.data.repository
 
+import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
-import app.otakureader.data.mapper.toEntity
-import app.otakureader.data.mapper.toManga
-import app.otakureader.domain.model.LibraryManga
 import app.otakureader.domain.model.Manga
+import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MangaRepositoryImpl @Inject constructor(
-    private val mangaDao: MangaDao
+    private val mangaDao: MangaDao,
+    private val chapterDao: ChapterDao
 ) : MangaRepository {
-
-    override fun observeLibrary(): Flow<List<LibraryManga>> =
-        mangaDao.observeLibrary().map { entities ->
-            entities.map { entity ->
-                LibraryManga(manga = entity.toManga())
-            }
+    
+    override fun getLibraryManga(): Flow<List<Manga>> {
+        return mangaDao.getFavoriteManga().map { entities ->
+            entities.map { it.toDomain() }
         }
-
-    override fun observeManga(id: Long): Flow<Manga?> =
-        mangaDao.observeManga(id).map { it?.toManga() }
-
-    override suspend fun getMangaBySourceAndUrl(sourceId: String, url: String): Manga? =
-        mangaDao.getMangaBySourceAndUrl(sourceId, url)?.toManga()
-
-    override suspend fun upsertManga(manga: Manga): Long =
-        mangaDao.upsert(manga.toEntity())
-
-    override suspend fun setFavorite(id: Long, favorite: Boolean) =
-        mangaDao.setFavorite(id, favorite)
-
-    override suspend fun deleteManga(id: Long) =
-        mangaDao.delete(id)
-
-    override fun searchLibrary(query: String): Flow<List<LibraryManga>> =
-        mangaDao.searchLibrary(query).map { entities ->
-            entities.map { entity -> LibraryManga(manga = entity.toManga()) }
+    }
+    
+    override suspend fun getMangaById(id: Long): Manga? {
+        return mangaDao.getMangaById(id)?.toDomain()
+    }
+    
+    override fun getMangaByIdFlow(id: Long): Flow<Manga?> {
+        return combine(
+            mangaDao.getMangaByIdFlow(id),
+            chapterDao.getUnreadCountByMangaId(id)
+        ) { mangaEntity, unreadCount ->
+            mangaEntity?.toDomain(unreadCount)
         }
+    }
+    
+    override suspend fun insertManga(manga: Manga): Long {
+        return mangaDao.insert(manga.toEntity())
+    }
+    
+    override suspend fun updateManga(manga: Manga) {
+        mangaDao.update(manga.toEntity())
+    }
+    
+    override suspend fun deleteManga(id: Long) {
+        mangaDao.deleteById(id)
+    }
+    
+    override suspend fun toggleFavorite(id: Long) {
+        val manga = mangaDao.getMangaById(id) ?: return
+        mangaDao.updateFavorite(id, !manga.favorite)
+    }
+    
+    override fun isFavorite(id: Long): Flow<Boolean> {
+        return mangaDao.isFavorite(id)
+    }
+    
+    private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
+        id = id,
+        sourceId = sourceId,
+        url = url,
+        title = title,
+        thumbnailUrl = thumbnailUrl,
+        author = author,
+        artist = artist,
+        description = description,
+        genre = genre?.split(",") ?: emptyList(),
+        status = MangaStatus.fromOrdinal(status),
+        favorite = favorite,
+        initialized = initialized,
+        unreadCount = unreadCount
+    )
+    
+    private fun Manga.toEntity() = MangaEntity(
+        id = id,
+        sourceId = sourceId,
+        url = url,
+        title = title,
+        thumbnailUrl = thumbnailUrl,
+        author = author,
+        artist = artist,
+        description = description,
+        genre = genre.joinToString(","),
+        status = status.ordinal,
+        favorite = favorite,
+        initialized = initialized
+    )
 }

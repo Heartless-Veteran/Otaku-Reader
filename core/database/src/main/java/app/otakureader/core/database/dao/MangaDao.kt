@@ -1,38 +1,49 @@
 package app.otakureader.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
 import androidx.room.Update
 import app.otakureader.core.database.entity.MangaEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MangaDao {
-
     @Query("SELECT * FROM manga WHERE favorite = 1 ORDER BY title ASC")
-    fun observeLibrary(): Flow<List<MangaEntity>>
-
-    @Query("SELECT * FROM manga WHERE favorite = 1 AND title LIKE '%' || :query || '%' ORDER BY title ASC")
-    fun searchLibrary(query: String): Flow<List<MangaEntity>>
-
+    fun getFavoriteManga(): Flow<List<MangaEntity>>
+    
     @Query("SELECT * FROM manga WHERE id = :id")
-    fun observeManga(id: Long): Flow<MangaEntity?>
-
-    @Query("SELECT * FROM manga WHERE source_id = :sourceId AND url = :url LIMIT 1")
-    suspend fun getMangaBySourceAndUrl(sourceId: String, url: String): MangaEntity?
-
+    suspend fun getMangaById(id: Long): MangaEntity?
+    
+    @Query("SELECT * FROM manga WHERE id = :id")
+    fun getMangaByIdFlow(id: Long): Flow<MangaEntity?>
+    
+    @Query("SELECT * FROM manga WHERE sourceId = :sourceId AND url = :url")
+    suspend fun getMangaBySourceAndUrl(sourceId: Long, url: String): MangaEntity?
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(manga: MangaEntity): Long
-
-    @Query("UPDATE manga SET favorite = :favorite WHERE id = :id")
-    suspend fun setFavorite(id: Long, favorite: Boolean)
-
+    suspend fun insert(manga: MangaEntity): Long
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(manga: List<MangaEntity>)
+    
+    @Update
+    suspend fun update(manga: MangaEntity)
+    
+    @Delete
+    suspend fun delete(manga: MangaEntity)
+    
     @Query("DELETE FROM manga WHERE id = :id")
-    suspend fun delete(id: Long)
-
-    @Query("SELECT * FROM manga WHERE id = :id LIMIT 1")
-    suspend fun getManga(id: Long): MangaEntity?
+    suspend fun deleteById(id: Long)
+    
+    @Query("UPDATE manga SET favorite = :favorite WHERE id = :id")
+    suspend fun updateFavorite(id: Long, favorite: Boolean)
+    
+    @Query("SELECT EXISTS(SELECT 1 FROM manga WHERE id = :id AND favorite = 1)")
+    fun isFavorite(id: Long): Flow<Boolean>
+    
+    @Query("SELECT COUNT(*) FROM manga WHERE favorite = 1")
+    fun getFavoriteMangaCount(): Flow<Int>
 }

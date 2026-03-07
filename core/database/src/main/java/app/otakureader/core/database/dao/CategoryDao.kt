@@ -1,34 +1,45 @@
 package app.otakureader.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import app.otakureader.core.database.entity.CategoryEntity
+import app.otakureader.core.database.entity.MangaCategoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
-
-    @Query("SELECT * FROM category ORDER BY `order` ASC")
-    fun observeCategories(): Flow<List<CategoryEntity>>
-
-    @Query("SELECT * FROM category WHERE id = :id LIMIT 1")
-    suspend fun getCategory(id: Long): CategoryEntity?
-
+    @Query("SELECT * FROM categories ORDER BY `order` ASC")
+    fun getCategories(): Flow<List<CategoryEntity>>
+    
+    @Query("SELECT * FROM categories WHERE id = :id")
+    suspend fun getCategoryById(id: Long): CategoryEntity?
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(category: CategoryEntity): Long
-
-    @Query("DELETE FROM category WHERE id = :id")
-    suspend fun delete(id: Long)
-
-    @Query(
-        """
-        SELECT c.* FROM category c 
-        INNER JOIN manga_category mc ON c.id = mc.category_id 
-        WHERE mc.manga_id = :mangaId 
-        ORDER BY c.`order` ASC
-        """
-    )
-    fun observeCategoriesForManga(mangaId: Long): Flow<List<CategoryEntity>>
+    suspend fun insert(category: CategoryEntity): Long
+    
+    @Update
+    suspend fun update(category: CategoryEntity)
+    
+    @Delete
+    suspend fun delete(category: CategoryEntity)
+    
+    @Query("DELETE FROM categories WHERE id = :id")
+    suspend fun deleteById(id: Long)
+    
+    // Manga-Category relations
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMangaCategory(mangaCategory: MangaCategoryEntity)
+    
+    @Query("DELETE FROM manga_categories WHERE mangaId = :mangaId AND categoryId = :categoryId")
+    suspend fun deleteMangaCategory(mangaId: Long, categoryId: Long)
+    
+    @Query("DELETE FROM manga_categories WHERE mangaId = :mangaId")
+    suspend fun deleteMangaCategoriesForManga(mangaId: Long)
+    
+    @Query("SELECT categoryId FROM manga_categories WHERE mangaId = :mangaId")
+    fun getCategoryIdsForManga(mangaId: Long): Flow<List<Long>>
 }

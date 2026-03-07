@@ -1,36 +1,30 @@
 package app.otakureader.core.database.entity
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
-import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * Room entity for manga data.
- * Indexed on sourceId+url for fast lookups, and favorite for library filtering.
- */
-@Entity(
-    tableName = "manga",
-    indices = [
-        Index(value = ["source_id", "url"], unique = true),
-        Index(value = ["favorite"])
-    ]
-)
+@Entity(tableName = "manga")
 data class MangaEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
-    @ColumnInfo(name = "source_id") val sourceId: String,
+    val id: Long = 0,
+    val sourceId: Long,
     val url: String,
     val title: String,
+    val thumbnailUrl: String? = null,
     val author: String? = null,
     val artist: String? = null,
     val description: String? = null,
-    val genres: String = "",           // pipe-delimited string (|||)
-    val status: Int = 0,
-    @ColumnInfo(name = "thumbnail_url") val thumbnailUrl: String? = null,
-    @ColumnInfo(name = "cover_last_modified") val coverLastModified: Long = 0L,
+    val genre: String? = null,
+    val status: Int = MangaStatus.UNKNOWN.ordinal,
     val favorite: Boolean = false,
-    @ColumnInfo(name = "date_added") val dateAdded: Long = 0L,
-    @ColumnInfo(name = "last_update") val lastUpdate: Long = 0L,
-    val tags: String = ""              // pipe-delimited string (|||)
+    val lastUpdate: Long = 0,
+    val initialized: Boolean = false,
+    val viewerFlags: Int = 0,
+    val chapterFlags: Int = 0,
+    val coverLastModified: Long = 0,
+    val dateAdded: Long = System.currentTimeMillis()
 )
+
+enum class MangaStatus {
+    UNKNOWN, ONGOING, COMPLETED, LICENSED, PUBLISHING_FINISHED, CANCELLED, ON_HIATUS
+}

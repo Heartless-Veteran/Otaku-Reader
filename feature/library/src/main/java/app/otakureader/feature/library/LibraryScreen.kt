@@ -1,155 +1,240 @@
 package app.otakureader.feature.library
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Badge
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.otakureader.core.ui.component.EmptyScreen
-import app.otakureader.core.ui.component.LoadingScreen
-import app.otakureader.domain.model.LibraryManga
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.collectLatest
 
-/**
- * Entry point composable for the Library feature.
- * Stateless: state comes from [LibraryViewModel] and is hoisted via parameters.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     onMangaClick: (Long) -> Unit,
-    modifier: Modifier = Modifier,
+    onNavigateToUpdates: () -> Unit,
+    onNavigateToBrowse: () -> Unit,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    // Handle one-shot effects
-    LaunchedEffect(Unit) {
-        viewModel.effect.collect { effect ->
+    
+    LaunchedEffect(viewModel.effect) {
+        viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is LibraryEffect.NavigateToManga -> onMangaClick(effect.mangaId)
-                is LibraryEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is LibraryEffect.ShowError -> { /* TODO: Show snackbar */ }
+                else -> {}
             }
         }
     }
-
+    
     Scaffold(
-        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text("Library") },
                 actions = {
-                    IconButton(onClick = { /* TODO: open search */ }) {
-                        Icon(imageVector = Icons.Default.Search, contentDescription = "Search library")
+                    IconButton(onClick = { /* TODO: Search */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                    IconButton(onClick = { /* TODO: More options */ }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More")
                     }
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+        bottomBar = {
+            // TODO: Bottom navigation
+        }
+    ) { padding ->
+        LibraryContent(
+            state = state,
+            onEvent = viewModel::onEvent,
+            modifier = Modifier.padding(padding)
+        )
+    }
+}
+
+@Composable
+private fun LibraryContent(
+    state: LibraryState,
+    onEvent: (LibraryEvent) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize()) {
         when {
-            state.isLoading -> LoadingScreen(modifier = Modifier.padding(paddingValues))
-            state.manga.isEmpty() -> EmptyScreen(
-                message = "Your library is empty.\nBrowse sources to find manga.",
-                modifier = Modifier.padding(paddingValues)
-            )
-            else -> LibraryGrid(
-                mangaList = state.manga,
-                onMangaClick = { viewModel.onEvent(LibraryEvent.OnMangaClick(it)) },
-                onMangaLongClick = { viewModel.onEvent(LibraryEvent.OnMangaLongClick(it)) },
-                selectedManga = state.selectedManga,
-                modifier = Modifier.padding(paddingValues)
-            )
+            state.isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            state.mangaList.isEmpty() -> {
+                EmptyLibraryMessage(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            else -> {
+                MangaGrid(
+                    mangaList = state.mangaList,
+                    onMangaClick = { onEvent(LibraryEvent.OnMangaClick(it)) },
+                    onMangaLongClick = { onEvent(LibraryEvent.OnMangaLongClick(it)) }
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun LibraryGrid(
-    mangaList: List<LibraryManga>,
+private fun MangaGrid(
+    mangaList: List<LibraryMangaItem>,
     onMangaClick: (Long) -> Unit,
     onMangaLongClick: (Long) -> Unit,
-    selectedManga: Set<Long>,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
-        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxSize()
     ) {
-        items(mangaList, key = { it.manga.id }) { libraryManga ->
+        items(
+            items = mangaList,
+            key = { it.id }
+        ) { manga ->
             MangaGridItem(
-                manga = libraryManga,
-                isSelected = libraryManga.manga.id in selectedManga,
-                onClick = { onMangaClick(libraryManga.manga.id) },
-                onLongClick = { onMangaLongClick(libraryManga.manga.id) }
+                manga = manga,
+                onClick = { onMangaClick(manga.id) },
+                onLongClick = { onMangaLongClick(manga.id) }
             )
         }
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MangaGridItem(
-    manga: LibraryManga,
-    isSelected: Boolean,
+    manga: LibraryMangaItem,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .aspectRatio(2f / 3f)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .clickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
     ) {
-        AsyncImage(
-            model = manga.manga.thumbnailUrl,
-            contentDescription = manga.manga.title,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-        if (manga.unreadCount > 0) {
-            Badge(
-                modifier = Modifier.padding(4.dp)
-            ) {
-                Text(
-                    text = manga.unreadCount.toString(),
-                    style = MaterialTheme.typography.labelSmall
+        Column {
+            Box {
+                AsyncImage(
+                    model = manga.thumbnailUrl,
+                    contentDescription = manga.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(3f / 4f)
                 )
+                
+                if (manga.unreadCount > 0) {
+                    UnreadBadge(
+                        count = manga.unreadCount,
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    )
+                }
             }
+            
+            Text(
+                text = manga.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(8.dp)
+            )
         }
+    }
+}
+
+@Composable
+private fun UnreadBadge(
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(4.dp)
+            .size(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // TODO: Implement badge with count
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
+    }
+}
+
+@Composable
+private fun EmptyLibraryMessage(
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.Favorite,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Your library is empty",
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Browse for manga to add to your collection",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }

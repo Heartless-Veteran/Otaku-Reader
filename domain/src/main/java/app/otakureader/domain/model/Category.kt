@@ -1,18 +1,8 @@
 package app.otakureader.domain.model
 
-import kotlinx.serialization.Serializable
-
-/** User-defined category for organizing the library. */
-@Serializable
 data class Category(
-    val id: Long = 0L,
+    val id: Long,
     val name: String,
     val order: Int = 0,
-    val flags: Long = 0L
+    val mangaCount: Int = 0
 )
-
-/** Default category constants. */
-object DefaultCategory {
-    const val ID_DEFAULT = 0L
-    const val NAME_DEFAULT = "Default"
-}

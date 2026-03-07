@@ -3,11 +3,6 @@ package app.otakureader.core.database.di
 import android.content.Context
 import androidx.room.Room
 import app.otakureader.core.database.OtakuReaderDatabase
-import app.otakureader.core.database.dao.CategoryDao
-import app.otakureader.core.database.dao.ChapterDao
-import app.otakureader.core.database.dao.MangaCategoryDao
-import app.otakureader.core.database.dao.MangaDao
-import app.otakureader.core.database.dao.ReadingHistoryDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,28 +13,27 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
+    
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): OtakuReaderDatabase =
-        Room.databaseBuilder(
+    fun provideDatabase(
+        @ApplicationContext context: Context
+    ): OtakuReaderDatabase {
+        return Room.databaseBuilder(
             context,
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
-        ).build()
-
+        )
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+    
     @Provides
-    fun provideMangaDao(db: OtakuReaderDatabase): MangaDao = db.mangaDao()
-
+    fun provideMangaDao(database: OtakuReaderDatabase) = database.mangaDao()
+    
     @Provides
-    fun provideChapterDao(db: OtakuReaderDatabase): ChapterDao = db.chapterDao()
-
+    fun provideChapterDao(database: OtakuReaderDatabase) = database.chapterDao()
+    
     @Provides
-    fun provideCategoryDao(db: OtakuReaderDatabase): CategoryDao = db.categoryDao()
-
-    @Provides
-    fun provideMangaCategoryDao(db: OtakuReaderDatabase): MangaCategoryDao = db.mangaCategoryDao()
-
-    @Provides
-    fun provideReadingHistoryDao(db: OtakuReaderDatabase): ReadingHistoryDao = db.readingHistoryDao()
+    fun provideCategoryDao(database: OtakuReaderDatabase) = database.categoryDao()
 }

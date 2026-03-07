@@ -3,12 +3,11 @@ package app.otakureader.core.database.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/** Room entity for a user-created library category. */
-@Entity(tableName = "category")
+@Entity(tableName = "categories")
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0L,
+    val id: Long = 0,
     val name: String,
     val order: Int = 0,
-    val flags: Long = 0L
+    val flags: Int = 0
 )

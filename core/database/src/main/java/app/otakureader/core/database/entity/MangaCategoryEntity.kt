@@ -1,36 +1,32 @@
 package app.otakureader.core.database.entity
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 
-/**
- * Junction table for the many-to-many relationship between manga and categories.
- */
 @Entity(
-    tableName = "manga_category",
-    primaryKeys = ["manga_id", "category_id"],
+    tableName = "manga_categories",
+    primaryKeys = ["mangaId", "categoryId"],
     foreignKeys = [
         ForeignKey(
             entity = MangaEntity::class,
             parentColumns = ["id"],
-            childColumns = ["manga_id"],
+            childColumns = ["mangaId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = CategoryEntity::class,
             parentColumns = ["id"],
-            childColumns = ["category_id"],
+            childColumns = ["categoryId"],
             onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [
-        Index(value = ["manga_id"]),
-        Index(value = ["category_id"])
+        Index(value = ["mangaId"]),
+        Index(value = ["categoryId"])
     ]
 )
 data class MangaCategoryEntity(
-    @ColumnInfo(name = "manga_id") val mangaId: Long,
-    @ColumnInfo(name = "category_id") val categoryId: Long
+    val mangaId: Long,
+    val categoryId: Long
 )

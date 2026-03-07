@@ -1,12 +1,8 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
-import app.otakureader.core.database.dao.ReadingHistoryDao
-import app.otakureader.core.database.entity.ReadingHistoryEntity
-import app.otakureader.data.mapper.toChapter
-import app.otakureader.data.mapper.toEntity
+import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.domain.model.Chapter
-import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.domain.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -15,37 +11,66 @@ import javax.inject.Singleton
 
 @Singleton
 class ChapterRepositoryImpl @Inject constructor(
-    private val chapterDao: ChapterDao,
-    private val readingHistoryDao: ReadingHistoryDao
+    private val chapterDao: ChapterDao
 ) : ChapterRepository {
-
-    override fun observeChaptersByManga(mangaId: Long): Flow<List<Chapter>> =
-        chapterDao.observeChaptersByManga(mangaId).map { list -> list.map { it.toChapter() } }
-
-    override suspend fun getChapter(id: Long): Chapter? =
-        chapterDao.getChapter(id)?.toChapter()
-
-    override suspend fun upsertChapters(chapters: List<Chapter>) =
-        chapterDao.upsertAll(chapters.map { it.toEntity() })
-
-    override suspend fun setRead(id: Long, read: Boolean, lastPageRead: Int) =
-        chapterDao.setRead(id, read, lastPageRead)
-
-    override suspend fun setBookmarked(id: Long, bookmarked: Boolean) =
-        chapterDao.setBookmarked(id, bookmarked)
-
-    override fun observeHistory(): Flow<List<ChapterWithHistory>> =
-        readingHistoryDao.observeHistory().map { list ->
-            list.mapNotNull { entity ->
-                val chapter = chapterDao.getChapter(entity.chapterId)?.toChapter() ?: return@mapNotNull null
-                ChapterWithHistory(
-                    chapter = chapter,
-                    readAt = entity.readAt,
-                    readDurationMs = entity.readDurationMs
-                )
-            }
+    
+    override fun getChaptersByMangaId(mangaId: Long): Flow<List<Chapter>> {
+        return chapterDao.getChaptersByMangaId(mangaId).map { entities ->
+            entities.map { it.toDomain() }
         }
-
-    override suspend fun deleteHistoryBefore(timestamp: Long) =
-        readingHistoryDao.deleteHistoryBefore(timestamp)
+    }
+    
+    override suspend fun getChapterById(id: Long): Chapter? {
+        return chapterDao.getChapterById(id)?.toDomain()
+    }
+    
+    override fun getChapterByIdFlow(id: Long): Flow<Chapter?> {
+        return chapterDao.getChapterByIdFlow(id).map { it?.toDomain() }
+    }
+    
+    override suspend fun getNextUnreadChapter(mangaId: Long): Chapter? {
+        return chapterDao.getNextUnreadChapter(mangaId)?.toDomain()
+    }
+    
+    override suspend fun updateChapterProgress(chapterId: Long, read: Boolean, lastPageRead: Int) {
+        chapterDao.updateChapterProgress(chapterId, read, lastPageRead)
+    }
+    
+    override suspend fun updateBookmark(chapterId: Long, bookmark: Boolean) {
+        chapterDao.updateBookmark(chapterId, bookmark)
+    }
+    
+    override suspend fun insertChapters(chapters: List<Chapter>) {
+        chapterDao.insertAll(chapters.map { it.toEntity() })
+    }
+    
+    override fun getUnreadCountByMangaId(mangaId: Long): Flow<Int> {
+        return chapterDao.getUnreadCountByMangaId(mangaId)
+    }
+    
+    private fun ChapterEntity.toDomain() = Chapter(
+        id = id,
+        mangaId = mangaId,
+        url = url,
+        name = name,
+        scanlator = scanlator,
+        read = read,
+        bookmark = bookmark,
+        lastPageRead = lastPageRead,
+        chapterNumber = chapterNumber,
+        dateUpload = dateUpload
+    )
+    
+    private fun Chapter.toEntity() = ChapterEntity(
+        id = id,
+        mangaId = mangaId,
+        url = url,
+        name = name,
+        scanlator = scanlator,
+        read = read,
+        bookmark = bookmark,
+        lastPageRead = lastPageRead,
+        chapterNumber = chapterNumber,
+        dateUpload = dateUpload
+    )
 }

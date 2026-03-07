@@ -1,41 +1,41 @@
 package app.otakureader.feature.library
 
-import app.otakureader.core.common.mvi.UiEffect
-import app.otakureader.core.common.mvi.UiEvent
-import app.otakureader.core.common.mvi.UiState
-import app.otakureader.domain.model.Category
-import app.otakureader.domain.model.LibraryManga
-
-// ===== MVI State =====
-
-/**
- * UI state for the library screen following the MVI pattern.
- */
 data class LibraryState(
     val isLoading: Boolean = false,
-    val manga: List<LibraryManga> = emptyList(),
-    val categories: List<Category> = emptyList(),
+    val mangaList: List<LibraryMangaItem> = emptyList(),
     val selectedManga: Set<Long> = emptySet(),
     val searchQuery: String = "",
-    val activeCategory: Long = 0L,
-    val error: String? = null
-) : UiState
+    val error: String? = null,
+    val categories: List<CategoryItem> = emptyList(),
+    val selectedCategory: Long? = null
+)
 
-// ===== MVI Events (user actions) =====
+data class LibraryMangaItem(
+    val id: Long,
+    val title: String,
+    val thumbnailUrl: String?,
+    val unreadCount: Int,
+    val isFavorite: Boolean
+)
 
-sealed interface LibraryEvent : UiEvent {
-    data object Refresh : LibraryEvent
-    data class OnMangaClick(val mangaId: Long) : LibraryEvent
-    data class OnMangaLongClick(val mangaId: Long) : LibraryEvent
-    data class OnSearchQueryChange(val query: String) : LibraryEvent
-    data class OnCategoryChange(val categoryId: Long) : LibraryEvent
-    data object ClearSelection : LibraryEvent
-    data class RemoveFromLibrary(val mangaIds: Set<Long>) : LibraryEvent
+data class CategoryItem(
+    val id: Long,
+    val name: String,
+    val count: Int
+)
+
+sealed class LibraryEvent {
+    data object Refresh : LibraryEvent()
+    data class OnMangaClick(val mangaId: Long) : LibraryEvent()
+    data class OnMangaLongClick(val mangaId: Long) : LibraryEvent()
+    data class OnSearchQueryChange(val query: String) : LibraryEvent()
+    data class OnCategorySelected(val categoryId: Long?) : LibraryEvent()
+    data object ClearSelection : LibraryEvent()
+    data class ToggleFavorite(val mangaId: Long) : LibraryEvent()
 }
 
-// ===== MVI Effects (one-shot side effects) =====
-
-sealed interface LibraryEffect : UiEffect {
-    data class NavigateToManga(val mangaId: Long) : LibraryEffect
-    data class ShowSnackbar(val message: String) : LibraryEffect
+sealed class LibraryEffect {
+    data class NavigateToManga(val mangaId: Long) : LibraryEffect()
+    data class NavigateToReader(val mangaId: Long, val chapterId: Long?) : LibraryEffect()
+    data class ShowError(val message: String) : LibraryEffect()
 }

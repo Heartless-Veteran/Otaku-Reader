@@ -1,32 +1,24 @@
 package app.otakureader.domain.model
 
-import kotlinx.serialization.Serializable
-
-/**
- * Domain model representing a manga/comic series.
- */
-@Serializable
 data class Manga(
-    val id: Long = 0L,
-    val sourceId: String,
+    val id: Long,
+    val sourceId: Long,
     val url: String,
     val title: String,
+    val thumbnailUrl: String? = null,
     val author: String? = null,
     val artist: String? = null,
     val description: String? = null,
-    val genres: List<String> = emptyList(),
+    val genre: List<String> = emptyList(),
     val status: MangaStatus = MangaStatus.UNKNOWN,
-    val thumbnailUrl: String? = null,
-    val coverLastModified: Long = 0L,
     val favorite: Boolean = false,
-    val dateAdded: Long = 0L,
-    val lastUpdate: Long = 0L,
+    val initialized: Boolean = false,
     val unreadCount: Int = 0,
-    val downloadedCount: Int = 0,
-    val tags: List<String> = emptyList()
+    val totalChapters: Int = 0,
+    val lastRead: Long? = null,
+    val categoryIds: List<Long> = emptyList()
 )
 
-/** Publication status of a manga. */
 enum class MangaStatus {
     UNKNOWN,
     ONGOING,
@@ -34,5 +26,10 @@ enum class MangaStatus {
     LICENSED,
     PUBLISHING_FINISHED,
     CANCELLED,
-    ON_HIATUS
+    ON_HIATUS;
+    
+    companion object {
+        fun fromOrdinal(ordinal: Int): MangaStatus =
+            entries.getOrElse(ordinal) { UNKNOWN }
+    }
 }
