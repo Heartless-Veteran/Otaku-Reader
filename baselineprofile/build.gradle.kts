@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "app.komikku.baselineprofile"
+    namespace = "app.otakureader.baselineprofile"
     compileSdk = 35
 
     defaultConfig {

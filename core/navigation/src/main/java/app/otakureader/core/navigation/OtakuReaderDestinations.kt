@@ -1,0 +1,37 @@
+package app.otakureader.core.navigation
+
+import kotlinx.serialization.Serializable
+
+/**
+ * Type-safe navigation destinations for Navigation Compose.
+ * Each sealed class/object is serializable for use with Navigation Compose 2.8+.
+ */
+sealed interface OtakuReaderDestination
+
+/** Top-level navigation graph destinations. */
+@Serializable
+object LibraryRoute : OtakuReaderDestination
+
+@Serializable
+object UpdatesRoute : OtakuReaderDestination
+
+@Serializable
+object BrowseRoute : OtakuReaderDestination
+
+@Serializable
+object HistoryRoute : OtakuReaderDestination
+
+@Serializable
+object SettingsRoute : OtakuReaderDestination
+
+/** Manga detail screen. */
+@Serializable
+data class MangaDetailRoute(val mangaId: Long) : OtakuReaderDestination
+
+/** Reader screen. */
+@Serializable
+data class ReaderRoute(val mangaId: Long, val chapterId: Long) : OtakuReaderDestination
+
+/** Browse/Source detail screen. */
+@Serializable
+data class SourceDetailRoute(val sourceId: String) : OtakuReaderDestination

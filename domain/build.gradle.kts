@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.komikku.kotlin.library)
+    alias(libs.plugins.otakureader.kotlin.library)
     alias(libs.plugins.kotlin.serialization)
 }
 

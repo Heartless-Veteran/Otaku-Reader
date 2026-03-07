@@ -149,9 +149,9 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 
 # Convention plugins (defined in build-logic)
-komikku-android-application = { id = "komikku.android.application" }
-komikku-android-library = { id = "komikku.android.library" }
-komikku-android-feature = { id = "komikku.android.feature" }
-komikku-android-hilt = { id = "komikku.android.hilt" }
-komikku-android-room = { id = "komikku.android.room" }
-komikku-kotlin-library = { id = "komikku.kotlin.library" }
+otakureader-android-application = { id = "otakureader.android.application" }
+otakureader-android-library = { id = "otakureader.android.library" }
+otakureader-android-feature = { id = "otakureader.android.feature" }
+otakureader-android-hilt = { id = "otakureader.android.hilt" }
+otakureader-android-room = { id = "otakureader.android.room" }
+otakureader-kotlin-library = { id = "otakureader.kotlin.library" }

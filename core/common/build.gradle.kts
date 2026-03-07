@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.komikku.android.library)
+    alias(libs.plugins.otakureader.android.library)
 }
 
 android {
-    namespace = "app.komikku.core.common"
+    namespace = "app.otakureader.core.common"
 }
 
 dependencies {

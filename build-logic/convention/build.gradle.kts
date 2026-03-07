@@ -4,7 +4,7 @@ plugins {
     `kotlin-dsl`
 }
 
-group = "app.komikku.buildlogic"
+group = "app.otakureader.buildlogic"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -36,27 +36,27 @@ tasks {
 gradlePlugin {
     plugins {
         register("androidApplication") {
-            id = "komikku.android.application"
+            id = "otakureader.android.application"
             implementationClass = "AndroidApplicationConventionPlugin"
         }
         register("androidLibrary") {
-            id = "komikku.android.library"
+            id = "otakureader.android.library"
             implementationClass = "AndroidLibraryConventionPlugin"
         }
         register("androidFeature") {
-            id = "komikku.android.feature"
+            id = "otakureader.android.feature"
             implementationClass = "AndroidFeatureConventionPlugin"
         }
         register("androidHilt") {
-            id = "komikku.android.hilt"
+            id = "otakureader.android.hilt"
             implementationClass = "AndroidHiltConventionPlugin"
         }
         register("androidRoom") {
-            id = "komikku.android.room"
+            id = "otakureader.android.room"
             implementationClass = "AndroidRoomConventionPlugin"
         }
         register("kotlinLibrary") {
-            id = "komikku.kotlin.library"
+            id = "otakureader.kotlin.library"
             implementationClass = "KotlinLibraryConventionPlugin"
         }
     }

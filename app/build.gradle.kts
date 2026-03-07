@@ -1,14 +1,14 @@
 plugins {
-    alias(libs.plugins.komikku.android.application)
-    alias(libs.plugins.komikku.android.hilt)
+    alias(libs.plugins.otakureader.android.application)
+    alias(libs.plugins.otakureader.android.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
-    namespace = "app.komikku"
+    namespace = "app.otakureader"
 
     defaultConfig {
-        applicationId = "app.komikku"
+        applicationId = "app.otakureader"
         versionCode = 1
         versionName = "0.1.0"
 
