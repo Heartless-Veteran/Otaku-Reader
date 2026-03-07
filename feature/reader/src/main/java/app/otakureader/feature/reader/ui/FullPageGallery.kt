@@ -34,7 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.otakureader.feature.reader.model.ReaderPage
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 
 /**
  * Full-screen gallery view with grid of page thumbnails.

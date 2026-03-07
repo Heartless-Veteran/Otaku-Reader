@@ -134,7 +134,7 @@ data class TapZoneConfig(
     val hapticFeedback: Boolean = true
 ) {
     init {
-        require(leftZoneWidth + centerZoneWidth + rightZoneWidth == 1.0f) {
+        require(kotlin.math.abs(leftZoneWidth + centerZoneWidth + rightZoneWidth - 1.0f) < 0.001f) {
             "Tap zone widths must sum to 1.0"
         }
     }

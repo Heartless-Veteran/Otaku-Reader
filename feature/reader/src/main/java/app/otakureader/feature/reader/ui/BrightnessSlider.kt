@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 
 /**
@@ -106,6 +107,7 @@ private fun VerticalSlider(
             ),
             modifier = Modifier
                 .width(200.dp) // Length of the vertical slider
+                .graphicsLayer { rotationZ = 270f }
         )
     }
 }

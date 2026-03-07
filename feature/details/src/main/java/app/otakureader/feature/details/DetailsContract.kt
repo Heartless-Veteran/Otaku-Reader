@@ -80,31 +80,31 @@ object DetailsContract {
     /**
      * UI Events (user actions)
      */
-    sealed class Event : UiEvent {
-        data object Refresh : Event()
-        data object ToggleFavorite : Event()
-        data object ToggleDescription : Event()
-        data object ToggleSortOrder : Event()
-        data object StartReading : Event()
-        data object ContinueReading : Event()
-        data class ChapterClick(val chapterId: Long) : Event()
-        data class ChapterLongClick(val chapterId: Long) : Event()
-        data class ToggleChapterRead(val chapterId: Long) : Event()
-        data class ToggleChapterBookmark(val chapterId: Long) : Event()
-        data class DownloadChapter(val chapterId: Long) : Event()
-        data class DeleteChapterDownload(val chapterId: Long) : Event()
-        data class MarkPreviousAsRead(val chapterId: Long) : Event()
+    sealed interface Event : UiEvent {
+        data object Refresh : Event
+        data object ToggleFavorite : Event
+        data object ToggleDescription : Event
+        data object ToggleSortOrder : Event
+        data object StartReading : Event
+        data object ContinueReading : Event
+        data class ChapterClick(val chapterId: Long) : Event
+        data class ChapterLongClick(val chapterId: Long) : Event
+        data class ToggleChapterRead(val chapterId: Long) : Event
+        data class ToggleChapterBookmark(val chapterId: Long) : Event
+        data class DownloadChapter(val chapterId: Long) : Event
+        data class DeleteChapterDownload(val chapterId: Long) : Event
+        data class MarkPreviousAsRead(val chapterId: Long) : Event
     }
 
     /**
      * UI Effects (one-shot side effects)
      */
-    sealed class Effect : UiEffect {
-        data class NavigateToReader(val mangaId: Long, val chapterId: Long) : Effect()
-        data class ShowSnackbar(val message: String) : Effect()
-        data class ShowError(val message: String) : Effect()
-        data class ShareManga(val title: String, val url: String) : Effect()
-        data class OpenInBrowser(val url: String) : Effect()
+    sealed interface Effect : UiEffect {
+        data class NavigateToReader(val mangaId: Long, val chapterId: Long) : Effect
+        data class ShowSnackbar(val message: String) : Effect
+        data class ShowError(val message: String) : Effect
+        data class ShareManga(val title: String, val url: String) : Effect
+        data class OpenInBrowser(val url: String) : Effect
     }
 }
 

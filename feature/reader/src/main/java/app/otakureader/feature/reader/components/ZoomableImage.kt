@@ -32,7 +32,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -111,28 +111,30 @@ fun ZoomableImage(
                     }
                 }
             }
-            .detectTapGestures(
-                onDoubleTap = { offset ->
-                    scope.launch {
-                        val targetScale = if (zoomState.scale >= doubleTapScale * 0.9f) {
-                            minScale
-                        } else {
-                            doubleTapScale
+            .pointerInput(imageUrl, minScale, maxScale, doubleTapScale) {
+                detectTapGestures(
+                    onDoubleTap = { offset ->
+                        scope.launch {
+                            val targetScale = if (zoomState.scale >= doubleTapScale * 0.9f) {
+                                minScale
+                            } else {
+                                doubleTapScale
+                            }
+                            zoomState.animateZoomTo(
+                                targetScale,
+                                offset.x,
+                                offset.y,
+                                containerSize.width.toFloat(),
+                                containerSize.height.toFloat()
+                            )
                         }
-                        zoomState.animateZoomTo(
-                            targetScale,
-                            offset.x,
-                            offset.y,
-                            containerSize.width.toFloat(),
-                            containerSize.height.toFloat()
-                        )
+                        onDoubleTap?.invoke(offset)
+                    },
+                    onTap = { offset ->
+                        onTap?.invoke(offset)
                     }
-                    onDoubleTap?.invoke(offset)
-                },
-                onTap = { offset ->
-                    onTap?.invoke(offset)
-                }
-            ),
+                )
+            },
         contentAlignment = Alignment.Center
     ) {
         if (imageUrl != null) {
@@ -205,13 +207,7 @@ class ZoomableState {
     ) {
         val previousScale = _scale.value
 
-        // Animate scale
-        _scale.animateTo(
-            targetScale,
-            animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
-        )
-
-        // Adjust and animate offset
+        // Compute target offsets before animating
         val scaleDiff = targetScale / previousScale
         val targetOffsetX = (_offsetX.value - centroidX) * scaleDiff + centroidX
         val targetOffsetY = (_offsetY.value - centroidY) * scaleDiff + centroidY
@@ -223,14 +219,27 @@ class ZoomableState {
             containerWidth * targetScale, containerHeight * targetScale
         )
 
-        _offsetX.animateTo(
-            constrained.first,
-            animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
-        )
-        _offsetY.animateTo(
-            constrained.second,
-            animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
-        )
+        // Animate scale and offsets concurrently for smooth zoom
+        coroutineScope {
+            launch {
+                _scale.animateTo(
+                    targetScale,
+                    animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
+                )
+            }
+            launch {
+                _offsetX.animateTo(
+                    constrained.first,
+                    animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
+                )
+            }
+            launch {
+                _offsetY.animateTo(
+                    constrained.second,
+                    animationSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
+                )
+            }
+        }
     }
 
     suspend fun fling(
