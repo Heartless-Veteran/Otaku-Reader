@@ -1,6 +1,6 @@
 [versions]
 # Core
-kotlin = "2.0.21"
+kotlin = "2.3.10"
 agp = "9.1.0"
 ksp = "2.0.21-1.0.28"
 
