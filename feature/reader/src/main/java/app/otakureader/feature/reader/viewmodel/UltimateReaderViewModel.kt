@@ -3,8 +3,10 @@ package app.otakureader.feature.reader.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.data.download.DownloadProvider
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.feature.reader.model.ReaderMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.feature.reader.model.ReadingDirection
@@ -32,6 +34,8 @@ import javax.inject.Inject
 class UltimateReaderViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
+    private val sourceRepository: SourceRepository,
+    private val downloadProvider: DownloadProvider,
     private val settingsRepository: ReaderSettingsRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -131,19 +135,59 @@ class UltimateReaderViewModel @Inject constructor(
 
     /**
      * Fetch pages from the manga source.
-     * In a real implementation, this would use the SourceManager to get pages.
-     * For now, we create placeholder pages that can be replaced with actual implementation.
+     * First checks for downloaded pages, then falls back to streaming from source.
      */
     private suspend fun fetchPagesFromSource(chapterUrl: String, chapterId: Long): List<ReaderPage> {
-        // TODO: Integrate with SourceManager to fetch actual page URLs
-        // This is a placeholder implementation
-        
-        // For testing/demo purposes, create some placeholder pages
-        // In production, this should call:
-        // val source = sourceManager.get(manga.sourceId)
-        // val pages = source.fetchPageList(chapter.toSourceChapter())
-        
-        return emptyList() // Return empty for now - will show "No pages found"
+        // First, check if the chapter is downloaded
+        if (downloadProvider.hasLocalPages(chapterId)) {
+            // Load pages from local storage
+            val localPages = downloadProvider.getLocalPages(chapterId)
+            return localPages.mapIndexed { index, file ->
+                ReaderPage(
+                    index = index,
+                    localPath = file.absolutePath,
+                    imageUrl = null // Local pages don't need image URLs
+                )
+            }
+        }
+
+        // Chapter not downloaded, fetch from source
+        try {
+            val manga = mangaRepository.observeManga(mangaId).first()
+            val chapter = chapterRepository.getChapterById(chapterId)
+
+            if (chapter == null) {
+                return emptyList()
+            }
+
+            val source = sourceRepository.getSourceById(manga.sourceId)
+                ?: return emptyList()
+
+            // Convert to SourceChapter
+            val sourceChapter = app.otakureader.sourceapi.SourceChapter(
+                id = chapter.id.toString(),
+                url = chapter.url,
+                name = chapter.name,
+                scanlator = chapter.scanlator,
+                chapterNumber = chapter.chapterNumber,
+                dateUpload = chapter.dateUpload
+            )
+
+            // Fetch pages from source
+            val pages = source.fetchPageList(sourceChapter)
+
+            // Convert to ReaderPage
+            return pages.map { page ->
+                ReaderPage(
+                    index = page.index,
+                    imageUrl = page.imageUrl ?: page.url,
+                    localPath = null // Network pages use imageUrl
+                )
+            }
+        } catch (e: Exception) {
+            // Log error and return empty list
+            return emptyList()
+        }
     }
 
     /**
