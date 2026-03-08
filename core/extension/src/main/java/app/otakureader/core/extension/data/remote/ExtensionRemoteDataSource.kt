@@ -154,8 +154,12 @@ class ExtensionRemoteDataSourceImpl(
                     .build()
                 httpClient.newCall(request).execute().use { response ->
                     if (!response.isSuccessful) error("HTTP ${response.code}")
-                    response.body?.bytes()?.let { destination.writeBytes(it) }
-                        ?: error("Empty body")
+                    val body = response.body ?: error("Empty body")
+                    body.byteStream().use { input ->
+                        destination.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
                 }
                 Result.success(destination)
             } catch (e: Exception) {
