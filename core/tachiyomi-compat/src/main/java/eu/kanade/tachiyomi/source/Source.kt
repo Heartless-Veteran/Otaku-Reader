@@ -12,13 +12,17 @@ interface Source {
     val id: Long
     val name: String
 
-    suspend fun getMangaDetails(manga: SManga): SManga = throw Exception("Stub!")
-    suspend fun getChapterList(manga: SManga): List<SChapter> = throw Exception("Stub!")
+    suspend fun getMangaDetails(manga: SManga): SManga =
+        fetchMangaDetails(manga).toBlocking().single()
+
+    suspend fun getChapterList(manga: SManga): List<SChapter> =
+        fetchChapterList(manga).toBlocking().single()
+
     fun fetchPageList(chapter: SChapter): Observable<List<Page>>
 
     @Deprecated("Use the non-RxJava API instead", ReplaceWith("getMangaDetails"))
-    fun fetchMangaDetails(manga: SManga): Observable<SManga> = throw Exception("Stub!")
+    fun fetchMangaDetails(manga: SManga): Observable<SManga>
 
     @Deprecated("Use the non-RxJava API instead", ReplaceWith("getChapterList"))
-    fun fetchChapterList(manga: SManga): Observable<List<SChapter>> = throw Exception("Stub!")
+    fun fetchChapterList(manga: SManga): Observable<List<SChapter>>
 }
