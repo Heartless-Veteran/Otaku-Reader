@@ -134,9 +134,9 @@ class DownloadManager @Inject constructor(
             val totalPages = pageUrls.size
 
             if (totalPages == 0) {
-                // No pages provided yet – mark as completed so it can be retried later
-                // when the caller supplies the actual URLs.
-                updateStatus(chapterId, DownloadStatus.COMPLETED)
+                // No pages provided yet – keep the chapter queued so it can be retried
+                // later when the caller supplies the actual URLs.
+                updateStatus(chapterId, DownloadStatus.QUEUED)
                 mutex.withLock { jobs.remove(chapterId) }
                 return@launch
             }
