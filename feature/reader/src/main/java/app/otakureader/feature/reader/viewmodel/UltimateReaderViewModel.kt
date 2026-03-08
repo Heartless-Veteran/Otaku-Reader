@@ -65,8 +65,17 @@ class UltimateReaderViewModel @Inject constructor(
 
     private fun recordHistoryOpen() {
         viewModelScope.launch {
+            // Resolve the incognito flag directly from settings to avoid races with loadSettings()
+            val isIncognito = runCatching {
+                // Assuming settingsRepository exposes a Flow of settings
+                settingsRepository.getSettings().first().incognitoMode
+            }.getOrElse {
+                // Fall back to the current state if settings cannot be read
+                _state.value.incognitoMode
+            }
+
             // Don't record history if incognito mode is enabled
-            if (_state.value.incognitoMode) return@launch
+            if (isIncognito) return@launch
 
             runCatching {
                 chapterRepository.recordHistory(
