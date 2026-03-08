@@ -58,14 +58,17 @@ class BackupCreator @Inject constructor(
         // Get all favorite manga
         val favoriteManga = mangaDao.getFavoriteManga().first()
 
+        // Load full reading history once and index by chapterId for fast lookups
+        val historyByChapterId = readingHistoryDao.observeHistory().first()
+            .associateBy { it.chapterId }
+
         return favoriteManga.map { mangaEntity ->
             // Get chapters for this manga
-            val chapters = chapterDao.getChaptersByMangaId(mangaEntity.id).first()
+            val chapters = chapterDao.getChaptersByMangaId(mangaEntity.id)
 
             // Get reading history for each chapter
             val backupChapters = chapters.map { chapterEntity ->
-                val history = readingHistoryDao.observeHistory().first()
-                    .find { it.chapterId == chapterEntity.id }
+                val history = historyByChapterId[chapterEntity.id]
                     ?.toBackupReadingHistory()
 
                 chapterEntity.toBackupChapter(readingHistory = history)
