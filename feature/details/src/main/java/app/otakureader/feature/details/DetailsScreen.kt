@@ -82,7 +82,7 @@ fun DetailsScreen(
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, "${effect.title}\n${effect.url}")
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, "Share Manga"))
+                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_manga)))
                 }
                 else -> { /* Handle other effects */ }
             }
