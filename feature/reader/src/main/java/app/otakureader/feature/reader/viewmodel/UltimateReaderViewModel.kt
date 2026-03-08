@@ -11,6 +11,7 @@ import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.feature.reader.model.ReadingDirection
 import app.otakureader.feature.reader.repository.ReaderSettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -50,9 +52,22 @@ class UltimateReaderViewModel @Inject constructor(
     private var autoSaveJob: Job? = null
     private var preloadJob: Job? = null
 
+    private val sessionStartMs = System.currentTimeMillis()
+
     init {
         loadSettings()
         loadChapter()
+        recordHistoryOpen()
+    }
+
+    private fun recordHistoryOpen() {
+        viewModelScope.launch {
+            chapterRepository.recordHistory(
+                chapterId = chapterId,
+                readAt = sessionStartMs,
+                readDurationMs = 0L
+            )
+        }
     }
 
     /**
@@ -467,6 +482,16 @@ class UltimateReaderViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        val durationMs = System.currentTimeMillis() - sessionStartMs
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                chapterRepository.recordHistory(
+                    chapterId = chapterId,
+                    readAt = sessionStartMs,
+                    readDurationMs = durationMs
+                )
+            }
+        }
         saveCurrentProgress()
         autoSaveJob?.cancel()
         preloadJob?.cancel()

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,8 +33,21 @@ class ReaderViewModel @Inject constructor(
     private val _effect = Channel<ReaderEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
+    private val sessionStartMs = System.currentTimeMillis()
+
     init {
         loadChapter()
+        recordHistoryOpen()
+    }
+
+    private fun recordHistoryOpen() {
+        viewModelScope.launch {
+            chapterRepository.recordHistory(
+                chapterId = chapterId,
+                readAt = sessionStartMs,
+                readDurationMs = 0L
+            )
+        }
     }
 
     private fun loadChapter() {
@@ -88,5 +103,19 @@ class ReaderViewModel @Inject constructor(
 
     private fun navigateNextChapter() {
         viewModelScope.launch { _effect.send(ReaderEffect.ShowSnackbar("End of available chapters")) }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        val durationMs = System.currentTimeMillis() - sessionStartMs
+        viewModelScope.launch {
+            withContext(NonCancellable) {
+                chapterRepository.recordHistory(
+                    chapterId = chapterId,
+                    readAt = sessionStartMs,
+                    readDurationMs = durationMs
+                )
+            }
+        }
     }
 }
