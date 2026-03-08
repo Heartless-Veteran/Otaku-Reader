@@ -67,6 +67,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ExtensionsBottomSheet(
     onDismiss: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     viewModel: ExtensionsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -88,6 +89,12 @@ fun ExtensionsBottomSheet(
                     sheetState.hide()
                     onDismiss()
                 }
+            },
+            onNavigateToSettings = {
+                scope.launch {
+                    sheetState.hide()
+                    onNavigateToSettings()
+                }
             }
         )
     }
@@ -98,7 +105,8 @@ fun ExtensionsBottomSheet(
 private fun ExtensionsContent(
     state: ExtensionsState,
     onEvent: (ExtensionsEvent) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Installed", "Available", "Updates")
@@ -116,7 +124,7 @@ private fun ExtensionsContent(
                     IconButton(onClick = { onEvent(ExtensionsEvent.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(onClick = { /* TODO: Settings */ }) {
+                    IconButton(onClick = onNavigateToSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
