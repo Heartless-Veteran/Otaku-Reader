@@ -55,6 +55,7 @@ fun BrowseScreen(
     viewModel: BrowseViewModel,
     onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
     onInstallExtensionClick: () -> Unit,
+    onGlobalSearchClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -80,7 +81,7 @@ fun BrowseScreen(
             TopAppBar(
                 title = { Text("Browse") },
                 actions = {
-                    IconButton(onClick = { /* TODO: Open search */ }) {
+                    IconButton(onClick = onGlobalSearchClick) {
                         Icon(Icons.Default.Search, contentDescription = "Search")
                     }
                 }

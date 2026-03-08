@@ -4,15 +4,14 @@ import androidx.room.Embedded
 import androidx.room.Relation
 
 /**
- * Represents a chapter with its associated reading history.
+ * Room join result that pairs a [ChapterEntity] with its [ReadingHistoryEntity].
+ * Used by [app.otakureader.core.database.dao.ReadingHistoryDao.observeHistoryWithChapters].
  */
 data class ChapterWithHistoryEntity(
-    @Embedded
-    val history: ReadingHistoryEntity,
-
+    @Embedded val chapter: ChapterEntity,
     @Relation(
-        parentColumn = "chapter_id",
-        entityColumn = "id"
+        parentColumn = "id",
+        entityColumn = "chapter_id"
     )
-    val chapter: ChapterEntity
+    val history: ReadingHistoryEntity
 )

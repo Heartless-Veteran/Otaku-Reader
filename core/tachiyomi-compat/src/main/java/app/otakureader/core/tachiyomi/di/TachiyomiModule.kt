@@ -7,6 +7,7 @@ import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetMangaDetailsUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
+import app.otakureader.domain.usecase.source.GlobalSearchUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import dagger.Module
 import dagger.Provides
@@ -63,5 +64,12 @@ object TachiyomiModule {
         sourceRepository: SourceRepository
     ): GetMangaDetailsUseCase {
         return GetMangaDetailsUseCase(sourceRepository)
+    }
+
+    @Provides
+    fun provideGlobalSearchUseCase(
+        sourceRepository: SourceRepository
+    ): GlobalSearchUseCase {
+        return GlobalSearchUseCase(sourceRepository)
     }
 }

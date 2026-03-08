@@ -12,9 +12,9 @@ interface MangaCategoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(mangaCategory: MangaCategoryEntity)
 
-    @Query("DELETE FROM manga_category WHERE manga_id = :mangaId AND category_id = :categoryId")
+    @Query("DELETE FROM manga_categories WHERE mangaId = :mangaId AND categoryId = :categoryId")
     suspend fun delete(mangaId: Long, categoryId: Long)
 
-    @Query("DELETE FROM manga_category WHERE manga_id = :mangaId")
+    @Query("DELETE FROM manga_categories WHERE mangaId = :mangaId")
     suspend fun deleteAllForManga(mangaId: Long)
 }
