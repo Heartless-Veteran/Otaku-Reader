@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.otakureader.android.library)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.otakureader.android.library.compose)
 }
 
 android {
     namespace = "app.otakureader.core.ui"
-    buildFeatures { compose = true }
 }
 
 dependencies {

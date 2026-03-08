@@ -51,6 +51,4 @@ include(":feature:browse")
 include(":feature:updates")
 include(":feature:history")
 include(":feature:settings")
-
-// Baseline profile generator
-include(":baselineprofile")
+include(":feature:details")

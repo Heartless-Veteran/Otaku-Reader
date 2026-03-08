@@ -15,14 +15,11 @@ fun MangaEntity.toManga(): Manga = Manga(
     author = author,
     artist = artist,
     description = description,
-    genres = genres.split("|||").filter { it.isNotBlank() },
+    genre = genre?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
     status = MangaStatus.entries.getOrNull(status) ?: MangaStatus.UNKNOWN,
     thumbnailUrl = thumbnailUrl,
-    coverLastModified = coverLastModified,
     favorite = favorite,
-    dateAdded = dateAdded,
-    lastUpdate = lastUpdate,
-    tags = tags.split("|||").filter { it.isNotBlank() }
+    initialized = initialized
 )
 
 /** Maps domain [Manga] to [MangaEntity]. */
@@ -34,14 +31,11 @@ fun Manga.toEntity(): MangaEntity = MangaEntity(
     author = author,
     artist = artist,
     description = description,
-    genres = genres.joinToString("|||"),
+    genre = genre.joinToString("|||"),
     status = status.ordinal,
     thumbnailUrl = thumbnailUrl,
-    coverLastModified = coverLastModified,
     favorite = favorite,
-    dateAdded = dateAdded,
-    lastUpdate = lastUpdate,
-    tags = tags.joinToString("|||")
+    initialized = initialized
 )
 
 /** Maps [ChapterEntity] to domain [Chapter]. */
@@ -53,12 +47,9 @@ fun ChapterEntity.toChapter(): Chapter = Chapter(
     scanlator = scanlator,
     dateUpload = dateUpload,
     chapterNumber = chapterNumber,
-    sourceOrder = sourceOrder,
     read = read,
     bookmark = bookmark,
-    lastPageRead = lastPageRead,
-    totalPageCount = totalPageCount,
-    dateFetch = dateFetch
+    lastPageRead = lastPageRead
 )
 
 /** Maps domain [Chapter] to [ChapterEntity]. */
@@ -70,10 +61,7 @@ fun Chapter.toEntity(): ChapterEntity = ChapterEntity(
     scanlator = scanlator,
     dateUpload = dateUpload,
     chapterNumber = chapterNumber,
-    sourceOrder = sourceOrder,
     read = read,
     bookmark = bookmark,
-    lastPageRead = lastPageRead,
-    totalPageCount = totalPageCount,
-    dateFetch = dateFetch
+    lastPageRead = lastPageRead
 )

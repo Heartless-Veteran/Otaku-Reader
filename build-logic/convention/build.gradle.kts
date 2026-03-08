@@ -59,5 +59,9 @@ gradlePlugin {
             id = "otakureader.kotlin.library"
             implementationClass = "KotlinLibraryConventionPlugin"
         }
+        register("androidLibraryCompose") {
+            id = "otakureader.android.library.compose"
+            implementationClass = "AndroidLibraryComposeConventionPlugin"
+        }
     }
 }

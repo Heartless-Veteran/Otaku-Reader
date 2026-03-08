@@ -8,16 +8,14 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
  * Configures common Kotlin/Android settings for both application and library modules.
  */
 internal fun Project.configureKotlinAndroid(
-    commonExtension: CommonExtension<*, *, *, *, *, *>
+    commonExtension: CommonExtension
 ) {
     commonExtension.apply {
         compileSdk = 35
 
-        defaultConfig {
-            minSdk = 26
-        }
+        defaultConfig.minSdk = 26
 
-        compileOptions {
+        compileOptions.apply {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
             isCoreLibraryDesugaringEnabled = true

@@ -25,14 +25,13 @@ dependencies {
     implementation("io.reactivex:rxandroid:1.2.1")
 
     // OkHttp (shared with Tachiyomi)
-    implementation(platform(libs.okhttp.bom))
-    implementation("com.squareup.okhttp3:okhttp")
+    implementation(libs.okhttp.core)
 
     // XML parsing
     implementation("org.xmlpull:xmlpull:1.1.3.1")
 
     // Testing
     testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso)
 }

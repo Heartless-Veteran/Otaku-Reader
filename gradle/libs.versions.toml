@@ -1,7 +1,7 @@
 [versions]
 # Core
 kotlin = "2.3.10"
-agp = "8.13.2"
+agp = "9.1.0"
 ksp = "2.3.6"
 
 # AndroidX
@@ -152,6 +152,7 @@ room = { id = "androidx.room", version.ref = "room" }
 otakureader-android-application = { id = "otakureader.android.application" }
 otakureader-android-library = { id = "otakureader.android.library" }
 otakureader-android-feature = { id = "otakureader.android.feature" }
+otakureader-android-library-compose = { id = "otakureader.android.library.compose" }
 otakureader-android-hilt = { id = "otakureader.android.hilt" }
 otakureader-android-room = { id = "otakureader.android.room" }
 otakureader-kotlin-library = { id = "otakureader.kotlin.library" }
