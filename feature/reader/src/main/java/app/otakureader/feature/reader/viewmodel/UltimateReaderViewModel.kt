@@ -65,6 +65,9 @@ class UltimateReaderViewModel @Inject constructor(
 
     private fun recordHistoryOpen() {
         viewModelScope.launch {
+            // Don't record history if incognito mode is enabled
+            if (_state.value.incognitoMode) return@launch
+
             runCatching {
                 chapterRepository.recordHistory(
                     chapterId = chapterId,
@@ -88,6 +91,7 @@ class UltimateReaderViewModel @Inject constructor(
             val direction = settingsRepository.readingDirection.first()
             val volumeKeyNav = settingsRepository.volumeKeyNavigation.first()
             val fullscreen = settingsRepository.fullscreen.first()
+            val incognitoMode = settingsRepository.incognitoMode.first()
 
             _state.update {
                 it.copy(
@@ -97,7 +101,8 @@ class UltimateReaderViewModel @Inject constructor(
                     showPageNumber = showPageNumber,
                     readingDirection = direction,
                     volumeKeyNavigation = volumeKeyNav,
-                    isFullscreen = fullscreen
+                    isFullscreen = fullscreen,
+                    incognitoMode = incognitoMode
                 )
             }
         }
@@ -376,6 +381,11 @@ class UltimateReaderViewModel @Inject constructor(
                 _state.update { it.copy(volumeKeyNavigation = newValue) }
                 viewModelScope.launch { settingsRepository.setVolumeKeyNavigation(newValue) }
             }
+            ReaderSetting.INCOGNITO_MODE -> {
+                val newValue = !_state.value.incognitoMode
+                _state.update { it.copy(incognitoMode = newValue) }
+                viewModelScope.launch { settingsRepository.setIncognitoMode(newValue) }
+            }
             else -> { /* Other settings not yet implemented */ }
         }
     }
@@ -436,6 +446,9 @@ class UltimateReaderViewModel @Inject constructor(
     private fun saveCurrentProgress() {
         val currentState = _state.value
         viewModelScope.launch {
+            // Don't update progress if incognito mode is enabled
+            if (currentState.incognitoMode) return@launch
+
             chapterRepository.updateChapterProgress(
                 chapterId = chapterId,
                 read = currentState.isLastPage,
@@ -493,12 +506,15 @@ class UltimateReaderViewModel @Inject constructor(
         val durationMs = System.currentTimeMillis() - sessionStartMs
         // Use cleanupScope (not viewModelScope) so the coroutine is not cancelled along with the ViewModel.
         cleanupScope.launch {
-            runCatching {
-                chapterRepository.recordHistory(
-                    chapterId = chapterId,
-                    readAt = sessionStartMs,
-                    readDurationMs = durationMs
-                )
+            // Don't record history if incognito mode is enabled
+            if (!_state.value.incognitoMode) {
+                runCatching {
+                    chapterRepository.recordHistory(
+                        chapterId = chapterId,
+                        readAt = sessionStartMs,
+                        readDurationMs = durationMs
+                    )
+                }
             }
         }
         saveCurrentProgress()
