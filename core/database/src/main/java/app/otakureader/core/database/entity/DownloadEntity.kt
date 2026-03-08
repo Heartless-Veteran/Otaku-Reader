@@ -59,7 +59,7 @@ data class DownloadEntity(
         )
     ],
     indices = [
-        Index(value = ["chapterId"])
+        Index(value = ["chapterId", "pageIndex"], unique = true)
     ]
 )
 data class DownloadPageEntity(
