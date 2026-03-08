@@ -54,3 +54,7 @@ data class SourceMangaDetailRoute(
     val mangaUrl: String,
     val mangaTitle: String = ""
 ) : OtakuReaderDestination
+
+/** Global search across all sources. */
+@Serializable
+data class GlobalSearchRoute(val query: String = "") : OtakuReaderDestination
