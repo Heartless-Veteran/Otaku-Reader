@@ -6,9 +6,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import app.otakureader.core.navigation.BrowseRoute
 import app.otakureader.core.navigation.ExtensionsRoute
+import app.otakureader.core.navigation.GlobalSearchRoute
 import app.otakureader.core.navigation.SourceDetailRoute
 import app.otakureader.feature.browse.BrowseScreen
 import app.otakureader.feature.browse.ExtensionsBottomSheet
+import app.otakureader.feature.browse.GlobalSearchScreen
 import app.otakureader.feature.browse.SourceMangaScreen
 import app.otakureader.core.navigation.ExtensionInstallRoute
 import app.otakureader.feature.browse.extension.ExtensionInstallScreen
@@ -17,6 +19,7 @@ fun NavGraphBuilder.browseScreen(
     onMangaClick: (sourceId: String, mangaUrl: String, mangaTitle: String) -> Unit,
     onNavigateToSource: (sourceId: String) -> Unit,
     onNavigateToExtensions: () -> Unit,
+    onNavigateToGlobalSearch: () -> Unit,
 ) {
     composable<BrowseRoute> {
         BrowseScreen(
@@ -24,7 +27,8 @@ fun NavGraphBuilder.browseScreen(
             onMangaClick = { sourceId, mangaUrl ->
                 onMangaClick(sourceId, mangaUrl, "")
             },
-            onInstallExtensionClick = onNavigateToExtensions
+            onInstallExtensionClick = onNavigateToExtensions,
+            onGlobalSearchClick = onNavigateToGlobalSearch
         )
     }
 }
@@ -51,6 +55,21 @@ fun NavGraphBuilder.extensionsBottomSheet(
     composable<ExtensionsRoute> {
         ExtensionsBottomSheet(
             onDismiss = onDismiss
+        )
+    }
+}
+
+fun NavGraphBuilder.globalSearchScreen(
+    onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
+    onNavigateBack: () -> Unit,
+) {
+    composable<GlobalSearchRoute> { backStackEntry ->
+        val route = backStackEntry.toRoute<GlobalSearchRoute>()
+        GlobalSearchScreen(
+            initialQuery = route.query,
+            onMangaClick = onMangaClick,
+            onNavigateBack = onNavigateBack,
+            viewModel = hiltViewModel()
         )
     }
 }

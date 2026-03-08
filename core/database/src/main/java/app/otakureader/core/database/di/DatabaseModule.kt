@@ -65,7 +65,7 @@ object DatabaseModule {
     fun provideCategoryDao(database: OtakuReaderDatabase) = database.categoryDao()
 
     @Provides
-    fun provideTrackDao(database: OtakuReaderDatabase) = database.trackDao()
+    fun provideMangaCategoryDao(database: OtakuReaderDatabase) = database.mangaCategoryDao()
 
     @Provides
     fun provideReadingHistoryDao(database: OtakuReaderDatabase) = database.readingHistoryDao()

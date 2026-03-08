@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.BrowseRoute
 import app.otakureader.core.navigation.ExtensionsRoute
+import app.otakureader.core.navigation.GlobalSearchRoute
 import app.otakureader.core.navigation.HistoryRoute
 import app.otakureader.core.navigation.LibraryRoute
 import app.otakureader.core.navigation.MangaDetailRoute
@@ -15,6 +16,7 @@ import app.otakureader.core.navigation.SourceDetailRoute
 import app.otakureader.core.navigation.UpdatesRoute
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.extensionsBottomSheet
+import app.otakureader.feature.browse.navigation.globalSearchScreen
 import app.otakureader.feature.browse.navigation.sourceDetailScreen
 import app.otakureader.feature.details.navigation.detailsScreen
 import app.otakureader.feature.history.navigation.historyScreen
@@ -84,6 +86,19 @@ fun OtakuReaderNavHost(
             },
             onNavigateToExtensions = {
                 navController.navigate(ExtensionsRoute)
+            },
+            onNavigateToGlobalSearch = {
+                navController.navigate(GlobalSearchRoute())
+            }
+        )
+
+        // Global search screen - searches across all sources
+        globalSearchScreen(
+            onMangaClick = { sourceId, _ ->
+                navController.navigate(SourceDetailRoute(sourceId))
+            },
+            onNavigateBack = {
+                navController.popBackStack()
             }
         )
 
