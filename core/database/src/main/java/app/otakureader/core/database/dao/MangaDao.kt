@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 interface MangaDao {
     @Query("SELECT * FROM manga WHERE favorite = 1 ORDER BY title ASC")
     fun getFavoriteManga(): Flow<List<MangaEntity>>
+
+    @Query("SELECT * FROM manga WHERE favorite = 1 AND title LIKE '%' || :query || '%' ORDER BY title ASC")
+    fun searchFavoriteManga(query: String): Flow<List<MangaEntity>>
     
     @Query("SELECT * FROM manga WHERE id = :id")
     suspend fun getMangaById(id: Long): MangaEntity?

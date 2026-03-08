@@ -2,11 +2,11 @@ package app.otakureader.domain.usecase
 
 import app.otakureader.domain.model.LibraryManga
 import app.otakureader.domain.model.Manga
-import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
 import app.cash.turbine.test
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,20 +31,22 @@ class GetLibraryUseCaseTest {
     }
 
     @Test
-    fun invoke_withBlankQuery_returnsAllLibraryManga() = runTest {
+    fun invoke_withBlankQuery_usesGetLibraryManga() = runTest {
         every { mangaRepository.getLibraryManga() } returns flowOf(sampleMangas)
 
         useCase("").test {
             val items = awaitItem()
             assertEquals(3, items.size)
-            assertEquals("Naruto", items[0].manga.title)
             awaitComplete()
         }
+
+        verify(exactly = 1) { mangaRepository.getLibraryManga() }
     }
 
     @Test
-    fun invoke_withQuery_filtersResultsByTitle() = runTest {
-        every { mangaRepository.getLibraryManga() } returns flowOf(sampleMangas)
+    fun invoke_withQuery_delegatesToSearchLibraryManga() = runTest {
+        val filtered = listOf(sampleMangas[2]) // "One Piece"
+        every { mangaRepository.searchLibraryManga("one") } returns flowOf(filtered)
 
         useCase("one").test {
             val items = awaitItem()
@@ -52,27 +54,16 @@ class GetLibraryUseCaseTest {
             assertEquals("One Piece", items[0].manga.title)
             awaitComplete()
         }
-    }
 
-    @Test
-    fun invoke_withCaseInsensitiveQuery_returnsMatches() = runTest {
-        every { mangaRepository.getLibraryManga() } returns flowOf(sampleMangas)
-
-        useCase("NARUTO").test {
-            val items = awaitItem()
-            assertEquals(1, items.size)
-            assertEquals("Naruto", items[0].manga.title)
-            awaitComplete()
-        }
+        verify(exactly = 1) { mangaRepository.searchLibraryManga("one") }
     }
 
     @Test
     fun invoke_withNonMatchingQuery_returnsEmptyList() = runTest {
-        every { mangaRepository.getLibraryManga() } returns flowOf(sampleMangas)
+        every { mangaRepository.searchLibraryManga("Dragon Ball") } returns flowOf(emptyList())
 
         useCase("Dragon Ball").test {
-            val items = awaitItem()
-            assertEquals(0, items.size)
+            assertEquals(emptyList<LibraryManga>(), awaitItem())
             awaitComplete()
         }
     }

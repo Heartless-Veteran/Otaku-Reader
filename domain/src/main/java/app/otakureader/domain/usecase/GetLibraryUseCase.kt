@@ -7,18 +7,19 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Use case that provides a filtered and searched library stream.
+ * Search is delegated to the repository/DB layer to avoid loading the full library into memory.
  */
 class GetLibraryUseCase(
     private val mangaRepository: MangaRepository
 ) {
     operator fun invoke(query: String = ""): Flow<List<LibraryManga>> {
-        return mangaRepository.getLibraryManga().map { mangas ->
-            val filtered = if (query.isBlank()) {
-                mangas
-            } else {
-                mangas.filter { it.title.contains(query, ignoreCase = true) }
-            }
-            filtered.map { manga -> LibraryManga(manga = manga, unreadCount = manga.unreadCount) }
+        val source = if (query.isBlank()) {
+            mangaRepository.getLibraryManga()
+        } else {
+            mangaRepository.searchLibraryManga(query)
+        }
+        return source.map { mangas ->
+            mangas.map { manga -> LibraryManga(manga = manga, unreadCount = manga.unreadCount) }
         }
     }
 }

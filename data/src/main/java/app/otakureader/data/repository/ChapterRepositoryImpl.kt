@@ -6,7 +6,6 @@ import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.domain.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -54,7 +53,8 @@ class ChapterRepositoryImpl @Inject constructor(
      * Reading history is not yet fully implemented in the local database.
      * Returns an empty flow until the history feature is wired up.
      */
-    override fun observeHistory(): Flow<List<ChapterWithHistory>> = flowOf(emptyList())
+    // TODO: Implement history by joining chapters with reading_history table via ReadingHistoryDao
+    override fun observeHistory(): Flow<List<ChapterWithHistory>> = TODO("History not yet implemented — requires ReadingHistoryDao join query")
     
     private fun ChapterEntity.toDomain() = Chapter(
         id = id,

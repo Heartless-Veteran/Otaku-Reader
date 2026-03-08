@@ -182,10 +182,12 @@ class ChapterRepositoryImplTest {
     // ---- observeHistory ----
 
     @Test
-    fun observeHistory_returnsEmptyList() = runTest {
-        repository.observeHistory().test {
-            assertTrue(awaitItem().isEmpty())
-            awaitComplete()
+    fun observeHistory_throwsNotImplementedError() {
+        try {
+            repository.observeHistory()
+            throw AssertionError("Expected NotImplementedError to be thrown")
+        } catch (e: NotImplementedError) {
+            // expected — history requires ReadingHistoryDao join query (TODO)
         }
     }
 

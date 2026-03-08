@@ -23,6 +23,12 @@ class MangaRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
     }
+
+    override fun searchLibraryManga(query: String): Flow<List<Manga>> {
+        return mangaDao.searchFavoriteManga(query).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
     
     override suspend fun getMangaById(id: Long): Manga? {
         return mangaDao.getMangaById(id)?.toDomain()
