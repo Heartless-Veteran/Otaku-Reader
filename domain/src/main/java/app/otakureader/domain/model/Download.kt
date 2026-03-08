@@ -23,6 +23,5 @@ enum class DownloadStatus {
     DOWNLOADING,
     PAUSED,
     COMPLETED,
-    FAILED,
-    CANCELED
+    FAILED
 }
