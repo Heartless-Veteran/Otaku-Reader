@@ -1,5 +1,8 @@
 package app.otakureader.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Chapter(
     val id: Long,
     val mangaId: Long,

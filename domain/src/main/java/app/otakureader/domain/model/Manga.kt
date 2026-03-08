@@ -1,5 +1,8 @@
 package app.otakureader.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Manga(
     val id: Long,
     val sourceId: Long,
@@ -19,6 +22,7 @@ data class Manga(
     val categoryIds: List<Long> = emptyList()
 )
 
+@Serializable
 enum class MangaStatus {
     UNKNOWN,
     ONGOING,

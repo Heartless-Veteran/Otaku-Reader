@@ -3,6 +3,7 @@ package app.otakureader.data.repository
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.domain.model.Chapter
+import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.domain.repository.ChapterRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -47,6 +48,13 @@ class ChapterRepositoryImpl @Inject constructor(
     override fun getUnreadCountByMangaId(mangaId: Long): Flow<Int> {
         return chapterDao.getUnreadCountByMangaId(mangaId)
     }
+
+    /**
+     * Reading history is not yet fully implemented in the local database.
+     * Returns an empty flow until the history feature is wired up.
+     */
+    // TODO: Implement history by joining chapters with reading_history table via ReadingHistoryDao
+    override fun observeHistory(): Flow<List<ChapterWithHistory>> = TODO("History not yet implemented — requires ReadingHistoryDao join query")
     
     private fun ChapterEntity.toDomain() = Chapter(
         id = id,
