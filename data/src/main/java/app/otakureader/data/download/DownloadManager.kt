@@ -110,23 +110,20 @@ class DownloadManager @Inject constructor(
 
     /**
      * Delete a download and its files.
+     *
+     * NOTE: Filesystem cleanup is not yet implemented. This API is currently disabled
+     * to avoid removing database entries while leaving downloaded files on disk.
      */
     suspend fun deleteDownload(chapterId: Long) {
         // Cancel if downloading
         downloadJobs[chapterId]?.cancel()
         downloadJobs.remove(chapterId)
 
-        // Get download info before deleting
-        val download = downloadRepository.getDownloadByChapterId(chapterId)
-        if (download != null) {
-            // Delete files
-            // Note: We need source name, which we'll get from the source
-            // For now, we'll just delete the database entry
-            // TODO: Store source name in download or get it from source repository
-        }
-
-        // Delete from database
-        downloadRepository.deleteDownload(chapterId)
+        // The actual deletion of downloaded files must be implemented (likely via a
+        // DownloadStorageProvider) before enabling this operation.
+        throw UnsupportedOperationException(
+            "deleteDownload is not implemented: filesystem cleanup not available yet"
+        )
     }
 
     /**
