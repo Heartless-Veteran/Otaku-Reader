@@ -31,21 +31,22 @@ class Downloader @Inject constructor(
                 destFile.parentFile?.mkdirs()
 
                 val request = Request.Builder().url(url).build()
-                val response = okHttpClient.newCall(request).execute()
+                okHttpClient.newCall(request).execute().use { response ->
 
-                if (!response.isSuccessful) {
-                    error("HTTP ${response.code}: ${response.message}")
+                    if (!response.isSuccessful) {
+                        error("HTTP ${response.code}: ${response.message}")
+                    }
+
+                    val body = checkNotNull(response.body) {
+                        "Empty response body for $url"
+                    }
+
+                    destFile.outputStream().use { out ->
+                        body.byteStream().use { it.copyTo(out) }
+                    }
+
+                    destFile
                 }
-
-                val body = checkNotNull(response.body) {
-                    "Empty response body for $url"
-                }
-
-                destFile.outputStream().use { out ->
-                    body.byteStream().use { it.copyTo(out) }
-                }
-
-                destFile
             }
         }
 }
