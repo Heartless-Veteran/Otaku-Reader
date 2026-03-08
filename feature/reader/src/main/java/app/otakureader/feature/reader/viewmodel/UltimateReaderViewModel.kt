@@ -142,16 +142,19 @@ class UltimateReaderViewModel @Inject constructor(
         if (downloadProvider.hasLocalPages(chapterId)) {
             // Load pages from local storage
             val localPages = downloadProvider.getLocalPages(chapterId)
-            return localPages.mapIndexed { index, file ->
-                ReaderPage(
-                    index = index,
-                    localPath = file.absolutePath,
-                    imageUrl = null // Local pages don't need image URLs
-                )
+            if (localPages.isNotEmpty()) {
+                return localPages.mapIndexed { index, file ->
+                    ReaderPage(
+                        index = index,
+                        localPath = file.absolutePath,
+                        imageUrl = null // Local pages don't need image URLs
+                    )
+                }
             }
+            // If local pages list is empty, fall through to fetch from source
         }
 
-        // Chapter not downloaded, fetch from source
+        // Chapter not downloaded or local files missing, fetch from source
         try {
             val manga = mangaRepository.observeManga(mangaId).first()
             val chapter = chapterRepository.getChapterById(chapterId)
