@@ -74,7 +74,7 @@ class SourceMangaViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    private fun loadManga() {
+    private fun loadManga(page: Int = 1) {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             // TODO: Load manga from source repository
