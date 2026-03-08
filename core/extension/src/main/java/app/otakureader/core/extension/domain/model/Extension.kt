@@ -34,7 +34,7 @@ data class Extension(
     val apkPath: String?,
 
     /** URL to download the APK from (for available extensions) */
-    val apkUrl: String?,
+    val apkUrl: String? = null,
 
     /** Icon URL or local path */
     val iconUrl: String?,
