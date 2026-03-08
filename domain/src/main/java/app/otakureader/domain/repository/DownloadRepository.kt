@@ -12,8 +12,8 @@ interface DownloadRepository {
         chapterTitle: String
     )
 
-    suspend fun pauseDownload(id: Long)
-    suspend fun resumeDownload(id: Long)
-    suspend fun cancelDownload(id: Long)
+    suspend fun pauseDownload(chapterId: Long)
+    suspend fun resumeDownload(chapterId: Long)
+    suspend fun cancelDownload(chapterId: Long)
     suspend fun clearAll()
 }
