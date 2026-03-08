@@ -11,5 +11,5 @@ class GetChaptersUseCase(
     private val chapterRepository: ChapterRepository
 ) {
     operator fun invoke(mangaId: Long): Flow<List<Chapter>> =
-        chapterRepository.observeChaptersByManga(mangaId)
+        chapterRepository.getChaptersByMangaId(mangaId)
 }
