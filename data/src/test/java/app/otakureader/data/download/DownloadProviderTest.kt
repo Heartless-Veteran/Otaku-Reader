@@ -60,8 +60,15 @@ class DownloadProviderTest {
     fun getPageFile_fileNameMatchesIndexPattern() {
         val dir = tempDir()
         try {
-            val chapterDir = File(dir, "OtakuReader/MangaDex/One_Piece/Chapter_1")
-            val pageFile = File(chapterDir, "3.jpg")
+            // Use the actual API under test instead of manually constructing a File path
+            val pageFile = DownloadProvider.getPageFile(
+                dir,
+                "MangaDex",
+                "One_Piece",
+                "Chapter_1",
+                3,
+                "jpg",
+            )
             assertEquals("3.jpg", pageFile.name)
             assertEquals("jpg", pageFile.extension)
         } finally {
