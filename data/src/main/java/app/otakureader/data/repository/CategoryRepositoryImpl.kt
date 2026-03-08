@@ -26,7 +26,7 @@ class CategoryRepositoryImpl @Inject constructor(
     }
     
     override suspend fun createCategory(name: String): Long {
-        val maxOrder = categoryDao.getCategories().map { it.maxOfOrNull { c -> c.order } ?: 0 }.let { 0 }
+        val maxOrder = categoryDao.getMaxCategoryOrder()
         val entity = CategoryEntity(name = name, order = maxOrder + 1)
         return categoryDao.insert(entity)
     }
@@ -48,8 +48,7 @@ class CategoryRepositoryImpl @Inject constructor(
     }
     
     override fun getMangaIdsByCategoryId(categoryId: Long): Flow<List<Long>> {
-        // This would need a specific query, simplified for now
-        return categoryDao.getCategoryIdsForManga(categoryId)
+        return categoryDao.getMangaIdsByCategoryId(categoryId)
     }
     
     private fun CategoryEntity.toDomain() = Category(

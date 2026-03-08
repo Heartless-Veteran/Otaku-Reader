@@ -42,4 +42,10 @@ interface CategoryDao {
     
     @Query("SELECT categoryId FROM manga_categories WHERE mangaId = :mangaId")
     fun getCategoryIdsForManga(mangaId: Long): Flow<List<Long>>
+
+    @Query("SELECT mangaId FROM manga_categories WHERE categoryId = :categoryId")
+    fun getMangaIdsByCategoryId(categoryId: Long): Flow<List<Long>>
+
+    @Query("SELECT COALESCE(MAX(`order`), 0) FROM categories")
+    suspend fun getMaxCategoryOrder(): Int
 }
