@@ -162,6 +162,21 @@ class EntityMappersTest {
     }
 
     @Test
+    fun manga_toEntity_withEmptyGenre_mapsToEmptyString() {
+        val manga = Manga(
+            id = 1L,
+            sourceId = 1L,
+            url = "/manga/test",
+            title = "Test",
+            genre = emptyList()
+        )
+
+        val entity = manga.toEntity()
+
+        assertEquals("", entity.genre)
+    }
+
+    @Test
     fun chapterEntity_toChapter_withNullScanlator_mapsCorrectly() {
         val entity = ChapterEntity(
             id = 5L,
@@ -207,4 +222,3 @@ class EntityMappersTest {
         assertEquals(original.dateUpload, roundTripped.dateUpload)
     }
 }
-
