@@ -12,9 +12,11 @@ android {
 
 dependencies {
     implementation(projects.core.common)
+    implementation(projects.core.preferences)
     implementation(projects.domain)
     implementation(projects.sourceApi)
-    implementation(projects.core.tachiyomiCompat)
+    implementation(project(":core:tachiyomi-compat"))
+    implementation(libs.androidx.core.ktx)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.datastore.preferences)

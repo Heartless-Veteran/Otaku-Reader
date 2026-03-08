@@ -83,6 +83,9 @@ fun SourceMangaScreen(
                     IconButton(onClick = { viewModel.onEvent(SourceMangaEvent.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
+                    IconButton(onClick = { /* TODO: Search */ }) {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
                 }
             )
         }

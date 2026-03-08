@@ -29,6 +29,3 @@ keystore.properties
 
 # Distribution / package
 dist/
-
-# Kotlin build error logs
-.kotlin/
