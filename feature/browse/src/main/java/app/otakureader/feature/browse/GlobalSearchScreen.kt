@@ -1,6 +1,5 @@
 package app.otakureader.feature.browse
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -239,9 +238,8 @@ private fun GlobalSearchMangaCard(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
-            .width(100.dp)
-            .clickable(onClick = onClick)
+        onClick = onClick,
+        modifier = modifier.width(100.dp)
     ) {
         Column {
             AsyncImage(
