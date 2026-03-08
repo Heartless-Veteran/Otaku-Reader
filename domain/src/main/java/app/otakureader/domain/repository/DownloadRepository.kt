@@ -9,13 +9,15 @@ interface DownloadRepository {
     /**
      * Enqueue a chapter for download.
      *
-     * @param mangaId     database ID of the parent manga
-     * @param chapterId   database ID of the chapter
-     * @param sourceName  human-readable name of the source extension (used for directory layout)
-     * @param mangaTitle  title of the manga
+     * @param mangaId      database ID of the parent manga
+     * @param chapterId    database ID of the chapter
+     * @param sourceName   value used as the source directory component in the download path
+     *                     (e.g. a source ID string or a short source identifier);
+     *                     does not need to be human-readable
+     * @param mangaTitle   title of the manga
      * @param chapterTitle title of the chapter
-     * @param pageUrls    ordered list of remote image URLs to download;
-     *                    if empty the download is queued but no pages are fetched yet
+     * @param pageUrls     ordered list of remote image URLs to download;
+     *                     if empty the item is queued but no pages are fetched yet
      */
     suspend fun enqueueChapter(
         mangaId: Long,
@@ -36,6 +38,8 @@ interface DownloadRepository {
      *
      * Note: this does not guarantee that all pages have been downloaded; callers that require
      * full offline availability should verify completeness (e.g., via page count/metadata).
+     *
+     * This function performs filesystem I/O and must be called from a coroutine.
      */
-    fun isChapterDownloaded(sourceName: String, mangaTitle: String, chapterTitle: String): Boolean
+    suspend fun isChapterDownloaded(sourceName: String, mangaTitle: String, chapterTitle: String): Boolean
 }

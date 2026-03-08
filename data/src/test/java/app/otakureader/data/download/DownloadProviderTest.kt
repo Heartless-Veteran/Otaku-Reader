@@ -53,109 +53,137 @@ class DownloadProviderTest {
     }
 
     // -------------------------------------------------------------------------
-    // getPageFile() path structure
+    // getPageFile()
     // -------------------------------------------------------------------------
 
     @Test
     fun getPageFile_fileNameMatchesIndexPattern() {
-        val dir = tempDir()
+        val root = tempDir()
         try {
-            // Use the actual API under test instead of manually constructing a File path
-            val pageFile = DownloadProvider.getPageFile(
-                dir,
-                "MangaDex",
-                "One_Piece",
-                "Chapter_1",
-                3,
-                "jpg",
-            )
+            val pageFile = DownloadProvider.getPageFile(root, "MangaDex", "One_Piece", "Chapter_1", 3)
             assertEquals("3.jpg", pageFile.name)
             assertEquals("jpg", pageFile.extension)
         } finally {
-            dir.deleteRecursively()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun getPageFile_pathContainsRootDirAndSegments() {
+        val root = tempDir()
+        try {
+            val pageFile = DownloadProvider.getPageFile(root, "Source", "Manga Title", "Ch 1", 0)
+            val path = pageFile.absolutePath
+            assertTrue(path.contains("OtakuReader"))
+            assertTrue(path.contains("Source"))
+            // sanitize() does not replace spaces, so the title is unchanged
+            assertTrue(path.contains("Manga Title"))
+            assertTrue(path.contains("Ch 1"))
+            assertTrue(path.endsWith("0.jpg"))
+        } finally {
+            root.deleteRecursively()
         }
     }
 
     // -------------------------------------------------------------------------
-    // isChapterDownloaded() / getDownloadedPageUris()
+    // isChapterDownloaded()
     // -------------------------------------------------------------------------
 
     @Test
     fun isChapterDownloaded_nonExistentDir_returnsFalse() {
-        val dir = File(System.getProperty("java.io.tmpdir"), "otaku_test_nonexistent_${System.nanoTime()}")
-        dir.deleteRecursively()
-        assertFalse(dir.isDirectory && (dir.listFiles()?.isNotEmpty() == true))
+        val root = tempDir()
+        try {
+            assertFalse(DownloadProvider.isChapterDownloaded(root, "source", "manga", "ch1"))
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test
     fun isChapterDownloaded_emptyDir_returnsFalse() {
-        val dir = tempDir()
+        val root = tempDir()
         try {
-            val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
-            assertFalse(
-                dir.isDirectory &&
-                    dir.listFiles()?.any { it.extension.lowercase() in imageExtensions } == true
-            )
+            DownloadProvider.getChapterDir(root, "source", "manga", "ch1").mkdirs()
+            assertFalse(DownloadProvider.isChapterDownloaded(root, "source", "manga", "ch1"))
         } finally {
-            dir.deleteRecursively()
+            root.deleteRecursively()
         }
     }
 
     @Test
     fun isChapterDownloaded_dirWithPageFile_returnsTrue() {
-        val dir = tempDir()
+        val root = tempDir()
         try {
-            File(dir, "0.jpg").writeText("fake image data")
-            val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
-            assertTrue(
-                dir.isDirectory &&
-                    dir.listFiles()?.any { it.extension.lowercase() in imageExtensions } == true
-            )
+            val pageFile = DownloadProvider.getPageFile(root, "source", "manga", "ch1", 0)
+            pageFile.parentFile?.mkdirs()
+            pageFile.writeText("fake image data")
+            assertTrue(DownloadProvider.isChapterDownloaded(root, "source", "manga", "ch1"))
         } finally {
-            dir.deleteRecursively()
+            root.deleteRecursively()
         }
     }
 
     @Test
-    fun getDownloadedPageUris_sortedByIndex() {
-        val dir = tempDir()
+    fun isChapterDownloaded_nonImageFileOnly_returnsFalse() {
+        val root = tempDir()
         try {
-            listOf(2, 0, 5, 1).forEach { i -> File(dir, "$i.jpg").writeText("data $i") }
-
-            val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
-            val files = dir.listFiles()
-                ?.filter { it.extension.lowercase() in imageExtensions }
-                ?.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
-                ?.map { "file://${it.absolutePath}" }
-                ?: emptyList()
-
-            assertEquals(4, files.size)
-            assertTrue(files[0].endsWith("0.jpg"))
-            assertTrue(files[1].endsWith("1.jpg"))
-            assertTrue(files[2].endsWith("2.jpg"))
-            assertTrue(files[3].endsWith("5.jpg"))
+            val chapterDir = DownloadProvider.getChapterDir(root, "source", "manga", "ch1")
+            chapterDir.mkdirs()
+            File(chapterDir, "meta.json").writeText("{}")
+            assertFalse(DownloadProvider.isChapterDownloaded(root, "source", "manga", "ch1"))
         } finally {
-            dir.deleteRecursively()
+            root.deleteRecursively()
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // getDownloadedPageUris()
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun getDownloadedPageUris_sortedByIndex() {
+        val root = tempDir()
+        try {
+            val chapterDir = DownloadProvider.getChapterDir(root, "source", "manga", "ch1")
+            chapterDir.mkdirs()
+            listOf(2, 0, 5, 1).forEach { i -> File(chapterDir, "$i.jpg").writeText("data $i") }
+
+            val uris = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
+            assertEquals(4, uris.size)
+            assertTrue(uris[0].endsWith("0.jpg"))
+            assertTrue(uris[1].endsWith("1.jpg"))
+            assertTrue(uris[2].endsWith("2.jpg"))
+            assertTrue(uris[3].endsWith("5.jpg"))
+        } finally {
+            root.deleteRecursively()
         }
     }
 
     @Test
     fun getDownloadedPageUris_nonImageFilesIgnored() {
-        val dir = tempDir()
+        val root = tempDir()
         try {
-            File(dir, "0.jpg").writeText("image")
-            File(dir, "meta.json").writeText("{}")
-            File(dir, "1.png").writeText("image2")
+            val chapterDir = DownloadProvider.getChapterDir(root, "source", "manga", "ch1")
+            chapterDir.mkdirs()
+            File(chapterDir, "0.jpg").writeText("image")
+            File(chapterDir, "meta.json").writeText("{}")
+            File(chapterDir, "1.png").writeText("image2")
 
-            val imageExtensions = setOf("jpg", "jpeg", "png", "webp")
-            val files = dir.listFiles()
-                ?.filter { it.extension.lowercase() in imageExtensions }
-                ?.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
-                ?: emptyList()
-
-            assertEquals(2, files.size)
+            val uris = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
+            assertEquals(2, uris.size)
         } finally {
-            dir.deleteRecursively()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun getDownloadedPageUris_emptyDir_returnsEmptyList() {
+        val root = tempDir()
+        try {
+            val uris = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
+            assertTrue(uris.isEmpty())
+        } finally {
+            root.deleteRecursively()
         }
     }
 }

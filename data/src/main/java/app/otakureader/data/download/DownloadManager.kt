@@ -41,7 +41,10 @@ data class ChapterDownloadRequest(
  * are downloaded sequentially, but multiple chapters may be downloaded concurrently (typically
  * one coroutine per chapter, and callers may enqueue many at once).
  *
- * Already-downloaded pages are skipped automatically, making the process idempotent.
+ * Already-downloaded pages are skipped automatically (provided the file is non-empty),
+ * making the process idempotent. Partial files from interrupted downloads are re-downloaded.
+ *
+ * All mutations to [jobs] and [requests] are performed under [mutex] to prevent races.
  */
 @Singleton
 class DownloadManager @Inject constructor(
@@ -58,7 +61,7 @@ class DownloadManager @Inject constructor(
     /** Active coroutine jobs keyed by chapterId. */
     private val jobs = mutableMapOf<Long, Job>()
 
-    /** Stored requests keyed by chapterId so that paused downloads can be resumed. */
+    /** Stored requests keyed by chapterId so that paused/failed/completed downloads can be resumed. */
     private val requests = mutableMapOf<Long, ChapterDownloadRequest>()
 
     // -------------------------------------------------------------------------
@@ -68,7 +71,14 @@ class DownloadManager @Inject constructor(
     suspend fun enqueue(request: ChapterDownloadRequest) {
         mutex.withLock {
             val existing = _downloads.value.firstOrNull { it.chapterId == request.chapterId }
-            if (existing != null && existing.status != DownloadStatus.CANCELED) return
+            // Allow re-enqueueing for terminal states (COMPLETED, FAILED) or when the item
+            // is not present at all (i.e., never queued, or previously canceled via cancel()
+            // which removes the item). Active (QUEUED, DOWNLOADING) and PAUSED downloads
+            // are not re-enqueued; use resume() for PAUSED.
+            if (existing != null &&
+                existing.status != DownloadStatus.COMPLETED &&
+                existing.status != DownloadStatus.FAILED
+            ) return
 
             requests[request.chapterId] = request
             _downloads.update { list ->
@@ -123,54 +133,71 @@ class DownloadManager @Inject constructor(
     // Internal helpers
     // -------------------------------------------------------------------------
 
-    private fun startDownload(request: ChapterDownloadRequest) {
+    private suspend fun startDownload(request: ChapterDownloadRequest) {
         val chapterId = request.chapterId
 
-        jobs.remove(chapterId)?.cancel()
-        updateStatus(chapterId, DownloadStatus.DOWNLOADING)
+        mutex.withLock {
+            // Cancel any existing job for this chapter
+            jobs.remove(chapterId)?.cancel()
 
-        val job = scope.launch {
-            val pageUrls = request.pageUrls
-            val totalPages = pageUrls.size
+            // Bail out if the item was removed while waiting for the lock
+            if (_downloads.value.none { it.chapterId == chapterId }) return
 
-            if (totalPages == 0) {
-                // No pages provided yet – keep the chapter queued so it can be retried
-                // later when the caller supplies the actual URLs.
-                updateStatus(chapterId, DownloadStatus.QUEUED)
-                mutex.withLock { jobs.remove(chapterId) }
-                return@launch
-            }
+            updateStatus(chapterId, DownloadStatus.DOWNLOADING)
 
-            pageUrls.forEachIndexed { index, url ->
-                if (!isActive) return@launch
+            // Launch and register the job under the same lock to eliminate the window
+            // where cancel() could run before the job is stored in `jobs`.
+            jobs[chapterId] = scope.launch {
+                try {
+                    val pageUrls = request.pageUrls
+                    val totalPages = pageUrls.size
 
-                val destFile = DownloadProvider.getPageFile(
-                    context,
-                    request.sourceName,
-                    request.mangaTitle,
-                    request.chapterTitle,
-                    index
-                )
-
-                if (!destFile.exists()) {
-                    val result = downloader.downloadPage(url, destFile)
-                    if (result.isFailure) {
-                        updateStatus(chapterId, DownloadStatus.FAILED)
+                    if (totalPages == 0) {
+                        // No pages provided yet – keep the chapter queued so it can be retried
+                        // later when the caller supplies the actual URLs.
+                        updateStatus(chapterId, DownloadStatus.QUEUED)
                         return@launch
                     }
+
+                    pageUrls.forEachIndexed { index, url ->
+                        if (!isActive) return@launch
+
+                        val destFile = DownloadProvider.getPageFile(
+                            context,
+                            request.sourceName,
+                            request.mangaTitle,
+                            request.chapterTitle,
+                            index
+                        )
+
+                        // Download only if the file is missing or empty (partial write).
+                        if (!destFile.exists() || destFile.length() == 0L) {
+                            // Remove a partial file so the download starts from scratch.
+                            destFile.delete()
+
+                            val result = downloader.downloadPage(url, destFile)
+                            if (result.isFailure) {
+                                // Clean up any partial write so future retries start fresh.
+                                destFile.delete()
+                                updateStatus(chapterId, DownloadStatus.FAILED)
+                                return@launch
+                            }
+                        }
+
+                        // Always update progress whether the file was downloaded or already existed.
+                        updateProgress(chapterId, ((index + 1) * 100) / totalPages)
+                    }
+
+                    if (isActive) {
+                        updateStatus(chapterId, DownloadStatus.COMPLETED)
+                    }
+                } finally {
+                    // Always remove the job reference on all terminal paths (success, failure,
+                    // cancellation, or early return) to prevent stale entries.
+                    mutex.withLock { jobs.remove(chapterId) }
                 }
-
-                val progress = ((index + 1) * 100) / totalPages
-                updateProgress(chapterId, progress)
-            }
-
-            if (isActive) {
-                updateStatus(chapterId, DownloadStatus.COMPLETED)
-                mutex.withLock { jobs.remove(chapterId) }
             }
         }
-
-        jobs[chapterId] = job
     }
 
     private fun updateStatus(chapterId: Long, status: DownloadStatus) {

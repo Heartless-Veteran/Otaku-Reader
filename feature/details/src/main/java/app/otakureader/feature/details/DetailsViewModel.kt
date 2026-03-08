@@ -247,6 +247,8 @@ class DetailsViewModel @Inject constructor(
             val chapter = _state.value.chapters.firstOrNull { it.id == chapterId }
             val manga = _state.value.manga
             val mangaTitle = manga?.title ?: "Manga"
+            // Use sourceId as a stable directory key. Once a SourceManager is available
+            // this can be replaced with the source's display name.
             val sourceName = manga?.sourceId?.toString() ?: ""
 
             if (chapter != null) {

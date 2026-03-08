@@ -15,6 +15,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 
 @Singleton
 class DownloadRepositoryImpl @Inject constructor(
@@ -22,7 +23,8 @@ class DownloadRepositoryImpl @Inject constructor(
     private val downloadManager: DownloadManager
 ) : DownloadRepository {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    // Use a background dispatcher so notification updates don't run on the main thread.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val notifier = DownloadNotifier(context)
 
     init {
@@ -71,10 +73,12 @@ class DownloadRepositoryImpl @Inject constructor(
         notifier.cancel()
     }
 
-    override fun isChapterDownloaded(
+    override suspend fun isChapterDownloaded(
         sourceName: String,
         mangaTitle: String,
         chapterTitle: String
-    ): Boolean = DownloadProvider.isChapterDownloaded(context, sourceName, mangaTitle, chapterTitle)
+    ): Boolean = withContext(Dispatchers.IO) {
+        DownloadProvider.isChapterDownloaded(context, sourceName, mangaTitle, chapterTitle)
+    }
 }
 

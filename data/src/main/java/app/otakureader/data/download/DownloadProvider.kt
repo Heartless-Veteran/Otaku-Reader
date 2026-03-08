@@ -19,6 +19,10 @@ import java.io.File
  *
  * Using `Context.getExternalFilesDir` means no storage permission is required on
  * any supported Android version.
+ *
+ * The `Context`-based public API resolves the root directory from the given context.
+ * Internal overloads that accept a root `File` directly are provided so that
+ * pure-JVM unit tests can exercise the logic without needing an Android Context.
  */
 object DownloadProvider {
 
@@ -26,6 +30,10 @@ object DownloadProvider {
 
     /** The file extensions recognised as downloaded page images. */
     private val PAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+
+    // -------------------------------------------------------------------------
+    // Context-based public API
+    // -------------------------------------------------------------------------
 
     /**
      * Returns the directory that holds all pages for [chapterName].
@@ -36,13 +44,7 @@ object DownloadProvider {
         sourceName: String,
         mangaTitle: String,
         chapterName: String
-    ): File {
-        val root = context.getExternalFilesDir(null) ?: context.filesDir
-        return File(
-            root,
-            "$ROOT_DIR/${sanitize(sourceName)}/${sanitize(mangaTitle)}/${sanitize(chapterName)}"
-        )
-    }
+    ): File = getChapterDir(rootFor(context), sourceName, mangaTitle, chapterName)
 
     /**
      * Returns the [File] where the page at [pageIndex] should be (or is) stored.
@@ -54,7 +56,7 @@ object DownloadProvider {
         mangaTitle: String,
         chapterName: String,
         pageIndex: Int
-    ): File = File(getChapterDir(context, sourceName, mangaTitle, chapterName), "$pageIndex.jpg")
+    ): File = getPageFile(rootFor(context), sourceName, mangaTitle, chapterName, pageIndex)
 
     /**
      * Returns `true` when the chapter directory exists and contains at least one page file.
@@ -64,11 +66,7 @@ object DownloadProvider {
         sourceName: String,
         mangaTitle: String,
         chapterName: String
-    ): Boolean {
-        val dir = getChapterDir(context, sourceName, mangaTitle, chapterName)
-        return dir.isDirectory && dir.listFiles()
-            ?.any { it.extension.lowercase() in PAGE_EXTENSIONS } == true
-    }
+    ): Boolean = isChapterDownloaded(rootFor(context), sourceName, mangaTitle, chapterName)
 
     /**
      * Returns an ordered list of `file://` URIs for every page that has been
@@ -80,8 +78,48 @@ object DownloadProvider {
         sourceName: String,
         mangaTitle: String,
         chapterName: String
+    ): List<String> = getDownloadedPageUris(rootFor(context), sourceName, mangaTitle, chapterName)
+
+    // -------------------------------------------------------------------------
+    // Internal root-File overloads (used for testing without a real Context)
+    // -------------------------------------------------------------------------
+
+    internal fun getChapterDir(
+        root: File,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String
+    ): File = File(
+        root,
+        "$ROOT_DIR/${sanitize(sourceName)}/${sanitize(mangaTitle)}/${sanitize(chapterName)}"
+    )
+
+    internal fun getPageFile(
+        root: File,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String,
+        pageIndex: Int
+    ): File = File(getChapterDir(root, sourceName, mangaTitle, chapterName), "$pageIndex.jpg")
+
+    internal fun isChapterDownloaded(
+        root: File,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String
+    ): Boolean {
+        val dir = getChapterDir(root, sourceName, mangaTitle, chapterName)
+        return dir.isDirectory && dir.listFiles()
+            ?.any { it.extension.lowercase() in PAGE_EXTENSIONS } == true
+    }
+
+    internal fun getDownloadedPageUris(
+        root: File,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String
     ): List<String> {
-        val dir = getChapterDir(context, sourceName, mangaTitle, chapterName)
+        val dir = getChapterDir(root, sourceName, mangaTitle, chapterName)
         if (!dir.isDirectory) return emptyList()
         return dir.listFiles()
             ?.filter { it.extension.lowercase() in PAGE_EXTENSIONS }
@@ -90,10 +128,17 @@ object DownloadProvider {
             ?: emptyList()
     }
 
+    // -------------------------------------------------------------------------
+    // Shared helpers
+    // -------------------------------------------------------------------------
+
     /**
      * Replaces characters that are illegal in filesystem paths with underscores and
      * trims surrounding whitespace.
      */
     internal fun sanitize(name: String): String =
         name.replace(Regex("""[/\\:*?"<>|]"""), "_").trim()
+
+    private fun rootFor(context: Context): File =
+        context.getExternalFilesDir(null) ?: context.filesDir
 }
