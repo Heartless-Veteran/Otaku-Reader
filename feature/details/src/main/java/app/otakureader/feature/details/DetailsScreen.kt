@@ -102,7 +102,7 @@ fun DetailsScreen(
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShareManga) }) {
+                    IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShareManga) }, enabled = state.manga != null) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
                 }
