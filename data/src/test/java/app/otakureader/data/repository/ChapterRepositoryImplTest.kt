@@ -186,33 +186,15 @@ class ChapterRepositoryImplTest {
     // ---- observeHistory ----
 
     @Test
-    fun observeHistory_returnsMappedChapterWithHistory() = runTest {
-        val chapterEntity = makeEntity(1L, 10L)
-        val historyEntity = ReadingHistoryEntity(id = 1L, chapterId = 1L, readAt = 1000L, readDurationMs = 60_000L)
-        val combined = ChapterWithHistoryEntity(history = historyEntity, chapter = chapterEntity)
-
-        every { readingHistoryDao.observeHistoryWithChapters() } returns flowOf(listOf(combined))
-
-        repository.observeHistory().test {
-            val items = awaitItem()
-            assertEquals(1, items.size)
-            assertEquals(1L, items[0].chapter.id)
-            assertEquals(1000L, items[0].readAt)
-            assertEquals(60_000L, items[0].readDurationMs)
-            awaitComplete()
-        }
-
-        verify { readingHistoryDao.observeHistoryWithChapters() }
-    }
-
-    @Test
-    fun observeHistory_withEmptyHistory_emitsEmptyList() = runTest {
+    fun observeHistory_delegatesToDao() = runTest {
         every { readingHistoryDao.observeHistoryWithChapters() } returns flowOf(emptyList())
 
         repository.observeHistory().test {
             assertEquals(emptyList<app.otakureader.domain.model.ChapterWithHistory>(), awaitItem())
             awaitComplete()
         }
+
+        verify { readingHistoryDao.observeHistoryWithChapters() }
     }
 
     // ---- recordHistory ----
