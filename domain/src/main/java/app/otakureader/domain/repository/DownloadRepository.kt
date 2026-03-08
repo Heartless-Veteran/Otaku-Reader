@@ -32,7 +32,10 @@ interface DownloadRepository {
     suspend fun clearAll()
 
     /**
-     * Returns true when all pages for the given chapter have already been saved to disk.
+     * Returns true when the given chapter has at least one page already saved to disk.
+     *
+     * Note: this does not guarantee that all pages have been downloaded; callers that require
+     * full offline availability should verify completeness (e.g., via page count/metadata).
      */
     fun isChapterDownloaded(sourceName: String, mangaTitle: String, chapterTitle: String): Boolean
 }
