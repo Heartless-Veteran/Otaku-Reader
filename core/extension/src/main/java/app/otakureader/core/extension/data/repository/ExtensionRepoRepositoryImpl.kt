@@ -28,7 +28,8 @@ class ExtensionRepoRepositoryImpl(
 
     override fun getRepositories(): Flow<List<String>> {
         return dataStore.data.map { preferences ->
-            preferences[REPOSITORIES_KEY]?.toList() ?: listOf(DEFAULT_KEIYOUSHI_REPO)
+            preferences[REPOSITORIES_KEY]?.toList()
+                ?: listOf(DEFAULT_KEIYOUSHI_REPO, DEFAULT_KOMIKKU_REPO)
         }
     }
 
