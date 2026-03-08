@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.tachiyomiCompat)
     implementation(projects.domain)
+    implementation(projects.sourceApi)
 
     // Networking (OkHttp for APK downloads and extension repo fetches)
     implementation(libs.okhttp.core)
