@@ -137,7 +137,7 @@ class UltimateReaderViewModel @Inject constructor(
      * Fetch pages from the manga source.
      * First checks for downloaded pages, then falls back to streaming from source.
      */
-    private suspend fun fetchPagesFromSource(chapterUrl: String, chapterId: Long): List<ReaderPage> {
+    private suspend fun fetchPagesFromSource(_: String, chapterId: Long): List<ReaderPage> {
         // First, check if the chapter is downloaded
         if (downloadProvider.hasLocalPages(chapterId)) {
             // Load pages from local storage
