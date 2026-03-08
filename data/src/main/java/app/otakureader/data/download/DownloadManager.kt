@@ -37,9 +37,9 @@ data class ChapterDownloadRequest(
 /**
  * Manages the chapter download queue and coordinates actual file downloads via [Downloader].
  *
- * Chapters are added to an in-memory queue backed by a [StateFlow]; each chapter's pages
- * are downloaded sequentially.  Multiple chapters can be queued at once but only one chapter
- * is actively downloading at a time (one coroutine per chapter, but callers may enqueue many).
+ * Chapters are added to an in-memory queue backed by a [StateFlow]. Pages for a single chapter
+ * are downloaded sequentially, but multiple chapters may be downloaded concurrently (typically
+ * one coroutine per chapter, and callers may enqueue many at once).
  *
  * Already-downloaded pages are skipped automatically, making the process idempotent.
  */
