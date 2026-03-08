@@ -66,6 +66,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.DownloadChapter -> downloadChapter(event.chapterId)
             is DetailsContract.Event.DeleteChapterDownload -> deleteChapterDownload(event.chapterId)
             is DetailsContract.Event.MarkPreviousAsRead -> markPreviousAsRead(event.chapterId)
+            is DetailsContract.Event.ShareManga -> shareManga()
         }
     }
 
@@ -292,6 +293,15 @@ class DetailsViewModel @Inject constructor(
                 _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
             } catch (e: Exception) {
                 _effect.emit(DetailsContract.Effect.ShowError("Failed to mark chapters: ${e.message}"))
+            }
+        }
+    }
+
+    private fun shareManga() {
+        viewModelScope.launch {
+            val manga = _state.value.manga
+            if (manga != null) {
+                _effect.emit(DetailsContract.Effect.ShareManga(title = manga.title, url = manga.url))
             }
         }
     }

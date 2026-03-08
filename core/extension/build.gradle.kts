@@ -13,7 +13,9 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.domain)
     implementation(projects.sourceApi)
+    implementation(projects.core.tachiyomiCompat)
 
+    implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp.core)
 }

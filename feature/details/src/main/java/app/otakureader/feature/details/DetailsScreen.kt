@@ -35,12 +35,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -61,6 +63,7 @@ fun DetailsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -73,6 +76,13 @@ fun DetailsScreen(
                 }
                 is DetailsContract.Effect.ShowError -> {
                     snackbarHostState.showSnackbar(effect.message)
+                }
+                is DetailsContract.Effect.ShareManga -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "${effect.title}\n${effect.url}")
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share Manga"))
                 }
                 else -> { /* Handle other effects */ }
             }
@@ -92,7 +102,7 @@ fun DetailsScreen(
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(onClick = { /* TODO: Share */ }) {
+                    IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShareManga) }) {
                         Icon(Icons.Default.Share, contentDescription = "Share")
                     }
                 }

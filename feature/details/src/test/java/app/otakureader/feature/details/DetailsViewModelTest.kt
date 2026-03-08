@@ -6,6 +6,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.DownloadRepository
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -35,6 +36,7 @@ class DetailsViewModelTest {
 
     private lateinit var mangaRepository: MangaRepository
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var downloadRepository: DownloadRepository
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val sampleManga = Manga(
@@ -57,6 +59,7 @@ class DetailsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         mangaRepository = mockk()
         chapterRepository = mockk()
+        downloadRepository = mockk()
         savedStateHandle = SavedStateHandle(mapOf(DetailsViewModel.MANGA_ID_ARG to mangaId))
     }
 
@@ -66,13 +69,14 @@ class DetailsViewModelTest {
     }
 
     private fun createViewModel(): DetailsViewModel {
-        return DetailsViewModel(savedStateHandle, mangaRepository, chapterRepository)
+        return DetailsViewModel(savedStateHandle, mangaRepository, chapterRepository, downloadRepository)
     }
 
     private fun setUpDefaultMocks() {
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(sampleManga)
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(sampleChapters)
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
+        every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
         coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns sampleChapters[1]
     }
 
@@ -220,6 +224,7 @@ class DetailsViewModelTest {
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(sampleManga)
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(emptyList())
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
+        every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
         coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns null
 
         val viewModel = createViewModel()
