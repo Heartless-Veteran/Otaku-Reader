@@ -153,7 +153,9 @@ class DownloadRepositoryImpl @Inject constructor(
             }
 
             if (completed) {
-                jobs.remove(id)
+                mutex.withLock {
+                    jobs.remove(id)
+                }
                 updateNotification()
             }
         }
