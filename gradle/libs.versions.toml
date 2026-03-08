@@ -33,7 +33,7 @@ datastore = "1.2.0"
 
 # Network
 okhttp = "4.12.0"
-retrofit = "2.12.0"
+retrofit = "3.0.0"
 kotlinx-serialization = "1.10.0"
 
 # Image Loading
