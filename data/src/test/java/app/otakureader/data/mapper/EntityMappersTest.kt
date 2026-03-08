@@ -10,6 +10,13 @@ import org.junit.Test
 
 class EntityMappersTest {
 
+    private val baseManga = Manga(
+        id = 1L,
+        sourceId = 1L,
+        url = "/manga/test",
+        title = "Test"
+    )
+
     @Test
     fun chapterEntity_toChapter_mapsCorrectly() {
         // Arrange
@@ -159,6 +166,39 @@ class EntityMappersTest {
         assertEquals(manga.thumbnailUrl, entity.thumbnailUrl)
         assertEquals(manga.favorite, entity.favorite)
         assertEquals(manga.initialized, entity.initialized)
+    }
+
+    @Test
+    fun manga_toEntity_withEmptyGenre_mapsToEmptyString() {
+        val entity = baseManga.toEntity()
+
+        assertEquals("", entity.genre)
+    }
+
+    @Test
+    fun manga_toEntity_withSingleGenre_mapsCorrectly() {
+        val entity = baseManga.copy(genre = listOf("Action")).toEntity()
+
+        assertEquals("Action", entity.genre)
+    }
+
+    @Test
+    fun manga_toEntity_withNullOptionals_mapsCorrectly() {
+        val entity = baseManga.toEntity()
+
+        assertEquals(null, entity.author)
+        assertEquals(null, entity.artist)
+        assertEquals(null, entity.description)
+        assertEquals(null, entity.thumbnailUrl)
+    }
+
+    @Test
+    fun manga_toEntity_allStatuses_mapsCorrectly() {
+        MangaStatus.entries.forEach { status ->
+            val entity = baseManga.copy(status = status).toEntity()
+
+            assertEquals(status.ordinal, entity.status)
+        }
     }
 
     @Test
