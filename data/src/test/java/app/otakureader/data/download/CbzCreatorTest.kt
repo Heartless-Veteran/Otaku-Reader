@@ -193,7 +193,7 @@ class CbzCreatorTest {
     }
 
     @Test
-    fun extractCbzPages_pathTraversalEntriesAreSkipped() {
+    fun extractCbzPages_pathTraversalEntryNameSanitizedToSafeFilename() {
         val root = tempDir()
         try {
             val destDir = File(root, "extracted").also { it.mkdirs() }
@@ -204,7 +204,7 @@ class CbzCreatorTest {
                 zos.putNextEntry(ZipEntry("0.jpg"))
                 zos.write("safe image".toByteArray())
                 zos.closeEntry()
-                // Path traversal attempt: tries to write outside destDir
+                // Path traversal attempt using ../ prefix
                 zos.putNextEntry(ZipEntry("../escape.jpg"))
                 zos.write("malicious content".toByteArray())
                 zos.closeEntry()
@@ -213,8 +213,9 @@ class CbzCreatorTest {
             val result = CbzCreator.extractCbzPages(cbzFile, destDir)
             assertTrue(result.isSuccess)
 
-            // The traversal attempt is neutralized: escape.jpg (after stripping ../
-            // via substringAfterLast('/')) ends up inside destDir rather than outside it.
+            // First-layer sanitization converts '../escape.jpg' → '_escape.jpg':
+            //   replace('/','_') → '.._escape.jpg', then trimStart('.') → '_escape.jpg'
+            // The canonical path check then confirms the sanitized path is inside destDir.
             // Verify the malicious file was NOT written outside destDir.
             assertFalse(File(root, "escape.jpg").exists())
 
@@ -222,8 +223,9 @@ class CbzCreatorTest {
             val extractedNames = result.getOrThrow().map { it.name }.toSet()
             assertTrue(extractedNames.contains("0.jpg"))
 
-            // escape.jpg ended up safely inside destDir (traversal neutralized).
-            assertTrue(File(destDir, "escape.jpg").exists())
+            // The traversal entry is sanitized to _escape.jpg and extracted inside destDir.
+            assertTrue(File(destDir, "_escape.jpg").exists())
+            assertTrue(extractedNames.contains("_escape.jpg"))
         } finally {
             root.deleteRecursively()
         }
