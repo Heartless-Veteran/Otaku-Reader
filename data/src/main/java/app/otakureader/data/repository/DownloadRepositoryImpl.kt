@@ -68,6 +68,24 @@ class DownloadRepositoryImpl @Inject constructor(
         downloadManager.cancel(id)
     }
 
+    override suspend fun deleteChapterDownload(
+        chapterId: Long,
+        sourceName: String,
+        mangaTitle: String,
+        chapterTitle: String
+    ) {
+        // Wait for any active download coroutine to fully stop before touching the
+        // filesystem, eliminating the race between job cancellation and file deletion.
+        // In-memory state is cleaned up as part of cancelAndJoin.
+        downloadManager.cancelAndJoin(chapterId)
+
+        withContext(Dispatchers.IO) {
+            // deleteChapter throws IOException if the directory exists but cannot be removed;
+            // returns false (silently) if there was nothing to delete.
+            DownloadProvider.deleteChapter(context, sourceName, mangaTitle, chapterTitle)
+        }
+    }
+
     override suspend fun clearAll() {
         downloadManager.clearAll()
         notifier.cancel()

@@ -2,6 +2,7 @@ package app.otakureader.data.download
 
 import android.content.Context
 import java.io.File
+import java.io.IOException
 
 /**
  * Provides filesystem helpers for locally downloaded chapter pages.
@@ -80,6 +81,20 @@ object DownloadProvider {
         chapterName: String
     ): List<String> = getDownloadedPageUris(rootFor(context), sourceName, mangaTitle, chapterName)
 
+    /**
+     * Deletes all downloaded files for the given chapter.
+     *
+     * @return `false` if the chapter directory did not exist (nothing to delete);
+     *         `true` if the directory was successfully removed.
+     * @throws IOException if the directory exists but could not be fully deleted.
+     */
+    fun deleteChapter(
+        context: Context,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String
+    ): Boolean = deleteChapter(rootFor(context), sourceName, mangaTitle, chapterName)
+
     // -------------------------------------------------------------------------
     // Internal root-File overloads (used for testing without a real Context)
     // -------------------------------------------------------------------------
@@ -126,6 +141,20 @@ object DownloadProvider {
             ?.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
             ?.map { "file://${it.absolutePath}" }
             ?: emptyList()
+    }
+
+    internal fun deleteChapter(
+        root: File,
+        sourceName: String,
+        mangaTitle: String,
+        chapterName: String
+    ): Boolean {
+        val dir = getChapterDir(root, sourceName, mangaTitle, chapterName)
+        if (!dir.exists()) return false
+        if (!dir.deleteRecursively()) {
+            throw IOException("Failed to delete chapter directory: ${dir.absolutePath}")
+        }
+        return true
     }
 
     // -------------------------------------------------------------------------
