@@ -62,6 +62,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToMigrationEntry: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
@@ -95,6 +96,7 @@ fun SettingsScreen(
                 SettingsEffect.ShowRestorePicker -> {
                     restoreFileLauncher.launch(arrayOf("application/json"))
                 }
+                SettingsEffect.NavigateToMigrationEntry -> onNavigateToMigrationEntry()
             }
         }
     }
@@ -564,8 +566,8 @@ private fun NotificationsSection(state: SettingsState, onEvent: (SettingsEvent) 
 
 @Composable
 private fun BackupRestoreSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
-    // ── Backup & Restore ──────────────────────────────────────────────
-            SectionHeader(title = "Backup & Restore")
+    // ── Data & Storage ────────────────────────────────────────────────
+            SectionHeader(title = "Data & Storage")
 
             ListItem(
                 headlineContent = { Text("Create Backup") },
@@ -593,6 +595,12 @@ private fun BackupRestoreSection(state: SettingsState, onEvent: (SettingsEvent) 
                         }
                     }
                 }
+            )
+
+            ListItem(
+                headlineContent = { Text("Migrate manga") },
+                supportingContent = { Text("Move manga from one source to another") },
+                modifier = Modifier.clickable { onEvent(SettingsEvent.OnNavigateToMigration) }
             )
 }
 
