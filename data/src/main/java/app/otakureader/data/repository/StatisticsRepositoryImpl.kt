@@ -93,11 +93,24 @@ class StatisticsRepositoryImpl @Inject constructor(
     private fun computeReadingActivity(timestamps: List<Long>): Map<String, Int> {
         val zone = ZoneId.systemDefault()
         val counts = TreeMap<String, Int>()
-        val cutoff = java.time.LocalDate.now(zone).minusDays(ACTIVITY_DAYS.toLong())
+
+        // Define an inclusive date range covering exactly ACTIVITY_DAYS days ending today.
+        val endDate = java.time.LocalDate.now(zone)
+        val startDate = endDate.minusDays(ACTIVITY_DAYS.toLong() - 1L)
+
+        // Initialize all days in the range with zero activity so the UI gets a fixed grid.
+        var date = startDate
+        while (!date.isAfter(endDate)) {
+            val key = DateTimeFormatter.ISO_LOCAL_DATE.format(date)
+            counts[key] = 0
+            date = date.plusDays(1)
+        }
+
+        // Increment counts for timestamps that fall within the date range.
         for (ts in timestamps) {
-            val date = Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
-            if (!date.isBefore(cutoff)) {
-                val key = DateTimeFormatter.ISO_LOCAL_DATE.format(date)
+            val tsDate = Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
+            if (!tsDate.isBefore(startDate) && !tsDate.isAfter(endDate)) {
+                val key = DateTimeFormatter.ISO_LOCAL_DATE.format(tsDate)
                 counts[key] = (counts[key] ?: 0) + 1
             }
         }
