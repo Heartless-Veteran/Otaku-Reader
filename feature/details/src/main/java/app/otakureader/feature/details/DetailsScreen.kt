@@ -424,7 +424,7 @@ private fun renderMarkdown(source: String): androidx.compose.ui.text.AnnotatedSt
                     pop()
                 }
                 linkMatch -> {
-                    val label = linkMatch.groupValues[1]
+                    val label = firstMatch.groupValues[1]
                     pushStyle(SpanStyle(textDecoration = TextDecoration.Underline))
                     append(label)
                     pop()

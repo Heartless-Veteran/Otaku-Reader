@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import app.otakureader.core.database.BuildConfig
 import app.otakureader.core.database.OtakuReaderDatabase
 import dagger.Module
 import dagger.Provides
@@ -63,14 +64,18 @@ object DatabaseModule {
     fun provideDatabase(
         @ApplicationContext context: Context
     ): OtakuReaderDatabase {
-        return Room.databaseBuilder(
+        val builder = Room.databaseBuilder(
             context,
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
         )
             .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-            .fallbackToDestructiveMigration()
-            .build()
+        // Only allow destructive migration in debug builds to avoid silently wiping
+        // user data (including notes) in production if a migration is missing.
+        if (BuildConfig.DEBUG) {
+            builder.fallbackToDestructiveMigration(dropAllTables = true)
+        }
+        return builder.build()
     }
     
     @Provides

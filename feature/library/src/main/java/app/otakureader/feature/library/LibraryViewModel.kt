@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -105,7 +106,7 @@ class LibraryViewModel @Inject constructor(
     private fun observeFilteredItems() {
         combine(
             _allItems,
-            _state.map { it.filterHasNotes }
+            _state.map { it.filterHasNotes }.distinctUntilChanged()
         ) { items, hasNotesFilter ->
             if (hasNotesFilter) items.filter { it.hasNote } else items
         }
