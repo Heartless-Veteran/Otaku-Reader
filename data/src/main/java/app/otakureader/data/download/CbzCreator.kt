@@ -60,31 +60,51 @@ object CbzCreator {
      *
      * Optionally embeds a `ComicInfo.xml` entry when [metadata] is provided.
      *
+     * The archive is written to a temporary file first and atomically renamed to
+     * [CBZ_FILE_NAME] on success, so a failed/interrupted call never leaves a
+     * truncated archive behind. If [CBZ_FILE_NAME] already exists it is returned
+     * immediately without modification.
+     *
      * @param chapterDir directory that contains the downloaded page files.
      * @param metadata   optional comic metadata to embed; `null` skips the XML entry.
-     * @return [Result.success] wrapping the created CBZ [File] on success,
+     * @return [Result.success] wrapping the created (or existing) CBZ [File] on success,
      *         or [Result.failure] with the cause on any error.
      */
     fun createCbz(chapterDir: File, metadata: ComicInfoMetadata? = null): Result<File> = runCatching {
         require(chapterDir.isDirectory) { "chapterDir must be an existing directory: $chapterDir" }
+
+        // Return the existing archive unchanged – prevents accidentally overwriting
+        // CBZ-only chapters that have already had their loose files deleted.
+        val cbzFile = File(chapterDir, CBZ_FILE_NAME)
+        if (cbzFile.exists()) return@runCatching cbzFile
 
         val pages = chapterDir.listFiles()
             ?.filter { it.isFile && it.extension.lowercase() in PAGE_EXTENSIONS }
             ?.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
             ?: emptyList()
 
-        val cbzFile = File(chapterDir, CBZ_FILE_NAME)
-        ZipOutputStream(cbzFile.outputStream().buffered()).use { zos ->
-            metadata?.let {
-                zos.putNextEntry(ZipEntry("ComicInfo.xml"))
-                zos.write(buildComicInfoXml(it).toByteArray(Charsets.UTF_8))
-                zos.closeEntry()
+        require(pages.isNotEmpty()) { "No page images found in $chapterDir; nothing to pack into CBZ" }
+
+        // Write to a temp file so that an error never leaves a corrupt/empty archive.
+        val tempFile = File(chapterDir, "$CBZ_FILE_NAME.tmp")
+        try {
+            ZipOutputStream(tempFile.outputStream().buffered()).use { zos ->
+                metadata?.let {
+                    zos.putNextEntry(ZipEntry("ComicInfo.xml"))
+                    zos.write(buildComicInfoXml(it).toByteArray(Charsets.UTF_8))
+                    zos.closeEntry()
+                }
+                pages.forEach { page ->
+                    zos.putNextEntry(ZipEntry(page.name))
+                    page.inputStream().use { input -> input.copyTo(zos) }
+                    zos.closeEntry()
+                }
             }
-            pages.forEach { page ->
-                zos.putNextEntry(ZipEntry(page.name))
-                page.inputStream().use { input -> input.copyTo(zos) }
-                zos.closeEntry()
-            }
+            // Atomic rename: replaces any stale temp file atomically.
+            tempFile.renameTo(cbzFile)
+        } catch (e: Exception) {
+            tempFile.delete()
+            throw e
         }
         cbzFile
     }

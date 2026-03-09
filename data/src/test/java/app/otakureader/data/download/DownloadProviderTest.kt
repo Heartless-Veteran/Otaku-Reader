@@ -243,8 +243,34 @@ class DownloadProviderTest {
 
             val uris = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
             assertEquals(2, uris.size)
+            // Pages are extracted into a .pages subdirectory; URIs still end with page filenames.
             assertTrue(uris[0].endsWith("0.jpg"))
             assertTrue(uris[1].endsWith("1.jpg"))
+            // Verify pages live in the cache subdir, not at the chapter dir level
+            assertTrue(uris[0].contains("/.pages/"))
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun getDownloadedPageUris_cbzOnly_usesExistingCacheOnSecondCall() {
+        val root = tempDir()
+        try {
+            val chapterDir = DownloadProvider.getChapterDir(root, "source", "manga", "ch1")
+            chapterDir.mkdirs()
+            File(chapterDir, "0.jpg").writeText("page0")
+            CbzCreator.createCbz(chapterDir)
+            File(chapterDir, "0.jpg").delete()
+
+            // First call - extracts from CBZ
+            val uris1 = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
+            assertEquals(1, uris1.size)
+
+            // Second call - should reuse the cached extraction
+            val uris2 = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
+            assertEquals(1, uris2.size)
+            assertEquals(uris1[0], uris2[0])
         } finally {
             root.deleteRecursively()
         }
@@ -262,6 +288,8 @@ class DownloadProviderTest {
             val uris = DownloadProvider.getDownloadedPageUris(root, "source", "manga", "ch1")
             assertEquals(1, uris.size)
             assertTrue(uris[0].endsWith("0.jpg"))
+            // Loose files are at chapter dir level, not inside .pages
+            assertFalse(uris[0].contains("/.pages/"))
         } finally {
             root.deleteRecursively()
         }

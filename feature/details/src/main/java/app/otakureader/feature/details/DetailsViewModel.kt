@@ -135,14 +135,15 @@ class DetailsViewModel @Inject constructor(
     }
 
     private fun observeDeleteAfterReadSetting() {
-        // Observe delete-after-read preference and keep state in sync
-        downloadPreferences.deleteAfterReadMode
-            .onEach { mode: DeleteAfterReadMode ->
-                _state.update { state ->
-                    state.copy(deleteAfterReadMode = mode)
-                }
-            }
-            .launchIn(viewModelScope)
+        combine(
+            downloadPreferences.deleteAfterReading,
+            downloadPreferences.perMangaOverrides
+        ) { global, overrides ->
+            val override = overrides[mangaId] ?: DeleteAfterReadMode.INHERIT
+            Pair(global, override)
+        }.onEach { (global, override) ->
+            _state.update { it.copy(globalDeleteAfterRead = global, deleteAfterReadOverride = override) }
+        }.launchIn(viewModelScope)
     }
 
     private fun refreshData() {

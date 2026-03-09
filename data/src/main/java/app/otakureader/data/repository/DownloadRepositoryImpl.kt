@@ -109,6 +109,23 @@ class DownloadRepositoryImpl @Inject constructor(
         if (!chapterDir.isDirectory) {
             return@withContext Result.failure(IllegalStateException("Chapter not downloaded"))
         }
+
+        // If the CBZ already exists (e.g. saved during auto-download), nothing to do.
+        val existingCbz = DownloadProvider.getCbzFile(context, sourceName, mangaTitle, chapterTitle)
+        if (existingCbz.exists()) {
+            return@withContext Result.success(Unit)
+        }
+
+        // Require at least one loose page image before attempting to pack.
+        val hasLoosePages = chapterDir.listFiles()
+            ?.any { it.isFile && it.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS }
+            ?: false
+        if (!hasLoosePages) {
+            return@withContext Result.failure(
+                IllegalStateException("No downloaded pages found to export as CBZ")
+            )
+        }
+
         CbzCreator.createCbz(chapterDir).map { }
     }
 }

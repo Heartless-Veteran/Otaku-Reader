@@ -72,13 +72,40 @@ class CbzCreatorTest {
     }
 
     @Test
-    fun createCbz_emptyDirectory_createsEmptyArchive() {
+    fun createCbz_emptyDirectory_returnsFailure() {
         val root = tempDir()
         try {
             val result = CbzCreator.createCbz(root)
-            assertTrue(result.isSuccess)
-            ZipFile(result.getOrThrow()).use { zip ->
-                assertFalse(zip.entries().hasMoreElements())
+            assertTrue("Expected failure for empty directory", result.isFailure)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun createCbz_existingCbz_returnsExistingWithoutOverwrite() {
+        val root = tempDir()
+        try {
+            File(root, "0.jpg").writeText("image data")
+            // First creation
+            val first = CbzCreator.createCbz(root)
+            assertTrue(first.isSuccess)
+            val firstCbz = first.getOrThrow()
+            val originalLastModified = firstCbz.lastModified()
+
+            // Add another page and attempt re-creation – should return existing file unchanged.
+            File(root, "1.jpg").writeText("another image")
+            val second = CbzCreator.createCbz(root)
+            assertTrue(second.isSuccess)
+            val secondCbz = second.getOrThrow()
+
+            assertEquals(firstCbz.absolutePath, secondCbz.absolutePath)
+            assertEquals(originalLastModified, secondCbz.lastModified())
+            // Only 0.jpg should be in the archive (1.jpg was added after creation)
+            ZipFile(secondCbz).use { zip ->
+                val entries = zip.entries().asSequence().map { it.name }.toSet()
+                assertTrue(entries.contains("0.jpg"))
+                assertFalse(entries.contains("1.jpg"))
             }
         } finally {
             root.deleteRecursively()
