@@ -68,6 +68,12 @@ class SettingsViewModel @Inject constructor(
                 state.copy(keepScreenOn = keepScreenOn)
             }.combine(readerSettingsRepository.incognitoMode) { state, incognitoMode ->
                 state.copy(incognitoMode = incognitoMode)
+            }.combine(downloadPreferences.autoDownloadEnabled) { state, autoDownloadEnabled ->
+                state.copy(autoDownloadEnabled = autoDownloadEnabled)
+            }.combine(downloadPreferences.downloadOnlyOnWifi) { state, downloadOnlyOnWifi ->
+                state.copy(downloadOnlyOnWifi = downloadOnlyOnWifi)
+            }.combine(downloadPreferences.autoDownloadLimit) { state, autoDownloadLimit ->
+                state.copy(autoDownloadLimit = autoDownloadLimit)
             }.collect { newState ->
                 _state.update { current ->
                     newState.copy(
@@ -96,7 +102,9 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetReaderMode -> readerPreferences.setReaderMode(event.mode)
                 is SettingsEvent.SetKeepScreenOn -> readerPreferences.setKeepScreenOn(event.enabled)
                 is SettingsEvent.SetIncognitoMode -> readerSettingsRepository.setIncognitoMode(event.enabled)
-                is SettingsEvent.SetDeleteAfterReading -> downloadPreferences.setDeleteAfterReading(event.enabled)
+                is SettingsEvent.SetAutoDownloadEnabled -> downloadPreferences.setAutoDownloadEnabled(event.enabled)
+                is SettingsEvent.SetDownloadOnlyOnWifi -> downloadPreferences.setDownloadOnlyOnWifi(event.enabled)
+                is SettingsEvent.SetAutoDownloadLimit -> downloadPreferences.setAutoDownloadLimit(event.limit)
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
                 SettingsEvent.OnRestoreBackup -> _effect.send(SettingsEffect.ShowRestorePicker)
                 is SettingsEvent.LoginTracker -> loginTracker(event.trackerId, event.username, event.password)
