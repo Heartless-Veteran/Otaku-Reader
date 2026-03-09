@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -116,6 +117,20 @@ fun LibraryScreen(
                             onClick = {
                                 showMenu = false
                                 onNavigateToSettings()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Has notes") },
+                            onClick = {
+                                viewModel.onEvent(LibraryEvent.FilterHasNotes(!state.filterHasNotes))
+                            },
+                            trailingIcon = {
+                                Checkbox(
+                                    checked = state.filterHasNotes,
+                                    onCheckedChange = { checked ->
+                                        viewModel.onEvent(LibraryEvent.FilterHasNotes(checked))
+                                    }
+                                )
                             }
                         )
                     }

@@ -40,10 +40,14 @@ class LibraryViewModel @Inject constructor(
     
     private val _effect = MutableSharedFlow<LibraryEffect>()
     val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
+
+    /** Holds the full, unfiltered library items for reactive filtering. */
+    private val _allItems = MutableStateFlow<List<LibraryMangaItem>>(emptyList())
     
     init {
         loadLibrary()
         observeLibraryPreferences()
+        observeFilteredItems()
     }
     
     fun onEvent(event: LibraryEvent) {
@@ -55,6 +59,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
             is LibraryEvent.ClearSelection -> clearSelection()
             is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
+            is LibraryEvent.FilterHasNotes -> onFilterHasNotes(event.enabled)
         }
     }
 
@@ -82,14 +87,8 @@ class LibraryViewModel @Inject constructor(
                 mangaList.map { it.toLibraryItem() }
             }
             .onEach { items ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isRefreshing = false,
-                        mangaList = items,
-                        error = null
-                    )
-                }
+                _allItems.value = items
+                _state.update { it.copy(isLoading = false, isRefreshing = false, error = null) }
             }
             .catch { error ->
                 _state.update {
@@ -99,6 +98,19 @@ class LibraryViewModel @Inject constructor(
                         error = error.message
                     )
                 }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeFilteredItems() {
+        combine(
+            _allItems,
+            _state.map { it.filterHasNotes }
+        ) { items, hasNotesFilter ->
+            if (hasNotesFilter) items.filter { it.hasNote } else items
+        }
+            .onEach { filtered ->
+                _state.update { it.copy(mangaList = filtered) }
             }
             .launchIn(viewModelScope)
     }
@@ -146,12 +158,17 @@ class LibraryViewModel @Inject constructor(
             toggleFavoriteManga(mangaId)
         }
     }
+
+    private fun onFilterHasNotes(enabled: Boolean) {
+        _state.update { it.copy(filterHasNotes = enabled) }
+    }
     
     private fun Manga.toLibraryItem() = LibraryMangaItem(
         id = id,
         title = title,
         thumbnailUrl = thumbnailUrl,
         unreadCount = unreadCount,
-        isFavorite = favorite
+        isFavorite = favorite,
+        hasNote = !notes.isNullOrBlank()
     )
 }

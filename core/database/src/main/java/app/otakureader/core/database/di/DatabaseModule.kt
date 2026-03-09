@@ -49,6 +49,15 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * Adds the notes column to the manga table in database version 5.
+     */
+    private val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `notes` TEXT")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(
@@ -59,7 +68,7 @@ object DatabaseModule {
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
             .fallbackToDestructiveMigration()
             .build()
     }
