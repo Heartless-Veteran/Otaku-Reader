@@ -49,7 +49,7 @@ class LibraryViewModelTest {
     }
 
     private fun createViewModel(): LibraryViewModel {
-        return LibraryViewModel(getLibraryManga, toggleFavoriteManga)
+        return LibraryViewModel(mockk(relaxed = true), getLibraryManga, toggleFavoriteManga, mockk(relaxed = true))
     }
 
     @Test

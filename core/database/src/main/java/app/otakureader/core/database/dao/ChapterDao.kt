@@ -29,9 +29,15 @@ interface ChapterDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(chapters: List<ChapterEntity>)
     
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllWithIds(chapters: List<ChapterEntity>): List<Long>
+
     @Update
     suspend fun update(chapter: ChapterEntity)
     
+    @Update
+    suspend fun updateAll(chapters: List<ChapterEntity>)
+
     @Query("UPDATE chapters SET read = :read, lastPageRead = :lastPageRead WHERE id = :chapterId")
     suspend fun updateChapterProgress(chapterId: Long, read: Boolean, lastPageRead: Int)
     

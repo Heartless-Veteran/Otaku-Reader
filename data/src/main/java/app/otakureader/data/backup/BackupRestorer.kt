@@ -95,25 +95,56 @@ class BackupRestorer @Inject constructor(
      * Restores chapters and reading history for a manga.
      */
     private suspend fun restoreChapters(mangaId: Long, backupManga: app.otakureader.data.backup.model.BackupManga) {
-        backupManga.chapters.forEach { backupChapter ->
-            // Check if chapter already exists by URL
-            val existingChapters = chapterDao.getChaptersByMangaId(mangaId).first()
-            val existingChapter = existingChapters.find { it.url == backupChapter.url }
+        val existingChapters = chapterDao.getChaptersByMangaId(mangaId).first()
+        val existingChaptersByUrl = existingChapters.associateBy { it.url }
 
-            val chapterId = if (existingChapter != null) {
-                // Update existing chapter
+        val chaptersToInsert = mutableListOf<app.otakureader.core.database.entity.ChapterEntity>()
+        val chaptersToUpdate = mutableListOf<app.otakureader.core.database.entity.ChapterEntity>()
+        val insertIndices = mutableListOf<Int>()
+        val updateIndices = mutableListOf<Int>()
+
+        backupManga.chapters.forEachIndexed { index, backupChapter ->
+            val existingChapter = existingChaptersByUrl[backupChapter.url]
+            if (existingChapter != null) {
                 val updatedChapter = backupChapter.toChapterEntity(mangaId).copy(id = existingChapter.id)
-                chapterDao.update(updatedChapter)
-                existingChapter.id
+                chaptersToUpdate.add(updatedChapter)
+                updateIndices.add(index)
             } else {
-                // Insert new chapter
-                chapterDao.insert(backupChapter.toChapterEntity(mangaId))
+                chaptersToInsert.add(backupChapter.toChapterEntity(mangaId))
+                insertIndices.add(index)
             }
+        }
 
-            // Restore reading history if present
+        if (chaptersToUpdate.isNotEmpty()) {
+            chapterDao.updateAll(chaptersToUpdate)
+        }
+
+        val insertedIds = if (chaptersToInsert.isNotEmpty()) {
+            chapterDao.insertAllWithIds(chaptersToInsert)
+        } else {
+            emptyList()
+        }
+
+        val historyToUpsert = mutableListOf<app.otakureader.core.database.entity.ReadingHistoryEntity>()
+
+        updateIndices.forEachIndexed { i, originalIndex ->
+            val backupChapter = backupManga.chapters[originalIndex]
+            val chapterId = chaptersToUpdate[i].id
             backupChapter.readingHistory?.let { history ->
-                readingHistoryDao.upsert(history.toReadingHistoryEntity(chapterId))
+                historyToUpsert.add(history.toReadingHistoryEntity(chapterId))
             }
+        }
+
+        insertIndices.forEachIndexed { i, originalIndex ->
+            val backupChapter = backupManga.chapters[originalIndex]
+            val chapterId = insertedIds[i]
+            backupChapter.readingHistory?.let { history ->
+                historyToUpsert.add(history.toReadingHistoryEntity(chapterId))
+            }
+        }
+
+        if (historyToUpsert.isNotEmpty()) {
+            readingHistoryDao.upsertAll(historyToUpsert)
         }
     }
 

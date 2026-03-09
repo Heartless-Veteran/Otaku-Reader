@@ -15,6 +15,9 @@ interface ReadingHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(history: ReadingHistoryEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(history: List<ReadingHistoryEntity>)
+
     @Query("SELECT * FROM reading_history ORDER BY read_at DESC")
     fun observeHistory(): Flow<List<ReadingHistoryEntity>>
 
