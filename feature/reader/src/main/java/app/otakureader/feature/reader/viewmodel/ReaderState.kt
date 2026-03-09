@@ -80,7 +80,7 @@ data class ReaderState(
     /** Color filter mode applied over the page content */
     val colorFilterMode: ColorFilterMode = ColorFilterMode.NONE,
 
-    /** Custom tint color used when colorFilterMode == CUSTOM_TINT (ARGB packed int) */
+    /** Custom tint color used when colorFilterMode == CUSTOM_TINT (ARGB color 0xAARRGGBB stored in a Long) */
     val customTintColor: Long = 0x4000AAFFL
 ) {
     /** Total pages in chapter (derived from pages.size) */
