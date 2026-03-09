@@ -20,6 +20,9 @@ import java.util.concurrent.TimeUnit
  * This represents the JSON structure returned by the extension repo server.
  */
 
+/**
+ * Standard index.json format with wrapped extensions array.
+ */
 @Serializable
 data class ExtensionRepoResponse(
     @SerialName("extensions")
@@ -29,6 +32,9 @@ data class ExtensionRepoResponse(
     val lastModified: Long,
 )
 
+/**
+ * Standard extension format (used in index.json).
+ */
 @Serializable
 data class ExtensionDto(
     @SerialName("id")
@@ -87,6 +93,61 @@ data class ExtensionSourceDto(
 )
 
 /**
+ * Minified extension format (used in index.min.json from Keiyoushi, Komikku, Suwayomi).
+ * This format is more compact and uses shorter field names.
+ */
+@Serializable
+data class MinifiedExtensionDto(
+    @SerialName("name")
+    val name: String,
+
+    @SerialName("pkg")
+    val pkg: String,
+
+    @SerialName("apk")
+    val apk: String,
+
+    @SerialName("lang")
+    val lang: String,
+
+    @SerialName("code")
+    val code: Int,
+
+    @SerialName("version")
+    val version: String,
+
+    @SerialName("nsfw")
+    val nsfw: Int = 0,
+
+    @SerialName("sources")
+    val sources: List<MinifiedExtensionSourceDto>,
+
+    @SerialName("hasReadme")
+    val hasReadme: Boolean = false,
+
+    @SerialName("hasChangelog")
+    val hasChangelog: Boolean = false,
+
+    @SerialName("icon")
+    val icon: String? = null,
+)
+
+@Serializable
+data class MinifiedExtensionSourceDto(
+    @SerialName("name")
+    val name: String,
+
+    @SerialName("lang")
+    val lang: String,
+
+    @SerialName("id")
+    val id: String,
+
+    @SerialName("baseUrl")
+    val baseUrl: String,
+)
+
+/**
  * Remote data source for fetching extension information and APKs.
  */
 interface ExtensionRemoteDataSource {
@@ -114,6 +175,7 @@ class ExtensionRemoteDataSourceImpl(
 
     companion object {
         private const val REPO_INDEX_PATH = "/index.json"
+        private const val REPO_INDEX_MIN_PATH = "/index.min.json"
 
         fun createDefaultClient(): OkHttpClient {
             return OkHttpClient.Builder()
@@ -133,15 +195,8 @@ class ExtensionRemoteDataSourceImpl(
                 val extensions = mutableListOf<Extension>()
 
                 repositories.forEach { baseUrl ->
-                    val request = Request.Builder()
-                        .url(baseUrl.trimEnd('/') + REPO_INDEX_PATH)
-                        .build()
-                    val responseBody = httpClient.newCall(request).execute().use { response ->
-                        if (!response.isSuccessful) error("HTTP ${response.code}")
-                        response.body?.string() ?: error("Empty body")
-                    }
-                    val repoResponse = json.decodeFromString(ExtensionRepoResponse.serializer(), responseBody)
-                    extensions += repoResponse.extensions.map { it.toDomain() }
+                    val repoExtensions = fetchFromRepository(baseUrl)
+                    extensions.addAll(repoExtensions)
                 }
 
                 // Deduplicate by package name preferring highest versionCode
@@ -157,6 +212,62 @@ class ExtensionRemoteDataSourceImpl(
                 Result.failure(e)
             }
         }
+    }
+
+    /**
+     * Fetch extensions from a single repository.
+     * Tries index.min.json first (common format for Keiyoushi/Komikku/Suwayomi),
+     * then falls back to index.json if that fails.
+     */
+    private suspend fun fetchFromRepository(baseUrl: String): List<Extension> {
+        val trimmedBaseUrl = baseUrl.trimEnd('/')
+
+        // Try index.min.json first (more common in third-party repos)
+        try {
+            return fetchMinifiedIndex(trimmedBaseUrl)
+        } catch (e: Exception) {
+            // Fall back to standard index.json
+            try {
+                return fetchStandardIndex(trimmedBaseUrl)
+            } catch (e2: Exception) {
+                // If both fail, throw the most recent error
+                throw e2
+            }
+        }
+    }
+
+    /**
+     * Fetch extensions from index.min.json (Keiyoushi/Komikku/Suwayomi format).
+     */
+    private suspend fun fetchMinifiedIndex(baseUrl: String): List<Extension> {
+        val request = Request.Builder()
+            .url(baseUrl + REPO_INDEX_MIN_PATH)
+            .build()
+
+        val responseBody = httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code}")
+            response.body?.string() ?: error("Empty body")
+        }
+
+        val minifiedExtensions = json.decodeFromString<List<MinifiedExtensionDto>>(responseBody)
+        return minifiedExtensions.map { it.toDomain(baseUrl) }
+    }
+
+    /**
+     * Fetch extensions from index.json (standard format).
+     */
+    private suspend fun fetchStandardIndex(baseUrl: String): List<Extension> {
+        val request = Request.Builder()
+            .url(baseUrl + REPO_INDEX_PATH)
+            .build()
+
+        val responseBody = httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code}")
+            response.body?.string() ?: error("Empty body")
+        }
+
+        val repoResponse = json.decodeFromString(ExtensionRepoResponse.serializer(), responseBody)
+        return repoResponse.extensions.map { it.toDomain() }
     }
 
     override suspend fun downloadApk(apkUrl: String, destination: File): Result<File> {
@@ -214,4 +325,60 @@ private fun ExtensionSourceDto.toDomain(): ExtensionSource {
         supportsSearch = supportsSearch,
         supportsLatest = supportsLatest,
     )
+}
+
+/** Convert [MinifiedExtensionDto] to the [Extension] domain model. */
+private fun MinifiedExtensionDto.toDomain(baseUrl: String): Extension {
+    return Extension(
+        id = pkg.hashCode().toLong(), // Generate ID from package name
+        pkgName = pkg,
+        name = name,
+        versionCode = code,
+        versionName = version,
+        sources = sources.map { it.toDomain() },
+        status = InstallStatus.AVAILABLE,
+        apkPath = null,
+        apkUrl = resolveApkUrl(baseUrl, apk),
+        iconUrl = icon?.let { resolveIconUrl(baseUrl, it) },
+        lang = lang,
+        isNsfw = nsfw == 1,
+        installDate = null,
+        signatureHash = null, // Signature not provided in minified format
+        isEnabled = true
+    )
+}
+
+private fun MinifiedExtensionSourceDto.toDomain(): ExtensionSource {
+    return ExtensionSource(
+        id = id.toLongOrNull() ?: id.hashCode().toLong(), // Parse ID or hash if not numeric
+        name = name,
+        lang = lang,
+        baseUrl = baseUrl,
+        supportsSearch = true, // Not specified in minified format, default to true
+        supportsLatest = true, // Not specified in minified format, default to true
+    )
+}
+
+/**
+ * Resolve APK URL from relative or absolute path.
+ * If the APK path is relative, prepend the repository base URL.
+ */
+private fun resolveApkUrl(baseUrl: String, apkPath: String): String {
+    return if (apkPath.startsWith("http://") || apkPath.startsWith("https://")) {
+        apkPath
+    } else {
+        "$baseUrl/${apkPath.trimStart('/')}"
+    }
+}
+
+/**
+ * Resolve icon URL from relative or absolute path.
+ * If the icon path is relative, prepend the repository base URL.
+ */
+private fun resolveIconUrl(baseUrl: String, iconPath: String): String {
+    return if (iconPath.startsWith("http://") || iconPath.startsWith("https://")) {
+        iconPath
+    } else {
+        "$baseUrl/${iconPath.trimStart('/')}"
+    }
 }
