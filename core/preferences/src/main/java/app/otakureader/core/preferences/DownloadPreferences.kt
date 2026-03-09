@@ -31,70 +31,70 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
     val autoDownloadLimit: Flow<Int> = dataStore.data.map { it[Keys.AUTO_DOWNLOAD_LIMIT] ?: 3 }
     suspend fun setAutoDownloadLimit(value: Int) = dataStore.edit { it[Keys.AUTO_DOWNLOAD_LIMIT] = value }
 
-    // --- Delete After Reading ---
-
-    /** Global switch: delete downloaded pages after the last page of a chapter is read. Default: false. */
+    /** Whether to delete chapters after reading. Default: false. */
     val deleteAfterReading: Flow<Boolean> = dataStore.data.map { it[Keys.DELETE_AFTER_READING] ?: false }
     suspend fun setDeleteAfterReading(value: Boolean) = dataStore.edit { it[Keys.DELETE_AFTER_READING] = value }
 
     /**
-     * Per-manga overrides for delete-after-reading behaviour, stored as a comma-separated string of
-     * `"<mangaId>:<MODE>"` pairs (e.g. `"1:ENABLED,2:DISABLED"`).
+     * Per-manga delete-after-reading overrides stored as "mangaId:MODE" comma-separated string.
+     * Example: "123:ENABLED,456:DISABLED"
      */
     val perMangaOverrides: Flow<Map<Long, DeleteAfterReadMode>> = dataStore.data.map { prefs ->
-        deserializeOverrides(prefs[Keys.PER_MANGA_OVERRIDES] ?: "")
+        val raw = prefs[Keys.PER_MANGA_OVERRIDES] ?: ""
+        raw.split(",")
+            .filter { it.isNotBlank() }
+            .mapNotNull { entry ->
+                val parts = entry.split(":")
+                if (parts.size == 2) {
+                    val id = parts[0].toLongOrNull()
+                    val mode = try {
+                        DeleteAfterReadMode.valueOf(parts[1])
+                    } catch (e: IllegalArgumentException) {
+                        null
+                    }
+                    if (id != null && mode != null) id to mode else null
+                } else null
+            }
+            .toMap()
     }
 
     /**
-     * Sets a per-manga override.  Passing [DeleteAfterReadMode.INHERIT] removes the entry so the
-     * manga falls back to the global setting.
+     * Set a per-manga override for delete-after-reading.
      */
     suspend fun setOverride(mangaId: Long, mode: DeleteAfterReadMode) {
         dataStore.edit { prefs ->
-            val current = deserializeOverrides(prefs[Keys.PER_MANGA_OVERRIDES] ?: "").toMutableMap()
-            if (mode == DeleteAfterReadMode.INHERIT) {
-                current.remove(mangaId)
-            } else {
-                current[mangaId] = mode
+            val current = prefs[Keys.PER_MANGA_OVERRIDES] ?: ""
+            val overrides = current.split(",")
+                .filter { it.isNotBlank() }
+                .filterNot { it.startsWith("$mangaId:") }
+                .toMutableList()
+
+            if (mode != DeleteAfterReadMode.INHERIT) {
+                overrides.add("$mangaId:$mode")
             }
-            prefs[Keys.PER_MANGA_OVERRIDES] = serializeOverrides(current)
+
+            prefs[Keys.PER_MANGA_OVERRIDES] = overrides.joinToString(",")
         }
     }
 
     /**
-     * Returns a [Flow] that emits the effective delete-after-reading setting for [mangaId],
-     * resolving the per-manga override against the global flag.
+     * Check if delete-after-reading is enabled for a specific manga,
+     * taking into account per-manga overrides.
      */
     fun isDeleteAfterReadingEnabled(mangaId: Long): Flow<Boolean> =
         combine(deleteAfterReading, perMangaOverrides) { global, overrides ->
-            when (overrides[mangaId] ?: DeleteAfterReadMode.INHERIT) {
+            when (overrides[mangaId]) {
                 DeleteAfterReadMode.ENABLED -> true
                 DeleteAfterReadMode.DISABLED -> false
-                DeleteAfterReadMode.INHERIT -> global
+                else -> global
             }
         }
-
-    // --- Serialisation helpers ---
-
-    private fun deserializeOverrides(raw: String): Map<Long, DeleteAfterReadMode> {
-        if (raw.isBlank()) return emptyMap()
-        return raw.split(',').mapNotNull { entry ->
-            val parts = entry.split(':')
-            if (parts.size != 2) return@mapNotNull null
-            val id = parts[0].toLongOrNull() ?: return@mapNotNull null
-            val mode = runCatching { DeleteAfterReadMode.valueOf(parts[1]) }.getOrNull() ?: return@mapNotNull null
-            id to mode
-        }.toMap()
-    }
-
-    private fun serializeOverrides(overrides: Map<Long, DeleteAfterReadMode>): String =
-        overrides.entries.joinToString(",") { (id, mode) -> "$id:${mode.name}" }
 
     private object Keys {
         val AUTO_DOWNLOAD_ENABLED = booleanPreferencesKey("auto_download_enabled")
         val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
         val AUTO_DOWNLOAD_LIMIT = intPreferencesKey("auto_download_limit")
         val DELETE_AFTER_READING = booleanPreferencesKey("delete_after_reading")
-        val PER_MANGA_OVERRIDES = stringPreferencesKey("per_manga_overrides")
+        val PER_MANGA_OVERRIDES = stringPreferencesKey("delete_after_reading_overrides")
     }
 }
