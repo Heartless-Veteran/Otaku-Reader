@@ -174,6 +174,10 @@ class DownloadManager @Inject constructor(
                         return@launch
                     }
 
+                    // Read the CBZ preference once before downloading to avoid
+                    // repeated Flow emissions during the download loop.
+                    val packAsCbz = downloadPreferences.saveAsCbz.first()
+
                     pageUrls.forEachIndexed { index, url ->
                         if (!isActive) return@launch
 
@@ -205,7 +209,7 @@ class DownloadManager @Inject constructor(
 
                     if (isActive) {
                         // Optionally pack pages into a CBZ archive when the preference is enabled.
-                        if (downloadPreferences.saveAsCbz.first()) {
+                        if (packAsCbz) {
                             val chapterDir = DownloadProvider.getChapterDir(
                                 context,
                                 request.sourceName,
@@ -217,7 +221,7 @@ class DownloadManager @Inject constructor(
                                 chapterDir.listFiles()
                                     ?.filter { file ->
                                         file.isFile &&
-                                            file.extension.lowercase() in setOf("jpg", "jpeg", "png", "webp")
+                                            file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
                                     }
                                     ?.forEach { it.delete() }
                             }

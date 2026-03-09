@@ -30,7 +30,7 @@ object DownloadProvider {
     private const val ROOT_DIR = "OtakuReader"
 
     /** The file extensions recognised as downloaded page images. */
-    private val PAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+    internal val PAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
 
     // -------------------------------------------------------------------------
     // Context-based public API

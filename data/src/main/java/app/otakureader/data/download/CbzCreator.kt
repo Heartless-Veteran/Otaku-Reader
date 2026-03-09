@@ -27,7 +27,7 @@ object CbzCreator {
     const val CBZ_FILE_NAME = "chapter.cbz"
 
     /** Image file extensions that are included when packing or unpacking CBZ archives. */
-    private val PAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
+    private val PAGE_EXTENSIONS get() = DownloadProvider.PAGE_EXTENSIONS
 
     // -------------------------------------------------------------------------
     // Data
