@@ -231,6 +231,8 @@ class DetailsViewModelTest {
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
         coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns null
+        every { downloadPreferences.deleteAfterReading } returns flowOf(false)
+        every { downloadPreferences.perMangaOverrides } returns flowOf(emptyMap())
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -393,6 +395,8 @@ class DetailsViewModelTest {
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
         coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns null
+        every { downloadPreferences.deleteAfterReading } returns flowOf(false)
+        every { downloadPreferences.perMangaOverrides } returns flowOf(emptyMap())
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
