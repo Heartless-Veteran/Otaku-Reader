@@ -150,12 +150,12 @@ class ChapterRepositoryImplTest {
     fun updateChapterProgress_list_chunksLargeListsToAvoidSqliteLimit() = runTest {
         coEvery { chapterDao.updateChapterProgress(any<List<Long>>(), any(), any()) } returns Unit
 
-        // 1001 IDs should be split into a chunk of 999 and a chunk of 2
+        // 1001 IDs should be split into a chunk of 997 and a chunk of 4
         val ids = (1L..1001L).toList()
         repository.updateChapterProgress(chapterIds = ids, read = true, lastPageRead = 0)
 
-        coVerify(exactly = 1) { chapterDao.updateChapterProgress(ids.take(999), true, 0) }
-        coVerify(exactly = 1) { chapterDao.updateChapterProgress(ids.drop(999), true, 0) }
+        coVerify(exactly = 1) { chapterDao.updateChapterProgress(ids.take(997), true, 0) }
+        coVerify(exactly = 1) { chapterDao.updateChapterProgress(ids.drop(997), true, 0) }
         coVerify(exactly = 2) { chapterDao.updateChapterProgress(any<List<Long>>(), any(), any()) }
     }
 
