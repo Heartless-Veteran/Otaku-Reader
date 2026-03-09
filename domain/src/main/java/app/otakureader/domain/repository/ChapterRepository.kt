@@ -23,4 +23,6 @@ interface ChapterRepository {
 
     /** Migration-specific methods */
     suspend fun getChaptersByMangaIdSync(mangaId: Long): List<Chapter>
+    suspend fun updateChapterMangaId(oldMangaId: Long, newMangaId: Long)
+    suspend fun deleteChaptersByMangaId(mangaId: Long)
 }

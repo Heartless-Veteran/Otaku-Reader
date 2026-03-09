@@ -48,6 +48,9 @@ interface ChapterDao {
     
     @Query("DELETE FROM chapters WHERE mangaId = :mangaId")
     suspend fun deleteByMangaId(mangaId: Long)
+
+    @Query("UPDATE chapters SET mangaId = :newMangaId WHERE mangaId = :oldMangaId")
+    suspend fun updateChapterMangaId(oldMangaId: Long, newMangaId: Long)
     
     @Query("SELECT COUNT(*) FROM chapters WHERE mangaId = :mangaId AND read = 0")
     fun getUnreadCountByMangaId(mangaId: Long): Flow<Int>
