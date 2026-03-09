@@ -88,11 +88,14 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
     private suspend fun enqueueAutoDownloads(mangaId: Long, sourceId: Long, mangaTitle: String, limit: Int) {
         try {
+            // Ensure limit is at least 1 to avoid IllegalArgumentException in take(limit)
+            val safeLimit = limit.coerceAtLeast(1)
+
             // Get unread chapters for this manga, limited by the auto-download limit
             val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
                 .filter { !it.read }
                 .sortedByDescending { it.chapterNumber }
-                .take(limit)
+                .take(safeLimit)
 
             // Use sourceId as a stable directory key (same as in DetailsViewModel)
             val sourceName = sourceId.toString()
