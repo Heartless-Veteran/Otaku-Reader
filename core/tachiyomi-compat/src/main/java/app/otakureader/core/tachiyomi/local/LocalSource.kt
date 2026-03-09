@@ -196,14 +196,14 @@ class LocalSource(
                                 chapters += SourceChapter(
                                     url = chapterUrl(entry.file.absolutePath, child.name),
                                     name = child.name,
-                                    chapterNumber = (index + 1).toFloat(),
+                                    chapterNumber = (chapters.size + 1).toFloat(),
                                     dateUpload = child.lastModified()
                                 )
                             child.isFile && child.extension.lowercase() in archiveExtensions ->
                                 chapters += SourceChapter(
                                     url = chapterUrl(entry.file.absolutePath, child.name),
                                     name = child.nameWithoutExtension,
-                                    chapterNumber = (index + 1).toFloat(),
+                                    chapterNumber = (chapters.size + 1).toFloat(),
                                     dateUpload = child.lastModified()
                                 )
                         }
