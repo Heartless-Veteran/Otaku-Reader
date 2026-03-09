@@ -41,6 +41,10 @@ class ChapterRepositoryImpl @Inject constructor(
         chapterDao.updateChapterProgress(chapterId, read, lastPageRead)
     }
     
+    override suspend fun updateChapterProgress(chapterIds: List<Long>, read: Boolean, lastPageRead: Int) {
+        chapterDao.updateChapterProgress(chapterIds, read, lastPageRead)
+    }
+
     override suspend fun updateBookmark(chapterId: Long, bookmark: Boolean) {
         chapterDao.updateBookmark(chapterId, bookmark)
     }

@@ -130,11 +130,20 @@ class ChapterRepositoryImplTest {
 
     @Test
     fun updateChapterProgress_callsDaoWithCorrectArgs() = runTest {
-        coEvery { chapterDao.updateChapterProgress(any(), any(), any()) } returns Unit
+        coEvery { chapterDao.updateChapterProgress(any<Long>(), any(), any()) } returns Unit
 
         repository.updateChapterProgress(chapterId = 7L, read = true, lastPageRead = 10)
 
         coVerify { chapterDao.updateChapterProgress(7L, true, 10) }
+    }
+
+    @Test
+    fun updateChapterProgress_list_callsDaoWithCorrectArgs() = runTest {
+        coEvery { chapterDao.updateChapterProgress(any<List<Long>>(), any(), any()) } returns Unit
+
+        repository.updateChapterProgress(chapterIds = listOf(7L, 8L), read = true, lastPageRead = 10)
+
+        coVerify { chapterDao.updateChapterProgress(listOf(7L, 8L), true, 10) }
     }
 
     // ---- updateBookmark ----

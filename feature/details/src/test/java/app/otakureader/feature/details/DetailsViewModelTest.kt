@@ -263,7 +263,7 @@ class DetailsViewModelTest {
     @Test
     fun onEvent_ToggleChapterRead_unreadToRead_updatesProgress() = runTest {
         setUpDefaultMocks()
-        coEvery { chapterRepository.updateChapterProgress(any(), any(), any()) } returns Unit
+        coEvery { chapterRepository.updateChapterProgress(any<Long>(), any(), any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -278,7 +278,7 @@ class DetailsViewModelTest {
     @Test
     fun onEvent_ToggleChapterRead_readToUnread_updatesProgress() = runTest {
         setUpDefaultMocks()
-        coEvery { chapterRepository.updateChapterProgress(any(), any(), any()) } returns Unit
+        coEvery { chapterRepository.updateChapterProgress(any<Long>(), any(), any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -295,7 +295,7 @@ class DetailsViewModelTest {
     @Test
     fun onEvent_MarkPreviousAsRead_marksAllPreviousChapters() = runTest {
         setUpDefaultMocks()
-        coEvery { chapterRepository.updateChapterProgress(any(), any(), any()) } returns Unit
+        coEvery { chapterRepository.updateChapterProgress(any<List<Long>>(), any(), any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -306,7 +306,7 @@ class DetailsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Only chapter 2 (unread and previous to 3) should be updated
-        coVerify { chapterRepository.updateChapterProgress(2L, true, 0) }
+        coVerify { chapterRepository.updateChapterProgress(listOf(2L), true, 0) }
     }
 
     // ---- ShareManga ----

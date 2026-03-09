@@ -307,17 +307,17 @@ class DetailsViewModel @Inject constructor(
                 val chapters = _state.value.chapters
                 val targetChapter = chapters.find { it.id == chapterId }
                 targetChapter?.let { target ->
-                    chapters
-                        .filter { it.chapterNumber < target.chapterNumber }
-                        .forEach { chapter ->
-                            if (!chapter.read) {
-                                chapterRepository.updateChapterProgress(
-                                    chapterId = chapter.id,
-                                    read = true,
-                                    lastPageRead = 0
-                                )
-                            }
-                        }
+                    val chapterIdsToUpdate = chapters
+                        .filter { it.chapterNumber < target.chapterNumber && !it.read }
+                        .map { it.id }
+
+                    if (chapterIdsToUpdate.isNotEmpty()) {
+                        chapterRepository.updateChapterProgress(
+                            chapterIds = chapterIdsToUpdate,
+                            read = true,
+                            lastPageRead = 0
+                        )
+                    }
                 }
                 _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
             } catch (e: Exception) {
