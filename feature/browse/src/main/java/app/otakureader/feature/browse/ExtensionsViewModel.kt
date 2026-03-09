@@ -30,8 +30,17 @@ data class ExtensionsState(
     val updateCount: Int = 0,
     val repositories: List<String> = emptyList(),
     val activeRepository: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val showNsfw: Boolean = false,
+    val sortMode: SortMode = SortMode.NAME,
+    val isUpdatingAll: Boolean = false
 ) : UiState
+
+enum class SortMode {
+    NAME,
+    RECENTLY_ADDED,
+    LANGUAGE
+}
 
 sealed interface ExtensionsEvent : UiEvent {
     data object Refresh : ExtensionsEvent
@@ -43,6 +52,9 @@ sealed interface ExtensionsEvent : UiEvent {
     data class AddRepository(val url: String) : ExtensionsEvent
     data class RemoveRepository(val url: String) : ExtensionsEvent
     data class SetActiveRepository(val url: String) : ExtensionsEvent
+    data object UpdateAllExtensions : ExtensionsEvent
+    data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
+    data class SetSortMode(val mode: SortMode) : ExtensionsEvent
 }
 
 sealed interface ExtensionsEffect : UiEffect {
@@ -59,36 +71,64 @@ class ExtensionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
+    private val _showNsfw = MutableStateFlow(false)
+    private val _sortMode = MutableStateFlow(SortMode.NAME)
 
     private val _state = MutableStateFlow(ExtensionsState())
     val state = combine(
         _state,
-        _searchQuery
-    ) { state, query ->
+        _searchQuery,
+        _showNsfw,
+        _sortMode
+    ) { state, query, showNsfw, sortMode ->
+        val filteredInstalled = applyFiltersAndSort(state.installedExtensions, query, showNsfw, sortMode)
+        val filteredAvailable = applyFiltersAndSort(state.availableExtensions, query, showNsfw, sortMode)
+        val filteredUpdates = applyFiltersAndSort(state.extensionsWithUpdates, query, showNsfw, sortMode)
+        
         state.copy(
             searchQuery = query,
-            // Filter extensions based on search query
-            installedExtensions = if (query.isBlank()) {
-                state.installedExtensions
-            } else {
-                state.installedExtensions.filter {
-                    it.name.contains(query, ignoreCase = true) ||
-                    it.sources.any { s -> s.name.contains(query, ignoreCase = true) }
-                }
-            },
-            availableExtensions = if (query.isBlank()) {
-                state.availableExtensions
-            } else {
-                state.availableExtensions.filter {
-                    it.name.contains(query, ignoreCase = true)
-                }
-            }
+            showNsfw = showNsfw,
+            sortMode = sortMode,
+            installedExtensions = filteredInstalled,
+            availableExtensions = filteredAvailable,
+            extensionsWithUpdates = filteredUpdates
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = ExtensionsState(),
     )
+
+    private fun applyFiltersAndSort(
+        extensions: List<Extension>,
+        query: String,
+        showNsfw: Boolean,
+        sortMode: SortMode
+    ): List<Extension> {
+        var result = extensions
+        
+        // Filter NSFW
+        if (!showNsfw) {
+            result = result.filter { !it.isNsfw }
+        }
+        
+        // Filter by search query
+        if (query.isNotBlank()) {
+            result = result.filter {
+                it.name.contains(query, ignoreCase = true) ||
+                it.sources.any { s -> s.name.contains(query, ignoreCase = true) }
+            }
+        }
+        
+        // Sort
+        result = when (sortMode) {
+            SortMode.NAME -> result.sortedBy { it.name }
+            SortMode.RECENTLY_ADDED -> result.sortedByDescending { it.installDate ?: 0 }
+            SortMode.LANGUAGE -> result.sortedBy { it.lang }
+        }
+        
+        return result
+    }
 
     private val _effect = Channel<ExtensionsEffect>()
     val effect = _effect.receiveAsFlow()
@@ -110,6 +150,9 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsEvent.AddRepository -> addRepository(event.url)
             is ExtensionsEvent.RemoveRepository -> removeRepository(event.url)
             is ExtensionsEvent.SetActiveRepository -> setActiveRepository(event.url)
+            is ExtensionsEvent.UpdateAllExtensions -> updateAllExtensions()
+            is ExtensionsEvent.ToggleNsfw -> _showNsfw.value = event.show
+            is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
         }
     }
 
@@ -276,6 +319,40 @@ class ExtensionsViewModel @Inject constructor(
                 sourceRepository.refreshSources()
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update: ${e.message}"))
+            }
+        }
+    }
+
+    private fun updateAllExtensions() {
+        viewModelScope.launch {
+            val updates = _state.value.extensionsWithUpdates
+            if (updates.isEmpty()) return@launch
+            
+            _state.update { it.copy(isUpdatingAll = true) }
+            var successCount = 0
+            var failCount = 0
+            
+            updates.forEach { extension ->
+                try {
+                    val apkPath = extension.apkPath
+                    if (apkPath != null) {
+                        extensionRepository.updateExtension(extension.pkgName, apkPath)
+                        successCount++
+                    } else {
+                        failCount++
+                    }
+                } catch (e: Exception) {
+                    failCount++
+                }
+            }
+            
+            _state.update { it.copy(isUpdatingAll = false) }
+            sourceRepository.refreshSources()
+            
+            when {
+                failCount == 0 -> _effect.send(ExtensionsEffect.ShowSnackbar("All $successCount extensions updated"))
+                successCount == 0 -> _effect.send(ExtensionsEffect.ShowError("All updates failed"))
+                else -> _effect.send(ExtensionsEffect.ShowSnackbar("$successCount updated, $failCount failed"))
             }
         }
     }

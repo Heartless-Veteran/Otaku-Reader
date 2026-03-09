@@ -24,8 +24,13 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -140,6 +145,23 @@ private fun ExtensionsContent(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
+
+            // Filter & Sort controls
+            FilterAndSortRow(
+                showNsfw = state.showNsfw,
+                sortMode = state.sortMode,
+                onToggleNsfw = { onEvent(ExtensionsEvent.ToggleNsfw(it)) },
+                onSetSortMode = { onEvent(ExtensionsEvent.SetSortMode(it)) }
+            )
+
+            // Update All button (only in Updates tab)
+            if (selectedTab == 2 && state.extensionsWithUpdates.isNotEmpty()) {
+                UpdateAllButton(
+                    updateCount = state.updateCount,
+                    isUpdating = state.isUpdatingAll,
+                    onUpdateAll = { onEvent(ExtensionsEvent.UpdateAllExtensions) }
+                )
+            }
 
             RepositoryManager(
                 repositories = state.repositories,
@@ -369,6 +391,174 @@ private fun ExtensionItem(
                     IconButton(onClick = onInstall) {
                         Icon(Icons.Default.Download, contentDescription = "Install")
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilterAndSortRow(
+    showNsfw: Boolean,
+    sortMode: SortMode,
+    onToggleNsfw: (Boolean) -> Unit,
+    onSetSortMode: (SortMode) -> Unit
+) {
+    var showSortMenu by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // NSFW Toggle
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.clickable { onToggleNsfw(!showNsfw) }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "NSFW",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Switch(
+                checked = showNsfw,
+                onCheckedChange = onToggleNsfw,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Sort dropdown
+        Box {
+            TextButton(onClick = { showSortMenu = true }) {
+                Icon(
+                    imageVector = Icons.Default.Sort,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = when (sortMode) {
+                        SortMode.NAME -> "Name"
+                        SortMode.RECENTLY_ADDED -> "Recent"
+                        SortMode.LANGUAGE -> "Language"
+                    }
+                )
+            }
+
+            DropdownMenu(
+                expanded = showSortMenu,
+                onDismissRequest = { showSortMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Name") },
+                    onClick = {
+                        onSetSortMode(SortMode.NAME)
+                        showSortMenu = false
+                    },
+                    leadingIcon = {
+                        if (sortMode == SortMode.NAME) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                        }
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Recently Added") },
+                    onClick = {
+                        onSetSortMode(SortMode.RECENTLY_ADDED)
+                        showSortMenu = false
+                    },
+                    leadingIcon = {
+                        if (sortMode == SortMode.RECENTLY_ADDED) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                        }
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Language") },
+                    onClick = {
+                        onSetSortMode(SortMode.LANGUAGE)
+                        showSortMenu = false
+                    },
+                    leadingIcon = {
+                        if (sortMode == SortMode.LANGUAGE) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpdateAllButton(
+    updateCount: Int,
+    isUpdating: Boolean,
+    onUpdateAll: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable(enabled = !isUpdating) { onUpdateAll() }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isUpdating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Update,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = if (isUpdating) "Updating all..." else "Update All",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "$updateCount update${if (updateCount > 1) "s" else ""} available",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (!isUpdating) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Text(
+                        text = updateCount.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
                 }
             }
         }
