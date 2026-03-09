@@ -1,5 +1,6 @@
 package app.otakureader.core.preferences
 
+import android.os.Environment
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -17,10 +18,11 @@ open class LocalSourcePreferences(private val dataStore: DataStore<Preferences>)
 
     /**
      * Absolute path of the directory that the Local source scans for manga.
-     * Defaults to `/sdcard/OtakuReader/local` (the external-storage path most users expect).
+     * Defaults to `<external storage>/OtakuReader/local` resolved via
+     * [Environment.getExternalStorageDirectory] at runtime.
      */
     open val localSourceDirectory: Flow<String> =
-        dataStore.data.map { it[Keys.LOCAL_SOURCE_DIRECTORY] ?: DEFAULT_DIRECTORY }
+        dataStore.data.map { it[Keys.LOCAL_SOURCE_DIRECTORY] ?: defaultDirectory() }
 
     open suspend fun setLocalSourceDirectory(path: String) {
         dataStore.edit { it[Keys.LOCAL_SOURCE_DIRECTORY] = path }
@@ -31,7 +33,13 @@ open class LocalSourcePreferences(private val dataStore: DataStore<Preferences>)
     }
 
     companion object {
-        const val DEFAULT_DIRECTORY = "/sdcard/OtakuReader/local"
+        /**
+         * Returns the default scan directory path resolved at runtime via
+         * [Environment.getExternalStorageDirectory] so the path is always correct
+         * regardless of device-specific symlinks.
+         */
+        fun defaultDirectory(): String =
+            "${Environment.getExternalStorageDirectory().absolutePath}/OtakuReader/local"
 
         /**
          * Create a [LocalSourcePreferences] that always returns [directory] for

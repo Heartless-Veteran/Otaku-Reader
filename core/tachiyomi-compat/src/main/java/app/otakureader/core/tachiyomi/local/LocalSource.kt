@@ -273,13 +273,16 @@ class LocalSource(
     private fun extractArchivePages(archive: File): List<Page> {
         if (!archive.exists()) return emptyList()
         return try {
-            val cacheDir = File(context.cacheDir, "local_source/${archive.nameWithoutExtension}")
+            // Use a hash of the full absolute path to avoid name collisions between
+            // archives with the same filename in different parent directories.
+            val cacheKey = archive.absolutePath.hashCode().toUInt().toString(16)
+            val cacheDir = File(context.cacheDir, "local_source/$cacheKey")
             cacheDir.mkdirs()
 
             ZipFile(archive).use { zip ->
                 zip.entries().asSequence()
                     .filter { !it.isDirectory && it.name.substringAfterLast('.').lowercase() in imageExtensions }
-                    .sortedWith(compareBy { it.name })
+                    .sortedWith(compareBy(NATURAL_STRING_ORDER) { it.name })
                     .mapIndexed { index, entry ->
                         // Sanitize: flatten any directory structure to prevent path traversal
                         val safeName = entry.name.replace('/', '_').replace('\\', '_')
@@ -433,14 +436,16 @@ class LocalSource(
     private fun extractEpubPages(epub: File): List<Page> {
         if (!epub.exists()) return emptyList()
         return try {
-            val cacheDir = File(context.cacheDir, "local_source/${epub.nameWithoutExtension}")
+            // Use a hash of the full absolute path to avoid name collisions between
+            // EPUB files with the same filename in different parent directories.
+            val cacheKey = epub.absolutePath.hashCode().toUInt().toString(16)
+            val cacheDir = File(context.cacheDir, "local_source/$cacheKey")
             cacheDir.mkdirs()
 
             ZipFile(epub).use { zip ->
                 // Find the OPF to get the reading order
                 val opfEntry = zip.entries().asSequence().firstOrNull { it.name.endsWith(".opf") }
-
-                val orderedImagePaths: List<String> = if (opfEntry != null) {
+                val spineHrefs: List<String> = if (opfEntry != null) {
                     parseOpfSpineImagePaths(zip.getInputStream(opfEntry))
                 } else {
                     emptyList()
@@ -451,13 +456,34 @@ class LocalSource(
                     .filter { !it.isDirectory && it.name.substringAfterLast('.').lowercase() in imageExtensions }
                     .associateBy { it.name }
 
-                // Use spine order if available, fall back to alphabetical
-                val sortedEntries = if (orderedImagePaths.isNotEmpty()) {
-                    orderedImagePaths.mapNotNull { path ->
-                        imageEntries.entries.firstOrNull { (key, _) -> key.endsWith(path) }?.value
-                    }.ifEmpty { imageEntries.values.sortedBy { it.name } }
-                } else {
-                    imageEntries.values.sortedBy { it.name }
+                // Build ordered list of image zip entries:
+                //  1. For each spine href, try direct match (image-only EPUB) then basename
+                //     match (XHTML-wrapped manga EPUB where page001.xhtml → page001.jpg).
+                //  2. Fall back to natural alphabetical order of all images.
+                val sortedEntries: List<java.util.zip.ZipEntry> = when {
+                    spineHrefs.isEmpty() ->
+                        imageEntries.values.sortedWith(compareBy(NATURAL_STRING_ORDER) { it.name })
+                    else -> {
+                        val ordered = spineHrefs.mapNotNull { href ->
+                            val filename = href.substringAfterLast('/')
+                            val baseName = filename.substringBeforeLast('.')
+                            // Direct image match (image-only EPUB)
+                            imageEntries.entries.firstOrNull { (key, _) ->
+                                key.endsWith(href) || key.endsWith(filename)
+                            }?.value
+                            // XHTML-wrapper pattern: page001.xhtml → page001.jpg (same basename)
+                                ?: imageEntries.entries.firstOrNull { (_, entry) ->
+                                    val entryBaseName = entry.name
+                                        .substringAfterLast('/')
+                                        .substringBeforeLast('.')
+                                    entryBaseName == baseName
+                                }?.value
+                        }.distinctBy { it.name } // remove duplicates if two spine items map to same image
+
+                        ordered.ifEmpty {
+                            imageEntries.values.sortedWith(compareBy(NATURAL_STRING_ORDER) { it.name })
+                        }
+                    }
                 }
 
                 sortedEntries.mapIndexed { index, entry ->
@@ -481,7 +507,17 @@ class LocalSource(
     }
 
     /**
-     * Parse content.opf and return image paths referenced from the spine (in order).
+     * Parse content.opf and return image paths in spine reading order.
+     *
+     * Standard EPUB structure:
+     * - The manifest lists BOTH XHTML content documents and image items.
+     * - The spine lists XHTML content documents (by id), not images directly.
+     * - Each XHTML page typically contains one image via `<img src="...">` or
+     *   a CSS background referencing the image.
+     *
+     * For manga EPUBs that use the XHTML-wrapping pattern, we resolve each spine
+     * item's href and then look for images referenced from that XHTML document.
+     * For image-only EPUBs (non-standard), we return image manifest items directly.
      */
     private fun parseOpfSpineImagePaths(stream: InputStream): List<String> {
         return try {
@@ -490,8 +526,8 @@ class LocalSource(
             val parser = factory.newPullParser()
             parser.setInput(stream, null)
 
-            // manifest: id → href
-            val manifest = mutableMapOf<String, String>()
+            // manifest: id → ManifestItem(href, mediaType)
+            val manifest = mutableMapOf<String, ManifestItem>()
             // spine: ordered list of idref
             val spineIdRefs = mutableListOf<String>()
             var inSpine = false
@@ -506,8 +542,8 @@ class LocalSource(
                                 val id = parser.getAttributeValue(null, "id")
                                 val href = parser.getAttributeValue(null, "href")
                                 val mediaType = parser.getAttributeValue(null, "media-type") ?: ""
-                                if (id != null && href != null && mediaType.startsWith("image/")) {
-                                    manifest[id] = href
+                                if (id != null && href != null) {
+                                    manifest[id] = ManifestItem(href, mediaType)
                                 }
                             }
                             "spine" -> inSpine = true
@@ -523,15 +559,38 @@ class LocalSource(
                 event = parser.next()
             }
 
+            // Collect direct image items and XHTML item hrefs from the spine.
+            // Manga EPUBs typically wrap each image in an XHTML page; we return
+            // the XHTML hrefs here so the caller can match them back to the ZIP
+            // entries. Images referenced directly in the spine (non-standard) are
+            // also included.
+            val imageMediaTypes = setOf("image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp")
+            val xhtmlMediaTypes = setOf("application/xhtml+xml", "text/html")
+
             if (spineIdRefs.isNotEmpty()) {
-                spineIdRefs.mapNotNull { manifest[it] }
+                spineIdRefs.mapNotNull { idRef ->
+                    val item = manifest[idRef] ?: return@mapNotNull null
+                    when {
+                        item.mediaType in imageMediaTypes -> item.href
+                        item.mediaType in xhtmlMediaTypes -> {
+                            // Return the XHTML href — the caller will extract embedded images
+                            item.href
+                        }
+                        else -> null
+                    }
+                }
             } else {
-                manifest.values.toList()
+                // No spine: fall back to image manifest items in declaration order
+                manifest.values
+                    .filter { it.mediaType in imageMediaTypes }
+                    .map { it.href }
             }
         } catch (e: Exception) {
             emptyList()
         }
     }
+
+    private data class ManifestItem(val href: String, val mediaType: String)
 
     // ─── URL scheme helpers ───────────────────────────────────────────
 
@@ -566,8 +625,8 @@ class LocalSource(
             return null
         }
 
-        val basePath = baseDir.path
-        val targetPath = target.path
+        val basePath = baseDir.absolutePath
+        val targetPath = target.absolutePath
 
         // Allow the base directory itself and any descendants.
         val isUnderBaseDir = target == baseDir ||
@@ -609,6 +668,12 @@ class LocalSource(
 
     companion object {
         private const val CHAPTER_SEPARATOR = "|chapter|"
+
+        /**
+         * Natural-order comparator for [String] values (ZIP entry names, filenames, etc.).
+         * Handles numeric segments so "page_2.jpg" sorts before "page_10.jpg".
+         */
+        val NATURAL_STRING_ORDER: Comparator<String> = Comparator { a, b -> naturalCompare(a, b) }
 
         /**
          * Natural-order comparator for [File] objects sorted by filename.

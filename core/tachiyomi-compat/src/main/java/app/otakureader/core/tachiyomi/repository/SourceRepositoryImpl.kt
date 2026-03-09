@@ -220,16 +220,24 @@ class SourceRepositoryImpl(
 
     override suspend fun refreshSources() {
         withContext(Dispatchers.IO) {
+            // Resolve the local source outside try/catch so errors reading preferences
+            // don't get swallowed — and so the catch block can safely reference it.
+            val local = try {
+                currentLocalSource()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return@withContext
+            }
             try {
                 // Load all installed Tachiyomi extensions
                 val extensions = extensionLoader.loadAllExtensions()
                 val extensionSources = extensions.flatMap { it.sources }
                 // Always prepend the built-in local source
-                _sources.value = (listOf(currentLocalSource()) + extensionSources).distinctBy { it.id }
+                _sources.value = (listOf(local) + extensionSources).distinctBy { it.id }
             } catch (e: Exception) {
                 // Log error but don't crash; still expose the local source
                 e.printStackTrace()
-                _sources.value = listOf(currentLocalSource())
+                _sources.value = listOf(local)
             }
         }
     }

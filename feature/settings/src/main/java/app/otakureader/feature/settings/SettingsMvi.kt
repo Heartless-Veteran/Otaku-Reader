@@ -3,6 +3,7 @@ package app.otakureader.feature.settings
 import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
+import app.otakureader.core.preferences.LocalSourcePreferences
 
 data class TrackerInfo(
     val id: Int,
@@ -25,7 +26,7 @@ data class SettingsState(
     val autoDownloadEnabled: Boolean = false, // Auto-download new chapters
     val downloadOnlyOnWifi: Boolean = true,   // Download only when connected to Wi-Fi
     val autoDownloadLimit: Int = 3,           // Max chapters to auto-download per manga
-    val localSourceDirectory: String = LocalSourcePreferences.DEFAULT_DIRECTORY, // Local source scan directory
+    val localSourceDirectory: String = LocalSourcePreferences.defaultDirectory(), // Local source scan directory
     val isBackupInProgress: Boolean = false,
     val isRestoreInProgress: Boolean = false,
     val trackers: List<TrackerInfo> = emptyList(),
