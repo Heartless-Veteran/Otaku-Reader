@@ -68,11 +68,15 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { prefs ->
             val current = prefs[Keys.PER_MANGA_OVERRIDES]
                 ?.split(',')
-                ?.filter { it.isNotEmpty() }
-                ?.associate {
-                    val parts = it.split(':')
-                    parts[0].toLong() to parts[1]
+                ?.mapNotNull { entry ->
+                    if (entry.isEmpty()) return@mapNotNull null
+                    val parts = entry.split(':')
+                    if (parts.size != 2) return@mapNotNull null
+                    val id = parts[0].toLongOrNull() ?: return@mapNotNull null
+                    val storedMode = parts[1]
+                    id to storedMode
                 }
+                ?.toMap()
                 ?.toMutableMap()
                 ?: mutableMapOf()
             if (mode == DeleteAfterReadMode.INHERIT) {
