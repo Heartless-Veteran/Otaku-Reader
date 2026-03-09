@@ -46,23 +46,13 @@ A modern, blazing-fast manga reader built from scratch with:
 - ✅ Manga details with chapter list
 - ✅ Browse with source filtering
 
-## 🚧 In Progress / TODO
+## 💡 Future Roadmap & Suggestions
 
-- ⏳ Extension APK installation UI
-- ⏳ Chapter downloads for offline
-- ⏳ Settings persistence
-- ⏳ Reading history tracking
-- ⏳ New chapter update checking
-- ⏳ Search functionality
-
-## 📋 Future Ideas
-
-- 🔮 Cloud sync (Firebase or Syncthing)
-- 🔮 AI recommendations
-- 🔮 Reading time estimation
-- 🔮 Auto-categorization
-- 🔮 Panel-by-panel reader
-- 🔮 SFX translation
+- 🔮 Kotlin Multiplatform (KMP) support for cross-platform expansion
+- 🔮 Seamless OPDS catalog integration for wider content discovery
+- 🔮 Advanced background syncing and task management with WorkManager
+- 🔮 Enhanced list performance and data loading using Paging 3
+- 🔮 Comprehensive UI and performance testing via Macrobenchmark
 
 ## 🏗️ Architecture
 
