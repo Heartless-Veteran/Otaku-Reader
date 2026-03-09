@@ -4,6 +4,12 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 
+data class TrackerInfo(
+    val id: Int,
+    val name: String,
+    val isLoggedIn: Boolean
+)
+
 data class SettingsState(
     val themeMode: Int = 0,            // 0=system, 1=light, 2=dark
     val useDynamicColor: Boolean = true,
@@ -19,7 +25,9 @@ data class SettingsState(
     val downloadOnlyOnWifi: Boolean = true,   // Download only when connected to Wi-Fi
     val autoDownloadLimit: Int = 3,           // Max chapters to auto-download per manga
     val isBackupInProgress: Boolean = false,
-    val isRestoreInProgress: Boolean = false
+    val isRestoreInProgress: Boolean = false,
+    val trackers: List<TrackerInfo> = emptyList(),
+    val trackingLoginInProgress: Boolean = false
 ) : UiState
 
 sealed interface SettingsEvent : UiEvent {
@@ -38,6 +46,8 @@ sealed interface SettingsEvent : UiEvent {
     data class SetAutoDownloadLimit(val limit: Int) : SettingsEvent
     data object OnCreateBackup : SettingsEvent
     data object OnRestoreBackup : SettingsEvent
+    data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
+    data class LogoutTracker(val trackerId: Int) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {
