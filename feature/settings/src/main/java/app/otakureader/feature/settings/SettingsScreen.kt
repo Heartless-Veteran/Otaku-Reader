@@ -372,6 +372,8 @@ private fun BrowseSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit
 
 @Composable
 private fun DownloadsSettingsSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
+    // ── Downloads ─────────────────────────────────────────────────────
+    SectionHeader(title = "Downloads")
 
             ListItem(
                 headlineContent = { Text("Remove chapter after reading") },

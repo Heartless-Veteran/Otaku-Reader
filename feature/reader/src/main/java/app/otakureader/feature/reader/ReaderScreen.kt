@@ -341,7 +341,7 @@ private fun ReaderContent(
                     ColorFilterMode.INVERT ->
                         drawRect(color = Color.White, blendMode = BlendMode.Difference)
                     ColorFilterMode.CUSTOM_TINT ->
-                        drawRect(color = Color(state.customTintColor))
+                        drawRect(color = Color(state.customTintColor), blendMode = BlendMode.SrcOver)
                     ColorFilterMode.NONE -> Unit
                 }
             }
