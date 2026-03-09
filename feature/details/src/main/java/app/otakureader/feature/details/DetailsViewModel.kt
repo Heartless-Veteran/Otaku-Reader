@@ -69,6 +69,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ToggleChapterBookmark -> toggleChapterBookmark(event.chapterId)
             is DetailsContract.Event.DownloadChapter -> downloadChapter(event.chapterId)
             is DetailsContract.Event.DeleteChapterDownload -> deleteChapterDownload(event.chapterId)
+            is DetailsContract.Event.ExportChapterAsCbz -> exportChapterAsCbz(event.chapterId)
             is DetailsContract.Event.MarkPreviousAsRead -> markPreviousAsRead(event.chapterId)
             is DetailsContract.Event.ShareManga -> shareManga()
             is DetailsContract.Event.SetDeleteAfterReadOverride -> setDeleteAfterReadOverride(event.mode)
@@ -135,10 +136,18 @@ class DetailsViewModel @Inject constructor(
 
     private fun observeDeleteAfterReadSetting() {
         // Observe delete-after-read preference and keep state in sync
-        downloadPreferences.deleteAfterReadMode
-            .onEach { mode: DeleteAfterReadMode ->
+        combine(
+            downloadPreferences.deleteAfterReading,
+            downloadPreferences.perMangaOverrides
+        ) { global, overrides ->
+            Pair(global, overrides[mangaId] ?: DeleteAfterReadMode.INHERIT)
+        }
+            .onEach { (global, override) ->
                 _state.update { state ->
-                    state.copy(deleteAfterReadMode = mode)
+                    state.copy(
+                        globalDeleteAfterRead = global,
+                        deleteAfterReadOverride = override
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -300,23 +309,45 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    private fun exportChapterAsCbz(chapterId: Long) {
+        viewModelScope.launch {
+            val chapter = _state.value.chapters.firstOrNull { it.id == chapterId }
+            val manga = _state.value.manga
+            if (chapter == null || manga == null) {
+                _effect.emit(DetailsContract.Effect.ShowError("Chapter not found"))
+                return@launch
+            }
+            downloadRepository.exportChapterAsCbz(
+                sourceName = manga.sourceId.toString(),
+                mangaTitle = manga.title,
+                chapterTitle = chapter.name
+            ).fold(
+                onSuccess = { _effect.emit(DetailsContract.Effect.ShowSnackbar("Exported as CBZ")) },
+                onFailure = {
+                    val reason = it.message ?: "Unknown error"
+                    _effect.emit(DetailsContract.Effect.ShowError("Export failed: $reason"))
+                }
+            )
+        }
+    }
+
     private fun markPreviousAsRead(chapterId: Long) {
         viewModelScope.launch {
             try {
                 val chapters = _state.value.chapters
                 val targetChapter = chapters.find { it.id == chapterId }
                 targetChapter?.let { target ->
-                    chapters
-                        .filter { it.chapterNumber < target.chapterNumber }
-                        .forEach { chapter ->
-                            if (!chapter.read) {
-                                chapterRepository.updateChapterProgress(
-                                    chapterId = chapter.id,
-                                    read = true,
-                                    lastPageRead = 0
-                                )
-                            }
-                        }
+                    val chapterIdsToUpdate = chapters
+                        .filter { it.chapterNumber < target.chapterNumber && !it.read }
+                        .map { it.id }
+
+                    if (chapterIdsToUpdate.isNotEmpty()) {
+                        chapterRepository.updateChapterProgress(
+                            chapterIds = chapterIdsToUpdate,
+                            read = true,
+                            lastPageRead = 0
+                        )
+                    }
                 }
                 _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
             } catch (e: Exception) {
