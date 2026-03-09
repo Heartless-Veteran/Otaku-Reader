@@ -567,7 +567,7 @@ private fun NotificationsSection(state: SettingsState, onEvent: (SettingsEvent) 
 @Composable
 private fun BackupRestoreSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
     // ── Data & Storage ────────────────────────────────────────────────
-            SectionHeader(title = "Data & Storage")
+            SectionHeader(title = "Backup, Restore & Migration")
 
             ListItem(
                 headlineContent = { Text("Create Backup") },
