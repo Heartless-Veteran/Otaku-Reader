@@ -353,10 +353,12 @@ SupportFactory(SQLiteDatabase.getBytes("passphrase".toCharArray()))
 ## Migration Notes
 
 ### Database Schema Changes
-The index additions require a database migration. Room will handle this automatically, but:
-- Existing users will experience a one-time migration delay on first launch
-- Large databases (1000+ manga) may take 5-10 seconds to migrate
-- No data loss will occur
+The index additions require a Room database schema migration. To apply them safely:
+- Bump the Room database version when these index changes are released
+- Provide a corresponding migration or auto-migration that creates the new indexes
+- Avoid relying on `fallbackToDestructiveMigration` in production, as it can drop existing data if a required migration is missing
+- Existing users will experience a one-time migration delay on first launch; large databases (1000+ manga) may take 5–10 seconds to migrate
+- The migration is designed to preserve data, but you must verify the migration path in your environment to ensure no data loss occurs
 
 ### Behavioral Changes
 1. **Search**: Searches now use prefix matching instead of substring matching
