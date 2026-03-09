@@ -50,14 +50,18 @@ interface DownloadRepository {
     suspend fun isChapterDownloaded(sourceName: String, mangaTitle: String, chapterTitle: String): Boolean
 
     /**
-     * Creates a CBZ archive from the already-downloaded pages of the given chapter.
+     * Creates a CBZ archive from the downloaded pages (if any) of the given chapter.
      *
      * The archive is placed inside the chapter's download directory. This operation
      * is independent of the "Save as CBZ" auto-download preference and can be triggered
      * manually from the manga details screen.
      *
-     * @return [Result.success] when the archive was created (or already existed),
-     *         [Result.failure] if the chapter has no downloaded pages or an error occurs.
+     * Note: the underlying implementation may succeed even if the chapter directory
+     * contains no page files, and it may overwrite an existing `chapter.cbz` archive.
+     *
+     * @return [Result.success] when the archive operation completes without error
+     *         (including when an existing archive is overwritten or no pages are present),
+     *         [Result.failure] only if an error occurs during export.
      */
     suspend fun exportChapterAsCbz(
         sourceName: String,
