@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tracking_title">Tracking</string>
+    <string name="tracking_login">Login</string>
+    <string name="tracking_logout">Logout</string>
+    <string name="tracking_search">Search manga</string>
+    <string name="tracking_unlink">Unlink</string>
+    <string name="tracking_status_reading">Reading</string>
+    <string name="tracking_status_completed">Completed</string>
+    <string name="tracking_status_on_hold">On Hold</string>
+    <string name="tracking_status_dropped">Dropped</string>
+    <string name="tracking_status_plan_to_read">Plan to Read</string>
+    <string name="tracking_status_re_reading">Re-reading</string>
+</resources>
