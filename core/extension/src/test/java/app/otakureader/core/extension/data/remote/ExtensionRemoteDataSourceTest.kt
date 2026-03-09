@@ -234,7 +234,7 @@ class ExtensionRemoteDataSourceTest {
 
         // Then: Empty list is returned
         assertTrue(result.isSuccess)
-        assertEquals(emptyList<Any>(), result.getOrThrow())
+        assertTrue(result.getOrThrow().isEmpty())
     }
 
     @Test
