@@ -98,7 +98,8 @@ class UltimateReaderViewModel @Inject constructor(
             val keepScreenOn = settingsRepository.keepScreenOn.first()
             val showPageNumber = settingsRepository.showPageNumber.first()
             val direction = settingsRepository.readingDirection.first()
-            val volumeKeyNav = settingsRepository.volumeKeyNavigation.first()
+            val volumeKeysEnabled = settingsRepository.volumeKeysEnabled.first()
+            val volumeKeysInverted = settingsRepository.volumeKeysInverted.first()
             val fullscreen = settingsRepository.fullscreen.first()
             val incognitoMode = settingsRepository.incognitoMode.first()
 
@@ -386,9 +387,14 @@ class UltimateReaderViewModel @Inject constructor(
                 viewModelScope.launch { settingsRepository.setDoubleTapZoomEnabled(newValue) }
             }
             ReaderSetting.VOLUME_KEY_NAVIGATION -> {
-                val newValue = !_state.value.volumeKeyNavigation
-                _state.update { it.copy(volumeKeyNavigation = newValue) }
-                viewModelScope.launch { settingsRepository.setVolumeKeyNavigation(newValue) }
+                val newValue = !_state.value.volumeKeysEnabled
+                _state.update { it.copy(volumeKeysEnabled = newValue) }
+                viewModelScope.launch { settingsRepository.setVolumeKeysEnabled(newValue) }
+            }
+            ReaderSetting.VOLUME_KEYS_INVERTED -> {
+                val newValue = !_state.value.volumeKeysInverted
+                _state.update { it.copy(volumeKeysInverted = newValue) }
+                viewModelScope.launch { settingsRepository.setVolumeKeysInverted(newValue) }
             }
             ReaderSetting.INCOGNITO_MODE -> {
                 val newValue = !_state.value.incognitoMode
