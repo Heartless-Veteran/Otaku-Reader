@@ -109,11 +109,11 @@ class ChapterRepositoryImpl @Inject constructor(
         }.first()
     }
 
-    override suspend fun updateChapterMangaId(oldMangaId: Long, newMangaId: Long) {
+    suspend fun updateChapterMangaId(oldMangaId: Long, newMangaId: Long) {
         chapterDao.updateChapterMangaId(oldMangaId, newMangaId)
     }
 
-    override suspend fun deleteChaptersByMangaId(mangaId: Long) {
+    suspend fun deleteChaptersByMangaId(mangaId: Long) {
         chapterDao.deleteByMangaId(mangaId)
     }
 
