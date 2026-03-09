@@ -25,7 +25,7 @@ data class SettingsState(
     val autoDownloadEnabled: Boolean = false, // Auto-download new chapters
     val downloadOnlyOnWifi: Boolean = true,   // Download only when connected to Wi-Fi
     val autoDownloadLimit: Int = 3,           // Max chapters to auto-download per manga
-    val localSourceDirectory: String = "/sdcard/OtakuReader/local", // Local source scan directory
+    val localSourceDirectory: String = LocalSourcePreferences.DEFAULT_DIRECTORY, // Local source scan directory
     val isBackupInProgress: Boolean = false,
     val isRestoreInProgress: Boolean = false,
     val trackers: List<TrackerInfo> = emptyList(),
