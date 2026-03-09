@@ -69,6 +69,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ToggleChapterBookmark -> toggleChapterBookmark(event.chapterId)
             is DetailsContract.Event.DownloadChapter -> downloadChapter(event.chapterId)
             is DetailsContract.Event.DeleteChapterDownload -> deleteChapterDownload(event.chapterId)
+            is DetailsContract.Event.ExportChapterAsCbz -> exportChapterAsCbz(event.chapterId)
             is DetailsContract.Event.MarkPreviousAsRead -> markPreviousAsRead(event.chapterId)
             is DetailsContract.Event.ShareManga -> shareManga()
             is DetailsContract.Event.SetDeleteAfterReadOverride -> setDeleteAfterReadOverride(event.mode)
@@ -298,6 +299,25 @@ class DetailsViewModel @Inject constructor(
                 downloadRepository.cancelDownload(chapterId)
                 _effect.emit(DetailsContract.Effect.ShowSnackbar("Download removed"))
             }
+        }
+    }
+
+    private fun exportChapterAsCbz(chapterId: Long) {
+        viewModelScope.launch {
+            val chapter = _state.value.chapters.firstOrNull { it.id == chapterId }
+            val manga = _state.value.manga
+            if (chapter == null || manga == null) {
+                _effect.emit(DetailsContract.Effect.ShowError("Chapter not found"))
+                return@launch
+            }
+            downloadRepository.exportChapterAsCbz(
+                sourceName = manga.sourceId.toString(),
+                mangaTitle = manga.title,
+                chapterTitle = chapter.name
+            ).fold(
+                onSuccess = { _effect.emit(DetailsContract.Effect.ShowSnackbar("Exported as CBZ")) },
+                onFailure = { _effect.emit(DetailsContract.Effect.ShowError("Export failed: ${it.message}")) }
+            )
         }
     }
 

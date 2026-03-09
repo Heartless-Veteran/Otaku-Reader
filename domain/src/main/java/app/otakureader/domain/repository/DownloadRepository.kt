@@ -48,4 +48,20 @@ interface DownloadRepository {
      * This function performs filesystem I/O and must be called from a coroutine.
      */
     suspend fun isChapterDownloaded(sourceName: String, mangaTitle: String, chapterTitle: String): Boolean
+
+    /**
+     * Creates a CBZ archive from the already-downloaded pages of the given chapter.
+     *
+     * The archive is placed inside the chapter's download directory. This operation
+     * is independent of the "Save as CBZ" auto-download preference and can be triggered
+     * manually from the manga details screen.
+     *
+     * @return [Result.success] when the archive was created (or already existed),
+     *         [Result.failure] if the chapter has no downloaded pages or an error occurs.
+     */
+    suspend fun exportChapterAsCbz(
+        sourceName: String,
+        mangaTitle: String,
+        chapterTitle: String
+    ): Result<Unit>
 }

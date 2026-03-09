@@ -44,22 +44,16 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
-            combine(
-                generalPreferences.themeMode,
-                generalPreferences.useDynamicColor,
-                generalPreferences.locale,
-                generalPreferences.notificationsEnabled,
-                generalPreferences.updateCheckInterval,
-                downloadPreferences.deleteAfterReading
-            ) { themeMode, dynamicColor, locale, notificationsEnabled, updateInterval, deleteAfterReading ->
-                SettingsState(
-                    themeMode = themeMode,
-                    useDynamicColor = dynamicColor,
-                    locale = locale,
-                    notificationsEnabled = notificationsEnabled,
-                    updateCheckInterval = updateInterval,
-                    deleteAfterReading = deleteAfterReading
-                )
+            generalPreferences.themeMode.combine(generalPreferences.useDynamicColor) { themeMode, dynamicColor ->
+                SettingsState(themeMode = themeMode, useDynamicColor = dynamicColor)
+            }.combine(generalPreferences.locale) { state, locale ->
+                state.copy(locale = locale)
+            }.combine(generalPreferences.notificationsEnabled) { state, notificationsEnabled ->
+                state.copy(notificationsEnabled = notificationsEnabled)
+            }.combine(generalPreferences.updateCheckInterval) { state, updateInterval ->
+                state.copy(updateCheckInterval = updateInterval)
+            }.combine(downloadPreferences.deleteAfterReading) { state, deleteAfterReading ->
+                state.copy(deleteAfterReading = deleteAfterReading)
             }.combine(libraryPreferences.gridSize) { state, gridSize ->
                 state.copy(libraryGridSize = gridSize)
             }.combine(libraryPreferences.showBadges) { state, showBadges ->
@@ -76,6 +70,8 @@ class SettingsViewModel @Inject constructor(
                 state.copy(downloadOnlyOnWifi = downloadOnlyOnWifi)
             }.combine(downloadPreferences.autoDownloadLimit) { state, autoDownloadLimit ->
                 state.copy(autoDownloadLimit = autoDownloadLimit)
+            }.combine(downloadPreferences.saveAsCbz) { state, saveAsCbz ->
+                state.copy(saveAsCbz = saveAsCbz)
             }.combine(localSourcePreferences.localSourceDirectory) { state, localDir ->
                 state.copy(localSourceDirectory = localDir)
             }.collect { newState ->
@@ -106,9 +102,11 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetReaderMode -> readerPreferences.setReaderMode(event.mode)
                 is SettingsEvent.SetKeepScreenOn -> readerPreferences.setKeepScreenOn(event.enabled)
                 is SettingsEvent.SetIncognitoMode -> readerSettingsRepository.setIncognitoMode(event.enabled)
+                is SettingsEvent.SetDeleteAfterReading -> downloadPreferences.setDeleteAfterReading(event.enabled)
                 is SettingsEvent.SetAutoDownloadEnabled -> downloadPreferences.setAutoDownloadEnabled(event.enabled)
                 is SettingsEvent.SetDownloadOnlyOnWifi -> downloadPreferences.setDownloadOnlyOnWifi(event.enabled)
                 is SettingsEvent.SetAutoDownloadLimit -> downloadPreferences.setAutoDownloadLimit(event.limit)
+                is SettingsEvent.SetSaveAsCbz -> downloadPreferences.setSaveAsCbz(event.enabled)
                 is SettingsEvent.SetLocalSourceDirectory -> localSourcePreferences.setLocalSourceDirectory(event.path)
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
                 SettingsEvent.OnRestoreBackup -> _effect.send(SettingsEffect.ShowRestorePicker)
