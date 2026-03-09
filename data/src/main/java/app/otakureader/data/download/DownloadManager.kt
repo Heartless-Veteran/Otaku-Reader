@@ -124,13 +124,7 @@ class DownloadManager @Inject constructor(
      * Removes in-memory state for a chapter that has been deleted from disk.
      * Cancels any active download job and removes the item from the download queue.
      */
-    suspend fun remove(chapterId: Long) {
-        mutex.withLock {
-            jobs.remove(chapterId)?.cancel()
-            requests.remove(chapterId)
-            _downloads.update { list -> list.filterNot { it.chapterId == chapterId } }
-        }
-    }
+    suspend fun remove(chapterId: Long) = cancel(chapterId)
 
     suspend fun clearAll() {
         mutex.withLock {
