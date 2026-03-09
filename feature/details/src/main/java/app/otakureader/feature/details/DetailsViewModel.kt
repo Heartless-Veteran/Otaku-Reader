@@ -135,10 +135,18 @@ class DetailsViewModel @Inject constructor(
 
     private fun observeDeleteAfterReadSetting() {
         // Observe delete-after-read preference and keep state in sync
-        downloadPreferences.deleteAfterReadMode
-            .onEach { mode: DeleteAfterReadMode ->
+        combine(
+            downloadPreferences.deleteAfterReading,
+            downloadPreferences.perMangaOverrides
+        ) { global, overrides ->
+            Pair(global, overrides[mangaId] ?: DeleteAfterReadMode.INHERIT)
+        }
+            .onEach { (global, override) ->
                 _state.update { state ->
-                    state.copy(deleteAfterReadMode = mode)
+                    state.copy(
+                        globalDeleteAfterRead = global,
+                        deleteAfterReadOverride = override
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -306,17 +314,17 @@ class DetailsViewModel @Inject constructor(
                 val chapters = _state.value.chapters
                 val targetChapter = chapters.find { it.id == chapterId }
                 targetChapter?.let { target ->
-                    chapters
-                        .filter { it.chapterNumber < target.chapterNumber }
-                        .forEach { chapter ->
-                            if (!chapter.read) {
-                                chapterRepository.updateChapterProgress(
-                                    chapterId = chapter.id,
-                                    read = true,
-                                    lastPageRead = 0
-                                )
-                            }
-                        }
+                    val chapterIdsToUpdate = chapters
+                        .filter { it.chapterNumber < target.chapterNumber && !it.read }
+                        .map { it.id }
+
+                    if (chapterIdsToUpdate.isNotEmpty()) {
+                        chapterRepository.updateChapterProgress(
+                            chapterIds = chapterIdsToUpdate,
+                            read = true,
+                            lastPageRead = 0
+                        )
+                    }
                 }
                 _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
             } catch (e: Exception) {
