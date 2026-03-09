@@ -543,13 +543,7 @@ class UltimateReaderViewModel @Inject constructor(
         hasTriggeredDeletion = true
 
         viewModelScope.launch {
-            val overrides = downloadPreferences.perMangaOverrides.first()
-            val globalEnabled = downloadPreferences.deleteAfterReading.first()
-            val effective = when (overrides[manga.id]) {
-                DeleteAfterReadMode.ENABLED -> true
-                DeleteAfterReadMode.DISABLED -> false
-                else -> globalEnabled
-            }
+            val effective = downloadPreferences.isDeleteAfterReadingEnabled(manga.id).first()
 
             if (effective) {
                 deleteChapterUseCase(
