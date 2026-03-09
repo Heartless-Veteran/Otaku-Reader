@@ -1,7 +1,9 @@
 package app.otakureader.data.download
 
 import java.io.File
+import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -185,6 +187,43 @@ class CbzCreatorTest {
             assertTrue(result.isSuccess)
             val names = result.getOrThrow().map { it.name }
             assertEquals(listOf("0.jpg", "1.jpg", "2.jpg", "4.jpg"), names)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun extractCbzPages_pathTraversalEntriesAreSkipped() {
+        val root = tempDir()
+        try {
+            val destDir = File(root, "extracted").also { it.mkdirs() }
+            val cbzFile = File(root, "malicious.cbz")
+
+            // Craft a ZIP with a path-traversal entry name
+            ZipOutputStream(cbzFile.outputStream()).use { zos ->
+                zos.putNextEntry(ZipEntry("0.jpg"))
+                zos.write("safe image".toByteArray())
+                zos.closeEntry()
+                // Path traversal attempt: tries to write outside destDir
+                zos.putNextEntry(ZipEntry("../escape.jpg"))
+                zos.write("malicious content".toByteArray())
+                zos.closeEntry()
+            }
+
+            val result = CbzCreator.extractCbzPages(cbzFile, destDir)
+            assertTrue(result.isSuccess)
+
+            // The traversal attempt is neutralized: escape.jpg (after stripping ../
+            // via substringAfterLast('/')) ends up inside destDir rather than outside it.
+            // Verify the malicious file was NOT written outside destDir.
+            assertFalse(File(root, "escape.jpg").exists())
+
+            // The safe 0.jpg entry must still be extracted.
+            val extractedNames = result.getOrThrow().map { it.name }.toSet()
+            assertTrue(extractedNames.contains("0.jpg"))
+
+            // escape.jpg ended up safely inside destDir (traversal neutralized).
+            assertTrue(File(destDir, "escape.jpg").exists())
         } finally {
             root.deleteRecursively()
         }
