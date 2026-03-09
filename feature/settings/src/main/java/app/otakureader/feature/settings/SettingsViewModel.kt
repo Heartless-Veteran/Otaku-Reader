@@ -44,10 +44,21 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
-            generalPreferences.themeMode.combine(generalPreferences.useDynamicColor) { themeMode, dynamicColor ->
-                SettingsState(themeMode = themeMode, useDynamicColor = dynamicColor)
-            }.combine(generalPreferences.locale) { state, locale ->
-                state.copy(locale = locale)
+            combine(
+                generalPreferences.themeMode,
+                generalPreferences.useDynamicColor,
+                generalPreferences.locale,
+                generalPreferences.notificationsEnabled,
+                generalPreferences.updateCheckInterval
+            ) { themeMode, dynamicColor, locale, notificationsEnabled, updateInterval ->
+                SettingsState(
+                    themeMode = themeMode,
+                    useDynamicColor = dynamicColor,
+                    locale = locale,
+                    notificationsEnabled = notificationsEnabled,
+                    updateCheckInterval = updateInterval
+                    // deleteAfterReading feature has been removed
+                )
             }.combine(generalPreferences.notificationsEnabled) { state, notificationsEnabled ->
                 state.copy(notificationsEnabled = notificationsEnabled)
             }.combine(generalPreferences.updateCheckInterval) { state, updateInterval ->
@@ -94,6 +105,8 @@ class SettingsViewModel @Inject constructor(
             when (event) {
                 is SettingsEvent.SetThemeMode -> generalPreferences.setThemeMode(event.mode)
                 is SettingsEvent.SetDynamicColor -> generalPreferences.setUseDynamicColor(event.enabled)
+                is SettingsEvent.SetPureBlackDarkMode -> generalPreferences.setUsePureBlackDarkMode(event.enabled)
+                is SettingsEvent.SetColorScheme -> generalPreferences.setColorScheme(event.scheme)
                 is SettingsEvent.SetLocale -> generalPreferences.setLocale(event.locale)
                 is SettingsEvent.SetNotificationsEnabled -> generalPreferences.setNotificationsEnabled(event.enabled)
                 is SettingsEvent.SetUpdateInterval -> generalPreferences.setUpdateCheckInterval(event.hours)
@@ -106,7 +119,7 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAutoDownloadEnabled -> downloadPreferences.setAutoDownloadEnabled(event.enabled)
                 is SettingsEvent.SetDownloadOnlyOnWifi -> downloadPreferences.setDownloadOnlyOnWifi(event.enabled)
                 is SettingsEvent.SetAutoDownloadLimit -> downloadPreferences.setAutoDownloadLimit(event.limit)
-                is SettingsEvent.SetSaveAsCbz -> downloadPreferences.setSaveAsCbz(event.enabled)
+                is SettingsEvent.SetDeleteAfterReading -> { /* Delete-after-reading feature has been removed */ }
                 is SettingsEvent.SetLocalSourceDirectory -> localSourcePreferences.setLocalSourceDirectory(event.path)
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
                 SettingsEvent.OnRestoreBackup -> _effect.send(SettingsEffect.ShowRestorePicker)

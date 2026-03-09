@@ -67,13 +67,16 @@ class DownloadManager @Inject constructor(
     /** Stored requests keyed by chapterId so that paused/failed/completed downloads can be resumed. */
     private val requests = mutableMapOf<Long, ChapterDownloadRequest>()
 
+    /** Internal map for O(1) lookup and updates of download items by chapterId. */
+    private val downloadMap = mutableMapOf<Long, DownloadItem>()
+
     // -------------------------------------------------------------------------
     // Public API
     // -------------------------------------------------------------------------
 
     suspend fun enqueue(request: ChapterDownloadRequest) {
         mutex.withLock {
-            val existing = _downloads.value.firstOrNull { it.chapterId == request.chapterId }
+            val existing = downloadMap[request.chapterId]
             // Allow re-enqueueing for terminal states (COMPLETED, FAILED) or when the item
             // is not present at all (i.e., never queued, or previously canceled via cancel()
             // which removes the item). Active (QUEUED, DOWNLOADING) and PAUSED downloads
@@ -84,16 +87,16 @@ class DownloadManager @Inject constructor(
             ) return
 
             requests[request.chapterId] = request
-            _downloads.update { list ->
-                list.filterNot { it.chapterId == request.chapterId } + DownloadItem(
-                    id = request.chapterId,
-                    mangaId = request.mangaId,
-                    chapterId = request.chapterId,
-                    mangaTitle = request.mangaTitle,
-                    chapterTitle = request.chapterTitle,
-                    status = DownloadStatus.QUEUED
-                )
-            }
+            val newItem = DownloadItem(
+                id = request.chapterId,
+                mangaId = request.mangaId,
+                chapterId = request.chapterId,
+                mangaTitle = request.mangaTitle,
+                chapterTitle = request.chapterTitle,
+                status = DownloadStatus.QUEUED
+            )
+            downloadMap[request.chapterId] = newItem
+            _downloads.value = downloadMap.values.toList()
         }
         startDownload(request)
     }
@@ -107,7 +110,7 @@ class DownloadManager @Inject constructor(
 
     suspend fun resume(chapterId: Long) {
         val request = mutex.withLock {
-            val item = _downloads.value.firstOrNull { it.chapterId == chapterId }
+            val item = downloadMap[chapterId]
             if (item?.status != DownloadStatus.PAUSED) return
             requests[chapterId]
         } ?: return
@@ -119,7 +122,8 @@ class DownloadManager @Inject constructor(
         mutex.withLock {
             jobs.remove(chapterId)?.cancel()
             requests.remove(chapterId)
-            _downloads.update { list -> list.filterNot { it.chapterId == chapterId } }
+            downloadMap.remove(chapterId)
+            _downloads.value = downloadMap.values.toList()
         }
     }
 
@@ -131,7 +135,8 @@ class DownloadManager @Inject constructor(
         mutex.withLock {
             jobs.remove(chapterId)?.cancel()
             requests.remove(chapterId)
-            _downloads.update { list -> list.filterNot { it.chapterId == chapterId } }
+            downloadMap.remove(chapterId)
+            _downloads.value = downloadMap.values.toList()
         }
     }
 
@@ -140,6 +145,7 @@ class DownloadManager @Inject constructor(
             jobs.values.forEach { it.cancel() }
             jobs.clear()
             requests.clear()
+            downloadMap.clear()
             _downloads.value = emptyList()
         }
     }
@@ -156,7 +162,7 @@ class DownloadManager @Inject constructor(
             jobs.remove(chapterId)?.cancel()
 
             // Bail out if the item was removed while waiting for the lock
-            if (_downloads.value.none { it.chapterId == chapterId }) return
+            if (!downloadMap.containsKey(chapterId)) return
 
             updateStatus(chapterId, DownloadStatus.DOWNLOADING)
 
@@ -238,14 +244,16 @@ class DownloadManager @Inject constructor(
     }
 
     private fun updateStatus(chapterId: Long, status: DownloadStatus) {
-        _downloads.update { list ->
-            list.map { if (it.chapterId == chapterId) it.copy(status = status) else it }
+        downloadMap[chapterId]?.let { item ->
+            downloadMap[chapterId] = item.copy(status = status)
+            _downloads.value = downloadMap.values.toList()
         }
     }
 
     private fun updateProgress(chapterId: Long, progress: Int) {
-        _downloads.update { list ->
-            list.map { if (it.chapterId == chapterId) it.copy(progress = progress) else it }
+        downloadMap[chapterId]?.let { item ->
+            downloadMap[chapterId] = item.copy(progress = progress)
+            _downloads.value = downloadMap.values.toList()
         }
     }
 }
