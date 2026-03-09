@@ -373,7 +373,25 @@ class MigrationViewModel @Inject constructor(
     }
 
     private fun dismissConfirmationDialog() {
-        _state.update { it.copy(showConfirmationDialog = false) }
+        val tasks = _state.value.migrationTasks.toMutableList()
+        val awaitingIndex = tasks.indexOfFirst { it.status == MigrationStatus.AWAITING_CONFIRMATION }
+        if (awaitingIndex != -1) {
+            // Revert the paused task to PENDING so the user can retry later,
+            // and clear isLoading so the Start button becomes available again.
+            tasks[awaitingIndex] = tasks[awaitingIndex].copy(
+                status = MigrationStatus.PENDING,
+                statusMessage = null
+            )
+            _state.update {
+                it.copy(
+                    showConfirmationDialog = false,
+                    migrationTasks = tasks.toList(),
+                    isLoading = false
+                )
+            }
+        } else {
+            _state.update { it.copy(showConfirmationDialog = false) }
+        }
     }
 
     private fun dismissCompletionSummary() {
