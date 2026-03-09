@@ -9,6 +9,7 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.SourceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -31,9 +32,7 @@ data class ExtensionsState(
     val repositories: List<String> = emptyList(),
     val activeRepository: String? = null,
     val error: String? = null,
-    val showNsfw: Boolean = false,
-    val sortMode: SortMode = SortMode.NAME,
-    val isUpdatingAll: Boolean = false
+    val showNsfwContent: Boolean = false
 ) : UiState
 
 enum class SortMode {
@@ -67,7 +66,8 @@ class ExtensionsViewModel @Inject constructor(
     private val extensionRepository: ExtensionRepository,
     private val extensionInstaller: ExtensionInstaller,
     private val extensionRepoRepository: ExtensionRepoRepository,
-    private val sourceRepository: SourceRepository
+    private val sourceRepository: SourceRepository,
+    private val generalPreferences: GeneralPreferences
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -78,20 +78,32 @@ class ExtensionsViewModel @Inject constructor(
     val state = combine(
         _state,
         _searchQuery,
-        _showNsfw,
-        _sortMode
-    ) { state, query, showNsfw, sortMode ->
-        val filteredInstalled = applyFiltersAndSort(state.installedExtensions, query, showNsfw, sortMode)
-        val filteredAvailable = applyFiltersAndSort(state.availableExtensions, query, showNsfw, sortMode)
-        val filteredUpdates = applyFiltersAndSort(state.extensionsWithUpdates, query, showNsfw, sortMode)
-        
+        generalPreferences.showNsfwContent
+    ) { state, query, showNsfw ->
+        // Apply NSFW filter then search filter
+        val visibleInstalled = state.installedExtensions
+            .filter { showNsfw || !it.isNsfw }
+        val visibleAvailable = state.availableExtensions
+            .filter { showNsfw || !it.isNsfw }
+
         state.copy(
             searchQuery = query,
-            showNsfw = showNsfw,
-            sortMode = sortMode,
-            installedExtensions = filteredInstalled,
-            availableExtensions = filteredAvailable,
-            extensionsWithUpdates = filteredUpdates
+            showNsfwContent = showNsfw,
+            installedExtensions = if (query.isBlank()) {
+                visibleInstalled
+            } else {
+                visibleInstalled.filter {
+                    it.name.contains(query, ignoreCase = true) ||
+                    it.sources.any { s -> s.name.contains(query, ignoreCase = true) }
+                }
+            },
+            availableExtensions = if (query.isBlank()) {
+                visibleAvailable
+            } else {
+                visibleAvailable.filter {
+                    it.name.contains(query, ignoreCase = true)
+                }
+            }
         )
     }.stateIn(
         scope = viewModelScope,
