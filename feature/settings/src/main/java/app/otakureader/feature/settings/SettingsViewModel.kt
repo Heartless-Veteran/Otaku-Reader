@@ -2,6 +2,7 @@ package app.otakureader.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.ReaderPreferences
@@ -21,6 +22,7 @@ class SettingsViewModel @Inject constructor(
     private val generalPreferences: GeneralPreferences,
     private val libraryPreferences: LibraryPreferences,
     private val readerPreferences: ReaderPreferences,
+    private val downloadPreferences: DownloadPreferences,
     private val backupRepository: app.otakureader.data.backup.repository.BackupRepository,
     private val readerSettingsRepository: app.otakureader.feature.reader.repository.ReaderSettingsRepository
 ) : ViewModel() {
@@ -42,14 +44,16 @@ class SettingsViewModel @Inject constructor(
                 generalPreferences.useDynamicColor,
                 generalPreferences.locale,
                 generalPreferences.notificationsEnabled,
-                generalPreferences.updateCheckInterval
-            ) { themeMode, dynamicColor, locale, notificationsEnabled, updateInterval ->
+                generalPreferences.updateCheckInterval,
+                downloadPreferences.deleteAfterReading
+            ) { themeMode, dynamicColor, locale, notificationsEnabled, updateInterval, deleteAfterReading ->
                 SettingsState(
                     themeMode = themeMode,
                     useDynamicColor = dynamicColor,
                     locale = locale,
                     notificationsEnabled = notificationsEnabled,
-                    updateCheckInterval = updateInterval
+                    updateCheckInterval = updateInterval,
+                    deleteAfterReading = deleteAfterReading
                 )
             }.combine(libraryPreferences.gridSize) { state, gridSize ->
                 state.copy(libraryGridSize = gridSize)
@@ -80,6 +84,7 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetReaderMode -> readerPreferences.setReaderMode(event.mode)
                 is SettingsEvent.SetKeepScreenOn -> readerPreferences.setKeepScreenOn(event.enabled)
                 is SettingsEvent.SetIncognitoMode -> readerSettingsRepository.setIncognitoMode(event.enabled)
+                is SettingsEvent.SetDeleteAfterReading -> downloadPreferences.setDeleteAfterReading(event.enabled)
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
                 SettingsEvent.OnRestoreBackup -> _effect.send(SettingsEffect.ShowRestorePicker)
             }

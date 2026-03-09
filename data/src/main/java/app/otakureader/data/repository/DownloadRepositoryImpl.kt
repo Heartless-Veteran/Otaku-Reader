@@ -68,6 +68,20 @@ class DownloadRepositoryImpl @Inject constructor(
         downloadManager.cancel(id)
     }
 
+    override suspend fun deleteChapterDownload(
+        chapterId: Long,
+        sourceName: String,
+        mangaTitle: String,
+        chapterTitle: String
+    ) {
+        // Remove any active job or completed metadata for this chapter only.
+        downloadManager.remove(chapterId)
+
+        withContext(Dispatchers.IO) {
+            DownloadProvider.deleteChapter(context, sourceName, mangaTitle, chapterTitle)
+        }
+    }
+
     override suspend fun clearAll() {
         downloadManager.clearAll()
         notifier.cancel()
@@ -81,4 +95,3 @@ class DownloadRepositoryImpl @Inject constructor(
         DownloadProvider.isChapterDownloaded(context, sourceName, mangaTitle, chapterTitle)
     }
 }
-
