@@ -42,7 +42,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setLibraryFilterMode(value: Int) = dataStore.edit { it[Keys.LIBRARY_FILTER_MODE] = value }
 
     /** Filter by source ID. null = all sources */
-    val libraryFilterSourceId: Flow<Long?> = dataStore.data.map { it[Keys.LIBRARY_FILTER_SOURCE]?.toLong() }
+    val libraryFilterSourceId: Flow<Long?> = dataStore.data.map { it[Keys.LIBRARY_FILTER_SOURCE] }
     suspend fun setLibraryFilterSourceId(value: Long?) = dataStore.edit { 
         if (value != null) it[Keys.LIBRARY_FILTER_SOURCE] = value else it.remove(Keys.LIBRARY_FILTER_SOURCE)
     }
