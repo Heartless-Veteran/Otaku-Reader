@@ -221,30 +221,25 @@ private fun FilterButton(
 /**
  * Count the number of filters that have been changed from their default state.
  */
-private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int {
-    return filters.filters.count { filter ->
-        when (filter) {
-            is Filter.Select<*> -> filter.state != 0
-            is Filter.Text -> filter.state.isNotBlank()
-            is Filter.CheckBox -> filter.state
-            is Filter.TriState -> filter.state != Filter.TriState.STATE_IGNORE
-            is Filter.Sort -> filter.state != null
-            is Filter.Group<*> -> {
-                @Suppress("UNCHECKED_CAST")
-                val children = filter.state as? List<Filter<*>> ?: emptyList()
-                children.any { child ->
-                    when (child) {
-                        is Filter.TriState -> child.state != Filter.TriState.STATE_IGNORE
-                        is Filter.CheckBox -> child.state
-                        else -> false
-                    }
-                }
-            }
-            else -> false
+private fun isFilterActive(filter: Filter<*>): Boolean {
+    return when (filter) {
+        is Filter.Select<*> -> filter.state != 0
+        is Filter.Text -> filter.state.isNotBlank()
+        is Filter.CheckBox -> filter.state
+        is Filter.TriState -> filter.state != Filter.TriState.STATE_IGNORE
+        is Filter.Sort -> filter.state != null
+        is Filter.Group<*> -> {
+            // Recursively check all child filters in this group, including nested groups.
+            val children = (filter.state as? List<*>)?.filterIsInstance<Filter<*>>() ?: emptyList()
+            children.any { child -> isFilterActive(child) }
         }
+        else -> false
     }
 }
 
+private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int {
+    return filters.filters.count { filter -> isFilterActive(filter) }
+}
 @Composable
 private fun SourcesContent(
     sources: List<String>,
