@@ -1,5 +1,7 @@
 package app.otakureader.feature.library
 
+import app.otakureader.domain.model.MangaStatus
+
 enum class LibrarySortMode {
     ALPHABETICAL,
     LAST_READ,
@@ -31,7 +33,7 @@ data class LibraryState(
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
     val filterMode: LibraryFilterMode = LibraryFilterMode.ALL,
     val filterSourceId: Long? = null,
-    val showNsfw: Boolean = true
+    val showNsfw: Boolean = false
 )
 
 data class LibraryMangaItem(
@@ -44,7 +46,9 @@ data class LibraryMangaItem(
     val sourceId: Long = 0,
     val isDownloaded: Boolean = false,
     val hasTracking: Boolean = false,
-    val isNsfw: Boolean = false
+    val isNsfw: Boolean = false,
+    val lastRead: Long? = null,
+    val status: MangaStatus = MangaStatus.UNKNOWN
 )
 
 data class CategoryItem(
