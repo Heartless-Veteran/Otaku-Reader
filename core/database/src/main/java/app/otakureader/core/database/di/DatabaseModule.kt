@@ -80,6 +80,16 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * Adds the readerBackgroundColor column to the manga table in database version 8.
+     * Stores per-manga reader background color as an INTEGER (ARGB Long), nullable.
+     */
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerBackgroundColor` INTEGER")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(
@@ -90,7 +100,7 @@ object DatabaseModule {
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
         // Only allow destructive migration in debug builds to avoid silently wiping
         // user data (including notes) in production if a migration is missing.
         if (BuildConfig.DEBUG) {

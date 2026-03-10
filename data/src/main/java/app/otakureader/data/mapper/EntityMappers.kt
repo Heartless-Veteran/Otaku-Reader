@@ -22,7 +22,8 @@ fun MangaEntity.toManga(): Manga = Manga(
     initialized = initialized,
     autoDownload = autoDownload,
     notes = notes,
-    notifyNewChapters = notifyNewChapters
+    notifyNewChapters = notifyNewChapters,
+    readerBackgroundColor = readerBackgroundColor
 )
 
 /** Maps domain [Manga] to [MangaEntity]. */
@@ -41,7 +42,8 @@ fun Manga.toEntity(): MangaEntity = MangaEntity(
     initialized = initialized,
     autoDownload = autoDownload,
     notes = notes,
-    notifyNewChapters = notifyNewChapters
+    notifyNewChapters = notifyNewChapters,
+    readerBackgroundColor = readerBackgroundColor
 )
 
 /** Maps [ChapterEntity] to domain [Chapter]. */
