@@ -52,12 +52,12 @@ object Filters {
     class CheckBoxFilter(name: String, state: Boolean = false) :
         Filter.CheckBox(name, state)
 
-    class TriStateFilter(name: String, state: Int = STATE_IGNORE) :
+    class TriStateFilter(name: String, state: Int = Filter.TriState.STATE_IGNORE) :
         Filter.TriState(name, state)
 
     class GroupFilter(name: String, state: List<Filter<*>>) :
         Filter.Group<Filter<*>>(name, state)
 
-    class SortFilter(name: String, values: Array<String>, state: Selection? = null) :
+    class SortFilter(name: String, values: Array<String>, state: Filter.Sort.Selection? = null) :
         Filter.Sort(name, values, state)
 }
