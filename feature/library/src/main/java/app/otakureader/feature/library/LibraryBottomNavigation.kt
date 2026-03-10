@@ -7,6 +7,8 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,6 +25,7 @@ fun LibraryBottomNavigation(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToStatistics: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    newUpdatesCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     NavigationBar(
@@ -35,7 +38,21 @@ fun LibraryBottomNavigation(
             onClick = onNavigateToLibrary
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.NewReleases, contentDescription = null) },
+            icon = {
+                BadgedBox(
+                    badge = {
+                        if (newUpdatesCount > 0) {
+                            Badge {
+                                Text(
+                                    text = if (newUpdatesCount > 99) "99+" else newUpdatesCount.toString()
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Icon(Icons.Default.NewReleases, contentDescription = null)
+                }
+            },
             label = { Text("Updates") },
             selected = selectedRoute == "updates",
             onClick = onNavigateToUpdates

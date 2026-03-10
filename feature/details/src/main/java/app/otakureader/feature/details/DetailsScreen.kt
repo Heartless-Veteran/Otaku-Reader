@@ -21,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -39,6 +41,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -220,6 +223,13 @@ private fun DetailsContent(
         }
 
         item {
+            NotificationOption(
+                notifyEnabled = state.manga?.notifyNewChapters ?: true,
+                onToggle = { onEvent(DetailsContract.Event.ToggleNotifications) }
+            )
+        }
+
+        item {
             ChapterListHeader(
                 chapterCount = state.chapters.size,
                 sortOrder = state.chapterSortOrder,
@@ -230,6 +240,7 @@ private fun DetailsContent(
         items(state.sortedChapters, key = { it.id }) { chapter ->
             ChapterListItem(
                 chapter = chapter,
+                isSelected = state.selectedChapters.contains(chapter.id),
                 onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
                 onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
                 onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) }
@@ -504,6 +515,38 @@ private fun DeleteAfterReadOption(
             }
         )
     }
+}
+
+@Composable
+private fun NotificationOption(
+    notifyEnabled: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ListItem(
+        headlineContent = { Text("Notify for new chapters") },
+        supportingContent = {
+            Text(
+                if (notifyEnabled) "You will be notified when new chapters are found"
+                else "Notifications are muted for this manga"
+            )
+        },
+        leadingContent = {
+            Icon(
+                imageVector = if (notifyEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
+                contentDescription = null,
+                tint = if (notifyEnabled) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        trailingContent = {
+            Switch(
+                checked = notifyEnabled,
+                onCheckedChange = { onToggle() }
+            )
+        },
+        modifier = modifier
+    )
 }
 
 @Composable
