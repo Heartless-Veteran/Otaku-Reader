@@ -58,6 +58,9 @@ import androidx.compose.ui.unit.dp
 import app.otakureader.feature.reader.model.ColorFilterMode
 import app.otakureader.feature.reader.model.ReaderMode
 
+/** Default custom tint color (semi-transparent blue) used when no custom color is set. */
+private const val DEFAULT_CUSTOM_TINT_COLOR = 0x4000AAFFL
+
 /**
  * Main reader menu overlay with controls and settings.
  * Appears when user taps the center of the screen.
@@ -73,7 +76,7 @@ fun ReaderMenuOverlay(
     zoomLevel: Float,
     brightness: Float,
     colorFilterMode: ColorFilterMode = ColorFilterMode.NONE,
-    customTintColor: Long = 0x4000AAFFL,
+    customTintColor: Long = DEFAULT_CUSTOM_TINT_COLOR,
     onBrightnessChange: (Float) -> Unit,
     onModeChange: (ReaderMode) -> Unit,
     onColorFilterChange: (ColorFilterMode) -> Unit = {},
@@ -368,7 +371,7 @@ fun BrightnessControl(
 @Composable
 fun ColorFilterControl(
     currentMode: ColorFilterMode,
-    customTintColor: Long = 0x4000AAFFL,
+    customTintColor: Long = DEFAULT_CUSTOM_TINT_COLOR,
     onModeChange: (ColorFilterMode) -> Unit,
     onCustomTintColorChange: (Long) -> Unit = {},
     modifier: Modifier = Modifier
@@ -494,9 +497,12 @@ private fun CustomTintPicker(
 /**
  * Named preset tint colors available in the custom tint picker.
  * Each entry holds the RGB portion (no alpha) – alpha is controlled separately.
+ * 
+ * TODO: Consider making these themable or user-configurable in future versions.
  */
 private data class TintPreset(val rgb: Long, val name: String)
 
+/** Hardcoded preset colors. These provide sensible defaults for common reading preferences. */
 private val TintPresets = listOf(
     TintPreset(0x00AAFFL, "Blue"),
     TintPreset(0xFF6B6BL, "Red"),
