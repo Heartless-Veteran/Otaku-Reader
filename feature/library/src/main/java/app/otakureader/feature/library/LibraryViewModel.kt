@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.domain.model.Manga
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,7 +35,9 @@ class LibraryViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
-    private val libraryPreferences: LibraryPreferences
+    private val libraryPreferences: LibraryPreferences,
+    private val generalPreferences: GeneralPreferences,
+    private val sourceRepository: SourceRepository
 ) : ViewModel() {
     
     private val _state = MutableStateFlow(LibraryState())
@@ -106,9 +110,31 @@ class LibraryViewModel @Inject constructor(
     private fun observeFilteredItems() {
         combine(
             _allItems,
-            _state.map { it.filterHasNotes }.distinctUntilChanged()
-        ) { items, hasNotesFilter ->
-            if (hasNotesFilter) items.filter { it.hasNote } else items
+            _state.map { it.filterHasNotes }.distinctUntilChanged(),
+            generalPreferences.showNsfwContent,
+            sourceRepository.getSources()
+        ) { items, hasNotesFilter, showNsfw, sources ->
+            var filtered = items
+
+            // Apply "has notes" filter
+            if (hasNotesFilter) {
+                filtered = filtered.filter { it.hasNote }
+            }
+
+            // Apply NSFW filter
+            if (!showNsfw) {
+                // Build a set of NSFW source IDs for fast lookup
+                // Sources have String IDs, manga have Long sourceIds
+                // We need to convert source.id to Long for comparison
+                val nsfwSourceIds = sources
+                    .filter { it.isNsfw }
+                    .mapNotNull { it.id.toLongOrNull() }
+                    .toSet()
+
+                filtered = filtered.filter { it.sourceId !in nsfwSourceIds }
+            }
+
+            filtered
         }
             .onEach { filtered ->
                 _state.update { it.copy(mangaList = filtered) }
@@ -170,6 +196,7 @@ class LibraryViewModel @Inject constructor(
         thumbnailUrl = thumbnailUrl,
         unreadCount = unreadCount,
         isFavorite = favorite,
-        hasNote = !notes.isNullOrBlank()
+        hasNote = !notes.isNullOrBlank(),
+        sourceId = sourceId
     )
 }

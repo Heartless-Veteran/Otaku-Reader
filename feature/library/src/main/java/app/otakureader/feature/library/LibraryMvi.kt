@@ -20,7 +20,8 @@ data class LibraryMangaItem(
     val thumbnailUrl: String?,
     val unreadCount: Int,
     val isFavorite: Boolean,
-    val hasNote: Boolean = false
+    val hasNote: Boolean = false,
+    val sourceId: Long
 )
 
 data class CategoryItem(
