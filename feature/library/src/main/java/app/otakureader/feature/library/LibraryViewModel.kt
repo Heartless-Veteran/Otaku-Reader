@@ -3,8 +3,10 @@ package app.otakureader.feature.library
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.domain.model.Manga
+import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +32,8 @@ class LibraryViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
-    private val libraryPreferences: LibraryPreferences
+    private val libraryPreferences: LibraryPreferences,
+    private val generalPreferences: GeneralPreferences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -70,25 +73,33 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun observeLibraryPreferences() {
-        combine(
-            libraryPreferences.gridSize,
-            libraryPreferences.showBadges,
-            libraryPreferences.librarySortMode,
-            libraryPreferences.libraryFilterMode,
-            libraryPreferences.libraryFilterSourceId,
-            libraryPreferences.showNsfw
-        ) { gridSize, showBadges, sortModeInt, filterModeInt, filterSourceId, showNsfw ->
-            _state.update {
-                it.copy(
-                    gridSize = gridSize,
-                    showBadges = showBadges,
-                    sortMode = LibrarySortMode.entries.getOrElse(sortModeInt) { LibrarySortMode.ALPHABETICAL },
-                    filterMode = LibraryFilterMode.entries.getOrElse(filterModeInt) { LibraryFilterMode.ALL },
-                    filterSourceId = filterSourceId,
-                    showNsfw = showNsfw
-                )
+        // Observe each preference independently to avoid 6-flow combine type-inference limitation
+        libraryPreferences.gridSize
+            .onEach { gridSize -> _state.update { it.copy(gridSize = gridSize) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showBadges
+            .onEach { showBadges -> _state.update { it.copy(showBadges = showBadges) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.librarySortMode
+            .onEach { sortModeInt ->
+                _state.update {
+                    it.copy(sortMode = LibrarySortMode.entries.getOrElse(sortModeInt) { LibrarySortMode.ALPHABETICAL })
+                }
             }
-        }.launchIn(viewModelScope)
+            .launchIn(viewModelScope)
+        libraryPreferences.libraryFilterMode
+            .onEach { filterModeInt ->
+                _state.update {
+                    it.copy(filterMode = LibraryFilterMode.entries.getOrElse(filterModeInt) { LibraryFilterMode.ALL })
+                }
+            }
+            .launchIn(viewModelScope)
+        libraryPreferences.libraryFilterSourceId
+            .onEach { filterSourceId -> _state.update { it.copy(filterSourceId = filterSourceId) } }
+            .launchIn(viewModelScope)
+        generalPreferences.showNsfwContent
+            .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
+            .launchIn(viewModelScope)
     }
 
     private fun loadLibrary() {
@@ -115,66 +126,78 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    /** Encapsulates all filter/sort parameters derived from state for use in the filtered-items combine. */
+    private data class FilterSortParams(
+        val query: String,
+        val filterHasNotes: Boolean,
+        val sortMode: LibrarySortMode,
+        val filterMode: LibraryFilterMode,
+        val filterSourceId: Long?,
+        val showNsfw: Boolean
+    )
+
     private fun observeFilteredItems() {
-        combine(
-            _allItems,
-            _state.map { it.searchQuery }.distinctUntilChanged(),
-            _state.map { it.filterHasNotes }.distinctUntilChanged(),
-            _state.map { it.sortMode }.distinctUntilChanged(),
-            _state.map { it.filterMode }.distinctUntilChanged(),
-            _state.map { it.filterSourceId }.distinctUntilChanged(),
-            _state.map { it.showNsfw }.distinctUntilChanged()
-        ) { items, query, hasNotesFilter, sortMode, filterMode, filterSourceId, showNsfw ->
-            var filtered = items
+        // Map state to filter/sort params with distinctUntilChanged to avoid recomputing
+        // when only mangaList (a derived field) changes, which would cause an infinite loop.
+        val filterParamsFlow = _state.map {
+            FilterSortParams(it.searchQuery, it.filterHasNotes, it.sortMode, it.filterMode, it.filterSourceId, it.showNsfw)
+        }.distinctUntilChanged()
 
-            // NSFW filter
-            if (!showNsfw) {
-                filtered = filtered.filter { !it.isNsfw }
-            }
-
-            // Search filter
-            if (query.isNotBlank()) {
-                filtered = filtered.filter {
-                    it.title.contains(query, ignoreCase = true)
-                }
-            }
-
-            // Has notes filter
-            if (hasNotesFilter) {
-                filtered = filtered.filter { it.hasNote }
-            }
-
-            // Filter by source
-            if (filterSourceId != null) {
-                filtered = filtered.filter { it.sourceId == filterSourceId }
-            }
-
-            // Filter mode
-            filtered = when (filterMode) {
-                // TODO: Re-enable download filtering when isDownloaded is correctly populated
-                LibraryFilterMode.DOWNLOADED -> filtered
-                LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
-                LibraryFilterMode.COMPLETED -> filtered // TODO: Add isCompleted to model
-                // TODO: Re-enable tracking filtering when hasTracking is correctly populated
-                LibraryFilterMode.TRACKING -> filtered
-                LibraryFilterMode.ALL -> filtered
-            }
-
-            // Sort
-            filtered = when (sortMode) {
-                LibrarySortMode.ALPHABETICAL,
-                LibrarySortMode.LAST_READ,
-                LibrarySortMode.DATE_ADDED -> filtered.sortedBy { it.title }
-                LibrarySortMode.UNREAD_COUNT -> filtered.sortedByDescending { it.unreadCount }
-                LibrarySortMode.SOURCE -> filtered.sortedBy { it.sourceId }
-            }
-
-            filtered
+        combine(_allItems, filterParamsFlow) { items, params ->
+            applyFiltersAndSort(items, params)
         }
             .onEach { filtered ->
                 _state.update { it.copy(mangaList = filtered) }
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        var filtered = items
+
+        // NSFW filter
+        if (!params.showNsfw) {
+            filtered = filtered.filter { !it.isNsfw }
+        }
+
+        // Search filter
+        if (params.query.isNotBlank()) {
+            filtered = filtered.filter {
+                it.title.contains(params.query, ignoreCase = true)
+            }
+        }
+
+        // Has notes filter
+        if (params.filterHasNotes) {
+            filtered = filtered.filter { it.hasNote }
+        }
+
+        // Filter by source
+        if (params.filterSourceId != null) {
+            filtered = filtered.filter { it.sourceId == params.filterSourceId }
+        }
+
+        // Filter mode
+        filtered = when (params.filterMode) {
+            // TODO: Re-enable download filtering when isDownloaded is correctly populated
+            LibraryFilterMode.DOWNLOADED -> filtered
+            LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
+            LibraryFilterMode.COMPLETED -> filtered.filter { it.status == MangaStatus.COMPLETED }
+            // TODO: Re-enable tracking filtering when hasTracking is correctly populated
+            // (hasTracking is always false until the tracking repository is wired)
+            LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
+            LibraryFilterMode.ALL -> filtered
+        }
+
+        // Sort
+        return when (params.sortMode) {
+            LibrarySortMode.ALPHABETICAL -> filtered.sortedBy { it.title }
+            LibrarySortMode.LAST_READ -> filtered.sortedByDescending { it.lastRead ?: 0L }
+            // TODO: Add dateAdded to Manga model to implement DATE_ADDED sort properly
+            LibrarySortMode.DATE_ADDED -> filtered.sortedBy { it.title }
+            LibrarySortMode.UNREAD_COUNT -> filtered.sortedByDescending { it.unreadCount }
+            LibrarySortMode.SOURCE -> filtered.sortedBy { it.sourceId }
+        }
     }
 
     private fun onMangaClick(mangaId: Long) {
@@ -245,7 +268,7 @@ class LibraryViewModel @Inject constructor(
 
     private fun onToggleNsfw(show: Boolean) {
         viewModelScope.launch {
-            libraryPreferences.setShowNsfw(show)
+            generalPreferences.setShowNsfwContent(show)
         }
     }
 
@@ -259,6 +282,8 @@ class LibraryViewModel @Inject constructor(
         sourceId = sourceId,
         isDownloaded = false, // TODO: Check download status
         hasTracking = false, // TODO: Check tracking status
-        isNsfw = isNsfw
+        isNsfw = false, // TODO: Derive from source/extension NSFW flag
+        lastRead = lastRead,
+        status = status
     )
 }

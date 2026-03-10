@@ -47,10 +47,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         if (value != null) it[Keys.LIBRARY_FILTER_SOURCE] = value else it.remove(Keys.LIBRARY_FILTER_SOURCE)
     }
 
-    /** Whether to show NSFW content in library */
-    val showNsfw: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW] ?: true }
-    suspend fun setShowNsfw(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW] = value }
-
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
@@ -58,6 +54,5 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val LIBRARY_DISPLAY_MODE = intPreferencesKey("library_display_mode")
         val LIBRARY_FILTER_MODE = intPreferencesKey("library_filter_mode")
         val LIBRARY_FILTER_SOURCE = longPreferencesKey("library_filter_source")
-        val SHOW_NSFW = booleanPreferencesKey("library_show_nsfw")
     }
 }
