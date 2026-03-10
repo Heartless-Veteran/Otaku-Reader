@@ -2,6 +2,7 @@ package app.otakureader.feature.updates
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.usecase.GetRecentUpdatesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
-    private val getRecentUpdatesUseCase: GetRecentUpdatesUseCase
+    private val getRecentUpdatesUseCase: GetRecentUpdatesUseCase,
+    private val generalPreferences: GeneralPreferences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UpdatesState())
@@ -33,6 +35,7 @@ class UpdatesViewModel @Inject constructor(
 
     init {
         loadUpdates()
+        markUpdatesViewed()
     }
 
     fun onEvent(event: UpdatesEvent) {
@@ -56,5 +59,12 @@ class UpdatesViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = false, error = error.message) }
             }
             .launchIn(viewModelScope)
+    }
+
+    /** Record the current time so the Library badge counter resets to zero. */
+    private fun markUpdatesViewed() {
+        viewModelScope.launch {
+            generalPreferences.setLastUpdatesViewedAt(System.currentTimeMillis())
+        }
     }
 }

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -60,6 +61,10 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val updateCheckInterval: Flow<Int> = dataStore.data.map { it[Keys.UPDATE_CHECK_INTERVAL] ?: 12 }
     suspend fun setUpdateCheckInterval(value: Int) = dataStore.edit { it[Keys.UPDATE_CHECK_INTERVAL] = value }
 
+    /** Epoch-millis timestamp of when the user last viewed the Updates screen. Used for badge counting. */
+    val lastUpdatesViewedAt: Flow<Long> = dataStore.data.map { it[Keys.LAST_UPDATES_VIEWED_AT] ?: 0L }
+    suspend fun setLastUpdatesViewedAt(value: Long) = dataStore.edit { it[Keys.LAST_UPDATES_VIEWED_AT] = value }
+
     // --- Browse ---
 
     /** Whether to show NSFW (18+) sources and extensions in the Browse screen. */
@@ -74,6 +79,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val LOCALE = stringPreferencesKey("locale")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val UPDATE_CHECK_INTERVAL = intPreferencesKey("update_check_interval")
+        val LAST_UPDATES_VIEWED_AT = longPreferencesKey("last_updates_viewed_at")
         val SHOW_NSFW_CONTENT = booleanPreferencesKey("show_nsfw_content")
     }
 }
