@@ -1016,7 +1016,8 @@ private fun AccentColorPicker(
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                items(AccentColorPresets) { (_, colorValue) ->
+                items(AccentColorPresets) { preset ->
+                    val colorValue = preset.second
                     val isSelected = selectedColor == colorValue
                     Box(
                         modifier = Modifier
