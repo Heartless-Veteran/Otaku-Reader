@@ -36,7 +36,7 @@ data class MangaEntity(
     val notes: String? = null,
     val notifyNewChapters: Boolean = true,
     // Per-manga reader settings (#260)
-    val readerDirection: Int? = null, // 0=LTR, 1=RTL
+    val readerDirection: Int? = null, // Reader direction enum ordinal
     val readerMode: Int? = null, // 0=single, 1=dual, 2=webtoon, 3=smart panels
     val readerColorFilter: Int? = null, // ColorFilterMode ordinal
     val readerCustomTintColor: Long? = null, // ARGB color
