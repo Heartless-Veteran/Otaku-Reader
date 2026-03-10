@@ -147,12 +147,18 @@ class ChapterRepositoryImpl @Inject constructor(
         author = author,
         artist = artist,
         description = description,
-        genre = genre?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList(),
+        genre = genre?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
         status = MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
         autoDownload = autoDownload,
-        readerBackgroundColor = readerBackgroundColor
+        readerBackgroundColor = readerBackgroundColor,
+        readerDirection = readerDirection,
+        readerMode = readerMode,
+        readerColorFilter = readerColorFilter,
+        readerCustomTintColor = readerCustomTintColor,
+        preloadPagesBefore = preloadPagesBefore,
+        preloadPagesAfter = preloadPagesAfter
     )
 
     private fun Chapter.toEntity() = ChapterEntity(
