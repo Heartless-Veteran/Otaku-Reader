@@ -578,6 +578,7 @@ private fun ReaderSettingsSection(
                 val hasOverrides = manga.readerDirection != null || 
                                    manga.readerMode != null || 
                                    manga.readerColorFilter != null ||
+                                   manga.readerCustomTintColor != null ||
                                    manga.preloadPagesBefore != null ||
                                    manga.preloadPagesAfter != null
                 Text(
