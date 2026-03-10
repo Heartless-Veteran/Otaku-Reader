@@ -105,7 +105,8 @@ class MangaRepositoryImpl @Inject constructor(
         unreadCount = unreadCount,
         autoDownload = autoDownload,
         notes = notes,
-        notifyNewChapters = notifyNewChapters
+        notifyNewChapters = notifyNewChapters,
+        readerBackgroundColor = readerBackgroundColor
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -123,6 +124,7 @@ class MangaRepositoryImpl @Inject constructor(
         initialized = initialized,
         autoDownload = autoDownload,
         notes = notes,
-        notifyNewChapters = notifyNewChapters
+        notifyNewChapters = notifyNewChapters,
+        readerBackgroundColor = readerBackgroundColor
     )
 }

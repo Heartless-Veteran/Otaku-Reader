@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -70,9 +71,11 @@ fun ReaderMenuOverlay(
     zoomLevel: Float,
     brightness: Float,
     colorFilterMode: ColorFilterMode = ColorFilterMode.NONE,
+    readerBackgroundColor: Long? = null,
     onBrightnessChange: (Float) -> Unit,
     onModeChange: (ReaderMode) -> Unit,
     onColorFilterChange: (ColorFilterMode) -> Unit = {},
+    onReaderBackgroundColorChange: (Long?) -> Unit = {},
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
     onResetZoom: () -> Unit,
@@ -164,6 +167,15 @@ fun ReaderMenuOverlay(
                 ColorFilterControl(
                     currentMode = colorFilterMode,
                     onModeChange = onColorFilterChange,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                HorizontalDivider()
+
+                // Per-manga reader background color
+                ReaderBackgroundColorControl(
+                    currentColor = readerBackgroundColor,
+                    onColorChange = onReaderBackgroundColorChange,
                     modifier = Modifier.padding(16.dp)
                 )
                 
@@ -384,6 +396,76 @@ fun ColorFilterControl(
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Preset background colors for the per-manga reader background.
+ * null means "default" (black).
+ */
+private val ReaderBackgroundPresets: List<Pair<String, Long?>> = listOf(
+    "Default" to null,
+    "Black" to 0xFF000000L,
+    "Dark Grey" to 0xFF1A1A1AL,
+    "Grey" to 0xFF333333L,
+    "Warm Grey" to 0xFF3E3832L,
+    "Dark Brown" to 0xFF2B1D0EL,
+    "Sepia" to 0xFFF5E6CCL,
+    "White" to 0xFFFFFFFFL,
+    "Dark Blue" to 0xFF0D1B2AL
+)
+
+/**
+ * Control for selecting a per-manga reader background color.
+ * Shows a row of color swatches with the currently selected one highlighted.
+ */
+@Composable
+fun ReaderBackgroundColorControl(
+    currentColor: Long?,
+    onColorChange: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = "Reader Background",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(ReaderBackgroundPresets.size) { index ->
+                val (_, colorValue) = ReaderBackgroundPresets[index]
+                val isSelected = currentColor == colorValue
+                val displayColor = if (colorValue != null) Color(colorValue.toInt()) else Color.Black
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(displayColor)
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = CircleShape
+                                )
+                            } else {
+                                Modifier.border(
+                                    width = 1.dp,
+                                    color = Color.Gray.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                )
+                            }
+                        )
+                        .clickable { onColorChange(colorValue) }
                 )
             }
         }
