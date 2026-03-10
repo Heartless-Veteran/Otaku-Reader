@@ -157,7 +157,8 @@ fun LibraryScreen(
                 onNavigateToBrowse = onNavigateToBrowse,
                 onNavigateToHistory = onNavigateToHistory,
                 onNavigateToStatistics = onNavigateToStatistics,
-                onNavigateToSettings = onNavigateToSettings
+                onNavigateToSettings = onNavigateToSettings,
+                newUpdatesCount = state.newUpdatesCount
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

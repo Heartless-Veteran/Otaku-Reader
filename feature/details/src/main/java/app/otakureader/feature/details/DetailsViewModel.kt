@@ -12,6 +12,7 @@ import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
+import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +37,8 @@ class DetailsViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
     private val downloadPreferences: DownloadPreferences,
-    private val updateMangaNote: UpdateMangaNoteUseCase
+    private val updateMangaNote: UpdateMangaNoteUseCase,
+    private val setMangaNotifications: SetMangaNotificationsUseCase
 ) : ViewModel() {
 
     private val mangaId: Long = savedStateHandle.get<Long>(MANGA_ID_ARG) 
@@ -86,6 +88,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.MarkSelectedAsRead -> markSelectedAsRead()
             is DetailsContract.Event.MarkSelectedAsUnread -> markSelectedAsUnread()
             is DetailsContract.Event.BookmarkSelectedChapters -> bookmarkSelectedChapters()
+            is DetailsContract.Event.ToggleNotifications -> toggleNotifications()
         }
     }
 
@@ -556,6 +559,23 @@ class DetailsViewModel @Inject constructor(
                     }
                 }
                 _effect.emit(DetailsContract.Effect.ShowError(errorMessage))
+            }
+        }
+    }
+
+    private fun toggleNotifications() {
+        viewModelScope.launch {
+            val manga = _state.value.manga ?: return@launch
+            try {
+                setMangaNotifications(manga.id, !manga.notifyNewChapters)
+                val message = if (manga.notifyNewChapters) {
+                    "Notifications muted for ${manga.title}"
+                } else {
+                    "Notifications enabled for ${manga.title}"
+                }
+                _effect.emit(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: Exception) {
+                _effect.emit(DetailsContract.Effect.ShowError("Failed to update notification setting"))
             }
         }
     }
