@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +64,9 @@ fun PageSlider(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
+                // Guard against totalPages == 0 (can occur during AnimatedVisibility exit transition).
+                if (totalPages <= 0) return@Column
+
                 // Page label row: e.g. "5 / 120"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -94,6 +98,10 @@ fun PageSlider(
                 // the external value changes (e.g. page turned via tap zone).
                 var sliderValue by remember(currentPage) { mutableFloatStateOf(currentPage.toFloat()) }
 
+                // Only emit onPageSeek when the integer page index actually changes to
+                // avoid unnecessary churn from sub-integer float movements during a drag.
+                var lastEmittedPage by remember(currentPage) { mutableIntStateOf(currentPage) }
+
                 val maxValue = (totalPages - 1).coerceAtLeast(0).toFloat()
 
                 // Apply horizontal mirror for RTL so dragging right → earlier pages.
@@ -111,7 +119,11 @@ fun PageSlider(
                     value = sliderValue,
                     onValueChange = { newValue ->
                         sliderValue = newValue
-                        onPageSeek(newValue.toInt())
+                        val newPage = newValue.toInt()
+                        if (newPage != lastEmittedPage) {
+                            lastEmittedPage = newPage
+                            onPageSeek(newPage)
+                        }
                     },
                     valueRange = 0f..maxValue,
                     steps = if (totalPages > 2) totalPages - 2 else 0,
