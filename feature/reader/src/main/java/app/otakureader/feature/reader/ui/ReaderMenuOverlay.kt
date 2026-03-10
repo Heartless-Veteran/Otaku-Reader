@@ -468,7 +468,11 @@ private fun CustomTintPicker(
                             val alpha = ((currentAlpha * 255).toInt().coerceIn(0, 255)).toLong()
                             onColorChange((alpha shl 24) or preset.rgb)
                         }
-                        .semantics { contentDescription = preset.name }
+                        .semantics {
+                            contentDescription = preset.name
+                            role = androidx.compose.ui.semantics.Role.RadioButton
+                            selected = isSelected
+                        }
                 )
             }
         }
