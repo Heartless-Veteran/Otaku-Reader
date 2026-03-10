@@ -99,9 +99,11 @@ class UltimateReaderViewModel @Inject constructor(
      */
     private fun loadSettings() {
         viewModelScope.launch {
-            // Load manga first to check for per-manga overrides
-            val manga = mangaRepository.getMangaById(mangaId)
-            currentManga = manga
+            // Load manga first to check for per-manga overrides.
+            // Reuse already loaded manga to avoid an extra DB read.
+            val manga = currentManga ?: mangaRepository.getMangaById(mangaId).also { loaded ->
+                currentManga = loaded
+            }
 
             // Load all settings concurrently
             val mode = settingsRepository.readerMode.first()
