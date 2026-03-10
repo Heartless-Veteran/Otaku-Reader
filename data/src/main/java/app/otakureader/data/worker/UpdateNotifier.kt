@@ -19,7 +19,8 @@ import kotlinx.coroutines.withContext
 
 internal const val UPDATE_CHANNEL_ID = "library_updates_channel"
 internal const val GROUP_KEY_UPDATES = "library_updates"
-internal const val SUMMARY_NOTIFICATION_ID = 0
+internal const val UPDATE_NOTIFICATION_TAG = "library_update"
+internal const val SUMMARY_NOTIFICATION_ID = Int.MAX_VALUE
 
 /**
  * Data class for notification manga info.
@@ -65,12 +66,12 @@ internal class UpdateNotifier(private val context: Context) {
         // Build individual notifications for each manga
         mangaList.forEach { manga ->
             val notification = buildMangaNotification(manga)
-            notificationManager.notify(manga.id.hashCode(), notification)
+            notificationManager.notify(UPDATE_NOTIFICATION_TAG, manga.id.hashCode(), notification)
         }
 
         // Build and show summary notification
         val summaryNotification = buildSummaryNotification(mangaList.size, totalNewChapters)
-        notificationManager.notify(SUMMARY_NOTIFICATION_ID, summaryNotification)
+        notificationManager.notify(UPDATE_NOTIFICATION_TAG, SUMMARY_NOTIFICATION_ID, summaryNotification)
     }
 
     private suspend fun buildMangaNotification(manga: NotificationManga): android.app.Notification {
@@ -84,8 +85,8 @@ internal class UpdateNotifier(private val context: Context) {
             loadCoverImage(url)
         }
 
-        // Build action intent to open manga
-        val openIntent = buildOpenMangaIntent(manga.id)
+        // Build action intent to open manga, fall back to launch intent if unavailable
+        val openIntent = buildOpenMangaIntent(manga.id) ?: buildLaunchIntent()
 
         return NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_more)
