@@ -17,10 +17,12 @@
     <string name="tracking_search_placeholder">Enter manga title…</string>
     <string name="tracking_search_error">Search failed: %s</string>
     <string name="tracking_unlink">Unlink</string>
+    <string name="tracking_unlink_success">Unlinked from %s</string>
     <string name="tracking_unlink_error">Failed to unlink: %s</string>
     <string name="tracking_link_success">Linked to %s</string>
     <string name="tracking_link_error">Failed to link: %s</string>
     <string name="tracking_update_error">Update failed: %s</string>
+    <string name="tracking_oauth_browser_error">No browser found to open OAuth login</string>
     <string name="tracking_chapter_progress">Ch. %d</string>
     <string name="tracking_status_reading">Reading</string>
     <string name="tracking_status_completed">Completed</string>

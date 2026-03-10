@@ -13,6 +13,7 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.tracking.Tracker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,6 +95,9 @@ class TrackingViewModel @Inject constructor(
     private val _effect = Channel<TrackingEffect>(Channel.BUFFERED)
     val effect: Flow<TrackingEffect> = _effect.receiveAsFlow()
 
+    /** Tracks the current entry-observation job so it can be cancelled on re-entry. */
+    private var observeEntriesJob: Job? = null
+
     fun onEvent(event: TrackingEvent) {
         when (event) {
             is TrackingEvent.LoadTrackers -> loadTrackers(event.mangaId, event.mangaTitle)
@@ -120,9 +124,10 @@ class TrackingViewModel @Inject constructor(
     private fun loadTrackers(mangaId: Long, mangaTitle: String) {
         _state.update { it.copy(mangaId = mangaId, mangaTitle = mangaTitle, isLoading = true) }
 
-        viewModelScope.launch {
-            val storedEntries = trackRepository.observeEntriesForManga(mangaId)
-            storedEntries.collect { entries ->
+        // Cancel any previous observation to avoid leaking collectors when mangaId changes.
+        observeEntriesJob?.cancel()
+        observeEntriesJob = viewModelScope.launch {
+            trackRepository.observeEntriesForManga(mangaId).collect { entries ->
                 val entryMap = entries.associateBy { it.trackerId }
                 val trackerModels = trackerMap.values
                     .sortedBy { it.id }
@@ -144,6 +149,14 @@ class TrackingViewModel @Inject constructor(
      * Determines the correct login flow:
      * - Credential-based trackers (Kitsu, MangaUpdates) show a username/password dialog.
      * - OAuth-based trackers (MAL, AniList, Shikimori) open the provider's authorization URL.
+     *
+     * TODO: The OAuth flow is incomplete. A full implementation requires:
+     *   1. `Tracker` exposing `authorizationUrl(codeVerifier: String): String` so each
+     *      provider can build a URL with client_id, redirect_uri, response_type, state, and
+     *      PKCE parameters specific to that service.
+     *   2. A deep-link / intent-filter in the app's manifest to receive the OAuth redirect
+     *      callback and dispatch a ViewModel event (e.g., `OAuthCallback(code)`) that calls
+     *      `Tracker.login(codeVerifier, authCode)` to exchange the code for tokens.
      */
     private fun initiateLogin(trackerId: Int) {
         if (isOAuthTracker(trackerId)) {
@@ -219,7 +232,8 @@ class TrackingViewModel @Inject constructor(
                         trackerId = trackerId
                     )
                     trackRepository.upsertEntry(linkedEntry)
-                    _state.update { it.copy(searchResults = emptyList(), searchQuery = "") }
+                    // Clear the search dialog state entirely so it dismisses automatically.
+                    _state.update { it.copy(searchResults = emptyList(), searchQuery = "", selectedTracker = null) }
                     _effect.trySend(TrackingEffect.ShowMessage(
                         context.getString(R.string.tracking_link_success, tracker.name)
                     ))
@@ -233,11 +247,15 @@ class TrackingViewModel @Inject constructor(
     }
 
     private fun unlinkManga(trackerId: Int) {
+        val tracker = trackerMap[trackerId] ?: return
         val entry = _state.value.trackers.find { it.id == trackerId }?.entry ?: return
 
         viewModelScope.launch {
             try {
                 trackRepository.deleteEntry(trackerId, entry.remoteId)
+                _effect.trySend(TrackingEffect.ShowMessage(
+                    context.getString(R.string.tracking_unlink_success, tracker.name)
+                ))
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_unlink_error, e.message ?: "")
@@ -252,6 +270,11 @@ class TrackingViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                // TODO: Several tracker implementations (MAL, Shikimori, etc.) catch exceptions
+                //  internally and return the input entry on failure, making it impossible to
+                //  distinguish a successful remote update from a silent one here.
+                //  A future fix should have `Tracker.update` either throw on failure or return
+                //  a `Result<TrackEntry>` so we can only persist on confirmed success.
                 val updated = tracker.update(currentEntry.copy(status = status))
                 trackRepository.upsertEntry(updated)
             } catch (e: Exception) {
@@ -312,6 +335,14 @@ class TrackingViewModel @Inject constructor(
         TrackerType.SHIKIMORI
     )
 
+    /**
+     * Returns the base authorization endpoint for OAuth-based trackers.
+     *
+     * TODO: These URLs are incomplete — a full OAuth request also requires client_id,
+     *  redirect_uri, response_type, state, and PKCE (code_challenge) query parameters.
+     *  The proper fix is to add `fun authorizationUrl(codeVerifier: String): String` to the
+     *  [Tracker] interface so each implementation can build a fully-parameterized URL.
+     */
     private fun getOAuthUrl(trackerId: Int): String = when (trackerId) {
         TrackerType.MY_ANIME_LIST -> "https://myanimelist.net/v1/oauth2/authorize"
         TrackerType.ANILIST -> "https://anilist.co/api/v2/oauth/authorize"

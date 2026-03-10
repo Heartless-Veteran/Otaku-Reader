@@ -84,7 +84,12 @@ fun TrackingScreen(
                 is TrackingEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
                 is TrackingEffect.OpenOAuth -> {
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(effect.url))
-                    context.startActivity(intent)
+                    runCatching { context.startActivity(intent) }
+                        .onFailure {
+                            snackbarHostState.showSnackbar(
+                                context.getString(R.string.tracking_oauth_browser_error)
+                            )
+                        }
                 }
             }
         }
