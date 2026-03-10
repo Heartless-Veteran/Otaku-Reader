@@ -240,27 +240,27 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun refreshLocalBackups() {
-        viewModelScope.launch {
+    private suspend fun refreshLocalBackups() {
+        try {
             val files = backupRepository.listLocalBackups().map { it.name }
             _state.update { it.copy(localBackupFiles = files) }
+        } catch (e: Exception) {
+            _effect.send(SettingsEffect.ShowSnackbar("Could not list backups: ${e.message}"))
         }
     }
 
-    private fun restoreLocalBackup(fileName: String) {
-        viewModelScope.launch {
-            _state.update { it.copy(isRestoreInProgress = true, restoringBackupFileName = fileName) }
-            try {
-                val files = backupRepository.listLocalBackups()
-                val file = files.firstOrNull { it.name == fileName }
-                    ?: throw IllegalArgumentException("Backup file not found: $fileName")
-                backupRepository.restoreLocalBackup(file)
-                _effect.send(SettingsEffect.ShowSnackbar("Backup restored successfully"))
-            } catch (e: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Restore failed: ${e.message}"))
-            } finally {
-                _state.update { it.copy(isRestoreInProgress = false, restoringBackupFileName = null) }
-            }
+    private suspend fun restoreLocalBackup(fileName: String) {
+        _state.update { it.copy(isRestoreInProgress = true, restoringBackupFileName = fileName) }
+        try {
+            val files = backupRepository.listLocalBackups()
+            val file = files.firstOrNull { it.name == fileName }
+                ?: throw IllegalArgumentException("Backup file not found: $fileName")
+            backupRepository.restoreLocalBackup(file)
+            _effect.send(SettingsEffect.ShowSnackbar("Backup restored successfully"))
+        } catch (e: Exception) {
+            _effect.send(SettingsEffect.ShowSnackbar("Restore failed: ${e.message}"))
+        } finally {
+            _state.update { it.copy(isRestoreInProgress = false, restoringBackupFileName = null) }
         }
     }
 }

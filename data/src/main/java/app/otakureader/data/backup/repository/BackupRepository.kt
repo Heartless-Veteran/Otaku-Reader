@@ -87,11 +87,13 @@ class BackupRepository @Inject constructor(
 
     /**
      * Removes old automatic backup files, keeping only the [maxCount] most recent ones.
+     * [maxCount] is coerced to at least 1 so the most recent backup is always retained.
      */
     suspend fun pruneLocalBackups(maxCount: Int) = withContext(Dispatchers.IO) {
+        val safeMax = maxCount.coerceAtLeast(1)
         val backups = listLocalBackups()
-        if (backups.size > maxCount) {
-            backups.drop(maxCount).forEach { it.delete() }
+        if (backups.size > safeMax) {
+            backups.drop(safeMax).forEach { it.delete() }
         }
     }
 
