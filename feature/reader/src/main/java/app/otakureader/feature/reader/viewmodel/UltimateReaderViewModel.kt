@@ -95,10 +95,14 @@ class UltimateReaderViewModel @Inject constructor(
     }
 
     /**
-     * Load saved reader settings
+     * Load saved reader settings with per-manga overrides (#260, #264)
      */
     private fun loadSettings() {
         viewModelScope.launch {
+            // Load manga first to check for per-manga overrides
+            val manga = mangaRepository.getMangaById(mangaId)
+            currentManga = manga
+
             // Load all settings concurrently
             val mode = settingsRepository.readerMode.first()
             val brightness = settingsRepository.brightness.first()
@@ -112,19 +116,29 @@ class UltimateReaderViewModel @Inject constructor(
             val colorFilterMode = settingsRepository.colorFilterMode.first()
             val customTintColor = settingsRepository.customTintColor.first()
 
+            // Apply per-manga overrides if they exist (#260)
+            val effectiveMode = manga?.readerMode?.let { ReaderMode.entries.getOrNull(it) } ?: mode
+            val effectiveDirection = manga?.readerDirection?.let { 
+                if (it == 0) ReadingDirection.LTR else ReadingDirection.RTL 
+            } ?: direction
+            val effectiveColorFilter = manga?.readerColorFilter?.let { 
+                ColorFilterMode.entries.getOrNull(it) 
+            } ?: colorFilterMode
+            val effectiveTintColor = manga?.readerCustomTintColor ?: customTintColor
+
             _state.update {
                 it.copy(
-                    mode = mode,
+                    mode = effectiveMode,
                     brightness = brightness,
                     keepScreenOn = keepScreenOn,
                     showPageNumber = showPageNumber,
-                    readingDirection = direction,
+                    readingDirection = effectiveDirection,
                     volumeKeysEnabled = volumeKeysEnabled,
                     volumeKeysInverted = volumeKeysInverted,
                     isFullscreen = fullscreen,
                     incognitoMode = incognitoMode,
-                    colorFilterMode = colorFilterMode,
-                    customTintColor = customTintColor
+                    colorFilterMode = effectiveColorFilter,
+                    customTintColor = effectiveTintColor
                 )
             }
         }
@@ -473,13 +487,20 @@ class UltimateReaderViewModel @Inject constructor(
     }
 
     /**
-     * Preload pages ahead and behind current page for smooth scrolling
+     * Preload pages ahead and behind current page for smooth scrolling.
+     * Uses per-manga preload settings if available (#264), otherwise falls back to default.
      */
     private fun preloadPages(currentPage: Int) {
         preloadJob?.cancel()
         preloadJob = viewModelScope.launch {
             val pages = _state.value.pages
-            val preloadRange = (currentPage - PRELOAD_BUFFER)..(currentPage + PRELOAD_BUFFER)
+            val manga = currentManga
+
+            // Use per-manga preload settings if available, otherwise use defaults (#264)
+            val preloadBefore = manga?.preloadPagesBefore ?: PRELOAD_BUFFER
+            val preloadAfter = manga?.preloadPagesAfter ?: PRELOAD_BUFFER
+
+            val preloadRange = (currentPage - preloadBefore)..(currentPage + preloadAfter)
 
             preloadRange.forEach { index ->
                 if (index in pages.indices && index != currentPage) {
