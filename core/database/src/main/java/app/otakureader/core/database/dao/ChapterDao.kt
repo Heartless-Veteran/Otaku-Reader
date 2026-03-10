@@ -68,4 +68,14 @@ interface ChapterDao {
             "LIMIT 200"
     )
     fun getRecentUpdates(): Flow<List<ChapterWithMangaEntity>>
+
+    /**
+     * Counts library chapters fetched after [since] (epoch millis). Used for the Updates badge.
+     */
+    @Query(
+        "SELECT COUNT(*) FROM chapters " +
+            "INNER JOIN manga ON chapters.mangaId = manga.id " +
+            "WHERE chapters.dateFetch > :since AND manga.favorite = 1"
+    )
+    fun countNewUpdatesSince(since: Long): Flow<Int>
 }
