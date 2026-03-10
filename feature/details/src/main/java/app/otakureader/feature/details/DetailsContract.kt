@@ -121,6 +121,7 @@ object DetailsContract {
         data object MarkSelectedAsRead : Event
         data object MarkSelectedAsUnread : Event
         data object BookmarkSelectedChapters : Event
+        data object ToggleNotifications : Event
     }
 
     /**

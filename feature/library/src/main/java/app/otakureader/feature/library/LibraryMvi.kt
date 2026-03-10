@@ -33,7 +33,8 @@ data class LibraryState(
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
     val filterMode: LibraryFilterMode = LibraryFilterMode.ALL,
     val filterSourceId: Long? = null,
-    val showNsfw: Boolean = false
+    val showNsfw: Boolean = false,
+    val newUpdatesCount: Int = 0
 )
 
 data class LibraryMangaItem(

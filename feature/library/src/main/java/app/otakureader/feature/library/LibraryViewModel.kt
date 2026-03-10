@@ -7,6 +7,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -33,7 +35,8 @@ class LibraryViewModel @Inject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
     private val libraryPreferences: LibraryPreferences,
-    private val generalPreferences: GeneralPreferences
+    private val generalPreferences: GeneralPreferences,
+    private val chapterRepository: ChapterRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -49,6 +52,7 @@ class LibraryViewModel @Inject constructor(
         loadLibrary()
         observeLibraryPreferences()
         observeFilteredItems()
+        observeNewUpdatesCount()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -99,6 +103,13 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         generalPreferences.showNsfwContent
             .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeNewUpdatesCount() {
+        generalPreferences.lastUpdatesViewedAt
+            .flatMapLatest { since -> chapterRepository.countNewUpdatesSince(since) }
+            .onEach { count -> _state.update { it.copy(newUpdatesCount = count) } }
             .launchIn(viewModelScope)
     }
 
