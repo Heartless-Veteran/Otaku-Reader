@@ -445,7 +445,6 @@ fun ReaderBackgroundColorControl(
                 val isSelected = currentColor == colorValue
                 val displayColor = if (colorValue != null) Color(colorValue.toInt()) else Color.Black
                 Box(
-                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)

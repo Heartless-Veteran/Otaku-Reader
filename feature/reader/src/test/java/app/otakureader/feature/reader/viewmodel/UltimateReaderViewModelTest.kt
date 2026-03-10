@@ -57,6 +57,8 @@ class UltimateReaderViewModelTest {
         every { settingsRepository.volumeKeysInverted } returns flowOf(false)
         every { settingsRepository.fullscreen } returns flowOf(true)
         every { settingsRepository.incognitoMode } returns flowOf(false)
+        every { settingsRepository.colorFilterMode } returns flowOf(app.otakureader.feature.reader.model.ColorFilterMode.NONE)
+        every { settingsRepository.customTintColor } returns flowOf(0x4000AAFFL)
 
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
         coEvery { chapterRepository.getChapterById(chapterId) } returns null
