@@ -16,15 +16,18 @@ import androidx.compose.ui.platform.LocalContext
 private val LightColorScheme = lightColorScheme()
 private val DarkColorScheme = darkColorScheme()
 
+/** Color scheme ID for the user-defined custom accent color. */
+const val COLOR_SCHEME_CUSTOM_ACCENT = 11
+
 /**
  * Otaku Reader app theme.
  * Supports dynamic color (Material You) on Android 12+, custom color schemes,
  * Pure Black (AMOLED) dark mode, custom accent color, and manual dark/light mode.
  *
  * @param darkTheme Whether to use dark theme. Defaults to system setting.
- * @param colorScheme Color scheme selection (0=System Default, 1=Dynamic, 2-10=Custom schemes, 11=Custom accent)
+ * @param colorScheme Color scheme selection (0=System Default, 1=Dynamic, 2-10=Custom schemes, [COLOR_SCHEME_CUSTOM_ACCENT]=Custom accent)
  * @param usePureBlack Whether to use Pure Black (#000000) background in dark mode (AMOLED)
- * @param customAccentColor ARGB Long used when [colorScheme] == 11 (Custom accent)
+ * @param customAccentColor ARGB Long used when [colorScheme] == [COLOR_SCHEME_CUSTOM_ACCENT]
  */
 @Composable
 fun OtakuReaderTheme(
@@ -54,8 +57,8 @@ fun OtakuReaderTheme(
             darkTheme -> DarkColorScheme
             else -> LightColorScheme
         }
-        // 11 = Custom accent color
-        11 -> {
+        // COLOR_SCHEME_CUSTOM_ACCENT = Custom accent color
+        COLOR_SCHEME_CUSTOM_ACCENT -> {
             val accent = Color(customAccentColor.toInt())
             if (darkTheme) buildCustomDarkScheme(accent) else buildCustomLightScheme(accent)
         }

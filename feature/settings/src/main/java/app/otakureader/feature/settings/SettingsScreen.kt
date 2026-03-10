@@ -12,13 +12,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -58,10 +56,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.theme.COLOR_SCHEME_CUSTOM_ACCENT
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -234,7 +237,7 @@ private fun AppearanceSection(state: SettingsState, onEvent: (SettingsEvent) -> 
                             "Tidal Wave" to 8,
                             "Yotsuba" to 9,
                             "Yin & Yang" to 10,
-                            "Custom Accent" to 11
+                            "Custom Accent" to COLOR_SCHEME_CUSTOM_ACCENT
                         )
                         schemes.forEach { (label, value) ->
                             Row(
@@ -263,7 +266,7 @@ private fun AppearanceSection(state: SettingsState, onEvent: (SettingsEvent) -> 
             )
 
             // Custom accent color picker (shown when "Custom Accent" is selected)
-            if (state.colorScheme == 11) {
+            if (state.colorScheme == COLOR_SCHEME_CUSTOM_ACCENT) {
                 AccentColorPicker(
                     selectedColor = state.customAccentColor,
                     onColorSelected = { onEvent(SettingsEvent.SetCustomAccentColor(it)) }
@@ -997,7 +1000,8 @@ private val AccentColorPresets: List<Pair<String, Long>> = listOf(
 
 /**
  * A grid of color swatches for selecting a custom accent color.
- * Shows a grid of preset colors and highlights the currently selected one.
+ * Uses FlowRow instead of LazyVerticalGrid to avoid infinite-height measurement
+ * inside the parent scrollable Column.
  */
 @Composable
 private fun AccentColorPicker(
@@ -1008,16 +1012,14 @@ private fun AccentColorPicker(
     ListItem(
         headlineContent = { Text("Accent Color") },
         supportingContent = {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
             ) {
-                items(AccentColorPresets) { preset ->
-                    val colorValue = preset.second
+                AccentColorPresets.forEach { (name, colorValue) ->
                     val isSelected = selectedColor == colorValue
                     Box(
                         modifier = Modifier
@@ -1034,6 +1036,11 @@ private fun AccentColorPicker(
                                 } else Modifier
                             )
                             .clickable { onColorSelected(colorValue) }
+                            .semantics {
+                                contentDescription = name
+                                role = Role.RadioButton
+                                selected = isSelected
+                            }
                     )
                 }
             }

@@ -49,7 +49,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     /**
      * Custom accent color stored as an ARGB Long.
-     * Used when colorScheme == 11 ("Custom") to generate a personalized color scheme.
+     * Used when colorScheme == COLOR_SCHEME_CUSTOM_ACCENT ("Custom") to generate a personalized color scheme.
      * Default is Material Blue (0xFF1976D2).
      */
     val customAccentColor: Flow<Long> = dataStore.data.map { it[Keys.CUSTOM_ACCENT_COLOR] ?: 0xFF1976D2L }
