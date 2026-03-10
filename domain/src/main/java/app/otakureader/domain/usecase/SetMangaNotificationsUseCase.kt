@@ -3,7 +3,7 @@ package app.otakureader.domain.usecase
 import app.otakureader.domain.repository.MangaRepository
 import javax.inject.Inject
 
-class ToggleMangaNotificationsUseCase @Inject constructor(
+class SetMangaNotificationsUseCase @Inject constructor(
     private val mangaRepository: MangaRepository
 ) {
     suspend operator fun invoke(mangaId: Long, notify: Boolean) {
