@@ -38,6 +38,7 @@ class AiPreferences(private val dataStore: DataStore<Preferences>) {
      * the Android Keystore. This plaintext approach is intentional for simplicity; users should
      * treat this key as low-sensitivity or rotate it if the device is compromised.
      */
+    /** Gemini API key (masked in UI, stored locally). */
     val geminiApiKey: Flow<String> = dataStore.data.map { it[Keys.GEMINI_API_KEY] ?: "" }
     suspend fun setGeminiApiKey(value: String) = dataStore.edit { it[Keys.GEMINI_API_KEY] = value }
 

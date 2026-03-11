@@ -1,9 +1,7 @@
 package app.otakureader.feature.about
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -11,17 +9,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Help
-import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.GitHub
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalLibrary
@@ -39,22 +36,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-
-/**
- * Opens [url] in the device browser. Shows a short Toast when no handler is available.
- */
-private fun openUrl(context: Context, url: String) {
-    runCatching {
-        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-    }.onFailure {
-        Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-    }
-}
 
 /**
  * About screen showing app information, help, FAQ, licenses, and credits.
@@ -65,7 +50,6 @@ fun AboutScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLicenses: () -> Unit = {},
     onNavigateToPrivacyPolicy: () -> Unit = {},
-    onNavigateToChangelog: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -105,7 +89,12 @@ fun AboutScreen(
                 title = "How to Add Sources",
                 subtitle = "Learn how to install extensions and add manga sources",
                 onClick = {
-                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
+                        )
+                    )
                 }
             )
 
@@ -114,7 +103,12 @@ fun AboutScreen(
                 title = "Frequently Asked Questions",
                 subtitle = "Common questions and troubleshooting tips",
                 onClick = {
-                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
+                        )
+                    )
                 }
             )
 
@@ -123,7 +117,12 @@ fun AboutScreen(
                 title = "Getting Started Guide",
                 subtitle = "Learn the basics of using Otaku Reader",
                 onClick = {
-                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
+                        )
+                    )
                 }
             )
 
@@ -136,7 +135,7 @@ fun AboutScreen(
                 icon = Icons.Default.History,
                 title = "Changelog",
                 subtitle = "See what's new in this version",
-                onClick = onNavigateToChangelog
+                onClick = onNavigateToLicenses
             )
 
             AboutListItem(
@@ -159,11 +158,16 @@ fun AboutScreen(
             AboutSectionTitle("Connect")
 
             AboutListItem(
-                icon = Icons.Default.Code,
+                icon = Icons.Default.GitHub,
                 title = "GitHub Repository",
                 subtitle = "View source code and report issues",
                 onClick = {
-                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader")
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader")
+                        )
+                    )
                 }
             )
 
@@ -172,7 +176,12 @@ fun AboutScreen(
                 title = "Documentation",
                 subtitle = "Full documentation and guides",
                 onClick = {
-                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
+                    context.startActivity(
+                        Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
+                        )
+                    )
                 }
             )
 
@@ -183,22 +192,6 @@ fun AboutScreen(
 
 @Composable
 private fun AppInfoHeader() {
-    val context = LocalContext.current
-    val versionName = remember(context) {
-        runCatching {
-            val packageManager = context.packageManager
-            val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                packageManager.getPackageInfo(
-                    context.packageName,
-                    android.content.pm.PackageManager.PackageInfoFlags.of(0L)
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(context.packageName, 0)
-            }
-            packageInfo.versionName
-        }.getOrNull().orEmpty()
-    }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -206,7 +199,7 @@ private fun AppInfoHeader() {
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+            imageVector = Icons.Default.MenuBook,
             contentDescription = null,
             modifier = Modifier
                 .padding(bottom = 16.dp)
@@ -221,7 +214,7 @@ private fun AppInfoHeader() {
         )
 
         Text(
-            text = "Version $versionName",
+            text = "Version ${BuildConfig.VERSION_NAME}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
