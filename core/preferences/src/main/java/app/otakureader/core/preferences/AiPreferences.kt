@@ -77,7 +77,7 @@ class AiPreferences(private val dataStore: DataStore<Preferences>) {
     val aiTokensUsedThisMonth: Flow<Long> = dataStore.data.map { it[Keys.AI_TOKENS_USED_THIS_MONTH] ?: 0L }
     suspend fun setAiTokensUsedThisMonth(value: Long) = dataStore.edit { it[Keys.AI_TOKENS_USED_THIS_MONTH] = value }
 
-    /** Month-year for token tracking (format: YYYY-MM). */
+    /** Month-year for token tracking (format: yyyy-MM). */
     val aiTokenTrackingPeriod: Flow<String> = dataStore.data.map { it[Keys.AI_TOKEN_TRACKING_PERIOD] ?: "" }
     suspend fun setAiTokenTrackingPeriod(value: String) = dataStore.edit { it[Keys.AI_TOKEN_TRACKING_PERIOD] = value }
 
