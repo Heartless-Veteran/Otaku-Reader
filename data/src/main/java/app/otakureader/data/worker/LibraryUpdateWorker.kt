@@ -7,6 +7,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.repository.ChapterRepository
@@ -28,6 +29,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val updateLibraryManga: UpdateLibraryMangaUseCase,
     private val downloadPreferences: DownloadPreferences,
+    private val generalPreferences: GeneralPreferences,
     private val downloadManager: DownloadManager,
     private val chapterRepository: ChapterRepository
 ) : CoroutineWorker(context, workerParams) {
@@ -44,12 +46,13 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val autoDownloadEnabled = downloadPreferences.autoDownloadEnabled.first()
             val downloadOnlyOnWifi = downloadPreferences.downloadOnlyOnWifi.first()
             val autoDownloadLimit = downloadPreferences.autoDownloadLimit.first()
+            val notificationsEnabled = generalPreferences.notificationsEnabled.first()
 
             // Check if we should skip auto-download due to Wi-Fi requirement
             val shouldAutoDownload = autoDownloadEnabled &&
                 (!downloadOnlyOnWifi || isConnectedToWifi())
 
-            var totalNewChapters = 0
+            val mangaWithNewChapters = mutableListOf<NotificationManga>()
             var failedUpdates = 0
 
             // Update each manga
@@ -57,13 +60,22 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 val result = updateLibraryManga(manga)
 
                 result.onSuccess { newChapterCount ->
-                    totalNewChapters += newChapterCount
+                    if (newChapterCount > 0) {
+                        // Only add to notification list if notifications enabled for this manga
+                        if (manga.notifyNewChapters) {
+                            mangaWithNewChapters.add(
+                                NotificationManga(
+                                    id = manga.id,
+                                    title = manga.title,
+                                    coverUrl = manga.thumbnailUrl,
+                                    newChapterCount = newChapterCount
+                                )
+                            )
+                        }
+                    }
 
                     // Auto-download new chapters if enabled and conditions are met
                     if (shouldAutoDownload && newChapterCount > 0) {
-                        // Check if auto-download is enabled for this specific manga (per-manga override)
-                        // If manga.autoDownload is true, always download
-                        // If manga.autoDownload is false and global setting is true, download
                         val shouldDownloadForManga = manga.autoDownload || autoDownloadEnabled
 
                         if (shouldDownloadForManga) {
@@ -73,6 +85,15 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 }.onFailure {
                     failedUpdates++
                 }
+            }
+
+            // Send notification if new chapters were found and notifications are enabled
+            if (notificationsEnabled && mangaWithNewChapters.isNotEmpty()) {
+                val totalNewChapters = mangaWithNewChapters.sumOf { it.newChapterCount }
+                UpdateNotifier(applicationContext).notify(
+                    mangaWithNewChapters,
+                    totalNewChapters
+                )
             }
 
             // Consider it a success if at least some manga were updated successfully

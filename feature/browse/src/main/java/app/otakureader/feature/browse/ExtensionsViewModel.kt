@@ -9,6 +9,7 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.SourceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -67,31 +68,27 @@ class ExtensionsViewModel @Inject constructor(
     private val extensionRepository: ExtensionRepository,
     private val extensionInstaller: ExtensionInstaller,
     private val extensionRepoRepository: ExtensionRepoRepository,
-    private val sourceRepository: SourceRepository
+    private val sourceRepository: SourceRepository,
+    private val generalPreferences: GeneralPreferences
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    private val _showNsfw = MutableStateFlow(false)
     private val _sortMode = MutableStateFlow(SortMode.NAME)
 
     private val _state = MutableStateFlow(ExtensionsState())
     val state = combine(
         _state,
         _searchQuery,
-        _showNsfw,
+        generalPreferences.showNsfwContent,
         _sortMode
     ) { state, query, showNsfw, sortMode ->
-        val filteredInstalled = applyFiltersAndSort(state.installedExtensions, query, showNsfw, sortMode)
-        val filteredAvailable = applyFiltersAndSort(state.availableExtensions, query, showNsfw, sortMode)
-        val filteredUpdates = applyFiltersAndSort(state.extensionsWithUpdates, query, showNsfw, sortMode)
-        
         state.copy(
             searchQuery = query,
             showNsfw = showNsfw,
             sortMode = sortMode,
-            installedExtensions = filteredInstalled,
-            availableExtensions = filteredAvailable,
-            extensionsWithUpdates = filteredUpdates
+            installedExtensions = applyFiltersAndSort(state.installedExtensions, query, showNsfw, sortMode),
+            availableExtensions = applyFiltersAndSort(state.availableExtensions, query, showNsfw, sortMode),
+            extensionsWithUpdates = applyFiltersAndSort(state.extensionsWithUpdates, query, showNsfw, sortMode)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -123,8 +120,12 @@ class ExtensionsViewModel @Inject constructor(
         // Sort
         result = when (sortMode) {
             SortMode.NAME -> result.sortedBy { it.name }
-            SortMode.RECENTLY_ADDED -> result.sortedByDescending { it.installDate ?: 0 }
-            SortMode.LANGUAGE -> result.sortedBy { it.lang }
+            SortMode.RECENTLY_ADDED -> result.sortedWith(
+                compareByDescending<Extension> { it.installDate }.thenBy { it.name }
+            )
+            SortMode.LANGUAGE -> result.sortedWith(
+                compareBy<Extension> { it.lang }.thenBy { it.name }
+            )
         }
         
         return result
@@ -151,7 +152,9 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsEvent.RemoveRepository -> removeRepository(event.url)
             is ExtensionsEvent.SetActiveRepository -> setActiveRepository(event.url)
             is ExtensionsEvent.UpdateAllExtensions -> updateAllExtensions()
-            is ExtensionsEvent.ToggleNsfw -> _showNsfw.value = event.show
+            is ExtensionsEvent.ToggleNsfw -> viewModelScope.launch {
+                generalPreferences.setShowNsfwContent(event.show)
+            }
             is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
         }
     }
@@ -312,11 +315,13 @@ class ExtensionsViewModel @Inject constructor(
     private fun updateExtension(extension: Extension) {
         viewModelScope.launch {
             try {
-                val apkPath = extension.apkPath
-                    ?: throw IllegalStateException("No APK path available")
-                extensionRepository.updateExtension(extension.pkgName, apkPath)
-                _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
-                sourceRepository.refreshSources()
+                val result = extensionInstaller.downloadAndInstall(extension)
+                result.onSuccess {
+                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
+                    sourceRepository.refreshSources()
+                }.onFailure { error ->
+                    _effect.send(ExtensionsEffect.ShowError("Failed to update: ${error.message}"))
+                }
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update: ${e.message}"))
             }
@@ -327,28 +332,20 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             val updates = _state.value.extensionsWithUpdates
             if (updates.isEmpty()) return@launch
-            
+
             _state.update { it.copy(isUpdatingAll = true) }
             var successCount = 0
             var failCount = 0
-            
+
             updates.forEach { extension ->
-                try {
-                    val apkPath = extension.apkPath
-                    if (apkPath != null) {
-                        extensionRepository.updateExtension(extension.pkgName, apkPath)
-                        successCount++
-                    } else {
-                        failCount++
-                    }
-                } catch (e: Exception) {
-                    failCount++
-                }
+                val result = runCatching { extensionInstaller.downloadAndInstall(extension) }
+                    .getOrElse { Result.failure(it) }
+                if (result.isSuccess) successCount++ else failCount++
             }
-            
+
             _state.update { it.copy(isUpdatingAll = false) }
             sourceRepository.refreshSources()
-            
+
             when {
                 failCount == 0 -> _effect.send(ExtensionsEffect.ShowSnackbar("All $successCount extensions updated"))
                 successCount == 0 -> _effect.send(ExtensionsEffect.ShowError("All updates failed"))

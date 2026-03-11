@@ -15,7 +15,8 @@ data class SettingsState(
     val themeMode: Int = 0,            // 0=system, 1=light, 2=dark
     val useDynamicColor: Boolean = true,
     val usePureBlackDarkMode: Boolean = false,  // Pure Black AMOLED mode
-    val colorScheme: Int = 0,          // 0=System Default, 1=Dynamic, 2-10=Custom schemes
+    val colorScheme: Int = 0,          // 0=System Default, 1=Dynamic, 2-10=Custom schemes, COLOR_SCHEME_CUSTOM_ACCENT=Custom accent
+    val customAccentColor: Long = 0xFF1976D2L, // Custom accent color ARGB (used when colorScheme == 11)
     val locale: String = "",           // BCP-47 tag, or "" for system default
     val readerMode: Int = 0,           // 0=single page, 1=webtoon, 2=dual page, 3=smart panels
     val keepScreenOn: Boolean = true,
@@ -32,12 +33,20 @@ data class SettingsState(
     val localSourceDirectory: String = LocalSourcePreferences.defaultDirectory(), // Local source scan directory
     val isBackupInProgress: Boolean = false,
     val isRestoreInProgress: Boolean = false,
+    val restoringBackupFileName: String? = null,
+    // --- Auto-backup settings ---
+    val autoBackupEnabled: Boolean = false,
+    val autoBackupIntervalHours: Int = 24,
+    val autoBackupMaxCount: Int = 5,
+    val localBackupFiles: List<String> = emptyList(),
     val trackers: List<TrackerInfo> = emptyList(),
     val trackingLoginInProgress: Boolean = false,
     // --- Migration settings ---
     val migrationSimilarityThreshold: Float = 0.7f,
     val migrationAlwaysConfirm: Boolean = false,
-    val migrationMinChapterCount: Int = 0
+    val migrationMinChapterCount: Int = 0,
+    // --- Browse ---
+    val showNsfwContent: Boolean = false
 ) : UiState
 
 sealed interface SettingsEvent : UiEvent {
@@ -45,6 +54,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetDynamicColor(val enabled: Boolean) : SettingsEvent
     data class SetPureBlackDarkMode(val enabled: Boolean) : SettingsEvent
     data class SetColorScheme(val scheme: Int) : SettingsEvent
+    data class SetCustomAccentColor(val color: Long) : SettingsEvent
     data class SetLocale(val locale: String) : SettingsEvent
     data class SetReaderMode(val mode: Int) : SettingsEvent
     data class SetKeepScreenOn(val enabled: Boolean) : SettingsEvent
@@ -61,12 +71,19 @@ sealed interface SettingsEvent : UiEvent {
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent
     data object OnCreateBackup : SettingsEvent
     data object OnRestoreBackup : SettingsEvent
+    // Auto-backup events
+    data class SetAutoBackupEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetAutoBackupInterval(val hours: Int) : SettingsEvent
+    data class SetAutoBackupMaxCount(val count: Int) : SettingsEvent
+    data object RefreshLocalBackups : SettingsEvent
+    data class RestoreLocalBackup(val fileName: String) : SettingsEvent
     data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
     data class LogoutTracker(val trackerId: Int) : SettingsEvent
     data class SetMigrationSimilarityThreshold(val threshold: Float) : SettingsEvent
     data class SetMigrationAlwaysConfirm(val enabled: Boolean) : SettingsEvent
     data class SetMigrationMinChapterCount(val count: Int) : SettingsEvent
     data object OnNavigateToMigration : SettingsEvent
+    data class SetShowNsfwContent(val enabled: Boolean) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {

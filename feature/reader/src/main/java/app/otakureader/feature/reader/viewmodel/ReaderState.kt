@@ -1,5 +1,6 @@
 package app.otakureader.feature.reader.viewmodel
 
+import app.otakureader.feature.reader.model.ColorFilterMode
 import app.otakureader.feature.reader.model.ReaderMode
 import app.otakureader.feature.reader.model.ReadingDirection
 import app.otakureader.feature.reader.model.ReaderPage
@@ -74,7 +75,16 @@ data class ReaderState(
     val chapterTitle: String = "",
 
     /** Incognito mode - when enabled, reading history is not saved */
-    val incognitoMode: Boolean = false
+    val incognitoMode: Boolean = false,
+
+    /** Color filter mode applied over the page content */
+    val colorFilterMode: ColorFilterMode = ColorFilterMode.NONE,
+
+    /** Custom tint color used when colorFilterMode == CUSTOM_TINT (ARGB color 0xAARRGGBB stored in a Long) */
+    val customTintColor: Long = 0x4000AAFFL,
+
+    /** Per-manga reader background color (ARGB Long), or null for default (black). */
+    val readerBackgroundColor: Long? = null
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size

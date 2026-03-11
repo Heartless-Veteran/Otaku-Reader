@@ -27,6 +27,9 @@ interface MangaSource {
     /** Whether this source supports fetching the latest updates feed. */
     val supportsLatest: Boolean get() = true
 
+    /** Whether this source contains NSFW (adult/explicit) content. */
+    val isNsfw: Boolean get() = false
+
     /** Fetch a paginated list of popular manga. */
     suspend fun fetchPopularManga(page: Int): MangaPage
 
@@ -44,6 +47,9 @@ interface MangaSource {
 
     /** Search manga by query string and optional filters. */
     suspend fun fetchSearchManga(page: Int, query: String, filters: FilterList): MangaPage
+
+    /** Get the list of filters supported by this source. */
+    fun getFilterList(): FilterList = FilterList()
 }
 
 /** Paginated result from a source query. */

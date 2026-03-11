@@ -59,6 +59,37 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * Adds the notifyNewChapters column to the manga table in database version 6.
+     */
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `notifyNewChapters` INTEGER NOT NULL DEFAULT 1")
+        }
+    }
+
+    /**
+     * Adds an index on chapters(dateFetch) in database version 7.
+     * This speeds up the badge-counter query that counts chapters with dateFetch > timestamp.
+     */
+    private val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_chapters_dateFetch` ON `chapters` (`dateFetch`)"
+            )
+        }
+    }
+
+    /**
+     * Adds the readerBackgroundColor column to the manga table in database version 8.
+     * Stores per-manga reader background color as an INTEGER (ARGB Long), nullable.
+     */
+    private val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerBackgroundColor` INTEGER")
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(
@@ -69,7 +100,7 @@ object DatabaseModule {
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
         // Only allow destructive migration in debug builds to avoid silently wiping
         // user data (including notes) in production if a migration is missing.
         if (BuildConfig.DEBUG) {

@@ -6,14 +6,21 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -44,13 +51,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.theme.COLOR_SCHEME_CUSTOM_ACCENT
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -85,6 +99,7 @@ fun SettingsScreen(
 
     // Collect effects
     LaunchedEffect(Unit) {
+        viewModel.onEvent(SettingsEvent.RefreshLocalBackups)
         viewModel.effect.collect { effect ->
             when (effect) {
                 is SettingsEffect.ShowSnackbar -> {
@@ -123,6 +138,8 @@ fun SettingsScreen(
             AppearanceSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
             LibrarySection(state = state, onEvent = viewModel::onEvent)
+            HorizontalDivider()
+            BrowseSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
             DownloadsSettingsSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
@@ -219,7 +236,8 @@ private fun AppearanceSection(state: SettingsState, onEvent: (SettingsEvent) -> 
                             "Teal & Turquoise" to 7,
                             "Tidal Wave" to 8,
                             "Yotsuba" to 9,
-                            "Yin & Yang" to 10
+                            "Yin & Yang" to 10,
+                            "Custom Accent" to COLOR_SCHEME_CUSTOM_ACCENT
                         )
                         schemes.forEach { (label, value) ->
                             Row(
@@ -246,6 +264,14 @@ private fun AppearanceSection(state: SettingsState, onEvent: (SettingsEvent) -> 
                     }
                 }
             )
+
+            // Custom accent color picker (shown when "Custom Accent" is selected)
+            if (state.colorScheme == COLOR_SCHEME_CUSTOM_ACCENT) {
+                AccentColorPicker(
+                    selectedColor = state.customAccentColor,
+                    onColorSelected = { onEvent(SettingsEvent.SetCustomAccentColor(it)) }
+                )
+            }
 
             // Language
             val context = LocalContext.current
@@ -350,9 +376,28 @@ private fun LibrarySection(state: SettingsState, onEvent: (SettingsEvent) -> Uni
 }
 
 @Composable
+private fun BrowseSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
+    // ── Browse ────────────────────────────────────────────────────────
+    SectionHeader(title = "Browse")
+
+    ListItem(
+        headlineContent = { Text("Show NSFW Sources") },
+        supportingContent = { Text("Display adult (18+) extensions and sources in Browse") },
+        trailingContent = {
+            Switch(
+                checked = state.showNsfwContent,
+                onCheckedChange = {
+                    onEvent(SettingsEvent.SetShowNsfwContent(it))
+                }
+            )
+        }
+    )
+}
+
+@Composable
 private fun DownloadsSettingsSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
     // ── Downloads ─────────────────────────────────────────────────────
-            SectionHeader(title = "Downloads")
+    SectionHeader(title = "Downloads")
 
             ListItem(
                 headlineContent = { Text("Remove chapter after reading") },
@@ -597,6 +642,119 @@ private fun DataStorageSection(state: SettingsState, onEvent: (SettingsEvent) ->
                 }
             )
 
+            // ── Automatic backups ──
+            HorizontalDivider()
+            SectionHeader(title = "Automatic Backups")
+
+            ListItem(
+                headlineContent = { Text("Enable automatic backups") },
+                supportingContent = { Text("Periodically save a backup to device storage") },
+                trailingContent = {
+                    Switch(
+                        checked = state.autoBackupEnabled,
+                        onCheckedChange = { onEvent(SettingsEvent.SetAutoBackupEnabled(it)) }
+                    )
+                }
+            )
+
+            if (state.autoBackupEnabled) {
+                ListItem(
+                    headlineContent = { Text("Backup frequency") },
+                    supportingContent = {
+                        Column(modifier = Modifier.selectableGroup()) {
+                            val options = listOf(
+                                "Every 6 hours" to 6,
+                                "Every 12 hours" to 12,
+                                "Daily" to 24,
+                                "Every 2 days" to 48,
+                                "Weekly" to 168
+                            )
+                            options.forEach { (label, hours) ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .selectable(
+                                            selected = state.autoBackupIntervalHours == hours,
+                                            onClick = { onEvent(SettingsEvent.SetAutoBackupInterval(hours)) },
+                                            role = Role.RadioButton
+                                        )
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    RadioButton(
+                                        selected = state.autoBackupIntervalHours == hours,
+                                        onClick = null
+                                    )
+                                    Text(
+                                        text = label,
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+
+                ListItem(
+                    headlineContent = { Text("Backups to keep") },
+                    supportingContent = {
+                        Column(modifier = Modifier.selectableGroup()) {
+                            listOf(3, 5, 10).forEach { count ->
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .selectable(
+                                            selected = state.autoBackupMaxCount == count,
+                                            onClick = { onEvent(SettingsEvent.SetAutoBackupMaxCount(count)) },
+                                            role = Role.RadioButton
+                                        )
+                                        .padding(vertical = 4.dp)
+                                ) {
+                                    RadioButton(
+                                        selected = state.autoBackupMaxCount == count,
+                                        onClick = null
+                                    )
+                                    Text(
+                                        text = "$count backups",
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                )
+
+                if (state.localBackupFiles.isNotEmpty()) {
+                    SectionHeader(title = "Restore from automatic backup")
+                    state.localBackupFiles.forEach { fileName ->
+                        val isRestoringThisFile = state.restoringBackupFileName == fileName
+                        ListItem(
+                            headlineContent = { Text(fileName) },
+                            trailingContent = {
+                                if (isRestoringThisFile) {
+                                    CircularProgressIndicator()
+                                } else {
+                                    OutlinedButton(
+                                        enabled = !state.isRestoreInProgress,
+                                        onClick = { onEvent(SettingsEvent.RestoreLocalBackup(fileName)) }
+                                    ) {
+                                        Text("Restore")
+                                    }
+                                }
+                            }
+                        )
+                    }
+                } else {
+                    ListItem(
+                        headlineContent = { Text("No automatic backups yet") },
+                        supportingContent = { Text("Backups will appear here once created") }
+                    )
+                }
+            }
+
+            HorizontalDivider()
+
             ListItem(
                 headlineContent = { Text("Migrate manga") },
                 supportingContent = { Text("Move manga from one source to another") },
@@ -812,5 +970,81 @@ private fun MigrationSection(state: SettingsState, onEvent: (SettingsEvent) -> U
                 )
             }
         }
+    )
+}
+
+/**
+ * Preset accent colors for the custom accent color picker.
+ * Each pair is (display name, ARGB Long).
+ */
+private val AccentColorPresets: List<Pair<String, Long>> = listOf(
+    "Red" to 0xFFE53935L,
+    "Pink" to 0xFFD81B60L,
+    "Purple" to 0xFF8E24AAL,
+    "Deep Purple" to 0xFF5E35B1L,
+    "Indigo" to 0xFF3949ABL,
+    "Blue" to 0xFF1E88E5L,
+    "Light Blue" to 0xFF039BE5L,
+    "Cyan" to 0xFF00ACC1L,
+    "Teal" to 0xFF00897BL,
+    "Green" to 0xFF43A047L,
+    "Light Green" to 0xFF7CB342L,
+    "Lime" to 0xFFC0CA33L,
+    "Yellow" to 0xFFFDD835L,
+    "Amber" to 0xFFFFB300L,
+    "Orange" to 0xFFFB8C00L,
+    "Deep Orange" to 0xFFF4511EL,
+    "Brown" to 0xFF6D4C41L,
+    "Blue Grey" to 0xFF546E7AL
+)
+
+/**
+ * A grid of color swatches for selecting a custom accent color.
+ * Uses FlowRow instead of LazyVerticalGrid to avoid infinite-height measurement
+ * inside the parent scrollable Column.
+ */
+@Composable
+private fun AccentColorPicker(
+    selectedColor: Long,
+    onColorSelected: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ListItem(
+        headlineContent = { Text("Accent Color") },
+        supportingContent = {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            ) {
+                AccentColorPresets.forEach { (name, colorValue) ->
+                    val isSelected = selectedColor == colorValue
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color(colorValue.toInt()))
+                            .then(
+                                if (isSelected) {
+                                    Modifier.border(
+                                        width = 3.dp,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        shape = CircleShape
+                                    )
+                                } else Modifier
+                            )
+                            .clickable { onColorSelected(colorValue) }
+                            .semantics {
+                                contentDescription = name
+                                role = Role.RadioButton
+                                selected = isSelected
+                            }
+                    )
+                }
+            }
+        },
+        modifier = modifier
     )
 }
