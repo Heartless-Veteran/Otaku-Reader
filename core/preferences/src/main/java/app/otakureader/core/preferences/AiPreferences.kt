@@ -53,12 +53,61 @@ class AiPreferences(
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (e: Exception) {
-            // Fall back to a plain SharedPreferences file on keystore failures.
-            // This should be rare (e.g., device-specific keystore corruption).
-            context.getSharedPreferences("ai_secure_prefs_fallback", Context.MODE_PRIVATE)
+            // On keystore/crypto failures, avoid writing sensitive data (API keys) to disk
+            // in plaintext. Use an in-memory/no-op SharedPreferences instead so that
+            // credentials are never persisted when encryption is unavailable.
+            NoOpSharedPreferences
         }
     }
 
+    /**
+     * In-memory/no-op SharedPreferences used when encrypted preferences cannot be
+     * initialized. This prevents sensitive data like API keys from ever being
+     * written to disk in plaintext while keeping existing call sites working.
+     */
+    private object NoOpSharedPreferences : SharedPreferences {
+
+        private object NoOpEditor : SharedPreferences.Editor {
+            override fun putString(key: String?, value: String?): SharedPreferences.Editor = this
+            override fun putStringSet(key: String?, values: MutableSet<String>?): SharedPreferences.Editor = this
+            override fun putInt(key: String?, value: Int): SharedPreferences.Editor = this
+            override fun putLong(key: String?, value: Long): SharedPreferences.Editor = this
+            override fun putFloat(key: String?, value: Float): SharedPreferences.Editor = this
+            override fun putBoolean(key: String?, value: Boolean): SharedPreferences.Editor = this
+            override fun remove(key: String?): SharedPreferences.Editor = this
+            override fun clear(): SharedPreferences.Editor = this
+            override fun commit(): Boolean = false
+            override fun apply() {
+                // no-op
+            }
+        }
+
+        override fun getAll(): MutableMap<String, *> = mutableMapOf<String, Any?>()
+
+        override fun getString(key: String?, defValue: String?): String? = defValue
+
+        override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? = defValues
+
+        override fun getInt(key: String?, defValue: Int): Int = defValue
+
+        override fun getLong(key: String?, defValue: Long): Long = defValue
+
+        override fun getFloat(key: String?, defValue: Float): Float = defValue
+
+        override fun getBoolean(key: String?, defValue: Boolean): Boolean = defValue
+
+        override fun contains(key: String?): Boolean = false
+
+        override fun edit(): SharedPreferences.Editor = NoOpEditor
+
+        override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
+            // no-op
+        }
+
+        override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
+            // no-op
+        }
+    }
     /** Master switch for all AI features. When false, no AI features work regardless of other settings. */
     val aiEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.AI_ENABLED] ?: false }
     suspend fun setAiEnabled(value: Boolean) = dataStore.edit { it[Keys.AI_ENABLED] = value }
