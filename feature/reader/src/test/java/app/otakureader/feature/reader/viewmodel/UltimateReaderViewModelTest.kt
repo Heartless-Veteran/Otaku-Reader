@@ -341,9 +341,9 @@ class UltimateReaderViewModelTest {
 
     @Test
     fun `preloadPages falls back to defaults when settings read fails`() = runTest {
-        // Simulate settings read failure
-        every { settingsRepository.preloadPagesBefore } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
-        every { settingsRepository.preloadPagesAfter } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+        // Simulate settings read failure by returning a throwing flow
+        every { settingsRepository.preloadPagesBefore } returns kotlinx.coroutines.flow.flow { throw RuntimeException("Read failed") }
+        every { settingsRepository.preloadPagesAfter } returns kotlinx.coroutines.flow.flow { throw RuntimeException("Read failed") }
 
         val vm = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -352,6 +352,7 @@ class UltimateReaderViewModelTest {
         vm.jumpToPage(5)
         testDispatcher.scheduler.advanceUntilIdle()
 
+        // Navigation should still succeed with fallback defaults
         assertEquals(5, vm.state.value.currentPage)
     }
 }
