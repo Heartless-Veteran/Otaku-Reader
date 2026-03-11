@@ -11,8 +11,11 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 
 /**
  * AI service tier selection.
@@ -73,7 +76,7 @@ class AiPreferences(
         private val backingMap: MutableMap<String, Any?> = mutableMapOf()
         private val listeners: MutableSet<SharedPreferences.OnSharedPreferenceChangeListener> = mutableSetOf()
 
-        private inner class InMemoryEditor : SharedPreferences.Editor {
+        private class InMemoryEditor : SharedPreferences.Editor {
 
             private val pendingChanges: MutableMap<String, Any?> = mutableMapOf()
             private val keysToRemove: MutableSet<String> = mutableSetOf()
@@ -155,10 +158,9 @@ class AiPreferences(
                 if (changedKeys.isNotEmpty()) {
                     synchronized(NoOpSharedPreferences) {
                         val snapshotListeners = listeners.toList()
-                        val snapshot = this@NoOpSharedPreferences
                         for (key in changedKeys) {
                             for (listener in snapshotListeners) {
-                                listener.onSharedPreferenceChanged(snapshot, key)
+                                listener.onSharedPreferenceChanged(NoOpSharedPreferences, key)
                             }
                         }
                     }
@@ -262,9 +264,39 @@ class AiPreferences(
     /**
      * Gemini API key — stored in [EncryptedSharedPreferences] backed by the Android Keystore
      * so it is never written to disk in plaintext.
+     * Reads and writes are dispatched to [Dispatchers.IO] to avoid blocking the main thread
+     * during Keystore/crypto initialization on first access.
      */
-    fun getGeminiApiKey(): String = encryptedPrefs.getString(GEMINI_API_KEY_PREF, "") ?: ""
-    fun setGeminiApiKey(value: String) = encryptedPrefs.edit().putString(GEMINI_API_KEY_PREF, value).apply()
+    suspend fun getGeminiApiKey(): String = withContext(Dispatchers.IO) {
+        encryptedPrefs.getString(GEMINI_API_KEY_PREF, "") ?: ""
+    }
+
+    suspend fun setGeminiApiKey(value: String) = withContext(Dispatchers.IO) {
+        encryptedPrefs.edit().putString(GEMINI_API_KEY_PREF, value).apply()
+    }
+
+    /**
+     * One-time migration: reads any legacy plaintext Gemini API key stored in DataStore,
+     * copies it into the encrypted store (if encrypted store has no key yet), then removes
+     * the plaintext entry. Safe to call on every app start — it is a no-op after the first
+     * successful run. The legacy key is only removed after a confirmed successful write to
+     * encrypted storage, preventing data loss if the encrypted write fails.
+     */
+    suspend fun migrateLegacyApiKeyIfNeeded() {
+        val legacyKey = dataStore.data.map { it[Keys.LEGACY_GEMINI_API_KEY] }.first()
+        if (!legacyKey.isNullOrBlank()) {
+            if (getGeminiApiKey().isBlank()) {
+                setGeminiApiKey(legacyKey)
+                // Only remove the legacy key once the encrypted write has confirmed success.
+                if (getGeminiApiKey().isNotBlank()) {
+                    dataStore.edit { it.remove(Keys.LEGACY_GEMINI_API_KEY) }
+                }
+            } else {
+                // Encrypted prefs already has a key — just clean up the legacy entry.
+                dataStore.edit { it.remove(Keys.LEGACY_GEMINI_API_KEY) }
+            }
+        }
+    }
 
     // --- Individual Feature Toggles ---
 
@@ -321,6 +353,8 @@ class AiPreferences(
     private object Keys {
         val AI_ENABLED = booleanPreferencesKey("ai_enabled")
         val AI_TIER = intPreferencesKey("ai_tier")
+        // Legacy plaintext key — kept only to support the one-time migration path
+        val LEGACY_GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
 
         val AI_READING_INSIGHTS = booleanPreferencesKey("ai_reading_insights")
         val AI_SMART_SEARCH = booleanPreferencesKey("ai_smart_search")

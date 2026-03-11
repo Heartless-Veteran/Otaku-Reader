@@ -47,6 +47,14 @@ class SettingsViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
+        viewModelScope.launch {
+            try {
+                aiPreferences.migrateLegacyApiKeyIfNeeded()
+            } catch (e: Exception) {
+                // Migration failure is non-fatal; the user can re-enter the API key.
+                _effect.send(SettingsEffect.ShowSnackbar("Failed to load AI settings. You may need to re-enter your API key."))
+            }
+        }
         observePreferences()
         observeAiPreferences()
         refreshTrackers()
@@ -114,6 +122,12 @@ class SettingsViewModel @Inject constructor(
             }.collect { newState ->
                 _state.update { current ->
                     newState.copy(
+                        // Preserve in-flight backup/restore state so a preference change
+                        // doesn't cancel progress indicators mid-operation.
+                        isBackupInProgress = current.isBackupInProgress,
+                        isRestoreInProgress = current.isRestoreInProgress,
+                        restoringBackupFileName = current.restoringBackupFileName,
+                        localBackupFiles = current.localBackupFiles,
                         trackers = current.trackers,
                         trackingLoginInProgress = current.trackingLoginInProgress,
                         // Preserve AI fields managed by observeAiPreferences()
