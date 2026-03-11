@@ -21,7 +21,7 @@ import app.otakureader.core.database.entity.ReadingHistoryEntity
         MangaCategoryEntity::class,
         ReadingHistoryEntity::class
     ],
-    version = 5,
+    version = 8,
     exportSchema = false
 )
 abstract class OtakuReaderDatabase : RoomDatabase() {

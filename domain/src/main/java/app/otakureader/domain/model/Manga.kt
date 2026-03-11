@@ -21,7 +21,10 @@ data class Manga(
     val lastRead: Long? = null,
     val categoryIds: List<Long> = emptyList(),
     val autoDownload: Boolean = false,
-    val notes: String? = null
+    val notes: String? = null,
+    val notifyNewChapters: Boolean = true,
+    /** Per-manga reader background color as ARGB Long, or null for default. */
+    val readerBackgroundColor: Long? = null
 )
 
 @Serializable

@@ -34,6 +34,7 @@ include(":core:ui")
 include(":core:navigation")
 include(":core:extension")
 include(":core:tachiyomi-compat")
+include(":core:discord")
 
 // Domain layer
 include(":domain")
@@ -55,3 +56,5 @@ include(":feature:details")
 include(":feature:statistics")
 include(":feature:migration")
 include(":feature:tracking")
+include(":feature:onboarding")
+include(":feature:about")

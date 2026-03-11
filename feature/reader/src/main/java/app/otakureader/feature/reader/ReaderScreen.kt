@@ -46,6 +46,7 @@ import app.otakureader.feature.reader.modes.SmartPanelsReader
 import app.otakureader.feature.reader.modes.WebtoonReader
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.FullPageGallery
+import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
 import app.otakureader.feature.reader.ui.ReaderMenuOverlay
 import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
@@ -210,9 +211,13 @@ fun ReaderScreen(
             zoomLevel = state.zoomLevel,
             brightness = state.brightness,
             colorFilterMode = state.colorFilterMode,
+            customTintColor = state.customTintColor,
+            readerBackgroundColor = state.readerBackgroundColor,
             onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
             onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
             onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
+            onCustomTintColorChange = { viewModel.onEvent(ReaderEvent.SetCustomTintColor(it)) },
+            onReaderBackgroundColorChange = { viewModel.onEvent(ReaderEvent.SetReaderBackgroundColor(it)) },
             onZoomIn = { viewModel.onEvent(ReaderEvent.ZoomIn) },
             onZoomOut = { viewModel.onEvent(ReaderEvent.ZoomOut) },
             onResetZoom = { viewModel.onEvent(ReaderEvent.ResetZoom) },
@@ -256,6 +261,16 @@ fun ReaderScreen(
             isVisible = showBrightnessSlider,
             modifier = Modifier.align(Alignment.CenterStart)
         )
+
+        // Page slider — shown when the menu is visible so users can quickly scrub pages
+        PageSlider(
+            currentPage = state.currentPage,
+            totalPages = state.totalPages,
+            onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
+            readingDirection = state.readingDirection,
+            isVisible = state.isMenuVisible && state.pages.isNotEmpty(),
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
         
         // Snackbar host
         SnackbarHost(
@@ -274,11 +289,18 @@ private fun ReaderContent(
     onDoubleTap: (Offset) -> Unit,
     onZoomChange: (Float) -> Unit
 ) {
+    // Use the per-manga background color if set, otherwise default to black
+    val backgroundColor = if (state.readerBackgroundColor != null) {
+        Color(state.readerBackgroundColor.toInt())
+    } else {
+        Color.Black
+    }
+
     // CompositingStrategy.Offscreen ensures blend modes in the Canvas overlay work correctly
     // against the already-rendered page content below them.
     val boxModifier = Modifier
         .fillMaxSize()
-        .background(androidx.compose.ui.graphics.Color.Black)
+        .background(backgroundColor)
         .let { base ->
             if (state.colorFilterMode != ColorFilterMode.NONE) {
                 base.graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)

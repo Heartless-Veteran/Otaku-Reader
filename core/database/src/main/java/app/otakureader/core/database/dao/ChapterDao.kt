@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.Flow
 interface ChapterDao {
     @Query("SELECT * FROM chapters WHERE mangaId = :mangaId ORDER BY sourceOrder DESC")
     fun getChaptersByMangaId(mangaId: Long): Flow<List<ChapterEntity>>
+
+    @Query("SELECT * FROM chapters WHERE mangaId = :mangaId AND url = :url LIMIT 1")
+    suspend fun getChapterByMangaIdAndUrl(mangaId: Long, url: String): ChapterEntity?
     
     @Query("SELECT * FROM chapters WHERE mangaId = :mangaId AND read = 0 ORDER BY sourceOrder ASC LIMIT 1")
     suspend fun getNextUnreadChapter(mangaId: Long): ChapterEntity?
@@ -68,4 +71,14 @@ interface ChapterDao {
             "LIMIT 200"
     )
     fun getRecentUpdates(): Flow<List<ChapterWithMangaEntity>>
+
+    /**
+     * Counts library chapters fetched after [since] (epoch millis). Used for the Updates badge.
+     */
+    @Query(
+        "SELECT COUNT(*) FROM chapters " +
+            "INNER JOIN manga ON chapters.mangaId = manga.id " +
+            "WHERE chapters.dateFetch > :since AND manga.favorite = 1"
+    )
+    fun countNewUpdatesSince(since: Long): Flow<Int>
 }

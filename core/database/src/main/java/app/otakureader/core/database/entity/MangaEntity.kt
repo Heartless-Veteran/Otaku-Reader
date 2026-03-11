@@ -33,7 +33,10 @@ data class MangaEntity(
     val coverLastModified: Long = 0,
     val dateAdded: Long = System.currentTimeMillis(),
     val autoDownload: Boolean = false,
-    val notes: String? = null
+    val notes: String? = null,
+    val notifyNewChapters: Boolean = true,
+    /** Per-manga reader background color as ARGB Long, or null for default. */
+    val readerBackgroundColor: Long? = null
 )
 
 enum class MangaStatus {

@@ -85,6 +85,10 @@ class ChapterRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun countNewUpdatesSince(since: Long): Flow<Int> {
+        return chapterDao.countNewUpdatesSince(since)
+    }
+
     override suspend fun recordHistory(chapterId: Long, readAt: Long, readDurationMs: Long) {
         readingHistoryDao.upsert(
             ReadingHistoryEntity(
@@ -147,7 +151,8 @@ class ChapterRepositoryImpl @Inject constructor(
         status = MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
-        autoDownload = autoDownload
+        autoDownload = autoDownload,
+        readerBackgroundColor = readerBackgroundColor
     )
 
     private fun Chapter.toEntity() = ChapterEntity(

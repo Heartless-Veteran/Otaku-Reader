@@ -17,6 +17,8 @@ interface ChapterRepository {
     fun getUnreadCountByMangaId(mangaId: Long): Flow<Int>
     fun observeHistory(): Flow<List<ChapterWithHistory>>
     fun getRecentUpdates(): Flow<List<MangaUpdate>>
+    /** Count library chapters fetched after [since] (epoch millis) for the Updates badge. */
+    fun countNewUpdatesSince(since: Long): Flow<Int>
     suspend fun recordHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
     suspend fun removeFromHistory(chapterId: Long)
     suspend fun clearAllHistory()
