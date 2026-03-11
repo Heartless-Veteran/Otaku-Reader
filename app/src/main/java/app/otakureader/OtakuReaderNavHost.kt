@@ -1,10 +1,12 @@
 package app.otakureader
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.BrowseRoute
+import app.otakureader.core.navigation.DownloadsRoute
 import app.otakureader.core.navigation.ExtensionsRoute
 import app.otakureader.core.navigation.GlobalSearchRoute
 import app.otakureader.core.navigation.HistoryRoute
@@ -12,7 +14,6 @@ import app.otakureader.core.navigation.LibraryRoute
 import app.otakureader.core.navigation.MangaDetailRoute
 import app.otakureader.core.navigation.MigrationEntryRoute
 import app.otakureader.core.navigation.MigrationRoute
-import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.core.navigation.ReaderRoute
 import app.otakureader.core.navigation.SettingsRoute
 import app.otakureader.core.navigation.SourceDetailRoute
@@ -26,6 +27,7 @@ import app.otakureader.feature.browse.navigation.sourceDetailScreen
 import app.otakureader.feature.details.navigation.detailsScreen
 import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.navigation.libraryScreen
+import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
 import app.otakureader.feature.reader.navigation.readerScreen
 import app.otakureader.feature.settings.navigation.settingsScreen
@@ -33,14 +35,32 @@ import app.otakureader.feature.statistics.navigation.statisticsScreen
 import app.otakureader.feature.tracking.navigation.trackingScreen
 import app.otakureader.feature.updates.navigation.downloadsScreen
 import app.otakureader.feature.updates.navigation.updatesScreen
-import app.otakureader.core.navigation.DownloadsRoute
+import app.otakureader.util.DeepLinkResult
 
 @Composable
 fun OtakuReaderNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: Any = LibraryRoute
+    startDestination: Any = LibraryRoute,
+    deepLinkResult: DeepLinkResult? = null
 ) {
+    // Handle deep link navigation
+    LaunchedEffect(deepLinkResult) {
+        when (deepLinkResult) {
+            is DeepLinkResult.MangaUrl -> {
+                // TODO: Lookup or create manga from URL, then navigate
+                // For now, navigate to browse to search for it
+                navController.navigate(BrowseRoute)
+            }
+            is DeepLinkResult.SearchQuery -> {
+                navController.navigate(GlobalSearchRoute(query = deepLinkResult.query))
+            }
+            is DeepLinkResult.Invalid, null -> {
+                // No deep link to handle
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = startDestination,
