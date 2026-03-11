@@ -14,7 +14,7 @@ jobs:
       trigger: ${{ steps.parse.outputs.trigger }}
     steps:
       - id: parse
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const body = context.payload.comment.body.toLowerCase();
@@ -47,11 +47,11 @@ jobs:
     if: contains(needs.parse-mention.outputs.trigger, 'ai') || contains(needs.parse-mention.outputs.trigger, 'full')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Post AI Review Request
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const prNumber = context.issue.number;
@@ -75,9 +75,9 @@ jobs:
     if: contains(needs.parse-mention.outputs.trigger, 'security') || contains(needs.parse-mention.outputs.trigger, 'full')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Security Scan
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const prNumber = context.issue.number;
@@ -93,8 +93,8 @@ jobs:
     if: contains(needs.parse-mention.outputs.trigger, 'style') || contains(needs.parse-mention.outputs.trigger, 'full')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7a8457288f8bea543c6ba6104780b1 # v4.7.0
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -105,7 +105,7 @@ jobs:
           ./ktlint --relative 2>&1 | head -50 || true
         continue-on-error: true
       - name: Post Style Review
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const prNumber = context.issue.number;
@@ -121,11 +121,11 @@ jobs:
     if: contains(needs.parse-mention.outputs.trigger, 'architecture') || contains(needs.parse-mention.outputs.trigger, 'full')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
       - name: Architecture Review
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const prNumber = context.issue.number;
@@ -153,9 +153,9 @@ jobs:
     if: contains(needs.parse-mention.outputs.trigger, 'tests') || contains(needs.parse-mention.outputs.trigger, 'full')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Test Review
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           script: |
             const prNumber = context.issue.number;
