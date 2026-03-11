@@ -461,5 +461,14 @@ class UltimateReaderViewModelTest {
         vm.jumpToPage(5)
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(5, vm.state.value.currentPage)
+        // Verify that oversized per-manga preload values are clamped down to the ViewModel's maximum.
+        assertEquals(
+            UltimateReaderViewModel.MAX_PRELOAD_PAGES,
+            vm.state.value.preloadPagesBefore
+        )
+        assertEquals(
+            UltimateReaderViewModel.MAX_PRELOAD_PAGES,
+            vm.state.value.preloadPagesAfter
+        )
     }
 }
