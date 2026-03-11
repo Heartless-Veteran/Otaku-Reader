@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reader menu overlay -->
+    <string name="reader_page_indicator">第 %1$d 页，共 %2$d 页</string>
+    <string name="reader_back">返回</string>
+    <string name="reader_fullscreen">全屏</string>
+    <string name="reader_gallery">图库</string>
+    <string name="reader_tap_to_hide">点击中央隐藏菜单</string>
+
+    <!-- Reading mode -->
+    <string name="reader_mode_title">阅读模式</string>
+    <string name="reader_mode_single">单页</string>
+    <string name="reader_mode_dual">双页</string>
+    <string name="reader_mode_webtoon">条漫</string>
+    <string name="reader_mode_smart">智能</string>
+
+    <!-- Zoom -->
+    <string name="reader_zoom">缩放</string>
+    <string name="reader_zoom_out">缩小</string>
+    <string name="reader_zoom_in">放大</string>
+    <string name="reader_zoom_percentage">%1$d%%</string>
+
+    <!-- Brightness -->
+    <string name="reader_brightness">亮度</string>
+    <string name="reader_brightness_percentage">%1$d%%</string>
+
+    <!-- Color filter -->
+    <string name="reader_color_filter">颜色滤镜</string>
+    <string name="reader_color_filter_none">无</string>
+    <string name="reader_color_filter_sepia">复古</string>
+    <string name="reader_color_filter_greyscale">灰度</string>
+    <string name="reader_color_filter_invert">反色</string>
+    <string name="reader_color_filter_custom_tint">自定义色调</string>
+
+    <!-- Custom tint picker -->
+    <string name="reader_tint_color">色调颜色</string>
+    <string name="reader_opacity">不透明度</string>
+    <string name="reader_opacity_percentage">%1$d%%</string>
+
+    <!-- Tint presets -->
+    <string name="reader_tint_blue">蓝色</string>
+    <string name="reader_tint_red">红色</string>
+    <string name="reader_tint_orange">橙色</string>
+    <string name="reader_tint_yellow">黄色</string>
+    <string name="reader_tint_green">绿色</string>
+    <string name="reader_tint_purple">紫色</string>
+    <string name="reader_tint_brown">棕色</string>
+    <string name="reader_tint_grey">灰色</string>
+
+    <!-- Reader background -->
+    <string name="reader_background">阅读器背景</string>
+    <string name="reader_bg_default">默认</string>
+    <string name="reader_bg_black">黑色</string>
+    <string name="reader_bg_dark_grey">深灰</string>
+    <string name="reader_bg_grey">灰色</string>
+    <string name="reader_bg_warm_grey">暖灰</string>
+    <string name="reader_bg_dark_brown">深棕</string>
+    <string name="reader_bg_sepia">复古</string>
+    <string name="reader_bg_white">白色</string>
+    <string name="reader_bg_dark_blue">深蓝</string>
+
+    <!-- Reader screen -->
+    <string name="reader_navigating_to_chapter">正在跳转到章节…</string>
+</resources>

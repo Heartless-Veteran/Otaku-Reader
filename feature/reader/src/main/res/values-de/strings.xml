@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reader menu overlay -->
+    <string name="reader_page_indicator">Seite %1$d von %2$d</string>
+    <string name="reader_back">Zurück</string>
+    <string name="reader_fullscreen">Vollbild</string>
+    <string name="reader_gallery">Galerie</string>
+    <string name="reader_tap_to_hide">Tippe in die Mitte, um das Menü auszublenden</string>
+
+    <!-- Reading mode -->
+    <string name="reader_mode_title">Lesemodus</string>
+    <string name="reader_mode_single">Einzelseite</string>
+    <string name="reader_mode_dual">Doppelseite</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart">Intelligent</string>
+
+    <!-- Zoom -->
+    <string name="reader_zoom">Zoom</string>
+    <string name="reader_zoom_out">Verkleinern</string>
+    <string name="reader_zoom_in">Vergrößern</string>
+    <string name="reader_zoom_percentage">%1$d%%</string>
+
+    <!-- Brightness -->
+    <string name="reader_brightness">Helligkeit</string>
+    <string name="reader_brightness_percentage">%1$d%%</string>
+
+    <!-- Color filter -->
+    <string name="reader_color_filter">Farbfilter</string>
+    <string name="reader_color_filter_none">Keiner</string>
+    <string name="reader_color_filter_sepia">Sepia</string>
+    <string name="reader_color_filter_greyscale">Graustufen</string>
+    <string name="reader_color_filter_invert">Invertieren</string>
+    <string name="reader_color_filter_custom_tint">Benutzerdefinierte Tönung</string>
+
+    <!-- Custom tint picker -->
+    <string name="reader_tint_color">Tönungsfarbe</string>
+    <string name="reader_opacity">Deckkraft</string>
+    <string name="reader_opacity_percentage">%1$d%%</string>
+
+    <!-- Tint presets -->
+    <string name="reader_tint_blue">Blau</string>
+    <string name="reader_tint_red">Rot</string>
+    <string name="reader_tint_orange">Orange</string>
+    <string name="reader_tint_yellow">Gelb</string>
+    <string name="reader_tint_green">Grün</string>
+    <string name="reader_tint_purple">Lila</string>
+    <string name="reader_tint_brown">Braun</string>
+    <string name="reader_tint_grey">Grau</string>
+
+    <!-- Reader background -->
+    <string name="reader_background">Leser-Hintergrund</string>
+    <string name="reader_bg_default">Standard</string>
+    <string name="reader_bg_black">Schwarz</string>
+    <string name="reader_bg_dark_grey">Dunkelgrau</string>
+    <string name="reader_bg_grey">Grau</string>
+    <string name="reader_bg_warm_grey">Warmgrau</string>
+    <string name="reader_bg_dark_brown">Dunkelbraun</string>
+    <string name="reader_bg_sepia">Sepia</string>
+    <string name="reader_bg_white">Weiß</string>
+    <string name="reader_bg_dark_blue">Dunkelblau</string>
+
+    <!-- Reader screen -->
+    <string name="reader_navigating_to_chapter">Navigiere zum Kapitel…</string>
+</resources>
