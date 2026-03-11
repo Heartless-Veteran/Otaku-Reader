@@ -1,5 +1,6 @@
 package app.otakureader.feature.about
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -43,6 +44,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+
+/**
+ * Opens [url] in the device browser. Shows a short Toast when no handler is available.
+ */
+private fun openUrl(context: Context, url: String) {
+    runCatching {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }.onFailure {
+        Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
+    }
+}
 
 /**
  * About screen showing app information, help, FAQ, licenses, and credits.
@@ -93,14 +105,7 @@ fun AboutScreen(
                 title = "How to Add Sources",
                 subtitle = "Learn how to install extensions and add manga sources",
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
-                    )
-                    runCatching { context.startActivity(intent) }
-                        .onFailure {
-                            Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-                        }
+                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
                 }
             )
 
@@ -109,14 +114,7 @@ fun AboutScreen(
                 title = "Frequently Asked Questions",
                 subtitle = "Common questions and troubleshooting tips",
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
-                    )
-                    runCatching { context.startActivity(intent) }
-                        .onFailure {
-                            Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-                        }
+                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
                 }
             )
 
@@ -125,14 +123,7 @@ fun AboutScreen(
                 title = "Getting Started Guide",
                 subtitle = "Learn the basics of using Otaku Reader",
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
-                    )
-                    runCatching { context.startActivity(intent) }
-                        .onFailure {
-                            Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-                        }
+                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
                 }
             )
 
@@ -172,14 +163,7 @@ fun AboutScreen(
                 title = "GitHub Repository",
                 subtitle = "View source code and report issues",
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader")
-                    )
-                    runCatching { context.startActivity(intent) }
-                        .onFailure {
-                            Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-                        }
+                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader")
                 }
             )
 
@@ -188,14 +172,7 @@ fun AboutScreen(
                 title = "Documentation",
                 subtitle = "Full documentation and guides",
                 onClick = {
-                    val intent = Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
-                    )
-                    runCatching { context.startActivity(intent) }
-                        .onFailure {
-                            Toast.makeText(context, "Unable to open browser", Toast.LENGTH_SHORT).show()
-                        }
+                    openUrl(context, "https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
                 }
             )
 
