@@ -81,11 +81,20 @@ object DatabaseModule {
     }
 
     /**
-     * Adds the readerBackgroundColor column to the manga table in database version 8.
-     * Stores per-manga reader background color as an INTEGER (ARGB Long), nullable.
+     * Adds per-manga reader settings, page preloading configuration, and reader background color
+     * in database version 8. Issues #260, #264, and AMOLED theme support.
      */
     private val MIGRATION_7_8 = object : Migration(7, 8) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            // Per-manga reader settings (#260)
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerDirection` INTEGER")
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerMode` INTEGER")
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerColorFilter` INTEGER")
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerCustomTintColor` INTEGER")
+            // Page preloading settings (#264)
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `preloadPagesBefore` INTEGER")
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `preloadPagesAfter` INTEGER")
+            // Reader background color (AMOLED theme support)
             db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerBackgroundColor` INTEGER")
         }
     }

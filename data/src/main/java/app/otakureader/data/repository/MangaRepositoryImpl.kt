@@ -89,6 +89,32 @@ class MangaRepositoryImpl @Inject constructor(
         mangaDao.updateNotifyNewChapters(id, notify)
     }
 
+    // Per-manga reader settings (#260)
+    override suspend fun updateReaderDirection(id: Long, direction: Int?) {
+        mangaDao.updateReaderDirection(id, direction)
+    }
+
+    override suspend fun updateReaderMode(id: Long, mode: Int?) {
+        mangaDao.updateReaderMode(id, mode)
+    }
+
+    override suspend fun updateReaderColorFilter(id: Long, filter: Int?) {
+        mangaDao.updateReaderColorFilter(id, filter)
+    }
+
+    override suspend fun updateReaderCustomTintColor(id: Long, color: Long?) {
+        mangaDao.updateReaderCustomTintColor(id, color)
+    }
+
+    // Page preloading settings (#264)
+    override suspend fun updatePreloadPagesBefore(id: Long, count: Int?) {
+        mangaDao.updatePreloadPagesBefore(id, count)
+    }
+
+    override suspend fun updatePreloadPagesAfter(id: Long, count: Int?) {
+        mangaDao.updatePreloadPagesAfter(id, count)
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -106,7 +132,15 @@ class MangaRepositoryImpl @Inject constructor(
         autoDownload = autoDownload,
         notes = notes,
         notifyNewChapters = notifyNewChapters,
-        readerBackgroundColor = readerBackgroundColor
+        // Per-manga reader settings (#260)
+        readerDirection = readerDirection,
+        readerMode = readerMode,
+        readerColorFilter = readerColorFilter,
+        readerCustomTintColor = readerCustomTintColor,
+        readerBackgroundColor = readerBackgroundColor,
+        // Page preloading settings (#264)
+        preloadPagesBefore = preloadPagesBefore,
+        preloadPagesAfter = preloadPagesAfter
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -125,6 +159,14 @@ class MangaRepositoryImpl @Inject constructor(
         autoDownload = autoDownload,
         notes = notes,
         notifyNewChapters = notifyNewChapters,
-        readerBackgroundColor = readerBackgroundColor
+        // Per-manga reader settings (#260)
+        readerDirection = readerDirection,
+        readerMode = readerMode,
+        readerColorFilter = readerColorFilter,
+        readerCustomTintColor = readerCustomTintColor,
+        readerBackgroundColor = readerBackgroundColor,
+        // Page preloading settings (#264)
+        preloadPagesBefore = preloadPagesBefore,
+        preloadPagesAfter = preloadPagesAfter
     )
 }
