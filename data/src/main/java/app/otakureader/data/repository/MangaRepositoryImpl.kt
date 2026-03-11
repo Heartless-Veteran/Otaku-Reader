@@ -137,6 +137,7 @@ class MangaRepositoryImpl @Inject constructor(
         readerMode = readerMode,
         readerColorFilter = readerColorFilter,
         readerCustomTintColor = readerCustomTintColor,
+        readerBackgroundColor = readerBackgroundColor,
         // Page preloading settings (#264)
         preloadPagesBefore = preloadPagesBefore,
         preloadPagesAfter = preloadPagesAfter
@@ -163,6 +164,7 @@ class MangaRepositoryImpl @Inject constructor(
         readerMode = readerMode,
         readerColorFilter = readerColorFilter,
         readerCustomTintColor = readerCustomTintColor,
+        readerBackgroundColor = readerBackgroundColor,
         // Page preloading settings (#264)
         preloadPagesBefore = preloadPagesBefore,
         preloadPagesAfter = preloadPagesAfter

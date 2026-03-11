@@ -81,8 +81,8 @@ object DatabaseModule {
     }
 
     /**
-     * Adds per-manga reader settings and page preloading configuration in database version 8.
-     * Issues #260 and #264.
+     * Adds per-manga reader settings, page preloading configuration, and reader background color
+     * in database version 8. Issues #260, #264, and AMOLED theme support.
      */
     private val MIGRATION_7_8 = object : Migration(7, 8) {
         override fun migrate(db: SupportSQLiteDatabase) {
@@ -94,6 +94,8 @@ object DatabaseModule {
             // Page preloading settings (#264)
             db.execSQL("ALTER TABLE `manga` ADD COLUMN `preloadPagesBefore` INTEGER")
             db.execSQL("ALTER TABLE `manga` ADD COLUMN `preloadPagesAfter` INTEGER")
+            // Reader background color (AMOLED theme support)
+            db.execSQL("ALTER TABLE `manga` ADD COLUMN `readerBackgroundColor` INTEGER")
         }
     }
 

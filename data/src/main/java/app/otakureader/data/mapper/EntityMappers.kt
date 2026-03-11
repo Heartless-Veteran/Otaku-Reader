@@ -28,6 +28,7 @@ fun MangaEntity.toManga(): Manga = Manga(
     readerMode = readerMode,
     readerColorFilter = readerColorFilter,
     readerCustomTintColor = readerCustomTintColor,
+    readerBackgroundColor = readerBackgroundColor,
     // Page preloading settings (#264)
     preloadPagesBefore = preloadPagesBefore,
     preloadPagesAfter = preloadPagesAfter
@@ -55,6 +56,7 @@ fun Manga.toEntity(): MangaEntity = MangaEntity(
     readerMode = readerMode,
     readerColorFilter = readerColorFilter,
     readerCustomTintColor = readerCustomTintColor,
+    readerBackgroundColor = readerBackgroundColor,
     // Page preloading settings (#264)
     preloadPagesBefore = preloadPagesBefore,
     preloadPagesAfter = preloadPagesAfter
