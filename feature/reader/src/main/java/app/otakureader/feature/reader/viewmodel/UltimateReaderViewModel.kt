@@ -515,9 +515,12 @@ class UltimateReaderViewModel @Inject constructor(
             val manga = currentManga
 
             // Use per-manga preload settings if available, otherwise use defaults (#264)
-            // Clamp to [0, MAX_PRELOAD] to guard against bad data
-            val preloadBefore = (manga?.preloadPagesBefore ?: PRELOAD_BUFFER).coerceIn(0, MAX_PRELOAD)
-            val preloadAfter = (manga?.preloadPagesAfter ?: PRELOAD_BUFFER).coerceIn(0, MAX_PRELOAD)
+            // Clamp to [0, MAX_PRELOAD_PAGES] to guard against bad data
+            val preloadBefore = (manga?.preloadPagesBefore ?: PRELOAD_BUFFER).coerceIn(0, MAX_PRELOAD_PAGES)
+            val preloadAfter = (manga?.preloadPagesAfter ?: PRELOAD_BUFFER).coerceIn(0, MAX_PRELOAD_PAGES)
+
+            // Store effective clamped values in state so they can be observed/tested
+            _state.update { it.copy(preloadPagesBefore = preloadBefore, preloadPagesAfter = preloadAfter) }
 
             val preloadRange = (currentPage - preloadBefore)..(currentPage + preloadAfter)
 
@@ -631,7 +634,7 @@ class UltimateReaderViewModel @Inject constructor(
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
         private const val PRELOAD_BUFFER = 3
-        private const val MAX_PRELOAD = 10
+        const val MAX_PRELOAD_PAGES = 10
         private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
         const val ZOOM_INCREMENT = 0.25f
         const val BRIGHTNESS_INCREMENT = 0.1f

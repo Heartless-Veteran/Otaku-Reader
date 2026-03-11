@@ -443,6 +443,9 @@ class UltimateReaderViewModelTest {
         vm.jumpToPage(5)
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(5, vm.state.value.currentPage)
+        // Verify that negative per-manga preload values are clamped up to 0
+        assertEquals(0, vm.state.value.preloadPagesBefore)
+        assertEquals(0, vm.state.value.preloadPagesAfter)
     }
 
     @Test
