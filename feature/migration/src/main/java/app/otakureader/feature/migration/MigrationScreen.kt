@@ -49,6 +49,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -96,10 +98,10 @@ fun MigrationScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mass Migration") },
+                title = { Text(stringResource(R.string.migration_title)) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onEvent(MigrationEvent.NavigateBack) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.migration_back))
                     }
                 }
             )
@@ -122,7 +124,7 @@ fun MigrationScreen(
             } else {
                 // Source selection
                 Text(
-                    text = "Select Target Source",
+                    text = stringResource(R.string.migration_select_target_source),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -149,7 +151,7 @@ fun MigrationScreen(
 
                 // Migration mode selection
                 Text(
-                    text = "Migration Mode",
+                    text = stringResource(R.string.migration_mode_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -170,7 +172,7 @@ fun MigrationScreen(
                                 viewModel.onEvent(MigrationEvent.SelectMigrationMode(MigrationMode.MOVE))
                             }
                         )
-                        Text("Move")
+                        Text(stringResource(R.string.migration_mode_move))
                     }
 
                     Row(
@@ -185,7 +187,7 @@ fun MigrationScreen(
                                 viewModel.onEvent(MigrationEvent.SelectMigrationMode(MigrationMode.COPY))
                             }
                         )
-                        Text("Copy")
+                        Text(stringResource(R.string.migration_mode_copy))
                     }
                 }
 
@@ -194,7 +196,7 @@ fun MigrationScreen(
                 // Migration tasks
                 if (state.migrationTasks.isNotEmpty()) {
                     Text(
-                        text = "Migration Progress (${state.currentTaskIndex + 1}/${state.migrationTasks.size})",
+                        text = stringResource(R.string.migration_progress, state.currentTaskIndex + 1, state.migrationTasks.size),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -238,7 +240,7 @@ fun MigrationScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Retry Failed")
+                        Text(stringResource(R.string.migration_retry_failed))
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -250,7 +252,7 @@ fun MigrationScreen(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = state.selectedTargetSourceId != null && !state.isLoading
                 ) {
-                    Text(if (state.isLoading) "Migrating..." else "Start Migration")
+                    Text(if (state.isLoading) stringResource(R.string.migration_migrating) else stringResource(R.string.migration_start))
                 }
             }
         }
@@ -288,11 +290,11 @@ fun MigrationScreen(
     state.error?.let { error ->
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(MigrationEvent.DismissError) },
-            title = { Text("Error") },
+            title = { Text(stringResource(R.string.migration_error_title)) },
             text = { Text(error) },
             confirmButton = {
                 TextButton(onClick = { viewModel.onEvent(MigrationEvent.DismissError) }) {
-                    Text("OK")
+                    Text(stringResource(R.string.migration_ok))
                 }
             }
         )
@@ -309,12 +311,12 @@ private fun MigrationConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Migration Target") },
+        title = { Text(stringResource(R.string.migration_select_target)) },
         text = {
             Column {
                 // Source manga info
                 Text(
-                    text = "Migrating:",
+                    text = stringResource(R.string.migration_migrating_label),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -362,7 +364,7 @@ private fun MigrationConfirmationDialog(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Choose a target (${candidates.size} match${if (candidates.size != 1) "es" else ""} found):",
+                    text = if (candidates.size == 1) stringResource(R.string.migration_choose_target, candidates.size) else stringResource(R.string.migration_choose_target_plural, candidates.size),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -381,7 +383,7 @@ private fun MigrationConfirmationDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onSkip) {
-                Text("Skip")
+                Text(stringResource(R.string.migration_skip))
             }
         }
     )
@@ -445,7 +447,7 @@ private fun MigrationCandidateCard(
                 )
                 if (candidate.chapterCount > 0) {
                     Text(
-                        text = "${candidate.chapterCount} chapter${if (candidate.chapterCount != 1) "s" else ""}",
+                        text = pluralStringResource(R.plurals.migration_chapter_count, candidate.chapterCount, candidate.chapterCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -461,7 +463,7 @@ private fun MigrationCandidateCard(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Match: ${(candidate.similarityScore * 100).toInt()}%",
+                    text = stringResource(R.string.migration_match_score, (candidate.similarityScore * 100).toInt()),
                     style = MaterialTheme.typography.labelSmall,
                     color = when {
                         candidate.similarityScore >= 0.9f -> MaterialTheme.colorScheme.primary
@@ -485,11 +487,11 @@ private fun MigrationSummaryDialog(
     val total = completedCount + failedCount + skippedCount
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Migration Complete") },
+        title = { Text(stringResource(R.string.migration_complete_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Processed $total manga",
+                    text = stringResource(R.string.migration_processed, total),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Row(
@@ -503,7 +505,7 @@ private fun MigrationSummaryDialog(
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "Completed: $completedCount",
+                        text = stringResource(R.string.migration_completed_count, completedCount),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -520,7 +522,7 @@ private fun MigrationSummaryDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Failed: $failedCount",
+                            text = stringResource(R.string.migration_failed_count, failedCount),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -538,7 +540,7 @@ private fun MigrationSummaryDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Skipped: $skippedCount",
+                            text = stringResource(R.string.migration_skipped_count, skippedCount),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -548,7 +550,7 @@ private fun MigrationSummaryDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Done")
+                Text(stringResource(R.string.migration_done))
             }
         }
     )
@@ -609,7 +611,7 @@ private fun MigrationTaskItem(task: MigrationTaskItem) {
             when (task.status) {
                 MigrationStatus.PENDING -> Icon(
                     imageVector = Icons.Default.Warning,
-                    contentDescription = "Pending",
+                    contentDescription = stringResource(R.string.migration_status_pending),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
@@ -618,19 +620,19 @@ private fun MigrationTaskItem(task: MigrationTaskItem) {
                 )
                 MigrationStatus.COMPLETED -> Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Completed",
+                    contentDescription = stringResource(R.string.migration_status_completed),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 MigrationStatus.FAILED, MigrationStatus.SKIPPED -> Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Failed",
+                    contentDescription = stringResource(R.string.migration_status_failed, ""),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(24.dp)
                 )
                 MigrationStatus.AWAITING_CONFIRMATION -> Icon(
                     imageVector = Icons.Default.Warning,
-                    contentDescription = "Awaiting confirmation",
+                    contentDescription = stringResource(R.string.migration_status_awaiting),
                     tint = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.size(24.dp)
                 )
@@ -649,17 +651,17 @@ private fun MigrationTaskItem(task: MigrationTaskItem) {
 
                 // Show detailed status message if available, otherwise fall back to generic label
                 val displayText = task.statusMessage ?: when (task.status) {
-                    MigrationStatus.PENDING -> "Pending"
-                    MigrationStatus.SEARCHING -> "Searching for matches..."
-                    MigrationStatus.AWAITING_CONFIRMATION -> "Awaiting confirmation"
-                    MigrationStatus.MIGRATING -> "Migrating data..."
+                    MigrationStatus.PENDING -> stringResource(R.string.migration_status_pending)
+                    MigrationStatus.SEARCHING -> stringResource(R.string.migration_status_searching)
+                    MigrationStatus.AWAITING_CONFIRMATION -> stringResource(R.string.migration_status_awaiting)
+                    MigrationStatus.MIGRATING -> stringResource(R.string.migration_status_migrating)
                     MigrationStatus.COMPLETED -> if (task.chaptersMatched > 0) {
-                        "Completed · ${task.chaptersMatched} chapter${if (task.chaptersMatched != 1) "s" else ""} matched"
+                        pluralStringResource(R.plurals.migration_status_completed_chapters, task.chaptersMatched, task.chaptersMatched)
                     } else {
-                        "Completed"
+                        stringResource(R.string.migration_status_completed)
                     }
-                    MigrationStatus.FAILED -> "Failed: ${task.errorMessage ?: "Unknown error"}"
-                    MigrationStatus.SKIPPED -> "Skipped"
+                    MigrationStatus.FAILED -> stringResource(R.string.migration_status_failed, task.errorMessage ?: stringResource(R.string.migration_status_unknown_error))
+                    MigrationStatus.SKIPPED -> stringResource(R.string.migration_status_skipped)
                 }
 
                 Text(
@@ -676,7 +678,7 @@ private fun MigrationTaskItem(task: MigrationTaskItem) {
                 task.targetCandidate?.let { target ->
                     if (task.status == MigrationStatus.COMPLETED) {
                         Text(
-                            text = "→ ${target.title}",
+                            text = stringResource(R.string.migration_target_arrow, target.title),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

@@ -44,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,10 +86,10 @@ fun BrowseScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Browse") },
+                title = { Text(stringResource(R.string.browse_title)) },
                 actions = {
                     IconButton(onClick = onGlobalSearchClick) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                     }
                 }
             )
@@ -96,7 +97,7 @@ fun BrowseScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = onInstallExtensionClick) {
-                Icon(Icons.Default.Add, contentDescription = "Install Extension")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.browse_install_extension))
             }
         }
     ) { paddingValues ->
@@ -139,10 +140,10 @@ private fun BrowseContent(
                 value = state.searchQuery,
                 onValueChange = { onEvent(BrowseEvent.OnSearchQueryChange(it)) },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Search manga...") },
+                placeholder = { Text(stringResource(R.string.browse_search_placeholder)) },
                 trailingIcon = {
                     IconButton(onClick = { onEvent(BrowseEvent.Search) }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
+                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                     }
                 },
                 singleLine = true
@@ -211,7 +212,7 @@ private fun FilterButton(
     onClick: () -> Unit
 ) {
     TextButton(onClick = onClick) {
-        Text("Filters")
+        Text(stringResource(R.string.browse_filters))
         if (activeCount > 0) {
             Spacer(modifier = Modifier.width(4.dp))
             Badge { Text("$activeCount") }
@@ -260,7 +261,7 @@ private fun SourcesContent(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Select a source to browse manga",
+                    text = stringResource(R.string.browse_select_source),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -317,7 +318,7 @@ private fun MangaGrid(
                         CircularProgressIndicator()
                     } else {
                         Text(
-                            text = "Load more",
+                            text = stringResource(R.string.browse_load_more),
                             modifier = Modifier.clickable { onLoadMore() },
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -375,7 +376,7 @@ private fun SearchResultsContent(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "No results found",
+                text = stringResource(R.string.browse_no_results),
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -398,12 +399,12 @@ private fun EmptySourcesContent() {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "No sources installed",
+                text = stringResource(R.string.browse_no_sources_title),
                 style = MaterialTheme.typography.headlineSmall
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Tap + to install a Tachiyomi extension",
+                text = stringResource(R.string.browse_no_sources_message),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

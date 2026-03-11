@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reader menu overlay -->
+    <string name="reader_page_indicator">%2$d 중 %1$d 페이지</string>
+    <string name="reader_back">뒤로</string>
+    <string name="reader_fullscreen">전체 화면</string>
+    <string name="reader_gallery">갤러리</string>
+    <string name="reader_tap_to_hide">중앙을 탭하여 메뉴 숨기기</string>
+
+    <!-- Reading mode -->
+    <string name="reader_mode_title">읽기 모드</string>
+    <string name="reader_mode_single">단일 페이지</string>
+    <string name="reader_mode_dual">이중 페이지</string>
+    <string name="reader_mode_webtoon">웹툰</string>
+    <string name="reader_mode_smart">스마트</string>
+
+    <!-- Zoom -->
+    <string name="reader_zoom">확대/축소</string>
+    <string name="reader_zoom_out">축소</string>
+    <string name="reader_zoom_in">확대</string>
+    <string name="reader_zoom_percentage">%1$d%%</string>
+
+    <!-- Brightness -->
+    <string name="reader_brightness">밝기</string>
+    <string name="reader_brightness_percentage">%1$d%%</string>
+
+    <!-- Color filter -->
+    <string name="reader_color_filter">색상 필터</string>
+    <string name="reader_color_filter_none">없음</string>
+    <string name="reader_color_filter_sepia">세피아</string>
+    <string name="reader_color_filter_greyscale">흑백</string>
+    <string name="reader_color_filter_invert">반전</string>
+    <string name="reader_color_filter_custom_tint">사용자 지정 틴트</string>
+
+    <!-- Custom tint picker -->
+    <string name="reader_tint_color">틴트 색상</string>
+    <string name="reader_opacity">불투명도</string>
+    <string name="reader_opacity_percentage">%1$d%%</string>
+
+    <!-- Tint presets -->
+    <string name="reader_tint_blue">파란색</string>
+    <string name="reader_tint_red">빨간색</string>
+    <string name="reader_tint_orange">주황색</string>
+    <string name="reader_tint_yellow">노란색</string>
+    <string name="reader_tint_green">초록색</string>
+    <string name="reader_tint_purple">보라색</string>
+    <string name="reader_tint_brown">갈색</string>
+    <string name="reader_tint_grey">회색</string>
+
+    <!-- Reader background -->
+    <string name="reader_background">리더 배경</string>
+    <string name="reader_bg_default">기본값</string>
+    <string name="reader_bg_black">검정</string>
+    <string name="reader_bg_dark_grey">짙은 회색</string>
+    <string name="reader_bg_grey">회색</string>
+    <string name="reader_bg_warm_grey">따뜻한 회색</string>
+    <string name="reader_bg_dark_brown">짙은 갈색</string>
+    <string name="reader_bg_sepia">세피아</string>
+    <string name="reader_bg_white">흰색</string>
+    <string name="reader_bg_dark_blue">짙은 파란색</string>
+
+    <!-- Reader screen -->
+    <string name="reader_navigating_to_chapter">챕터로 이동 중…</string>
+</resources>

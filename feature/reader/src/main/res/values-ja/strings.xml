@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reader menu overlay -->
+    <string name="reader_page_indicator">%1$d / %2$d ページ</string>
+    <string name="reader_back">戻る</string>
+    <string name="reader_fullscreen">全画面表示</string>
+    <string name="reader_gallery">ギャラリー</string>
+    <string name="reader_tap_to_hide">中央をタップしてメニューを非表示</string>
+
+    <!-- Reading mode -->
+    <string name="reader_mode_title">閲覧モード</string>
+    <string name="reader_mode_single">単一ページ</string>
+    <string name="reader_mode_dual">見開き</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart">スマート</string>
+
+    <!-- Zoom -->
+    <string name="reader_zoom">ズーム</string>
+    <string name="reader_zoom_out">縮小</string>
+    <string name="reader_zoom_in">拡大</string>
+    <string name="reader_zoom_percentage">%1$d%%</string>
+
+    <!-- Brightness -->
+    <string name="reader_brightness">明るさ</string>
+    <string name="reader_brightness_percentage">%1$d%%</string>
+
+    <!-- Color filter -->
+    <string name="reader_color_filter">カラーフィルター</string>
+    <string name="reader_color_filter_none">なし</string>
+    <string name="reader_color_filter_sepia">セピア</string>
+    <string name="reader_color_filter_greyscale">グレースケール</string>
+    <string name="reader_color_filter_invert">色反転</string>
+    <string name="reader_color_filter_custom_tint">カスタムティント</string>
+
+    <!-- Custom tint picker -->
+    <string name="reader_tint_color">ティントの色</string>
+    <string name="reader_opacity">不透明度</string>
+    <string name="reader_opacity_percentage">%1$d%%</string>
+
+    <!-- Tint presets -->
+    <string name="reader_tint_blue">青</string>
+    <string name="reader_tint_red">赤</string>
+    <string name="reader_tint_orange">オレンジ</string>
+    <string name="reader_tint_yellow">黄</string>
+    <string name="reader_tint_green">緑</string>
+    <string name="reader_tint_purple">紫</string>
+    <string name="reader_tint_brown">茶</string>
+    <string name="reader_tint_grey">灰色</string>
+
+    <!-- Reader background -->
+    <string name="reader_background">リーダーの背景</string>
+    <string name="reader_bg_default">デフォルト</string>
+    <string name="reader_bg_black">黒</string>
+    <string name="reader_bg_dark_grey">ダークグレー</string>
+    <string name="reader_bg_grey">グレー</string>
+    <string name="reader_bg_warm_grey">ウォームグレー</string>
+    <string name="reader_bg_dark_brown">ダークブラウン</string>
+    <string name="reader_bg_sepia">セピア</string>
+    <string name="reader_bg_white">白</string>
+    <string name="reader_bg_dark_blue">ダークブルー</string>
+
+    <!-- Reader screen -->
+    <string name="reader_navigating_to_chapter">チャプターに移動中…</string>
+</resources>

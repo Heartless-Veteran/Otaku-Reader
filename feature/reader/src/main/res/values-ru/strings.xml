@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reader menu overlay -->
+    <string name="reader_page_indicator">Страница %1$d из %2$d</string>
+    <string name="reader_back">Назад</string>
+    <string name="reader_fullscreen">Полный экран</string>
+    <string name="reader_gallery">Галерея</string>
+    <string name="reader_tap_to_hide">Нажмите по центру, чтобы скрыть меню</string>
+
+    <!-- Reading mode -->
+    <string name="reader_mode_title">Режим чтения</string>
+    <string name="reader_mode_single">Одна страница</string>
+    <string name="reader_mode_dual">Двойная страница</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart">Умный</string>
+
+    <!-- Zoom -->
+    <string name="reader_zoom">Масштаб</string>
+    <string name="reader_zoom_out">Уменьшить</string>
+    <string name="reader_zoom_in">Увеличить</string>
+    <string name="reader_zoom_percentage">%1$d%%</string>
+
+    <!-- Brightness -->
+    <string name="reader_brightness">Яркость</string>
+    <string name="reader_brightness_percentage">%1$d%%</string>
+
+    <!-- Color filter -->
+    <string name="reader_color_filter">Цветовой фильтр</string>
+    <string name="reader_color_filter_none">Нет</string>
+    <string name="reader_color_filter_sepia">Сепия</string>
+    <string name="reader_color_filter_greyscale">Оттенки серого</string>
+    <string name="reader_color_filter_invert">Инвертировать</string>
+    <string name="reader_color_filter_custom_tint">Пользовательский оттенок</string>
+
+    <!-- Custom tint picker -->
+    <string name="reader_tint_color">Цвет оттенка</string>
+    <string name="reader_opacity">Непрозрачность</string>
+    <string name="reader_opacity_percentage">%1$d%%</string>
+
+    <!-- Tint presets -->
+    <string name="reader_tint_blue">Синий</string>
+    <string name="reader_tint_red">Красный</string>
+    <string name="reader_tint_orange">Оранжевый</string>
+    <string name="reader_tint_yellow">Жёлтый</string>
+    <string name="reader_tint_green">Зелёный</string>
+    <string name="reader_tint_purple">Фиолетовый</string>
+    <string name="reader_tint_brown">Коричневый</string>
+    <string name="reader_tint_grey">Серый</string>
+
+    <!-- Reader background -->
+    <string name="reader_background">Фон читалки</string>
+    <string name="reader_bg_default">По умолчанию</string>
+    <string name="reader_bg_black">Чёрный</string>
+    <string name="reader_bg_dark_grey">Тёмно-серый</string>
+    <string name="reader_bg_grey">Серый</string>
+    <string name="reader_bg_warm_grey">Тёплый серый</string>
+    <string name="reader_bg_dark_brown">Тёмно-коричневый</string>
+    <string name="reader_bg_sepia">Сепия</string>
+    <string name="reader_bg_white">Белый</string>
+    <string name="reader_bg_dark_blue">Тёмно-синий</string>
+
+    <!-- Reader screen -->
+    <string name="reader_navigating_to_chapter">Переход к главе…</string>
+</resources>

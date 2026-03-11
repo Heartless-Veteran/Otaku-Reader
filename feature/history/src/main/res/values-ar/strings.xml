@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_selected_count">تم تحديد %1$d</string>
+    <string name="history_title">السجل</string>
+    <string name="history_clear_selection">إلغاء التحديد</string>
+    <string name="history_back">رجوع</string>
+    <string name="history_delete_selected">حذف المحدد</string>
+    <string name="history_select_all">تحديد الكل</string>
+    <string name="history_clear_all">مسح الكل</string>
+    <string name="history_search_placeholder">البحث في السجل…</string>
+    <string name="history_clear_search">مسح البحث</string>
+    <string name="history_unknown_error">خطأ غير معروف</string>
+    <string name="history_empty">سيظهر سجل القراءة الخاص بك هنا.</string>
+    <string name="history_no_results">لا توجد نتائج لـ \"%1$s\".</string>
+    <string name="history_remove">إزالة من السجل</string>
+</resources>

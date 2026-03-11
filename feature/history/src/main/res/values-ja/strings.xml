@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_selected_count">%1$d 件選択中</string>
+    <string name="history_title">履歴</string>
+    <string name="history_clear_selection">選択を解除</string>
+    <string name="history_back">戻る</string>
+    <string name="history_delete_selected">選択した項目を削除</string>
+    <string name="history_select_all">すべて選択</string>
+    <string name="history_clear_all">すべて削除</string>
+    <string name="history_search_placeholder">履歴を検索…</string>
+    <string name="history_clear_search">検索をクリア</string>
+    <string name="history_unknown_error">不明なエラー</string>
+    <string name="history_empty">読んだ履歴がここに表示されます。</string>
+    <string name="history_no_results">\"%1$s\" の検索結果はありません。</string>
+    <string name="history_remove">履歴から削除</string>
+</resources>

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.GitHub
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocalLibrary
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.Card
@@ -38,8 +40,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.otakureader.feature.about.R
 
 /**
  * About screen showing app information, help, FAQ, licenses, and credits.
@@ -58,12 +62,12 @@ fun AboutScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("About & Help") },
+                title = { Text(stringResource(R.string.about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Navigate back"
+                            contentDescription = stringResource(R.string.about_navigate_back)
                         )
                     }
                 }
@@ -82,12 +86,12 @@ fun AboutScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Help & Support Section
-            AboutSectionTitle("Help & Support")
+            AboutSectionTitle(stringResource(R.string.about_help_support_section))
 
             AboutListItem(
                 icon = Icons.AutoMirrored.Filled.Help,
-                title = "How to Add Sources",
-                subtitle = "Learn how to install extensions and add manga sources",
+                title = stringResource(R.string.about_how_to_add_sources_title),
+                subtitle = stringResource(R.string.about_how_to_add_sources_subtitle),
                 onClick = {
                     context.startActivity(
                         Intent(
@@ -100,8 +104,8 @@ fun AboutScreen(
 
             AboutListItem(
                 icon = Icons.Default.QuestionAnswer,
-                title = "Frequently Asked Questions",
-                subtitle = "Common questions and troubleshooting tips",
+                title = stringResource(R.string.about_faq_title),
+                subtitle = stringResource(R.string.about_faq_subtitle),
                 onClick = {
                     context.startActivity(
                         Intent(
@@ -114,8 +118,8 @@ fun AboutScreen(
 
             AboutListItem(
                 icon = Icons.Default.LocalLibrary,
-                title = "Getting Started Guide",
-                subtitle = "Learn the basics of using Otaku Reader",
+                title = stringResource(R.string.about_getting_started_title),
+                subtitle = stringResource(R.string.about_getting_started_subtitle),
                 onClick = {
                     context.startActivity(
                         Intent(
@@ -129,38 +133,38 @@ fun AboutScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // App Information Section
-            AboutSectionTitle("App Information")
+            AboutSectionTitle(stringResource(R.string.about_app_information_section))
 
             AboutListItem(
                 icon = Icons.Default.History,
-                title = "Changelog",
-                subtitle = "See what's new in this version",
+                title = stringResource(R.string.about_changelog_title),
+                subtitle = stringResource(R.string.about_changelog_subtitle),
                 onClick = onNavigateToLicenses
             )
 
             AboutListItem(
                 icon = Icons.Default.Gavel,
-                title = "Open Source Licenses",
-                subtitle = "View licenses for third-party libraries",
+                title = stringResource(R.string.about_open_source_licenses_title),
+                subtitle = stringResource(R.string.about_open_source_licenses_subtitle),
                 onClick = onNavigateToLicenses
             )
 
             AboutListItem(
                 icon = Icons.Default.Policy,
-                title = "Privacy Policy",
-                subtitle = "Learn how we handle your data",
+                title = stringResource(R.string.about_privacy_policy_title),
+                subtitle = stringResource(R.string.about_privacy_policy_subtitle),
                 onClick = onNavigateToPrivacyPolicy
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Connect Section
-            AboutSectionTitle("Connect")
+            AboutSectionTitle(stringResource(R.string.about_connect_section))
 
             AboutListItem(
                 icon = Icons.Default.GitHub,
-                title = "GitHub Repository",
-                subtitle = "View source code and report issues",
+                title = stringResource(R.string.about_github_title),
+                subtitle = stringResource(R.string.about_github_subtitle),
                 onClick = {
                     context.startActivity(
                         Intent(
@@ -173,8 +177,8 @@ fun AboutScreen(
 
             AboutListItem(
                 icon = Icons.Default.Description,
-                title = "Documentation",
-                subtitle = "Full documentation and guides",
+                title = stringResource(R.string.about_documentation_title),
+                subtitle = stringResource(R.string.about_documentation_subtitle),
                 onClick = {
                     context.startActivity(
                         Intent(
@@ -208,13 +212,13 @@ private fun AppInfoHeader() {
         )
 
         Text(
-            text = "Otaku Reader",
+            text = stringResource(R.string.about_app_name),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
 
         Text(
-            text = "Version ${BuildConfig.VERSION_NAME}",
+            text = stringResource(R.string.about_version_format, BuildConfig.VERSION_NAME),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -222,7 +226,7 @@ private fun AppInfoHeader() {
         )
 
         Text(
-            text = "A hero that doesn't wear a cape",
+            text = stringResource(R.string.about_tagline),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
@@ -241,13 +245,12 @@ private fun AppInfoHeader() {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "About Otaku Reader",
+                    text = stringResource(R.string.about_card_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
-                    text = "Otaku Reader is a free, open-source manga reader built with the community in mind. " +
-                            "No subscriptions, no ads, no tracking. Just read.",
+                    text = stringResource(R.string.about_card_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 4.dp)
