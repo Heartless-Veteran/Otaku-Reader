@@ -26,8 +26,8 @@ class AiPreferences(private val dataStore: DataStore<Preferences>) {
      * 1 = Standard tier (paid, higher limits)
      * 2 = Pro tier (paid, highest limits)
      */
-    val aiTier: Flow<Int> = dataStore.data.map { it[Keys.AI_TIER] ?: 0 }
-    suspend fun setAiTier(value: Int) = dataStore.edit { it[Keys.AI_TIER] = value }
+    val aiTier: Flow<AiTier> = dataStore.data.map { AiTier.from(it[Keys.AI_TIER] ?: 0) }
+    suspend fun setAiTier(value: AiTier) = dataStore.edit { it[Keys.AI_TIER] = value.value }
 
     /** Gemini API key (masked in UI, stored locally). */
     val geminiApiKey: Flow<String> = dataStore.data.map { it[Keys.GEMINI_API_KEY] ?: "" }
