@@ -115,7 +115,22 @@ class SettingsViewModel @Inject constructor(
                 _state.update { current ->
                     newState.copy(
                         trackers = current.trackers,
-                        trackingLoginInProgress = current.trackingLoginInProgress
+                        trackingLoginInProgress = current.trackingLoginInProgress,
+                        // Preserve AI fields managed by observeAiPreferences()
+                        aiEnabled = current.aiEnabled,
+                        aiTier = current.aiTier,
+                        aiApiKeySet = current.aiApiKeySet,
+                        aiReadingInsights = current.aiReadingInsights,
+                        aiSmartSearch = current.aiSmartSearch,
+                        aiRecommendations = current.aiRecommendations,
+                        aiPanelReader = current.aiPanelReader,
+                        aiSfxTranslation = current.aiSfxTranslation,
+                        aiSummaryTranslation = current.aiSummaryTranslation,
+                        aiSourceIntelligence = current.aiSourceIntelligence,
+                        aiSmartNotifications = current.aiSmartNotifications,
+                        aiAutoCategorization = current.aiAutoCategorization,
+                        aiTokensUsedThisMonth = current.aiTokensUsedThisMonth,
+                        aiTokenTrackingPeriod = current.aiTokenTrackingPeriod
                     )
                 }
             }
