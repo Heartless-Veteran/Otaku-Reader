@@ -187,7 +187,12 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAiTier -> aiPreferences.setAiTier(event.tier)
                 is SettingsEvent.SetAiApiKey -> {
                     aiPreferences.setGeminiApiKey(event.key)
-                    _state.update { it.copy(aiApiKeySet = event.key.isNotBlank()) }
+                    val persistedKey = aiPreferences.getGeminiApiKey()
+                    val isSet = persistedKey.isNotBlank()
+                    _state.update { it.copy(aiApiKeySet = isSet) }
+                    if (event.key.isNotBlank() && !isSet) {
+                        _effect.send(SettingsEffect.ShowSnackbar("Failed to save AI API key"))
+                    }
                 }
                 is SettingsEvent.SetAiReadingInsights -> aiPreferences.setAiReadingInsights(event.enabled)
                 is SettingsEvent.SetAiSmartSearch -> aiPreferences.setAiSmartSearch(event.enabled)
