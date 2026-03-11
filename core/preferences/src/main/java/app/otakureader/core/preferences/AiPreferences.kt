@@ -52,31 +52,31 @@ class AiPreferences(
     suspend fun setAiReadingInsights(value: Boolean) = dataStore.edit { it[Keys.AI_READING_INSIGHTS] = value }
 
     /** Enable smart search with natural language queries. */
-    val aiSmartSearch: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_SEARCH] ?: true }
+    val aiSmartSearch: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_SEARCH] ?: false }
     suspend fun setAiSmartSearch(value: Boolean) = dataStore.edit { it[Keys.AI_SMART_SEARCH] = value }
 
     /** Enable AI recommendations based on reading history. */
-    val aiRecommendations: Flow<Boolean> = dataStore.data.map { it[Keys.AI_RECOMMENDATIONS] ?: true }
+    val aiRecommendations: Flow<Boolean> = dataStore.data.map { it[Keys.AI_RECOMMENDATIONS] ?: false }
     suspend fun setAiRecommendations(value: Boolean) = dataStore.edit { it[Keys.AI_RECOMMENDATIONS] = value }
 
     /** Enable panel-aware reader with Gemini Vision. */
-    val aiPanelReader: Flow<Boolean> = dataStore.data.map { it[Keys.AI_PANEL_READER] ?: true }
+    val aiPanelReader: Flow<Boolean> = dataStore.data.map { it[Keys.AI_PANEL_READER] ?: false }
     suspend fun setAiPanelReader(value: Boolean) = dataStore.edit { it[Keys.AI_PANEL_READER] = value }
 
     /** Enable SFX translation in manga pages. */
-    val aiSfxTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SFX_TRANSLATION] ?: true }
+    val aiSfxTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SFX_TRANSLATION] ?: false }
     suspend fun setAiSfxTranslation(value: Boolean) = dataStore.edit { it[Keys.AI_SFX_TRANSLATION] = value }
 
     /** Enable auto-translation of chapter summaries. */
-    val aiSummaryTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SUMMARY_TRANSLATION] ?: true }
+    val aiSummaryTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SUMMARY_TRANSLATION] ?: false }
     suspend fun setAiSummaryTranslation(value: Boolean) = dataStore.edit { it[Keys.AI_SUMMARY_TRANSLATION] = value }
 
     /** Enable source intelligence for best source scoring. */
-    val aiSourceIntelligence: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SOURCE_INTELLIGENCE] ?: true }
+    val aiSourceIntelligence: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SOURCE_INTELLIGENCE] ?: false }
     suspend fun setAiSourceIntelligence(value: Boolean) = dataStore.edit { it[Keys.AI_SOURCE_INTELLIGENCE] = value }
 
     /** Enable smart notifications with context-aware summaries. */
-    val aiSmartNotifications: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_NOTIFICATIONS] ?: true }
+    val aiSmartNotifications: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_NOTIFICATIONS] ?: false }
     suspend fun setAiSmartNotifications(value: Boolean) = dataStore.edit { it[Keys.AI_SMART_NOTIFICATIONS] = value }
 
     /** Enable auto-categorization of manga when added to library. */
