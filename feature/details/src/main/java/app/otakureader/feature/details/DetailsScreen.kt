@@ -769,6 +769,8 @@ private fun PreloadOption(
     label: String,
     value: Int?,
     onChange: (Int?) -> Unit,
+    defaultValue: Int = DetailsContract.DEFAULT_PRELOAD_PAGES,
+    maxValue: Int = DetailsContract.MAX_PRELOAD_PAGES,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -782,18 +784,18 @@ private fun PreloadOption(
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(
-                onClick = { onChange((value ?: 0).coerceAtLeast(0) - 1) },
-                enabled = (value ?: 0) > 0
+                onClick = { if (value == 0) onChange(null) else onChange(value!! - 1) },
+                enabled = value != null
             ) {
                 Text("-")
             }
             Text(
-                text = (value ?: 0).toString(),
+                text = if (value == null) "Default ($defaultValue)" else value.toString(),
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
             TextButton(
-                onClick = { onChange((value ?: 0).coerceAtMost(9) + 1) },
-                enabled = (value ?: 0) < 10
+                onClick = { onChange(if (value == null) 0 else (value + 1)) },
+                enabled = value == null || value < maxValue
             ) {
                 Text("+")
             }

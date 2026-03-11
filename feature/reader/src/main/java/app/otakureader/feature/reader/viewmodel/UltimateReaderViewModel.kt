@@ -105,7 +105,7 @@ class UltimateReaderViewModel @Inject constructor(
                 currentManga = loaded
             }
 
-            // Load all settings concurrently
+            // Load settings
             val mode = settingsRepository.readerMode.first()
             val brightness = settingsRepository.brightness.first()
             val keepScreenOn = settingsRepository.keepScreenOn.first()

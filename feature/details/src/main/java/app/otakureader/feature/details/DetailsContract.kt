@@ -13,6 +13,17 @@ import app.otakureader.domain.model.MangaStatus
  */
 object DetailsContract {
 
+    /** Maximum pages to preload before/after the current page.
+     *  Intentionally duplicated from UltimateReaderViewModel.MAX_PRELOAD_PAGES — feature modules
+     *  cannot cross-depend, so keeping both values equal is a manual constraint. */
+    const val MAX_PRELOAD_PAGES = 10
+
+    /** Default pages to preload when no per-manga override is set.
+     *  Intentionally duplicated from UltimateReaderViewModel.PRELOAD_BUFFER — feature modules
+     *  cannot cross-depend, so keeping both values equal is a manual constraint. */
+    const val DEFAULT_PRELOAD_PAGES = 3
+
+
     /**
      * UI State for Details Screen
      */
