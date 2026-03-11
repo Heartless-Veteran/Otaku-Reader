@@ -504,7 +504,7 @@ class UltimateReaderViewModel @Inject constructor(
 
     /**
      * Preload pages ahead and behind current page for smooth scrolling.
-     * Uses per-manga preload settings if available (#264), otherwise falls back to default.
+     * Uses per-manga preload settings if available (#264), otherwise falls back to global defaults.
      */
     private fun preloadPages(currentPage: Int) {
         preloadJob?.cancel()
@@ -512,9 +512,14 @@ class UltimateReaderViewModel @Inject constructor(
             val pages = _state.value.pages
             val manga = currentManga
 
-            // Use per-manga preload settings if available, otherwise use defaults (#264)
-            val preloadBefore = manga?.preloadPagesBefore ?: PRELOAD_BUFFER
-            val preloadAfter = manga?.preloadPagesAfter ?: PRELOAD_BUFFER
+            // Use per-manga preload settings if available, otherwise use global defaults (#264)
+            val globalBefore = runCatching { settingsRepository.preloadPagesBefore.first() }
+                .getOrDefault(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+            val globalAfter = runCatching { settingsRepository.preloadPagesAfter.first() }
+                .getOrDefault(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+
+            val preloadBefore = manga?.preloadPagesBefore ?: globalBefore
+            val preloadAfter = manga?.preloadPagesAfter ?: globalAfter
 
             val preloadRange = (currentPage - preloadBefore)..(currentPage + preloadAfter)
 
@@ -627,7 +632,6 @@ class UltimateReaderViewModel @Inject constructor(
     companion object {
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
-        private const val PRELOAD_BUFFER = 3
         private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
         const val ZOOM_INCREMENT = 0.25f
         const val BRIGHTNESS_INCREMENT = 0.1f

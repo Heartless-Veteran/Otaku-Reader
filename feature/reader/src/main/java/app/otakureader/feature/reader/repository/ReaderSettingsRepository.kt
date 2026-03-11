@@ -181,6 +181,35 @@ class ReaderSettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.CUSTOM_TINT_COLOR] = color }
     }
 
+    // ==================== Page Preloading (#264) ====================
+
+    /** Number of pages to preload before the current page (0–10). */
+    val preloadPagesBefore: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.PRELOAD_PAGES_BEFORE] ?: DEFAULT_PRELOAD_PAGES
+    }
+
+    suspend fun setPreloadPagesBefore(count: Int) {
+        dataStore.edit { it[Keys.PRELOAD_PAGES_BEFORE] = count.coerceIn(0, MAX_PRELOAD_PAGES) }
+    }
+
+    /** Number of pages to preload after the current page (0–10). */
+    val preloadPagesAfter: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.PRELOAD_PAGES_AFTER] ?: DEFAULT_PRELOAD_PAGES
+    }
+
+    suspend fun setPreloadPagesAfter(count: Int) {
+        dataStore.edit { it[Keys.PRELOAD_PAGES_AFTER] = count.coerceIn(0, MAX_PRELOAD_PAGES) }
+    }
+
+    /** Memory cache size in megabytes for page images (32–512 MB). */
+    val memoryCacheSizeMb: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.MEMORY_CACHE_SIZE_MB] ?: DEFAULT_MEMORY_CACHE_SIZE_MB
+    }
+
+    suspend fun setMemoryCacheSizeMb(sizeMb: Int) {
+        dataStore.edit { it[Keys.MEMORY_CACHE_SIZE_MB] = sizeMb.coerceIn(MIN_MEMORY_CACHE_SIZE_MB, MAX_MEMORY_CACHE_SIZE_MB) }
+    }
+
     private object Keys {
         val READER_MODE = intPreferencesKey("reader_mode_setting")
         val BRIGHTNESS = floatPreferencesKey("reader_brightness")
@@ -199,6 +228,9 @@ class ReaderSettingsRepository @Inject constructor(
         val INCOGNITO_MODE = booleanPreferencesKey("reader_incognito_mode")
         val COLOR_FILTER_MODE = intPreferencesKey("reader_color_filter_mode")
         val CUSTOM_TINT_COLOR = longPreferencesKey("reader_custom_tint_color")
+        val PRELOAD_PAGES_BEFORE = intPreferencesKey("reader_preload_pages_before")
+        val PRELOAD_PAGES_AFTER = intPreferencesKey("reader_preload_pages_after")
+        val MEMORY_CACHE_SIZE_MB = intPreferencesKey("reader_memory_cache_size_mb")
     }
     
     companion object {
@@ -207,5 +239,10 @@ class ReaderSettingsRepository @Inject constructor(
         const val MIN_ZOOM = 0.5f
         const val MAX_ZOOM = 5.0f
         const val DEFAULT_AUTO_SCROLL_SPEED = 100f
+        const val DEFAULT_PRELOAD_PAGES = 3
+        const val MAX_PRELOAD_PAGES = 10
+        const val DEFAULT_MEMORY_CACHE_SIZE_MB = 128
+        const val MIN_MEMORY_CACHE_SIZE_MB = 32
+        const val MAX_MEMORY_CACHE_SIZE_MB = 512
     }
 }

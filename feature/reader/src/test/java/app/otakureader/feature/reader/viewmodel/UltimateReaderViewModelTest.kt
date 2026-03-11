@@ -64,6 +64,8 @@ class UltimateReaderViewModelTest {
         every { settingsRepository.incognitoMode } returns flowOf(false)
         every { settingsRepository.colorFilterMode } returns flowOf(ColorFilterMode.NONE)
         every { settingsRepository.customTintColor } returns flowOf(0x4000AAFFL)
+        every { settingsRepository.preloadPagesBefore } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+        every { settingsRepository.preloadPagesAfter } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
 
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
         coEvery { chapterRepository.getChapterById(chapterId) } returns null
@@ -314,5 +316,42 @@ class UltimateReaderViewModelTest {
         coVerify {
             mangaRepository.updateManga(match { it.readerBackgroundColor == 0xFF333333L })
         }
+    }
+
+    // ---- Preload settings (#264) ----
+
+    @Test
+    fun `preloadPages uses global defaults from ReaderSettingsRepository`() = runTest {
+        // Set custom global preload settings
+        every { settingsRepository.preloadPagesBefore } returns flowOf(5)
+        every { settingsRepository.preloadPagesAfter } returns flowOf(7)
+
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Set pages and navigate to trigger preloading
+        vm.setPages(List(20) { ReaderPage(index = it) })
+        vm.jumpToPage(10)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // The ViewModel should have navigated to page 10 successfully,
+        // which triggers preloadPages() internally using our custom settings
+        assertEquals(10, vm.state.value.currentPage)
+    }
+
+    @Test
+    fun `preloadPages falls back to defaults when settings read fails`() = runTest {
+        // Simulate settings read failure
+        every { settingsRepository.preloadPagesBefore } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+        every { settingsRepository.preloadPagesAfter } returns flowOf(ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES)
+
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        vm.setPages(List(20) { ReaderPage(index = it) })
+        vm.jumpToPage(5)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(5, vm.state.value.currentPage)
     }
 }

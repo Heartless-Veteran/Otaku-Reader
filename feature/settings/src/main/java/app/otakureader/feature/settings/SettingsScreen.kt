@@ -504,6 +504,74 @@ private fun ReaderSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit
                     )
                 }
             )
+
+            // Page preloading
+            var preloadBeforeSlider by remember(state.preloadPagesBefore) {
+                mutableFloatStateOf(state.preloadPagesBefore.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text("Preload Pages Before: ${preloadBeforeSlider.roundToInt()}") },
+                supportingContent = {
+                    Column {
+                        Text("Number of pages to preload before the current page")
+                        Slider(
+                            value = preloadBeforeSlider,
+                            onValueChange = { preloadBeforeSlider = it },
+                            onValueChangeFinished = {
+                                onEvent(SettingsEvent.SetPreloadPagesBefore(preloadBeforeSlider.roundToInt()))
+                            },
+                            valueRange = 0f..10f,
+                            steps = 9,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            )
+
+            var preloadAfterSlider by remember(state.preloadPagesAfter) {
+                mutableFloatStateOf(state.preloadPagesAfter.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text("Preload Pages After: ${preloadAfterSlider.roundToInt()}") },
+                supportingContent = {
+                    Column {
+                        Text("Number of pages to preload after the current page")
+                        Slider(
+                            value = preloadAfterSlider,
+                            onValueChange = { preloadAfterSlider = it },
+                            onValueChangeFinished = {
+                                onEvent(SettingsEvent.SetPreloadPagesAfter(preloadAfterSlider.roundToInt()))
+                            },
+                            valueRange = 0f..10f,
+                            steps = 9,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            )
+
+            // Memory cache size
+            var cacheSizeSlider by remember(state.memoryCacheSizeMb) {
+                mutableFloatStateOf(state.memoryCacheSizeMb.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text("Image Cache Size: ${cacheSizeSlider.roundToInt()} MB") },
+                supportingContent = {
+                    Column {
+                        Text("Memory allocated for caching page images")
+                        Slider(
+                            value = cacheSizeSlider,
+                            onValueChange = { cacheSizeSlider = it },
+                            onValueChangeFinished = {
+                                onEvent(SettingsEvent.SetMemoryCacheSizeMb(cacheSizeSlider.roundToInt()))
+                            },
+                            valueRange = 32f..512f,
+                            steps = 14,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            )
 }
 
 @Composable
