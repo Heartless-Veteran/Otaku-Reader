@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_selected_count">%1$d выбрано</string>
+    <string name="history_title">История</string>
+    <string name="history_clear_selection">Снять выделение</string>
+    <string name="history_back">Назад</string>
+    <string name="history_delete_selected">Удалить выбранное</string>
+    <string name="history_select_all">Выбрать все</string>
+    <string name="history_clear_all">Очистить все</string>
+    <string name="history_search_placeholder">Поиск по истории…</string>
+    <string name="history_clear_search">Очистить поиск</string>
+    <string name="history_unknown_error">Неизвестная ошибка</string>
+    <string name="history_empty">Здесь появится история чтения.</string>
+    <string name="history_no_results">Нет результатов для \"%1$s\".</string>
+    <string name="history_remove">Удалить из истории</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_selected_count">%1$d sélectionnés</string>
+    <string name="history_title">Historique</string>
+    <string name="history_clear_selection">Effacer la sélection</string>
+    <string name="history_back">Retour</string>
+    <string name="history_delete_selected">Supprimer la sélection</string>
+    <string name="history_select_all">Tout sélectionner</string>
+    <string name="history_clear_all">Tout effacer</string>
+    <string name="history_search_placeholder">Rechercher dans l\'historique…</string>
+    <string name="history_clear_search">Effacer la recherche</string>
+    <string name="history_unknown_error">Erreur inconnue</string>
+    <string name="history_empty">Votre historique de lecture apparaîtra ici.</string>
+    <string name="history_no_results">Aucun résultat pour \"%1$s\".</string>
+    <string name="history_remove">Retirer de l\'historique</string>
+</resources>

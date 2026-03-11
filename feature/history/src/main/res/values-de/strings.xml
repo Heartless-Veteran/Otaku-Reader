@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="history_selected_count">%1$d ausgewählt</string>
+    <string name="history_title">Verlauf</string>
+    <string name="history_clear_selection">Auswahl aufheben</string>
+    <string name="history_back">Zurück</string>
+    <string name="history_delete_selected">Ausgewählte löschen</string>
+    <string name="history_select_all">Alle auswählen</string>
+    <string name="history_clear_all">Alles löschen</string>
+    <string name="history_search_placeholder">Verlauf durchsuchen…</string>
+    <string name="history_clear_search">Suche löschen</string>
+    <string name="history_unknown_error">Unbekannter Fehler</string>
+    <string name="history_empty">Dein Leseverlauf wird hier angezeigt.</string>
+    <string name="history_no_results">Keine Ergebnisse für \"%1$s\".</string>
+    <string name="history_remove">Aus dem Verlauf entfernen</string>
+</resources>
