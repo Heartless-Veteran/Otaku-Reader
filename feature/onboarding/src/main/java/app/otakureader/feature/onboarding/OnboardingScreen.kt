@@ -52,7 +52,7 @@ data class OnboardingPage(
 
 /**
  * Onboarding screen for first-time users.
- * Multi-step flow: Welcome → Permissions → Features → Extensions → Complete
+ * Multi-step flow: Welcome → Browse → Download → Organize → Extensions
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
