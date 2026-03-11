@@ -8,18 +8,13 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 /**
  * Preference store for AI-related settings.
  * All AI features are opt-in and can be completely disabled.
  */
-class AiPreferences(
-    private val dataStore: DataStore<Preferences>,
-    private val encryptedApiKeyStore: EncryptedApiKeyStore
-) {
+class AiPreferences(private val dataStore: DataStore<Preferences>) {
 
     /** Master switch for all AI features. When false, no AI features work regardless of other settings. */
     val aiEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.AI_ENABLED] ?: false }
@@ -34,16 +29,9 @@ class AiPreferences(
     val aiTier: Flow<Int> = dataStore.data.map { it[Keys.AI_TIER] ?: 0 }
     suspend fun setAiTier(value: Int) = dataStore.edit { it[Keys.AI_TIER] = value }
 
-    /**
-     * Gemini API key, encrypted at rest via Android Keystore-backed EncryptedSharedPreferences.
-     * Initialises [EncryptedApiKeyStore] lazily on the coroutine dispatcher that collects this
-     * flow, avoiding Keystore/disk work on the main thread.
-     */
-    val geminiApiKey: Flow<String> = flow {
-        encryptedApiKeyStore.init()
-        emitAll(encryptedApiKeyStore.geminiApiKey)
-    }
-    suspend fun setGeminiApiKey(value: String) = encryptedApiKeyStore.setGeminiApiKey(value)
+    /** Gemini API key (masked in UI, stored locally). */
+    val geminiApiKey: Flow<String> = dataStore.data.map { it[Keys.GEMINI_API_KEY] ?: "" }
+    suspend fun setGeminiApiKey(value: String) = dataStore.edit { it[Keys.GEMINI_API_KEY] = value }
 
     // --- Individual Feature Toggles ---
 
@@ -52,31 +40,31 @@ class AiPreferences(
     suspend fun setAiReadingInsights(value: Boolean) = dataStore.edit { it[Keys.AI_READING_INSIGHTS] = value }
 
     /** Enable smart search with natural language queries. */
-    val aiSmartSearch: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_SEARCH] ?: false }
+    val aiSmartSearch: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_SEARCH] ?: true }
     suspend fun setAiSmartSearch(value: Boolean) = dataStore.edit { it[Keys.AI_SMART_SEARCH] = value }
 
     /** Enable AI recommendations based on reading history. */
-    val aiRecommendations: Flow<Boolean> = dataStore.data.map { it[Keys.AI_RECOMMENDATIONS] ?: false }
+    val aiRecommendations: Flow<Boolean> = dataStore.data.map { it[Keys.AI_RECOMMENDATIONS] ?: true }
     suspend fun setAiRecommendations(value: Boolean) = dataStore.edit { it[Keys.AI_RECOMMENDATIONS] = value }
 
     /** Enable panel-aware reader with Gemini Vision. */
-    val aiPanelReader: Flow<Boolean> = dataStore.data.map { it[Keys.AI_PANEL_READER] ?: false }
+    val aiPanelReader: Flow<Boolean> = dataStore.data.map { it[Keys.AI_PANEL_READER] ?: true }
     suspend fun setAiPanelReader(value: Boolean) = dataStore.edit { it[Keys.AI_PANEL_READER] = value }
 
     /** Enable SFX translation in manga pages. */
-    val aiSfxTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SFX_TRANSLATION] ?: false }
+    val aiSfxTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SFX_TRANSLATION] ?: true }
     suspend fun setAiSfxTranslation(value: Boolean) = dataStore.edit { it[Keys.AI_SFX_TRANSLATION] = value }
 
     /** Enable auto-translation of chapter summaries. */
-    val aiSummaryTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SUMMARY_TRANSLATION] ?: false }
+    val aiSummaryTranslation: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SUMMARY_TRANSLATION] ?: true }
     suspend fun setAiSummaryTranslation(value: Boolean) = dataStore.edit { it[Keys.AI_SUMMARY_TRANSLATION] = value }
 
     /** Enable source intelligence for best source scoring. */
-    val aiSourceIntelligence: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SOURCE_INTELLIGENCE] ?: false }
+    val aiSourceIntelligence: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SOURCE_INTELLIGENCE] ?: true }
     suspend fun setAiSourceIntelligence(value: Boolean) = dataStore.edit { it[Keys.AI_SOURCE_INTELLIGENCE] = value }
 
     /** Enable smart notifications with context-aware summaries. */
-    val aiSmartNotifications: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_NOTIFICATIONS] ?: false }
+    val aiSmartNotifications: Flow<Boolean> = dataStore.data.map { it[Keys.AI_SMART_NOTIFICATIONS] ?: true }
     suspend fun setAiSmartNotifications(value: Boolean) = dataStore.edit { it[Keys.AI_SMART_NOTIFICATIONS] = value }
 
     /** Enable auto-categorization of manga when added to library. */
@@ -100,6 +88,7 @@ class AiPreferences(
     private object Keys {
         val AI_ENABLED = booleanPreferencesKey("ai_enabled")
         val AI_TIER = intPreferencesKey("ai_tier")
+        val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
 
         val AI_READING_INSIGHTS = booleanPreferencesKey("ai_reading_insights")
         val AI_SMART_SEARCH = booleanPreferencesKey("ai_smart_search")

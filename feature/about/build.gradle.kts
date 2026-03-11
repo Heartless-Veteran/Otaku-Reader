@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "app.otakureader.feature.onboarding"
+    namespace = "app.otakureader.feature.about"
 }
 
 dependencies {
