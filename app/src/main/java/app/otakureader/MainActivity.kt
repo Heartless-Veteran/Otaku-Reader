@@ -1,5 +1,6 @@
 package app.otakureader
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +24,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
+import app.otakureader.util.DeepLinkHandler
+import app.otakureader.util.DeepLinkResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -37,6 +40,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         applyLocaleFromPreferences()
+        
+        // Handle deep link or share intent
+        val deepLinkResult = DeepLinkHandler.parseIntent(intent)
+        
         setContent {
             val themeMode by generalPreferences.themeMode
                 .collectAsStateWithLifecycle(initialValue = 0)
@@ -66,10 +73,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    OtakuReaderApp()
+                    OtakuReaderApp(deepLinkResult = deepLinkResult)
                 }
             }
         }
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        // Handle new intents when activity is already running
+        val deepLinkResult = DeepLinkHandler.parseIntent(intent)
+        // TODO: Navigate to appropriate screen based on deep link result
     }
 
     private fun applyLocaleFromPreferences() {
@@ -98,12 +112,13 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun OtakuReaderApp() {
+fun OtakuReaderApp(deepLinkResult: DeepLinkResult? = null) {
     val navController = rememberNavController()
 
     Scaffold { padding ->
         OtakuReaderNavHost(
             navController = navController,
+            deepLinkResult = deepLinkResult,
             modifier = Modifier.padding(padding)
         )
     }
