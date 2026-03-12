@@ -38,7 +38,7 @@ jobs:
                 repo: context.repo.repo,
                 username: login
               });
-              authorized = ['admin', 'write'].includes(perm.permission);
+              authorized = ['admin', 'maintain', 'write'].includes(perm.permission);
             } catch (e) {
               core.info(`Permission check failed for ${login}: ${e.message}`);
             }
