@@ -8,7 +8,7 @@
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.10-7F52FF?style=flat-square&logo=kotlin&logoColor=white&labelColor=27303D)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-26+-3DDC84?style=flat-square&logo=android&logoColor=white&labelColor=27303D)](https://developer.android.com/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square&labelColor=27303D)](LICENSE)
-  [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square&labelColor=27303D)](https://github.com/Heartless-Veteran/Otaku-Reader)
+  [![CI](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml)
 
   <sub><i>Requires Android 8.0 (API 26) or higher.</i></sub>
 </div>
