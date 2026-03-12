@@ -44,7 +44,7 @@ class AppShortcutManager @Inject constructor(
             readingHistoryDao.observeHistoryWithChapters()
                 .map { it.firstOrNull() }
                 .distinctUntilChangedBy { entry ->
-                    entry?.let { "${it.chapter.id}|${it.chapter.mangaId}" }
+                    entry?.chapter?.id
                 }
                 .collect { lastRead ->
                     val mangaTitle = lastRead?.let {
