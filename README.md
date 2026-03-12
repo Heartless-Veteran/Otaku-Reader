@@ -94,7 +94,7 @@ Compatible with the entire **Tachiyomi extension ecosystem** — no extra setup 
 
 **🔮 Future**
 - **AI Features** — Smart recommendations and auto-categorization
-- **Widgets** — Home screen continue-reading widget
+- **Widget Improvements** — Enhanced data hookup & customization for home screen widgets
 - **Panel-by-Panel** — Advanced panel navigation mode
 
 ---
