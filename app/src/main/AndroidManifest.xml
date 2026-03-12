@@ -30,6 +30,24 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            
+            <!-- Deep link intent filter for manga URLs -->
+            <!-- Note: Using single intent-filter with specific host+path combinations -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- MangaDex -->
+                <data android:scheme="https" android:host="mangadex.org" android:pathPrefix="/title" />
+                <data android:scheme="https" android:host="www.mangadex.org" android:pathPrefix="/title" />
+            </intent-filter>
+            
+            <!-- Share intent filter for text/plain -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
         </activity>
 
         <provider
