@@ -31,7 +31,7 @@ class OtakuReaderApplication : Application(), Configuration.Provider {
         super.onCreate()
         // Enable Material You dynamic colors on Android 12+ (API 31+)
         DynamicColors.applyToActivitiesIfAvailable(this)
-        // Initialise launcher shortcuts (Library, Updates, Continue Reading)
+        // Initialize launcher shortcuts (Library, Updates, Continue Reading)
         appShortcutManager.initialize()
     }
 }

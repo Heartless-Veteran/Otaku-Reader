@@ -167,7 +167,7 @@ object DeepLinkHandler {
     private fun parseContinueReadingIntent(intent: Intent): DeepLinkResult {
         val mangaId = intent.getLongExtra(AppShortcutManager.EXTRA_MANGA_ID, -1L)
         val chapterId = intent.getLongExtra(AppShortcutManager.EXTRA_CHAPTER_ID, -1L)
-        return if (mangaId > 0 && chapterId > 0) {
+        return if (mangaId != -1L && chapterId != -1L) {
             DeepLinkResult.ContinueReading(mangaId, chapterId)
         } else {
             DeepLinkResult.Invalid
