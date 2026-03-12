@@ -57,15 +57,10 @@ class OpdsRepositoryImpl @Inject constructor(
     ): Result<OpdsFeed> {
         return try {
             val encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8)
-            // Check if searchUrl is an OpenSearch description URL
-            val actualSearchUrl = if (searchUrl.contains("opensearchdescription")) {
-                val template = opdsClient.fetchSearchTemplate(server, searchUrl)
-                template?.replace("{searchTerms}", encodedQuery)
-                    ?: throw OpdsException("Could not find search template")
-            } else {
-                // Assume it's a direct search URL template
-                searchUrl.replace("{searchTerms}", encodedQuery)
-            }
+            // Try to resolve a search template from the OpenSearch description URL first,
+            // then fall back to treating searchUrl itself as a template.
+            val template = opdsClient.fetchSearchTemplate(server, searchUrl)
+            val actualSearchUrl = (template ?: searchUrl).replace("{searchTerms}", encodedQuery)
             val feed = opdsClient.fetchFeed(server, actualSearchUrl)
             Result.success(feed)
         } catch (e: Exception) {
