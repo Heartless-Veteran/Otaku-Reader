@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./media/logo/v1-oto-monogram.png" alt="Otaku Reader" width="200"/>
+  <img src="./media/logo/v1-oto-monogram.svg" alt="Otaku Reader" width="200"/>
 
   <h1>Otaku Reader</h1>
 
