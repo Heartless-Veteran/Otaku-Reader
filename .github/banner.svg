@@ -1,1 +1,123 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400"><defs><linearGradient id="bannerBg" x1="0%" x2="100%" y1="0%" y2="100%"><stop offset="0%" style="stop-color:#1a1a2e"/><stop offset="50%" style="stop-color:#16213e"/><stop offset="100%" style="stop-color:#0f3460"/></linearGradient><linearGradient id="textGrad" x1="0%" x2="100%" y1="0%" y2="0%"><stop offset="0%" style="stop-color:#ff6b6b"/><stop offset="50%" style="stop-color:#4ecdc4"/><stop offset="100%" style="stop-color:#45b7d1"/></linearGradient></defs><rect width="1200" height="400" fill="url(#bannerBg)" rx="20"/><g transform="translate(150, 200)"><circle r="80" fill="url(#textGrad)" opacity=".9"/><g fill="#FFF"><path d="M-30,-35 Q-15,-45 0,-38 L0,40 Q-15,35 -30,40 Z"/><path d="M30,-35 Q15,-45 0,-38 L0,40 Q15,35 30,40 Z"/><line x1="0" x2="0" y1="-38" y2="40" stroke="#FFF" stroke-width="4"/></g><ellipse cx="-60" cy="-60" fill="#FFB6C1" rx="12" ry="7" transform="rotate(-30)"/><circle cx="-56" cy="-64" r="5" fill="#FFB6C1"/><circle cx="-64" cy="-56" r="5" fill="#FFB6C1"/><circle cx="-52" cy="-56" r="4" fill="#FF69B4"/><ellipse cx="60" cy="-50" fill="#FFB6C1" rx="10" ry="6" transform="rotate(45)"/><circle cx="64" cy="-54" r="4" fill="#FFB6C1"/><circle cx="56" cy="-46" r="4" fill="#FFB6C1"/><circle cx="68" cy="-46" r="3" fill="#FF69B4"/></g><text x="500" y="180" fill="url(#textGrad)" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="bold">Otaku Reader</text><text x="500" y="240" fill="#888" font-family="system-ui, -apple-system, sans-serif" font-size="28">The Ultimate Manga Experience</text><rect width="140" height="36" x="500" y="280" fill="#FF6B6B" opacity=".9" rx="18"/><text x="570" y="305" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">2000+ Sources</text><rect width="120" height="36" x="660" y="280" fill="#4ECDC4" opacity=".9" rx="18"/><text x="720" y="305" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Cloud Sync</text><rect width="140" height="36" x="800" y="280" fill="#45B7D1" opacity=".9" rx="18"/><text x="870" y="305" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Perfect Reader</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bannerBg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="50%" style="stop-color:#16213e"/>
+      <stop offset="100%" style="stop-color:#0f3460"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="50%" style="stop-color:#4ecdc4"/>
+      <stop offset="100%" style="stop-color:#45b7d1"/>
+    </linearGradient>
+    <linearGradient id="circleGrad" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="50%" style="stop-color:#4ecdc4"/>
+      <stop offset="100%" style="stop-color:#45b7d1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="400" fill="url(#bannerBg)" rx="20"/>
+
+  <!-- Subtle background stars -->
+  <g fill="#ffffff" opacity="0.15">
+    <circle cx="50" cy="30" r="1.5"/>
+    <circle cx="120" cy="80" r="1"/>
+    <circle cx="200" cy="20" r="2"/>
+    <circle cx="300" cy="60" r="1.5"/>
+    <circle cx="400" cy="15" r="1"/>
+    <circle cx="480" cy="50" r="2"/>
+    <circle cx="600" cy="25" r="1.5"/>
+    <circle cx="700" cy="70" r="1"/>
+    <circle cx="800" cy="10" r="2"/>
+    <circle cx="900" cy="45" r="1.5"/>
+    <circle cx="1000" cy="30" r="1"/>
+    <circle cx="1100" cy="65" r="2"/>
+    <circle cx="1160" cy="20" r="1.5"/>
+    <circle cx="80" cy="350" r="1"/>
+    <circle cx="160" cy="370" r="1.5"/>
+    <circle cx="350" cy="380" r="1"/>
+    <circle cx="700" cy="360" r="2"/>
+    <circle cx="950" cy="375" r="1.5"/>
+    <circle cx="1050" cy="340" r="1"/>
+    <circle cx="1140" cy="380" r="1.5"/>
+    <!-- Subtle decorative horizontal line -->
+  </g>
+  <line x1="60" y1="395" x2="1140" y2="395" stroke="url(#textGrad)" stroke-width="2" opacity="0.25"/>
+
+  <!-- Logo circle -->
+  <g transform="translate(150, 200)">
+    <circle r="80" fill="url(#circleGrad)" opacity="0.9"/>
+    <!-- Open book icon -->
+    <g fill="#FFFFFF">
+      <!-- Left page -->
+      <path d="M-28,-32 Q-14,-42 0,-36 L0,38 Q-14,33 -28,38 Z"/>
+      <!-- Right page -->
+      <path d="M28,-32 Q14,-42 0,-36 L0,38 Q14,33 28,38 Z"/>
+      <!-- Spine line -->
+      <rect x="-2" y="-36" width="4" height="74" rx="2"/>
+    </g>
+
+    <!-- Sakura petals near logo -->
+    <g opacity="0.9">
+      <!-- Petal group top-left -->
+      <ellipse cx="-68" cy="-58" rx="11" ry="6" fill="#FFB6C1" transform="rotate(-30,-68,-58)"/>
+      <circle cx="-62" cy="-65" r="5" fill="#FFB6C1"/>
+      <circle cx="-74" cy="-52" r="5" fill="#FFB6C1"/>
+      <circle cx="-58" cy="-52" r="4" fill="#FF69B4"/>
+
+      <!-- Petal group top-right -->
+      <ellipse cx="65" cy="-52" rx="10" ry="6" fill="#FFB6C1" transform="rotate(45,65,-52)"/>
+      <circle cx="70" cy="-57" r="4" fill="#FFB6C1"/>
+      <circle cx="60" cy="-47" r="4" fill="#FFB6C1"/>
+      <circle cx="74" cy="-47" r="3" fill="#FF69B4"/>
+
+      <!-- Petal group bottom-left -->
+      <ellipse cx="-72" cy="58" rx="9" ry="5" fill="#FFB6C1" transform="rotate(20,-72,58)"/>
+      <circle cx="-76" cy="53" r="4" fill="#FFB6C1"/>
+      <circle cx="-68" cy="63" r="3" fill="#FF69B4"/>
+
+      <!-- Petal group bottom-right -->
+      <ellipse cx="70" cy="55" rx="9" ry="5" fill="#FFB6C1" transform="rotate(-25,70,55)"/>
+      <circle cx="75" cy="50" r="3" fill="#FFB6C1"/>
+      <circle cx="65" cy="60" r="4" fill="#FF69B4"/>
+    </g>
+  </g>
+
+  <!-- Scattered sakura petals across banner -->
+  <g opacity="0.5">
+    <!-- Top area petals -->
+    <ellipse cx="320" cy="45" rx="8" ry="5" fill="#FFB6C1" transform="rotate(15,320,45)"/>
+    <ellipse cx="330" cy="38" rx="5" ry="3" fill="#FF69B4" transform="rotate(-20,330,38)"/>
+    <ellipse cx="1050" cy="55" rx="9" ry="5" fill="#FFB6C1" transform="rotate(30,1050,55)"/>
+    <ellipse cx="1060" cy="45" rx="5" ry="3" fill="#FF69B4" transform="rotate(-10,1060,45)"/>
+    <!-- Bottom area petals -->
+    <ellipse cx="420" cy="340" rx="8" ry="5" fill="#FFB6C1" transform="rotate(-25,420,340)"/>
+    <ellipse cx="430" cy="350" rx="5" ry="3" fill="#FF69B4" transform="rotate(15,430,350)"/>
+    <ellipse cx="980" cy="330" rx="9" ry="5" fill="#FFB6C1" transform="rotate(20,980,330)"/>
+    <ellipse cx="990" cy="342" rx="5" ry="3" fill="#FF69B4" transform="rotate(-15,990,342)"/>
+    <!-- Mid-left petals -->
+    <ellipse cx="285" cy="200" rx="7" ry="4" fill="#FFB6C1" transform="rotate(35,285,200)"/>
+    <ellipse cx="278" cy="210" rx="4" ry="3" fill="#FF69B4" transform="rotate(-5,278,210)"/>
+    <!-- Far right petals -->
+    <ellipse cx="1130" cy="190" rx="8" ry="5" fill="#FFB6C1" transform="rotate(-30,1130,190)"/>
+    <ellipse cx="1140" cy="200" rx="5" ry="3" fill="#FF69B4" transform="rotate(20,1140,200)"/>
+  </g>
+
+  <!-- Title -->
+  <text x="500" y="165" fill="url(#textGrad)" font-family="system-ui, -apple-system, sans-serif" font-size="80" font-weight="bold">Otaku Reader</text>
+
+  <!-- Tagline -->
+  <text x="500" y="225" fill="#aab4c8" font-family="system-ui, -apple-system, sans-serif" font-size="26">The Ultimate Manga Experience</text>
+
+  <!-- Feature pills -->
+  <rect width="148" height="38" x="498" y="265" fill="#FF6B6B" opacity="0.9" rx="19"/>
+  <text x="572" y="290" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">2000+ Sources</text>
+
+  <rect width="128" height="38" x="662" y="265" fill="#4ECDC4" opacity="0.9" rx="19"/>
+  <text x="726" y="290" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Cloud Sync</text>
+
+  <rect width="148" height="38" x="806" y="265" fill="#45B7D1" opacity="0.9" rx="19"/>
+  <text x="880" y="290" fill="#FFF" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Perfect Reader</text>
+</svg>
