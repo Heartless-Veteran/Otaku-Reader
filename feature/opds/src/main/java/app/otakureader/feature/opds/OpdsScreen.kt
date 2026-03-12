@@ -223,10 +223,10 @@ private fun AddServerDialog(
     onSave: (name: String, url: String, username: String, password: String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var name by rememberSaveable { mutableStateOf(editingServer?.name ?: "") }
-    var url by rememberSaveable { mutableStateOf(editingServer?.url ?: "") }
-    var username by rememberSaveable { mutableStateOf(editingServer?.username ?: "") }
-    var password by rememberSaveable { mutableStateOf(editingServer?.password ?: "") }
+    var name by remember(editingServer?.id) { mutableStateOf(editingServer?.name ?: "") }
+    var url by remember(editingServer?.id) { mutableStateOf(editingServer?.url ?: "") }
+    var username by remember(editingServer?.id) { mutableStateOf(editingServer?.username ?: "") }
+    var password by remember(editingServer?.id) { mutableStateOf(editingServer?.password ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
