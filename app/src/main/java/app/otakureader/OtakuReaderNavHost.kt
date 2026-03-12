@@ -19,6 +19,7 @@ import app.otakureader.core.navigation.SettingsRoute
 import app.otakureader.core.navigation.SourceDetailRoute
 import app.otakureader.core.navigation.StatisticsRoute
 import app.otakureader.core.navigation.TrackingRoute
+import app.otakureader.core.navigation.OpdsRoute
 import app.otakureader.core.navigation.UpdatesRoute
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.extensionsBottomSheet
@@ -29,6 +30,7 @@ import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
+import app.otakureader.feature.opds.navigation.opdsScreen
 import app.otakureader.feature.reader.navigation.readerScreen
 import app.otakureader.feature.settings.navigation.settingsScreen
 import app.otakureader.feature.statistics.navigation.statisticsScreen
@@ -145,6 +147,16 @@ fun OtakuReaderNavHost(
             },
             onNavigateToGlobalSearch = {
                 navController.navigate(GlobalSearchRoute())
+            },
+            onNavigateToOpds = {
+                navController.navigate(OpdsRoute)
+            }
+        )
+
+        // OPDS catalog browser
+        opdsScreen(
+            onNavigateBack = {
+                navController.popBackStack()
             }
         )
 
