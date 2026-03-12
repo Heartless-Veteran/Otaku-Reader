@@ -46,8 +46,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         applyLocaleFromPreferences()
         
-        // Handle deep link or share intent from initial launch
-        pendingDeepLinkResult = DeepLinkHandler.parseIntent(intent)
+        // Handle deep link or share intent only on initial launch
+        if (savedInstanceState == null) {
+            val result = DeepLinkHandler.parseIntent(intent)
+            if (result !is DeepLinkResult.Invalid) {
+                pendingDeepLinkResult = result
+            }
+        }
         
         setContent {
             val themeMode by generalPreferences.themeMode
