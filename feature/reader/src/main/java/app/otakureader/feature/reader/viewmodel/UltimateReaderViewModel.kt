@@ -679,7 +679,6 @@ class UltimateReaderViewModel @Inject constructor(
         currentPage: Int? = null
     ) {
         if (!cachedDiscordRpcEnabled) return
-        discordRpcService.resetSessionTimer()
         discordRpcService.updateReadingPresence(
             mangaTitle = mangaTitle,
             chapterName = chapterName,
