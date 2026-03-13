@@ -15,6 +15,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
+import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.core.preferences.SyncPreferences
 import dagger.Module
 import dagger.Provides
@@ -115,6 +116,11 @@ object PreferencesModule {
         dataStore: DataStore<Preferences>,
         @ApplicationContext context: Context
     ): AiPreferences = AiPreferences(dataStore, context)
+
+    @Provides
+    @Singleton
+    fun provideReadingGoalPreferences(dataStore: DataStore<Preferences>): ReadingGoalPreferences =
+        ReadingGoalPreferences(dataStore)
 
     @Provides
     @Singleton
