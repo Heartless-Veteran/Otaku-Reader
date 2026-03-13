@@ -10,9 +10,10 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
-import app.otakureader.core.discord.DiscordRpcService
+import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
+import app.otakureader.data.worker.ReadingReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,8 @@ class SettingsViewModel @Inject constructor(
     private val trackManager: TrackManager,
     private val appPreferences: AppPreferences,
     private val aiPreferences: AiPreferences,
-    private val discordRpcService: DiscordRpcService
+    private val readingGoalPreferences: ReadingGoalPreferences,
+    private val readingReminderScheduler: ReadingReminderScheduler
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -59,6 +61,7 @@ class SettingsViewModel @Inject constructor(
         }
         observePreferences()
         observeAiPreferences()
+        observeReadingGoalPreferences()
         refreshTrackers()
     }
 
@@ -236,6 +239,14 @@ class SettingsViewModel @Inject constructor(
                     aiPreferences.setAiCacheLastCleared(System.currentTimeMillis())
                     _effect.send(SettingsEffect.ShowSnackbar("AI suggestions will refresh for future requests"))
                 }
+                is SettingsEvent.SetDailyChapterGoal ->
+                    readingGoalPreferences.setDailyChapterGoal(event.goal)
+                is SettingsEvent.SetWeeklyChapterGoal ->
+                    readingGoalPreferences.setWeeklyChapterGoal(event.goal)
+                is SettingsEvent.SetReadingRemindersEnabled ->
+                    handleSetReadingRemindersEnabled(event.enabled)
+                is SettingsEvent.SetReadingReminderHour ->
+                    handleSetReadingReminderHour(event.hour)
             }
         }
     }
@@ -280,6 +291,54 @@ class SettingsViewModel @Inject constructor(
                         )
                     }
                 }
+        }
+    }
+
+    private fun observeReadingGoalPreferences() {
+        viewModelScope.launch {
+            combine(
+                readingGoalPreferences.dailyChapterGoal,
+                readingGoalPreferences.weeklyChapterGoal,
+                readingGoalPreferences.remindersEnabled,
+                readingGoalPreferences.reminderHour
+            ) { daily, weekly, enabled, hour ->
+                ReadingGoalState(daily, weekly, enabled, hour)
+            }.collect { goalState ->
+                _state.update { current ->
+                    current.copy(
+                        dailyChapterGoal = goalState.dailyGoal,
+                        weeklyChapterGoal = goalState.weeklyGoal,
+                        readingRemindersEnabled = goalState.remindersEnabled,
+                        readingReminderHour = goalState.reminderHour
+                    )
+                }
+            }
+        }
+    }
+
+    /** Intermediate holder to avoid destructuring a 4-element array. */
+    private data class ReadingGoalState(
+        val dailyGoal: Int,
+        val weeklyGoal: Int,
+        val remindersEnabled: Boolean,
+        val reminderHour: Int
+    )
+
+    private suspend fun handleSetReadingRemindersEnabled(enabled: Boolean) {
+        readingGoalPreferences.setRemindersEnabled(enabled)
+        if (enabled) {
+            val hour = readingGoalPreferences.reminderHour.first()
+            readingReminderScheduler.schedule(hour)
+        } else {
+            readingReminderScheduler.cancel()
+        }
+    }
+
+    private suspend fun handleSetReadingReminderHour(hour: Int) {
+        readingGoalPreferences.setReminderHour(hour)
+        val enabled = readingGoalPreferences.remindersEnabled.first()
+        if (enabled) {
+            readingReminderScheduler.schedule(hour)
         }
     }
 

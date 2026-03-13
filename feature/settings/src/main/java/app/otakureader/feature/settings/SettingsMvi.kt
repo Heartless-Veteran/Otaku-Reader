@@ -67,7 +67,12 @@ data class SettingsState(
     val aiSmartNotifications: Boolean = true,
     val aiAutoCategorization: Boolean = true,
     val aiTokensUsedThisMonth: Long = 0L,
-    val aiTokenTrackingPeriod: String = ""
+    val aiTokenTrackingPeriod: String = "",
+    // --- Reading Goals ---
+    val dailyChapterGoal: Int = 0,
+    val weeklyChapterGoal: Int = 0,
+    val readingRemindersEnabled: Boolean = false,
+    val readingReminderHour: Int = 20
 ) : UiState
 
 sealed interface SettingsEvent : UiEvent {
@@ -124,6 +129,11 @@ sealed interface SettingsEvent : UiEvent {
     data class SetAiSmartNotifications(val enabled: Boolean) : SettingsEvent
     data class SetAiAutoCategorization(val enabled: Boolean) : SettingsEvent
     data object ClearAiCache : SettingsEvent
+    // --- Reading Goals ---
+    data class SetDailyChapterGoal(val goal: Int) : SettingsEvent
+    data class SetWeeklyChapterGoal(val goal: Int) : SettingsEvent
+    data class SetReadingRemindersEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetReadingReminderHour(val hour: Int) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {
