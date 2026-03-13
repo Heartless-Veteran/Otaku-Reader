@@ -60,6 +60,7 @@ dependencies {
     implementation(projects.feature.statistics)
     implementation(projects.feature.migration)
     implementation(projects.feature.tracking)
+    implementation(projects.feature.opds)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
