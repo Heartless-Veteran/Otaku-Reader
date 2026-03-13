@@ -125,7 +125,13 @@ class SettingsViewModel @Inject constructor(
             }.combine(generalPreferences.showNsfwContent) { state, showNsfw ->
                 state.copy(showNsfwContent = showNsfw)
             }.combine(generalPreferences.discordRpcEnabled) { state, discordRpc ->
-                state.copy(discordRpcEnabled = discordRpc)
+                            state.copy(
+                                discordRpcEnabled = discordRpc,
+                                dailyChapterGoal = _state.value.dailyChapterGoal,
+                                weeklyChapterGoal = _state.value.weeklyChapterGoal,
+                                readingRemindersEnabled = _state.value.readingRemindersEnabled,
+                                readingReminderHour = _state.value.readingReminderHour
+                            )
             }.combine(backupPreferences.autoBackupEnabled) { state, enabled ->
                 state.copy(autoBackupEnabled = enabled)
             }.combine(backupPreferences.autoBackupIntervalHours) { state, hours ->
