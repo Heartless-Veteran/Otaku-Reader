@@ -2,13 +2,17 @@ package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
+import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
 import app.otakureader.domain.repository.StatisticsRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
 import java.util.TreeMap
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -115,6 +119,26 @@ class StatisticsRepositoryImpl @Inject constructor(
             }
         }
         return counts
+    }
+
+    override fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal> {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val startOfDayMs = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val startOfWeekMs = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            .atStartOfDay(zone).toInstant().toEpochMilli()
+
+        return combine(
+            readingHistoryDao.getChaptersReadSince(startOfDayMs),
+            readingHistoryDao.getChaptersReadSince(startOfWeekMs)
+        ) { dailyProgress, weeklyProgress ->
+            ReadingGoal(
+                dailyGoal = dailyGoal,
+                dailyProgress = dailyProgress,
+                weeklyGoal = weeklyGoal,
+                weeklyProgress = weeklyProgress
+            )
+        }
     }
 
     companion object {

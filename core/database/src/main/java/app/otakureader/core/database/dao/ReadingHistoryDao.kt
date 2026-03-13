@@ -54,6 +54,9 @@ interface ReadingHistoryDao {
     @Query("SELECT read_at FROM reading_history WHERE read_at > 0 ORDER BY read_at ASC")
     fun getAllReadTimestamps(): Flow<List<Long>>
 
+    @Query("SELECT COUNT(*) FROM reading_history WHERE read_at >= :startOfDayMs")
+    fun getChaptersReadSince(startOfDayMs: Long): Flow<Int>
+
     @Query("DELETE FROM reading_history WHERE read_at < :timestamp")
     suspend fun deleteHistoryBefore(timestamp: Long)
 
