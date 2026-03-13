@@ -10,6 +10,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
+import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,7 +38,8 @@ class SettingsViewModel @Inject constructor(
     private val readerSettingsRepository: app.otakureader.feature.reader.repository.ReaderSettingsRepository,
     private val trackManager: TrackManager,
     private val appPreferences: AppPreferences,
-    private val aiPreferences: AiPreferences
+    private val aiPreferences: AiPreferences,
+    private val discordRpcService: DiscordRpcService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -119,6 +121,8 @@ class SettingsViewModel @Inject constructor(
                 state.copy(migrationMinChapterCount = minChapters)
             }.combine(generalPreferences.showNsfwContent) { state, showNsfw ->
                 state.copy(showNsfwContent = showNsfw)
+            }.combine(generalPreferences.discordRpcEnabled) { state, discordRpc ->
+                state.copy(discordRpcEnabled = discordRpc)
             }.combine(backupPreferences.autoBackupEnabled) { state, enabled ->
                 state.copy(autoBackupEnabled = enabled)
             }.combine(backupPreferences.autoBackupIntervalHours) { state, hours ->
@@ -204,6 +208,8 @@ class SettingsViewModel @Inject constructor(
                     _effect.send(SettingsEffect.NavigateToMigrationEntry)
                 is SettingsEvent.SetShowNsfwContent ->
                     generalPreferences.setShowNsfwContent(event.enabled)
+                is SettingsEvent.SetDiscordRpcEnabled ->
+                    handleSetDiscordRpcEnabled(event.enabled)
                 is SettingsEvent.SetCustomAccentColor ->
                     generalPreferences.setCustomAccentColor(event.color)
                 is SettingsEvent.SetAiEnabled -> aiPreferences.setAiEnabled(event.enabled)
@@ -349,6 +355,15 @@ class SettingsViewModel @Inject constructor(
         val enabled = backupPreferences.autoBackupEnabled.first()
         if (enabled) {
             backupScheduler.schedule(hours)
+        }
+    }
+
+    private suspend fun handleSetDiscordRpcEnabled(enabled: Boolean) {
+        generalPreferences.setDiscordRpcEnabled(enabled)
+        if (enabled) {
+            discordRpcService.initialize()
+        } else {
+            discordRpcService.disconnect()
         }
     }
 

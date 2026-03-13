@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.core.discord.DiscordRpcService
+import app.otakureader.core.discord.ReadingStatus
+import app.otakureader.core.preferences.GeneralPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +16,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,6 +26,8 @@ import javax.inject.Inject
 class ReaderViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
+    private val discordRpcService: DiscordRpcService,
+    private val generalPreferences: GeneralPreferences,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -60,6 +66,10 @@ class ReaderViewModel @Inject constructor(
                 if (chapter != null) recordHistoryOpen()
                 manga.collect { m ->
                     _state.update { it.copy(manga = m) }
+                    // Update Discord Rich Presence when manga data is available
+                    if (m != null && chapter != null) {
+                        updateDiscordPresence(m.title, chapter.name)
+                    }
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(isLoading = false, error = e.message) }
@@ -102,6 +112,12 @@ class ReaderViewModel @Inject constructor(
                 )
             }
         }
+        // Update Discord presence with page info
+        val manga = _state.value.manga
+        val chapter = _state.value.chapter
+        if (manga != null && chapter != null) {
+            updateDiscordPresence(manga.title, chapter.name, _state.value.pages.size, page + 1)
+        }
     }
 
     private fun navigatePreviousChapter() {
@@ -123,6 +139,35 @@ class ReaderViewModel @Inject constructor(
                     readAt = sessionStartMs,
                     readDurationMs = durationMs
                 )
+            }
+        }
+        // Clear Discord Rich Presence when reader closes
+        discordRpcService.clearReadingPresence(showBrowsing = false)
+    }
+
+    /**
+     * Update Discord Rich Presence if the feature is enabled.
+     * Fails silently if Discord is not available.
+     */
+    private fun updateDiscordPresence(
+        mangaTitle: String,
+        chapterName: String,
+        totalPages: Int? = null,
+        currentPage: Int? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                if (generalPreferences.discordRpcEnabled.first()) {
+                    discordRpcService.updateReadingPresence(
+                        mangaTitle = mangaTitle,
+                        chapterName = chapterName,
+                        status = ReadingStatus.READING,
+                        page = currentPage,
+                        totalPages = totalPages
+                    )
+                }
+            } catch (_: Exception) {
+                // Fail silently – Discord RPC is best-effort
             }
         }
     }
