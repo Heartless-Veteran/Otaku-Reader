@@ -51,9 +51,9 @@ class StatisticsViewModel @Inject constructor(
                 combine(
                     getReadingStatsUseCase(),
                     statisticsRepository.getReadingGoalProgress(dailyGoal, weeklyGoal)
-                ) { stats, goalProgress -> Triple(stats, goalProgress, Unit) }
+                ) { stats, goalProgress -> Pair(stats, goalProgress) }
             }
-            .onEach { (stats, goalProgress, _) ->
+            .onEach { (stats, goalProgress) ->
                 _state.update {
                     it.copy(
                         isLoading = false,
