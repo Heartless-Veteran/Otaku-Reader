@@ -662,7 +662,7 @@ class UltimateReaderViewModel @Inject constructor(
             }
         }
         // Clear Discord Rich Presence when reader closes
-        discordRpcService.clearReadingPresence(showBrowsing = false)
+        discordRpcService.clearReadingPresence(showBrowsing = true)
         saveCurrentProgress()
         autoSaveJob?.cancel()
         preloadJob?.cancel()
