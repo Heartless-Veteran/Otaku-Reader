@@ -423,16 +423,21 @@ class LibraryUpdateWorkerTest {
     // -------------------------------------------------------------------------
 
     @Test
+    @Test
     fun `isConnectedToWifi returns false when ConnectivityManager unavailable`() = runTest {
         // Given
         every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns null
-        coEvery { getLibraryManga() } returns flowOf(emptyList())
+        every { downloadPreferences.autoDownloadEnabled } returns flowOf(true)
+        every { downloadPreferences.downloadOnlyOnWifi } returns flowOf(true)
+        coEvery { getLibraryManga() } returns flowOf(listOf(testManga1))
+        coEvery { updateLibraryManga(testManga1) } returns Result.success(1)
 
         // When
         val result = worker.doWork()
 
-        // Then - should succeed without crashes
+        // Then - should succeed without crashes and skip downloads due to no WiFi connectivity manager
         assertEquals(ListenableWorker.Result.success(), result)
+        coVerify(exactly = 0) { downloadManager.enqueue(any()) }
     }
 
     @Test
