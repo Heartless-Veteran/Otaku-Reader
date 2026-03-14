@@ -156,7 +156,7 @@ Smart caching with hierarchical fallback (Lines 201-245):
 
 ### 2.2 Storage Directory Structure
 
-**Implementation:** `/data/src/main/java/app/otakureader/data/download/DownloadProvider.kt` (Lines 323-324)
+**Implementation:** `/data/src/main/java/app/otakureader/data/download/DownloadProvider.kt` – `rootFor` helper
 
 ```kotlin
 private fun rootFor(context: Context): File =
