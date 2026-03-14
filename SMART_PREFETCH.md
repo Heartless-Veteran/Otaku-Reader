@@ -140,7 +140,7 @@ Manages smart prefetch preferences via DataStore.
 smartPrefetchEnabled = true
 prefetchStrategy = Balanced (ordinal 1)
 adaptiveLearningEnabled = true
-prefetchAdjacentChapters = true
+prefetchAdjacentChapters = false
 prefetchOnlyOnWiFi = false
 ```
 
