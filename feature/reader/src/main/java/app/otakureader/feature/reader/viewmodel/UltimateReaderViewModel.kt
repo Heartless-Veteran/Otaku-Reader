@@ -136,6 +136,7 @@ class UltimateReaderViewModel @Inject constructor(
             val incognitoMode = settingsRepository.incognitoMode.first()
             val colorFilterMode = settingsRepository.colorFilterMode.first()
             val customTintColor = settingsRepository.customTintColor.first()
+            val cropBordersEnabled = settingsRepository.cropBordersEnabled.first()
             val showReadingTimer = false
             val showBatteryTime = false
 
@@ -179,7 +180,8 @@ class UltimateReaderViewModel @Inject constructor(
                     colorFilterMode = effectiveColorFilter,
                     customTintColor = effectiveTintColor,
                     showReadingTimer = showReadingTimer,
-                    showBatteryTime = showBatteryTime
+                    showBatteryTime = showBatteryTime,
+                    cropBordersEnabled = cropBordersEnabled
                 )
             }
         }
@@ -530,6 +532,11 @@ class UltimateReaderViewModel @Inject constructor(
                 val newValue = !_state.value.incognitoMode
                 _state.update { it.copy(incognitoMode = newValue) }
                 viewModelScope.launch { settingsRepository.setIncognitoMode(newValue) }
+            }
+            ReaderSetting.AUTO_CROP -> {
+                val newValue = !_state.value.cropBordersEnabled
+                _state.update { it.copy(cropBordersEnabled = newValue) }
+                viewModelScope.launch { settingsRepository.setCropBordersEnabled(newValue) }
             }
             else -> { /* Other settings not yet implemented */ }
         }
