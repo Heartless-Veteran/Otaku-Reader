@@ -58,10 +58,7 @@
     <string name="migration_clear_search">Clear search</string>
 
     <!-- Migration Entry Screen -->
-    <plurals name="migration_entry_selected">
-        <item quantity="one">%1$d selected</item>
-        <item quantity="other">%1$d selected</item>
-    </plurals>
+    <string name="migration_entry_selected">%1$d selected</string>
     <string name="migration_entry_title">Select Manga to Migrate</string>
     <string name="migration_entry_clear">Clear</string>
     <string name="migration_entry_all">All</string>
