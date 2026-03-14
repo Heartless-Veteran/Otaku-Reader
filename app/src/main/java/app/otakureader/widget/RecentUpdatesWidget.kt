@@ -119,7 +119,7 @@ private fun UpdateItemWidget(update: MangaUpdate) {
             maxLines = 1
         )
         Text(
-            text = "${update.chapter} • ${update.timeAgo}",
+            text = context.getString(R.string.widget_chapter_time_format, update.chapter, update.timeAgo),
             style = TextStyle(
                 color = ColorProvider(GlanceTheme.colors.primary),
                 fontSize = 12.sp
