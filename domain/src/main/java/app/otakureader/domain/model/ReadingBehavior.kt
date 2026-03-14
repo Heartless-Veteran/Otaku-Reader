@@ -44,7 +44,7 @@ data class ReadingBehavior(
      * Used to disable adaptive prefetching in favor of balanced static approach.
      */
     val isUnpredictable: Boolean
-        get() = sequentialNavigationRatio < 0.6f || sampleSize < 50
+        get() = sequentialNavigationRatio < 0.6f || sampleSize < MIN_SAMPLE_SIZE
 
     companion object {
         /** Default behavior profile for new users (assume typical manga reader). */
