@@ -21,6 +21,9 @@ class GeminiClient @Inject constructor() {
      */
     private lateinit var generativeModel: GenerativeModel
 
+    private var currentApiKey: String? = null
+    private var currentModelName: String? = null
+
     /**
      * Initialize the Gemini client with an API key.
      *
@@ -28,10 +31,28 @@ class GeminiClient @Inject constructor() {
      * @param modelName The model name to use (default: "gemini-pro")
      */
     fun initialize(apiKey: String, modelName: String = "gemini-pro") {
+        require(apiKey.isNotBlank()) {
+            "Gemini API key must not be blank."
+        }
+
+        if (::generativeModel.isInitialized) {
+            if (currentApiKey == apiKey && currentModelName == modelName) {
+                // Already initialized with the same configuration; nothing to do.
+                return
+            } else {
+                throw IllegalStateException(
+                    "GeminiClient has already been initialized. " +
+                        "Re-initialization with a different API key or model is not allowed."
+                )
+            }
+        }
+
         generativeModel = GenerativeModel(
             modelName = modelName,
             apiKey = apiKey
         )
+        currentApiKey = apiKey
+        currentModelName = modelName
     }
 
     /**
