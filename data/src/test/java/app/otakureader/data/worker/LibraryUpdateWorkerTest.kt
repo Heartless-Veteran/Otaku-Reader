@@ -493,6 +493,7 @@ class LibraryUpdateWorkerTest {
     }
 
     @Test
+    @Test
     fun `doWork continues when auto-download enqueue fails`() = runTest {
         // Given
         every { downloadPreferences.autoDownloadEnabled } returns flowOf(true)
@@ -501,7 +502,10 @@ class LibraryUpdateWorkerTest {
 
         coEvery { getLibraryManga() } returns flowOf(listOf(testManga1))
         coEvery { updateLibraryManga(testManga1) } returns Result.success(1)
-        coEvery { chapterRepository.getChaptersByMangaId(testManga1.id) } throws Exception("DB error")
+        coEvery { chapterRepository.getChaptersByMangaId(testManga1.id) } returns flowOf(
+            listOf(testChapter.copy(read = false))
+        )
+        coEvery { downloadManager.enqueue(any()) } throws Exception("enqueue error")
 
         // When - should not crash the worker
         val result = worker.doWork()
