@@ -55,8 +55,6 @@ class SourceRepositoryImpl(
         LocalSourcePreferences.ofDirectory(localDirectory),
         healthMonitor
     )
-
-    private val extensionLoader = TachiyomiExtensionLoader(
         context.packageManager,
         context.cacheDir
     )
@@ -103,6 +101,7 @@ class SourceRepositoryImpl(
     }
 
     override suspend fun getPopularManga(sourceId: String, page: Int): Result<MangaPage> {
+        return withContext(Dispatchers.IO) {
             // Check source health before attempting request; still allow cached data
             if (!healthMonitor.isSourceHealthy(sourceId)) {
                 popularMangaCache[sourceId]?.get(page)?.let {

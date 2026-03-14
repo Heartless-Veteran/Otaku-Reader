@@ -88,6 +88,7 @@ class SourceHealthMonitor @Inject constructor() {
             )
         }
         emitUpdate()
+    }
 
     /**
      * Check if a source is healthy enough to use.

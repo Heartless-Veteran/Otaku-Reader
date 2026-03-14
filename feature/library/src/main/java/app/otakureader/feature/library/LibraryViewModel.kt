@@ -1,6 +1,5 @@
 package app.otakureader.feature.library
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
@@ -11,13 +10,12 @@ import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -31,7 +29,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
     private val libraryPreferences: LibraryPreferences,
@@ -42,8 +39,8 @@ class LibraryViewModel @Inject constructor(
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<LibraryEffect>()
-    val effect: SharedFlow<LibraryEffect> = _effect.asSharedFlow()
+    private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
+    val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
 
     /** Holds the full, unfiltered library items for reactive filtering. */
     private val _allItems = MutableStateFlow<List<LibraryMangaItem>>(emptyList())
@@ -216,7 +213,7 @@ class LibraryViewModel @Inject constructor(
             toggleSelection(mangaId)
         } else {
             viewModelScope.launch {
-                _effect.emit(LibraryEffect.NavigateToManga(mangaId))
+                _effect.send(LibraryEffect.NavigateToManga(mangaId))
             }
         }
     }
