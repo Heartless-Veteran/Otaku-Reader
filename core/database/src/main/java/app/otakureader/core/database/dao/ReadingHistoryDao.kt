@@ -1,8 +1,6 @@
 package app.otakureader.core.database.dao
 
 import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import app.otakureader.core.database.entity.ChapterWithHistoryEntity
@@ -13,8 +11,21 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ReadingHistoryDao {
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(history: ReadingHistoryEntity)
+    /**
+     * Inserts a new reading-history entry or, on a chapter_id conflict, accumulates the reading
+     * time rather than replacing the row.  This preserves the total time spent reading a chapter
+     * across multiple sessions while still updating the "last read" timestamp.
+     */
+    @Query(
+        """
+        INSERT INTO reading_history (chapter_id, read_at, read_duration_ms)
+        VALUES (:chapterId, :readAt, :readDurationMs)
+        ON CONFLICT(chapter_id) DO UPDATE SET
+            read_at          = excluded.read_at,
+            read_duration_ms = reading_history.read_duration_ms + excluded.read_duration_ms
+        """
+    )
+    suspend fun upsert(chapterId: Long, readAt: Long, readDurationMs: Long)
 
     @Query("SELECT * FROM reading_history ORDER BY read_at DESC")
     fun observeHistory(): Flow<List<ReadingHistoryEntity>>
