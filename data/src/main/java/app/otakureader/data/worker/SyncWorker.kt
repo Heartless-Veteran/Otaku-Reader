@@ -41,9 +41,11 @@ class SyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val notifier = SyncNotifier(applicationContext)
 
-        // Check if sync is enabled
+        // Check if sync is enabled and properly configured for automatic sync
         val isSyncEnabled = syncPreferences.isSyncEnabled.first()
-        if (!isSyncEnabled) {
+        val isAutoSyncEnabled = syncPreferences.autoSyncEnabled.first()
+        val providerId = syncPreferences.providerId.first()
+        if (!isSyncEnabled || !isAutoSyncEnabled || providerId == null) {
             return Result.success()
         }
 
