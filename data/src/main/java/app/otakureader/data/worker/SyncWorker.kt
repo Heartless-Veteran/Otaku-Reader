@@ -62,15 +62,15 @@ class SyncWorker @AssistedInject constructor(
             },
             onFailure = { throwable ->
                 if (throwable is CancellationException) {
-                                    notifier.notifyFailure("Sync cancelled")
-                                    throw throwable
-                                }
+                    // Propagate coroutine/WorkManager cancellation without showing a failure notification.
+                    throw throwable
+                }
                 notifier.notifyFailure(throwable.message ?: "Unknown error")
-                                if (throwable is IllegalStateException || throwable is NotImplementedError) {
-                                    Result.failure()
-                                } else {
-                                    Result.retry()
-                                }
+                if (throwable is IllegalStateException || throwable is NotImplementedError) {
+                    Result.failure()
+                } else {
+                    Result.retry()
+                }
             }
         )
     }
