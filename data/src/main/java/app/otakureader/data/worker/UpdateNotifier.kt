@@ -130,14 +130,18 @@ internal class UpdateNotifier(private val context: Context) {
     private suspend fun loadCoverImage(url: String): android.graphics.Bitmap? {
         return withContext(Dispatchers.IO) {
             try {
-                val request = ImageRequest.Builder(context)
-                    .data(url)
-                    .size(256, 256)
-                    .build()
+                // Add timeout to prevent notifications from being delayed by slow image loads
+                kotlinx.coroutines.withTimeout(5000L) { // 5 second timeout
+                    val request = ImageRequest.Builder(context)
+                        .data(url)
+                        .size(256, 256)
+                        .build()
 
-                val result = context.imageLoader.execute(request)
-                result.image?.toBitmap()
+                    val result = context.imageLoader.execute(request)
+                    result.image?.toBitmap()
+                }
             } catch (e: Exception) {
+                // Catches both timeout exceptions and image loading failures
                 null
             }
         }
