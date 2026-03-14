@@ -28,12 +28,6 @@ object TachiyomiModule {
 
     @Provides
     @Singleton
-    fun provideSourceHealthMonitor(): SourceHealthMonitor {
-        return SourceHealthMonitor()
-    }
-
-    @Provides
-    @Singleton
     fun provideSourceRepository(
         @ApplicationContext context: Context,
         localSourcePreferences: LocalSourcePreferences,
