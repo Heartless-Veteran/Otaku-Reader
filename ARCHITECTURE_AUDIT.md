@@ -706,7 +706,7 @@ object DetailsContract {
 
 **After:**
 ```kotlin
-// In DetailsM vi.kt
+// In DetailsMvi.kt
 data class DetailsState(...) : UiState
 sealed interface DetailsEvent : UiEvent { ... }
 sealed interface DetailsEffect : UiEffect { ... }
