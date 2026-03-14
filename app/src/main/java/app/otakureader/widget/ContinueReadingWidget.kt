@@ -118,7 +118,7 @@ private fun ReadingItemWidget(item: ReadingItem) {
             maxLines = 1
         )
         Text(
-            text = "${item.chapter} • ${item.progress}",
+            text = context.getString(R.string.widget_chapter_progress_format, item.chapter, item.progress),
             style = TextStyle(
                 color = GlanceTheme.colors.onSurfaceVariant,
                 fontSize = 12.sp
