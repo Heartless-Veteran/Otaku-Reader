@@ -46,8 +46,9 @@ class SyncWorker @AssistedInject constructor(
         val isAutoSyncEnabled = syncPreferences.autoSyncEnabled.first()
         val providerId = syncPreferences.providerId.first()
         if (!isSyncEnabled || !isAutoSyncEnabled || providerId == null) {
-            return Result.success()
-        }
+                    cancel(applicationContext)
+                    return Result.success()
+                }
 
         notifier.notifySyncing()
 
