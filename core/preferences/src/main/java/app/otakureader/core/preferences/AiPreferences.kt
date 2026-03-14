@@ -150,38 +150,39 @@ class AiPreferences(
             }
 
             private fun applyChanges() {
-                val changedKeys = mutableSetOf<String>()
+                synchronized(this@NoOpSharedPreferences) {
+                    val changedKeys = mutableSetOf<String>()
 
-                // Use ConcurrentHashMap atomic operations instead of synchronized blocks
-                if (clearRequested) {
-                    // Atomically capture keys before clearing
-                    changedKeys.addAll(backingMap.keys)
-                    backingMap.clear()
-                    clearRequested = false
-                }
-
-                for (key in keysToRemove) {
-                    // remove() returns null if key not present, non-null if removed
-                    if (backingMap.remove(key) != null) {
-                        changedKeys.add(key)
+                    if (clearRequested) {
+                        // Capture keys before clearing so we can notify listeners
+                        changedKeys.addAll(backingMap.keys)
+                        backingMap.clear()
+                        clearRequested = false
                     }
-                }
-                keysToRemove.clear()
 
-                for ((key, value) in pendingChanges) {
-                    val oldValue = backingMap.put(key, value)
-                    // Track changes only if value actually changed
-                    if (oldValue != value) {
-                        changedKeys.add(key)
+                    for (key in keysToRemove) {
+                        // remove() returns null if key not present, non-null if removed
+                        if (backingMap.remove(key) != null) {
+                            changedKeys.add(key)
+                        }
                     }
-                }
-                pendingChanges.clear()
+                    keysToRemove.clear()
 
-                // Notify listeners using CopyOnWriteArraySet (thread-safe iteration)
-                if (changedKeys.isNotEmpty()) {
-                    for (key in changedKeys) {
-                        for (listener in listeners) {
-                            listener.onSharedPreferenceChanged(NoOpSharedPreferences, key)
+                    for ((key, value) in pendingChanges) {
+                        val oldValue = backingMap.put(key, value)
+                        // Track changes only if value actually changed
+                        if (oldValue != value) {
+                            changedKeys.add(key)
+                        }
+                    }
+                    pendingChanges.clear()
+
+                    // Notify listeners using CopyOnWriteArraySet (thread-safe iteration)
+                    if (changedKeys.isNotEmpty()) {
+                        for (key in changedKeys) {
+                            for (listener in listeners) {
+                                listener.onSharedPreferenceChanged(NoOpSharedPreferences, key)
+                            }
                         }
                     }
                 }
