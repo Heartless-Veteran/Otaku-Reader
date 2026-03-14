@@ -59,7 +59,6 @@ import app.otakureader.feature.reader.ui.ZoomIndicator
 import app.otakureader.feature.reader.viewmodel.ReaderEffect
 import app.otakureader.feature.reader.viewmodel.ReaderEvent
 import app.otakureader.feature.reader.viewmodel.TapZone
-import app.otakureader.feature.reader.viewmodel.PageRotation
 import app.otakureader.feature.reader.viewmodel.UltimateReaderViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
