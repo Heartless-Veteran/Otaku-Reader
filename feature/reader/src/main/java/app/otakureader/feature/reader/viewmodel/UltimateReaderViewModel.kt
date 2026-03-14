@@ -14,6 +14,11 @@ import app.otakureader.feature.reader.model.ReaderMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.feature.reader.model.ReadingDirection
 import app.otakureader.feature.reader.repository.ReaderSettingsRepository
+import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
+import app.otakureader.feature.reader.prefetch.SmartPrefetchManager
+import app.otakureader.feature.reader.prefetch.AdaptiveChapterPrefetcher
+import app.otakureader.domain.model.PageNavigationEvent
+import app.otakureader.domain.model.PrefetchStrategy
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.discord.ReadingStatus
 import app.otakureader.core.preferences.GeneralPreferences
@@ -53,6 +58,9 @@ class UltimateReaderViewModel @Inject constructor(
     private val imageLoader: ImageLoader,
     private val discordRpcService: DiscordRpcService,
     private val generalPreferences: GeneralPreferences,
+    private val behaviorTracker: ReadingBehaviorTracker,
+    private val smartPrefetchManager: SmartPrefetchManager,
+    private val chapterPrefetcher: AdaptiveChapterPrefetcher,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -73,11 +81,21 @@ class UltimateReaderViewModel @Inject constructor(
     private var cachedPreloadBefore: Int = ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
     private var cachedPreloadAfter: Int = ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
 
+    /** Cached smart prefetch settings. */
+    private var cachedSmartPrefetchEnabled: Boolean = true
+    private var cachedPrefetchStrategy: PrefetchStrategy = PrefetchStrategy.Balanced
+    private var cachedAdaptiveLearningEnabled: Boolean = true
+    private var cachedPrefetchAdjacentChapters: Boolean = true
+    private var cachedPrefetchOnlyOnWiFi: Boolean = false
+
     /** Cached Discord RPC enabled state, loaded once to avoid DataStore reads on every page change. */
     private var cachedDiscordRpcEnabled: Boolean = false
 
     private var autoSaveJob: Job? = null
     private var preloadJob: Job? = null
+
+    /** Timestamp when last page change occurred, for tracking page duration. */
+    private var lastPageChangeMs: Long = System.currentTimeMillis()
 
     /** Session start timestamp - made internal for ReadingTimerOverlay access */
     internal val sessionStartMs = System.currentTimeMillis()
@@ -153,6 +171,34 @@ class UltimateReaderViewModel @Inject constructor(
                 throw e
             } catch (_: Exception) {
                 ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
+            }
+
+            // Cache smart prefetch settings
+            cachedSmartPrefetchEnabled = try {
+                settingsRepository.smartPrefetchEnabled.first()
+            } catch (_: Exception) {
+                true
+            }
+            cachedPrefetchStrategy = try {
+                val ordinal = settingsRepository.prefetchStrategyOrdinal.first()
+                PrefetchStrategy.fromOrdinal(ordinal)
+            } catch (_: Exception) {
+                PrefetchStrategy.Balanced
+            }
+            cachedAdaptiveLearningEnabled = try {
+                settingsRepository.adaptiveLearningEnabled.first()
+            } catch (_: Exception) {
+                true
+            }
+            cachedPrefetchAdjacentChapters = try {
+                settingsRepository.prefetchAdjacentChapters.first()
+            } catch (_: Exception) {
+                true
+            }
+            cachedPrefetchOnlyOnWiFi = try {
+                settingsRepository.prefetchOnlyOnWiFi.first()
+            } catch (_: Exception) {
+                false
             }
 
             // Apply per-manga overrides if they exist (#260)
@@ -358,9 +404,36 @@ class UltimateReaderViewModel @Inject constructor(
     private fun changePage(page: Int) {
         val validPage = page.coerceIn(0, (_state.value.pages.size - 1).coerceAtLeast(0))
         if (validPage != _state.value.currentPage) {
+            val previousPage = _state.value.currentPage
+
+            // Record navigation event for behavior tracking
+            if (cachedAdaptiveLearningEnabled) {
+                val now = System.currentTimeMillis()
+                val pageDuration = now - lastPageChangeMs
+                lastPageChangeMs = now
+
+                val event = PageNavigationEvent(
+                    mangaId = mangaId,
+                    chapterId = chapterId,
+                    fromPage = previousPage,
+                    toPage = validPage,
+                    pageDurationMs = pageDuration,
+                    readerMode = _state.value.mode.ordinal,
+                    timestamp = now
+                )
+                behaviorTracker.recordNavigation(event)
+            }
+
+            // Record page view for telemetry
+            val currentPage = _state.value.pages.getOrNull(previousPage)
+            if (currentPage != null) {
+                smartPrefetchManager.recordPageView(currentPage)
+            }
+
             _state.update { it.copy(currentPage = validPage) }
             preloadPages(validPage)
             scheduleProgressSave()
+
             // Update Discord presence with current page
             val manga = currentManga
             val chapter = currentChapter
@@ -369,6 +442,7 @@ class UltimateReaderViewModel @Inject constructor(
                     manga.title, chapter.name, _state.value.pages.size, validPage + 1
                 )
             }
+
             val pages = _state.value.pages
             if (pages.isNotEmpty() && validPage == pages.lastIndex) {
                 maybeDeleteAfterReading()
@@ -562,9 +636,7 @@ class UltimateReaderViewModel @Inject constructor(
 
     /**
      * Preload pages ahead and behind current page for smooth scrolling.
-     * Uses per-manga preload settings if available (#264), otherwise falls back to
-     * cached global defaults loaded once during [loadSettings].
-     *
+     * Uses smart prefetch if enabled, otherwise falls back to manual preload settings.
      * Integrates with Coil's image prefetch to warm up the image cache for upcoming pages.
      */
     private fun preloadPages(currentPage: Int) {
@@ -573,29 +645,55 @@ class UltimateReaderViewModel @Inject constructor(
             val pages = _state.value.pages
             val manga = currentManga
 
-            // Use per-manga overrides if available, otherwise use cached global defaults (#264)
-            val preloadBefore = manga?.preloadPagesBefore ?: cachedPreloadBefore
-            val preloadAfter = manga?.preloadPagesAfter ?: cachedPreloadAfter
+            if (cachedSmartPrefetchEnabled) {
+                // Use smart prefetch manager with behavior-based strategy
+                val behavior = behaviorTracker.getBehaviorForManga(mangaId)
+                smartPrefetchManager.prefetchPages(
+                    pages = pages,
+                    currentPage = currentPage,
+                    strategy = cachedPrefetchStrategy,
+                    behavior = behavior,
+                    onlyOnWiFi = cachedPrefetchOnlyOnWiFi,
+                    scope = viewModelScope
+                )
 
-            val preloadRange = (currentPage - preloadBefore)..(currentPage + preloadAfter)
+                // Prefetch adjacent chapters if enabled
+                if (cachedPrefetchAdjacentChapters) {
+                    chapterPrefetcher.prefetchAdjacentChapters(
+                        currentChapterId = chapterId,
+                        mangaId = mangaId,
+                        currentPage = currentPage,
+                        totalPages = pages.size,
+                        strategy = cachedPrefetchStrategy,
+                        behavior = behavior,
+                        scope = viewModelScope
+                    )
+                }
+            } else {
+                // Fallback to manual preload settings (legacy behavior)
+                val preloadBefore = manga?.preloadPagesBefore ?: cachedPreloadBefore
+                val preloadAfter = manga?.preloadPagesAfter ?: cachedPreloadAfter
 
-            preloadRange.forEach { index ->
-                if (index in pages.indices && index != currentPage) {
-                    val page = pages[index]
-                    val imageUrl = page.imageUrl
+                val preloadRange = (currentPage - preloadBefore)..(currentPage + preloadAfter)
 
-                    // Prefetch image using Coil's prefetch API
-                    if (!imageUrl.isNullOrBlank()) {
-                        try {
-                            val request = ImageRequest.Builder(context)
-                                .data(imageUrl)
-                                .build()
+                preloadRange.forEach { index ->
+                    if (index in pages.indices && index != currentPage) {
+                        val page = pages[index]
+                        val imageUrl = page.imageUrl
 
-                            // Enqueue prefetch request (non-blocking, returns immediately)
-                            imageLoader.enqueue(request)
-                        } catch (e: Exception) {
-                            // Silently ignore prefetch failures - they're not critical
-                            // The image will be loaded on-demand when the user navigates to the page
+                        // Prefetch image using Coil's prefetch API
+                        if (!imageUrl.isNullOrBlank()) {
+                            try {
+                                val request = ImageRequest.Builder(context)
+                                    .data(imageUrl)
+                                    .build()
+
+                                // Enqueue prefetch request (non-blocking, returns immediately)
+                                imageLoader.enqueue(request)
+                            } catch (e: Exception) {
+                                // Silently ignore prefetch failures - they're not critical
+                                // The image will be loaded on-demand when the user navigates to the page
+                            }
                         }
                     }
                 }
