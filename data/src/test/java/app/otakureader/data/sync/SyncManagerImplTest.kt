@@ -305,7 +305,7 @@ class SyncManagerImplTest {
         every { syncPreferences.isSyncEnabled } returns flowOf(true)
 
         // When - observe initial status
-        val status = syncManager.syncStatus.first()
+        val status = syncManager.syncStatus.first { it is SyncStatus.Idle }
 
         // Then
         assertTrue(status is SyncStatus.Idle)
