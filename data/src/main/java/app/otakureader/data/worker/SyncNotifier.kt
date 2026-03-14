@@ -1,7 +1,6 @@
 package app.otakureader.data.worker
 
 import android.Manifest
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
