@@ -1,7 +1,7 @@
 # Network & Extension API Audit Report
 
 **Date:** 2026-03-14
-**Reference:** [Audit Codebase Functionality Before Final App Completion]
+**Reference:** Audit Codebase Functionality Before Final App Completion
 **Comparison Baseline:** Komikku-2026 upstream
 
 ## Executive Summary
