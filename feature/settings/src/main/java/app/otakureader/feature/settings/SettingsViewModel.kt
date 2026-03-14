@@ -14,6 +14,7 @@ import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
 import app.otakureader.data.worker.ReadingReminderScheduler
+import app.otakureader.core.discord.DiscordRpcService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,7 +42,8 @@ class SettingsViewModel @Inject constructor(
     private val appPreferences: AppPreferences,
     private val aiPreferences: AiPreferences,
     private val readingGoalPreferences: ReadingGoalPreferences,
-    private val readingReminderScheduler: ReadingReminderScheduler
+    private val readingReminderScheduler: ReadingReminderScheduler,
+    private val discordRpcService: DiscordRpcService
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
