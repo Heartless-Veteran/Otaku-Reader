@@ -29,7 +29,7 @@ class ContinueReadingWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         // TODO: Load actual reading data from repository
-        val readingItems = getMockReadingItems()
+        val readingItems = emptyList<ReadingItem>()
         val title = context.getString(R.string.widget_continue_reading_title)
         val emptyText = context.getString(R.string.widget_no_manga_in_progress)
 
