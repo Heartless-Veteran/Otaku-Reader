@@ -73,10 +73,10 @@ class SyncNotifier(private val context: Context) {
      * @param errorMessage Error message to display
      */
     fun notifyFailure(errorMessage: String) {
-        if (!hasNotificationPermission()) return
-
-        // Cancel syncing notification
+        // Cancel syncing notification even if posting new notifications is not allowed.
         notificationManager.cancel(NOTIFICATION_ID_SYNCING)
+
+        if (!hasNotificationPermission()) return
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Sync failed")
