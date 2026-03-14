@@ -122,7 +122,13 @@ fun MigrationEntryScreen(
                         onClick = { viewModel.onEvent(MigrationEntryEvent.OnStartMigration) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(stringResource(R.string.migration_entry_migrate_count, state.selectedIds.size))
+                        Text(
+                            androidx.compose.ui.res.pluralStringResource(
+                                R.plurals.migration_entry_migrate_count,
+                                state.selectedIds.size,
+                                state.selectedIds.size
+                            )
+                        )
                     }
                 }
             }
