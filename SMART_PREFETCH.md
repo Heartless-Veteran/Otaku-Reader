@@ -92,15 +92,16 @@ Manages intelligent page prefetching based on strategy and behavior.
 Handles cross-chapter prefetching for seamless chapter transitions.
 
 **Key Methods:**
-- `prefetchAdjacentChapters(...)`: Prefetches next/previous chapters
-- `prefetchPages(pages, pageCount, fromEnd)`: Prefetches specific pages
-- `clearPrefetchedChapters()`: Resets prefetch cache
+- `prefetchAdjacentChapters(...)`: Orchestrates next/previous chapter prefetch (currently a stub/no-op)
+- `prefetchPages(pages, pageCount, fromEnd)`: Prefetches specific pages within a chapter (where implemented)
+- `clearPrefetchedChapters()`: Resets any in-memory prefetch cache
 
-**Features:**
-- Prefetches first 5 pages of next chapter
-- Prefetches last 5 pages of previous chapter
-- Respects strategy and behavior patterns
-- Avoids duplicate prefetching
+**Current Status & Planned Features:**
+- Current implementation: `prefetchChapterPages()` and adjacent-chapter prefetch logic are TODO/no-op
+- Planned: Prefetch first 5 pages of the next chapter when nearing the end of the current chapter
+- Planned: Prefetch last 5 pages of the previous chapter when starting a new chapter
+- Planned: Respect active `PrefetchStrategy` and `ReadingBehavior` patterns to decide when/what to prefetch
+- Planned: Avoid duplicate prefetching and unnecessary network/disk usage
 
 ### ViewModel Integration (`feature/reader/src/main/java/app/otakureader/feature/reader/viewmodel/`)
 
