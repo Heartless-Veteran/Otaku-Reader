@@ -17,6 +17,7 @@ import coil3.request.ImageRequest
 import coil3.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 internal const val UPDATE_CHANNEL_ID = "library_updates_channel"
 internal const val GROUP_KEY_UPDATES = "library_updates"
@@ -131,7 +132,7 @@ internal class UpdateNotifier(private val context: Context) {
         return withContext(Dispatchers.IO) {
             try {
                 // Add timeout to prevent notifications from being delayed by slow image loads
-                kotlinx.coroutines.withTimeout(5000L) { // 5 second timeout
+                withTimeout(5000L) { // 5 second timeout
                     val request = ImageRequest.Builder(context)
                         .data(url)
                         .size(256, 256)
