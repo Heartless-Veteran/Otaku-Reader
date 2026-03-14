@@ -45,11 +45,7 @@ class RecentUpdatesWidget : GlanceAppWidget() {
     }
 
     private fun getMockUpdates(): List<MangaUpdate> {
-        return listOf(
-            MangaUpdate("One Piece", "Chapter 1086", "2 hours ago"),
-            MangaUpdate("My Hero Academia", "Chapter 415", "5 hours ago"),
-            MangaUpdate("Spy x Family", "Chapter 87", "1 day ago")
-        )
+        return emptyList()
     }
 }
 
