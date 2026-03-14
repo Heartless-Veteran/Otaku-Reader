@@ -11,7 +11,7 @@
 
 Otaku Reader demonstrates **excellent adherence to Clean Architecture principles** with a well-structured codebase that properly separates concerns across domain, data, and presentation layers. The application uses a hybrid MVI (Model-View-Intent) pattern with StateFlow for reactive state management, combined with proper Hilt dependency injection.
 
-**Overall Score: 9.2/10**
+**Overall Score: 9.1/10**
 
 ### Key Findings
 
