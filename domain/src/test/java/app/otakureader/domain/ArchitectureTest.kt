@@ -145,8 +145,8 @@ class ArchitectureTest {
     }
 
     /**
-     * Ensures domain layer only uses allowed dependencies.
-     * Allowed: kotlinx.coroutines, kotlinx.serialization, javax.inject (compile-only)
+     * Ensures the domain module is configured as a pure Kotlin/JVM library
+     * and does not declare any Android or AndroidX dependencies.
      */
     @Test
     fun `domain build file should only declare allowed dependencies`() {
