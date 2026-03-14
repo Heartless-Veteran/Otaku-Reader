@@ -176,28 +176,33 @@ class UltimateReaderViewModel @Inject constructor(
             // Cache smart prefetch settings
             cachedSmartPrefetchEnabled = try {
                 settingsRepository.smartPrefetchEnabled.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 true
             }
             cachedPrefetchStrategy = try {
                 val ordinal = settingsRepository.prefetchStrategyOrdinal.first()
                 PrefetchStrategy.fromOrdinal(ordinal)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 PrefetchStrategy.Balanced
             }
             cachedAdaptiveLearningEnabled = try {
                 settingsRepository.adaptiveLearningEnabled.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 true
             }
             cachedPrefetchAdjacentChapters = try {
                 settingsRepository.prefetchAdjacentChapters.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 true
             }
             cachedPrefetchOnlyOnWiFi = try {
                 settingsRepository.prefetchOnlyOnWiFi.first()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 false
             }
 
