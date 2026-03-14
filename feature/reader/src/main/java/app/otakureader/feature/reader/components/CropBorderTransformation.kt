@@ -39,24 +39,36 @@ class CropBorderTransformation(private val config: CropConfig = CropConfig()) : 
         val left = findLeftCrop(pixels, width, height)
         val right = findRightCrop(pixels, width, height)
 
-        // Clamp crop amounts to configured limits
-        val maxTopCrop = (height * config.maxCropPercent).toInt()
-        val maxBottomCrop = (height * config.maxCropPercent).toInt()
-        val maxLeftCrop = (width * config.maxCropPercent).toInt()
-        val maxRightCrop = (width * config.maxCropPercent).toInt()
+        // Clamp total crop amounts per dimension to configured limits
+        val maxHeightCrop = (height * config.maxCropPercent).toInt()
+        val maxWidthCrop = (width * config.maxCropPercent).toInt()
 
-        val clampedTop = top.coerceAtMost(maxTopCrop)
-        val clampedBottom = bottom.coerceAtMost(maxBottomCrop)
-        val clampedLeft = left.coerceAtMost(maxLeftCrop)
-        val clampedRight = right.coerceAtMost(maxRightCrop)
+        val rawVertical = top + bottom
+        val rawHorizontal = left + right
 
-        // Skip trivial crops (smaller than minCropPercent)
+        val verticalScale = when {
+            rawVertical <= 0 -> 0f
+            rawVertical > maxHeightCrop -> maxHeightCrop.toFloat() / rawVertical.toFloat()
+            else -> 1f
+        }
+        val horizontalScale = when {
+            rawHorizontal <= 0 -> 0f
+            rawHorizontal > maxWidthCrop -> maxWidthCrop.toFloat() / rawHorizontal.toFloat()
+            else -> 1f
+        }
+
+        val clampedTop = (top * verticalScale).toInt()
+        val clampedBottom = (bottom * verticalScale).toInt()
+        val clampedLeft = (left * horizontalScale).toInt()
+        val clampedRight = (right * horizontalScale).toInt()
+
+        // Skip trivial crops (smaller than minCropPercent of the full dimension)
         val minHeightCrop = (height * config.minCropPercent).toInt()
         val minWidthCrop = (width * config.minCropPercent).toInt()
-        val effectiveTop = if (clampedTop >= minHeightCrop) clampedTop else 0
-        val effectiveBottom = if (clampedBottom >= minHeightCrop) clampedBottom else 0
-        val effectiveLeft = if (clampedLeft >= minWidthCrop) clampedLeft else 0
-        val effectiveRight = if (clampedRight >= minWidthCrop) clampedRight else 0
+        val effectiveTop = if (clampedTop + clampedBottom >= minHeightCrop) clampedTop else 0
+        val effectiveBottom = if (clampedTop + clampedBottom >= minHeightCrop) clampedBottom else 0
+        val effectiveLeft = if (clampedLeft + clampedRight >= minWidthCrop) clampedLeft else 0
+        val effectiveRight = if (clampedLeft + clampedRight >= minWidthCrop) clampedRight else 0
 
         // If nothing to crop, return original
         if (effectiveTop == 0 && effectiveBottom == 0 &&
