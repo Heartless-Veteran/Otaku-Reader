@@ -130,8 +130,20 @@ class UltimateReaderViewModel @Inject constructor(
             val incognitoMode = settingsRepository.incognitoMode.first()
             val colorFilterMode = settingsRepository.colorFilterMode.first()
             val customTintColor = settingsRepository.customTintColor.first()
-            val showReadingTimer = settingsRepository.showReadingTimer.first()
-            val showBatteryTime = settingsRepository.showBatteryTime.first()
+            val showReadingTimer = try {
+                settingsRepository.showReadingTimer.first()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+            val showBatteryTime = try {
+                settingsRepository.showBatteryTime.first()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
 
             // Cache preload settings so preloadPages() doesn't read DataStore per page change (#264)
             cachedPreloadBefore = try {
