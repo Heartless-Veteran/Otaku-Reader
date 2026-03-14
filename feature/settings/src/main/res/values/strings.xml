@@ -57,7 +57,7 @@
     <string name="settings_auto_download_new_chapters_description">Automatically download new chapters found during library updates</string>
     <string name="settings_download_only_wifi">Download Only on Wi-Fi</string>
     <string name="settings_download_only_wifi_description">Restrict downloads to Wi-Fi connections only</string>
-    <string name="settings_auto_download_limit">Auto-Download Limit: %1$d chapters</string>
+    <string name="settings_auto_download_limit">Auto-Download Limit: %1$d chapter(s)</string>
 
     <!-- Reader -->
     <string name="settings_reader">Reader</string>
