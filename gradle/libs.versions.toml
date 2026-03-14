@@ -5,13 +5,13 @@ agp = "9.1.0"
 ksp = "2.3.6"
 
 # AndroidX
-core-ktx = "1.17.0"
+core-ktx = "1.18.0"
 appcompat = "1.7.1"
-activity-compose = "1.12.4"
-material = "1.12.0"
+activity-compose = "1.13.0"
+material = "1.13.0"
 
 # Compose
-compose-bom = "2024.12.01"
+compose-bom = "2026.03.00"
 
 # Coroutines
 coroutines = "1.10.2"
@@ -30,21 +30,21 @@ hilt-navigation-compose = "1.3.0"
 room = "2.8.4"
 
 # DataStore
-datastore = "1.2.0"
+datastore = "1.2.1"
 
 # Security
-security-crypto = "1.1.0-alpha06"
+security-crypto = "1.1.0"
 
 # Network
-okhttp = "4.12.0"
-retrofit = "2.12.0"
+okhttp = "5.3.2"
+retrofit = "3.0.0"
 kotlinx-serialization = "1.10.0"
 
 # Image Loading
 coil = "3.4.0"
 
 # Paging
-paging = "3.4.1"
+paging = "3.4.2"
 
 # WorkManager
 workmanager = "2.11.1"
@@ -58,12 +58,12 @@ glance = "1.1.1"
 # Testing
 junit = "4.13.2"
 junit5 = "5.11.0"
-androidxTest = "1.1.5"
-androidxTestCore = "1.5.0"
+androidxTest = "1.3.0"
+androidxTestCore = "1.7.0"
 espresso = "3.7.0"
 mockk = "1.14.9"
 turbine = "1.2.1"
-robolectric = "4.14.1"
+robolectric = "4.16.1"
 
 [libraries]
 # Kotlin
@@ -137,7 +137,7 @@ paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.r
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 
 # Browser (Custom Tabs)
-browser = { group = "androidx.browser", name = "browser", version = "1.8.0" }
+browser = { group = "androidx.browser", name = "browser", version = "1.9.0" }
 
 # WorkManager
 workmanager-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
