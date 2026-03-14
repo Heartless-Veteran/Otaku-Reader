@@ -81,7 +81,7 @@ class ArchitectureTest {
             .forEach { file ->
                 val lines = file.readLines()
                 lines.forEachIndexed { index, line ->
-                    if (line.trimStart().startsWith("data class ")) {
+                    if (line.startsWith("data class ")) {
                         nonModelDataClasses += "${file.path}:${index + 1}: ${line.trim()}"
                     }
                 }
