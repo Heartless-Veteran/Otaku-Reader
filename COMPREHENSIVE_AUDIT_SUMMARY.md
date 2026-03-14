@@ -72,7 +72,7 @@ All critical functionality is implemented and tested. Minor gaps identified are 
 
 **Score: Production Ready**
 
-**Audit Document:** [docs/audits/network-extension.md](/home/runner/work/Otaku-Reader/Otaku-Reader/docs/audits/network-extension.md)
+**Audit Document:** [docs/audits/network-extension.md](./docs/audits/network-extension.md)
 
 **Key Findings:**
 - ✅ Tachiyomi extension compatibility with comprehensive validation
@@ -99,7 +99,7 @@ All critical functionality is implemented and tested. Minor gaps identified are 
 
 **Score: 8.5/10** - Production Ready
 
-**Audit Document:** [docs/audits/ux-ui-presentation.md](/home/runner/work/Otaku-Reader/Otaku-Reader/docs/audits/ux-ui-presentation.md)
+**Audit Document:** [docs/audits/ux-ui-presentation.md](./docs/audits/ux-ui-presentation.md)
 
 **Key Findings:**
 - ✅ Material 3 theming with 10 color schemes + dynamic color
@@ -129,7 +129,7 @@ All critical functionality is implemented and tested. Minor gaps identified are 
 
 **Score: 9.0/10** - Production Ready
 
-**Audit Document:** [docs/audits/database-persistence.md](/home/runner/work/Otaku-Reader/Otaku-Reader/docs/audits/database-persistence.md)
+**Audit Document:** [docs/audits/database-persistence.md](./docs/audits/database-persistence.md)
 
 **Key Findings:**
 - ✅ Room database v9 with safe migrations (v2→v9, all additive)
@@ -154,7 +154,7 @@ All critical functionality is implemented and tested. Minor gaps identified are 
 
 **Score: 8.8/10** - Production Ready
 
-**Audit Document:** [docs/audits/background-tasks-downloads.md](/home/runner/work/Otaku-Reader/Otaku-Reader/docs/audits/background-tasks-downloads.md)
+**Audit Document:** [docs/audits/background-tasks-downloads.md](./docs/audits/background-tasks-downloads.md)
 
 **Key Findings:**
 - ✅ WorkManager properly configured with Hilt integration
