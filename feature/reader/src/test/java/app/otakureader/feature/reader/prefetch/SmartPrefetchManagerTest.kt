@@ -149,7 +149,7 @@ class SmartPrefetchManagerTest {
     }
 
     @Test
-    fun `recordPageView updates cache hits when page was prefetched`() {
+    fun `recordPageView updates cache hits when page was prefetched`() = runTest(testDispatcher) {
         // Given: Simulate a prefetch by calling prefetchPages first
         val pages = createTestPages(5)
         every { behaviorTracker.getBehaviorForManga(any()) } returns ReadingBehavior.DEFAULT
@@ -162,6 +162,7 @@ class SmartPrefetchManagerTest {
             onlyOnWiFi = false,
             scope = CoroutineScope(testDispatcher)
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // When: Record viewing a prefetched page
         prefetchManager.recordPageView(pages[1])
