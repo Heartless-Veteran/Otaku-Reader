@@ -15,7 +15,6 @@ import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
 import app.otakureader.data.worker.ReadingReminderScheduler
-import app.otakureader.core.discord.DiscordRpcService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow

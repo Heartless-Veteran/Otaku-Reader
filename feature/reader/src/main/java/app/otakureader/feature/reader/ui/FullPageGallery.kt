@@ -84,7 +84,7 @@ fun FullPageGallery(
             Column(modifier = Modifier.fillMaxSize()) {
                 TopAppBar(
                     title = {
-                        Text(stringResource(R.string.reader_page_gallery_title, pages.size))
+                        Text(pluralStringResource(R.plurals.reader_page_gallery_title, pages.size, pages.size))
                     },
                     navigationIcon = {
                         IconButton(onClick = onDismiss) {
