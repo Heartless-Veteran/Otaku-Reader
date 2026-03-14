@@ -123,8 +123,20 @@ class DownloadsViewModel @Inject constructor(
 
     private fun prioritizeSelected() {
         viewModelScope.launch {
-            val selectedIds = _state.value.selectedItems
-            downloadRepository.prioritizeDownloads(selectedIds)
+            val state = _state.value
+            val selectedIds = state.items
+                .asSequence()
+                .filter { item ->
+                    item.id in state.selectedItems &&
+                        (item.status == app.otakureader.domain.model.DownloadStatus.QUEUED ||
+                            item.status == app.otakureader.domain.model.DownloadStatus.DOWNLOADING ||
+                            item.status == app.otakureader.domain.model.DownloadStatus.PAUSED)
+                }
+                .map { it.id }
+                .toSet()
+            if (selectedIds.isNotEmpty()) {
+                downloadRepository.prioritizeDownloads(selectedIds)
+            }
             clearSelection()
         }
     }
