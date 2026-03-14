@@ -169,7 +169,7 @@ class AiPreferences(
                     keysToRemove.clear()
 
                     for ((key, value) in pendingChanges) {
-                        val oldValue = backingMap.put(key, value)
+                        val oldValue = backingMap.put(key, value as Any)
                         // Track changes only if value actually changed
                         if (oldValue != value) {
                             changedKeys.add(key)
