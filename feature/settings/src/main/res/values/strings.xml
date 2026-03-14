@@ -77,7 +77,7 @@
     <string name="settings_crop_borders">Crop Borders</string>
     <string name="settings_crop_borders_description">Automatically remove white or black margins from page images</string>
     <string name="settings_data_saver">Data Saver Mode</string>
-    <string name="settings_data_saver_description">Reduce image quality to save bandwidth and data usage</string>
+    <string name="settings_data_saver_description">Reduce image quality to lower memory usage and improve performance</string>
 
     <!-- Notifications -->
     <string name="settings_notifications">Notifications</string>
