@@ -290,7 +290,7 @@ fun ReaderScreen(
 
             // Battery/Time Overlay - below the timer when both are visible
             BatteryTimeOverlay(
-                isVisible = state.showBatteryTime && !state.isMenuVisible,
+                isVisible = state.showBatteryTime && !state.isMenuVisible && !state.isGalleryOpen,
                 modifier = Modifier
             )
         }
