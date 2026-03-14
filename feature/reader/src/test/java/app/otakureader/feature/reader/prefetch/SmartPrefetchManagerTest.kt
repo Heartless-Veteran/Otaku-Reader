@@ -227,7 +227,7 @@ class SmartPrefetchManagerTest {
     }
 
     @Test
-    fun `getTelemetryStats returns formatted string`() {
+    fun `getTelemetryStats returns formatted string`() = runTest(testDispatcher) {
         // Given: Some telemetry data
         val pages = createTestPages(5)
         prefetchManager.prefetchPages(
@@ -238,6 +238,7 @@ class SmartPrefetchManagerTest {
             onlyOnWiFi = false,
             scope = CoroutineScope(testDispatcher)
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         // When
         val stats = prefetchManager.getTelemetryStats()
@@ -248,6 +249,7 @@ class SmartPrefetchManagerTest {
         assertTrue(stats.contains("Cache Hits"))
         assertTrue(stats.contains("Hit Rate"))
         assertTrue(stats.contains("Efficiency"))
+        assertFalse(stats.contains("Pages Prefetched: 0"))
     }
 
     @Test
