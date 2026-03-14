@@ -89,12 +89,24 @@ class SourceRepositoryImpl(
         return _sources.value.find { it.id == sourceId }
     }
 
+    /**
+     * Helper to perform a source health check and return a failure Result when unhealthy.
+     * Returns null when the source is healthy so the caller can proceed.
+     */
+    private fun <T> failIfUnhealthy(sourceId: String): Result<T>? {
+        if (!healthMonitor.isSourceHealthy(sourceId)) {
+            val message = healthMonitor.getHealthMessage(sourceId)
+                ?: "Source is temporarily unavailable"
+            return Result.failure(IllegalStateException(message))
+        }
+        return null
+    }
+
     override suspend fun getPopularManga(sourceId: String, page: Int): Result<MangaPage> {
         return withContext(Dispatchers.IO) {
             // Check source health before attempting request
-            if (!healthMonitor.isSourceHealthy(sourceId)) {
-                val message = healthMonitor.getHealthMessage(sourceId) ?: "Source is temporarily unavailable"
-                return@withContext Result.failure(IllegalStateException(message))
+            failIfUnhealthy<MangaPage>(sourceId)?.let { failureResult ->
+                return@withContext failureResult
             }
 
             try {
