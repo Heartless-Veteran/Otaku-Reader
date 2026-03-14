@@ -175,7 +175,7 @@ prefetchOnlyOnWiFi = false
 2. **Cache Hits**: Pages viewed after being prefetched
 3. **On-Demand Loads**: Pages loaded without prefetch
 4. **Cache Hit Rate**: `cacheHits / (cacheHits + onDemandLoads)`
-5. **Prefetch Efficiency**: `viewedPages / pagesPrefetched`
+5. **Prefetch Efficiency**: `viewedPrefetchedPages / pagesPrefetched`
 
 ### Optimization Tips
 
