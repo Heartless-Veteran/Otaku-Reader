@@ -73,8 +73,9 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
     }
 
     suspend fun setConflictResolutionStrategyOrdinal(ordinal: Int) {
+        val clamped = ordinal.coerceAtLeast(0)
         dataStore.edit { prefs ->
-            prefs[Keys.CONFLICT_STRATEGY] = ordinal
+            prefs[Keys.CONFLICT_STRATEGY] = clamped
         }
     }
 
@@ -85,8 +86,9 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
     }
 
     suspend fun setSyncIntervalHours(hours: Int) {
+        val clamped = hours.coerceAtLeast(1)
         dataStore.edit { prefs ->
-            prefs[Keys.SYNC_INTERVAL_HOURS] = hours
+            prefs[Keys.SYNC_INTERVAL_HOURS] = clamped
         }
     }
 
