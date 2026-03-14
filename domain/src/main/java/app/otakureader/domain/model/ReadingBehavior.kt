@@ -83,5 +83,8 @@ data class PageNavigationEvent(
 
     /** True if this is a sequential navigation (adjacent page). */
     val isSequential: Boolean
-        get() = kotlin.math.abs(toPage - fromPage) == 1
+        get() = when (readerMode) {
+            1 -> kotlin.math.abs(toPage - fromPage) == 2 // DUAL_PAGE mode advances by 2
+            else -> kotlin.math.abs(toPage - fromPage) == 1
+        }
 }
