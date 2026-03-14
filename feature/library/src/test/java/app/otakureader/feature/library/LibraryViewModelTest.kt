@@ -1,6 +1,5 @@
 package app.otakureader.feature.library
 
-import android.content.Context
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.domain.model.Manga
@@ -32,7 +31,6 @@ class LibraryViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var context: Context
     private lateinit var getLibraryManga: GetLibraryMangaUseCase
     private lateinit var toggleFavoriteManga: ToggleFavoriteMangaUseCase
     private lateinit var libraryPreferences: LibraryPreferences
@@ -48,7 +46,6 @@ class LibraryViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        context = mockk(relaxed = true)
         getLibraryManga = mockk()
         toggleFavoriteManga = mockk()
         libraryPreferences = mockk {
@@ -73,7 +70,7 @@ class LibraryViewModelTest {
     }
 
     private fun createViewModel(): LibraryViewModel {
-        return LibraryViewModel(context, getLibraryManga, toggleFavoriteManga, libraryPreferences, generalPreferences, chapterRepository)
+        return LibraryViewModel(getLibraryManga, toggleFavoriteManga, libraryPreferences, generalPreferences, chapterRepository)
     }
 
     @Test

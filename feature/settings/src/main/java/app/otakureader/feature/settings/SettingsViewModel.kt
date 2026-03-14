@@ -11,6 +11,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
 import app.otakureader.data.worker.ReadingReminderScheduler
@@ -127,13 +128,7 @@ class SettingsViewModel @Inject constructor(
             }.combine(generalPreferences.showNsfwContent) { state, showNsfw ->
                 state.copy(showNsfwContent = showNsfw)
             }.combine(generalPreferences.discordRpcEnabled) { state, discordRpc ->
-                            state.copy(
-                                discordRpcEnabled = discordRpc,
-                                dailyChapterGoal = _state.value.dailyChapterGoal,
-                                weeklyChapterGoal = _state.value.weeklyChapterGoal,
-                                readingRemindersEnabled = _state.value.readingRemindersEnabled,
-                                readingReminderHour = _state.value.readingReminderHour
-                            )
+                state.copy(discordRpcEnabled = discordRpc)
             }.combine(backupPreferences.autoBackupEnabled) { state, enabled ->
                 state.copy(autoBackupEnabled = enabled)
             }.combine(backupPreferences.autoBackupIntervalHours) { state, hours ->
@@ -165,7 +160,12 @@ class SettingsViewModel @Inject constructor(
                         aiSmartNotifications = current.aiSmartNotifications,
                         aiAutoCategorization = current.aiAutoCategorization,
                         aiTokensUsedThisMonth = current.aiTokensUsedThisMonth,
-                        aiTokenTrackingPeriod = current.aiTokenTrackingPeriod
+                        aiTokenTrackingPeriod = current.aiTokenTrackingPeriod,
+                        // Preserve reading goal fields managed by observeReadingGoalPreferences()
+                        dailyChapterGoal = current.dailyChapterGoal,
+                        weeklyChapterGoal = current.weeklyChapterGoal,
+                        readingRemindersEnabled = current.readingRemindersEnabled,
+                        readingReminderHour = current.readingReminderHour
                     )
                 }
             }
