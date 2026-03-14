@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
 import androidx.compose.foundation.background
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,9 +70,11 @@ fun BatteryTimeOverlay(
             }
         }
 
-        context.registerReceiver(
+        ContextCompat.registerReceiver(
+            context,
             batteryReceiver,
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+            ContextCompat.RECEIVER_NOT_EXPORTED
         )
 
         onDispose {
