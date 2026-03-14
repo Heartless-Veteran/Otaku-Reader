@@ -10,14 +10,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
-    <!-- Storage / Media permissions for chapter downloads, local manga, covers, and CBZ export -->
+    <!-- Storage permissions for legacy chapter downloads, local manga, covers, and CBZ export -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <!-- Wake lock: prevents the CPU from sleeping during background library/download workers -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
