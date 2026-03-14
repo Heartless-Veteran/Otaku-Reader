@@ -38,7 +38,7 @@ class SmartPrefetchManagerTest {
         every { connectivityManager.getNetworkCapabilities(any()) } returns networkCapabilities
         every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns true
 
-        prefetchManager = SmartPrefetchManager(context, imageLoader, behaviorTracker)
+        prefetchManager = SmartPrefetchManager(context, imageLoader)
     }
 
     @Test
