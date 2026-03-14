@@ -98,11 +98,21 @@ class SmartPrefetchManager @Inject constructor(
         val imageUrl = page.imageUrl
         if (imageUrl.isNullOrBlank()) return
 
-        // Skip if already prefetched recently (within last 5 minutes)
-        val lastPrefetchTime = prefetchedPages[imageUrl]
-        if (lastPrefetchTime != null && System.currentTimeMillis() - lastPrefetchTime < 300_000L) {
-            return
+        val now = System.currentTimeMillis()
+
+        // Decide and record prefetch under lock to avoid races.
+        val shouldPrefetch = synchronized(prefetchedPages) {
+            val lastPrefetchTime = prefetchedPages[imageUrl]
+            if (lastPrefetchTime != null && now - lastPrefetchTime < 300_000L) {
+                false
+            } else {
+                prefetchedPages[imageUrl] = now
+                pagesPrefetched++
+                true
+            }
         }
+
+        if (!shouldPrefetch) return
 
         try {
             val request = ImageRequest.Builder(context)
@@ -111,10 +121,6 @@ class SmartPrefetchManager @Inject constructor(
 
             // Enqueue prefetch request (non-blocking)
             imageLoader.enqueue(request)
-
-            // Track prefetch
-            prefetchedPages[imageUrl] = System.currentTimeMillis()
-            pagesPrefetched++
         } catch (e: Exception) {
             // Silently ignore prefetch failures - they're not critical
         }
@@ -128,25 +134,29 @@ class SmartPrefetchManager @Inject constructor(
     fun recordPageView(page: ReaderPage) {
         val imageUrl = page.imageUrl ?: return
 
-        // Check if this was a cache hit (prefetched) or on-demand load
-        if (prefetchedPages.containsKey(imageUrl)) {
-            cacheHits++
-        } else {
-            onDemandLoads++
-        }
+        synchronized(prefetchedPages) {
+            // Check if this was a cache hit (prefetched) or on-demand load
+            if (prefetchedPages.containsKey(imageUrl)) {
+                cacheHits++
+            } else {
+                onDemandLoads++
+            }
 
-        viewedPages.add(imageUrl)
+            viewedPages.add(imageUrl)
+        }
     }
 
     /**
      * Returns cache hit rate (0.0 to 1.0).
      */
     fun getCacheHitRate(): Float {
-        val totalViews = cacheHits + onDemandLoads
-        return if (totalViews > 0) {
-            cacheHits.toFloat() / totalViews.toFloat()
-        } else {
-            0f
+        return synchronized(prefetchedPages) {
+            val totalViews = cacheHits + onDemandLoads
+            if (totalViews > 0) {
+                cacheHits.toFloat() / totalViews.toFloat()
+            } else {
+                0f
+            }
         }
     }
 
@@ -155,11 +165,13 @@ class SmartPrefetchManager @Inject constructor(
      * Ratio of prefetched pages that were actually viewed.
      */
     fun getPrefetchEfficiency(): Float {
-        return if (pagesPrefetched > 0) {
-            val viewedPrefetched = viewedPages.count { prefetchedPages.containsKey(it) }
-            viewedPrefetched.toFloat() / pagesPrefetched.toFloat()
-        } else {
-            0f
+        return synchronized(prefetchedPages) {
+            if (pagesPrefetched > 0) {
+                val viewedPrefetched = viewedPages.count { prefetchedPages.containsKey(it) }
+                viewedPrefetched.toFloat() / pagesPrefetched.toFloat()
+            } else {
+                0f
+            }
         }
     }
 
