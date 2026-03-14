@@ -13,6 +13,7 @@ import app.otakureader.core.preferences.SyncPreferences
 import app.otakureader.domain.sync.SyncManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -46,20 +47,24 @@ class SyncWorker @AssistedInject constructor(
             return Result.success()
         }
 
-        return try {
-            notifier.notifySyncing()
+        notifier.notifySyncing()
 
-            val syncResult = syncManager.sync().getOrThrow()
-
-            notifier.notifySuccess(
-                changesCount = syncResult.totalChanges,
-                message = syncResult.message
-            )
-            Result.success()
-        } catch (e: Exception) {
-            notifier.notifyFailure(e.message ?: "Unknown error")
-            Result.retry()
-        }
+        return syncManager.sync().fold(
+            onSuccess = { syncResult ->
+                notifier.notifySuccess(
+                    changesCount = syncResult.totalChanges,
+                    message = syncResult.message
+                )
+                Result.success()
+            },
+            onFailure = { throwable ->
+                if (throwable is CancellationException) {
+                    throw throwable
+                }
+                notifier.notifyFailure(throwable.message ?: "Unknown error")
+                Result.retry()
+            }
+        )
     }
 
     companion object {
