@@ -151,7 +151,9 @@ fun ZoomableImage(
 
                 // Apply size restriction when data saver is enabled
                 if (dataSaverEnabled) {
-                    builder.size(800) // Limit to 800px max dimension for bandwidth savings
+                    builder
+                        .size(800)
+                        .scale(coil3.size.Scale.FIT) // Enforce max-dimension cap
                 }
 
                 // Apply crop borders transformation if enabled
