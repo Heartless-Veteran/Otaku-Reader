@@ -63,7 +63,7 @@ fun ReadingTimerOverlay(
         ) {
             Icon(
                 imageVector = Icons.Default.Timer,
-                contentDescription = "Reading timer",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
             Spacer(Modifier.width(8.dp))
