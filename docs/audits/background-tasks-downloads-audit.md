@@ -147,7 +147,7 @@ Smart caching with hierarchical fallback (Lines 201-245):
 **Status:** ✅ **FULLY COMPLIANT**
 
 #### Key Compliance Points:
-1. ✅ External storage permissions restricted to API ≤28 (pre-Pie)
+1. ✅ External storage WRITE restricted to API ≤28 and READ restricted to API ≤32 (per manifest)
 2. ✅ No `requestLegacyExternalStorageAccess` flag
 3. ✅ Downloads use `Context.getExternalFilesDir()` - app-specific directory
 4. ✅ App-specific directory is auto-granted on all Android versions
