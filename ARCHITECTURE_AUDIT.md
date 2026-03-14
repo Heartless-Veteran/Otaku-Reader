@@ -481,7 +481,7 @@ object NetworkModule {
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(HttpLoggingInterceptor().apply {
-                        level = HttpLoggingInterceptor.Level.BODY
+                        level = HttpLoggingInterceptor.Level.BASIC
                     })
                 }
             }
@@ -495,6 +495,7 @@ object NetworkModule {
         json: Json
     ): Retrofit {
         return Retrofit.Builder()
+            .baseUrl("https://api.example.com")
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
