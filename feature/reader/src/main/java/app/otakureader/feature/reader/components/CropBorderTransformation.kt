@@ -28,6 +28,9 @@ class CropBorderTransformation(private val config: CropConfig = CropConfig()) : 
         val height = input.height
         if (width == 0 || height == 0) return input
 
+        // If neither white nor black border detection is enabled, there is nothing to do.
+        if (!config.detectWhiteBorders && !config.detectBlackBorders) return input
+
         val pixels = IntArray(width * height)
         input.getPixels(pixels, 0, width, 0, 0, width, height)
 
