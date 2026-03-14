@@ -67,7 +67,7 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
             .diskCache {
                 DiskCache.Builder()
                     .directory(context.cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizePercent(0.02)
+                    .maxSizeBytes(100L * 1024 * 1024)
                     .build()
             }
             .components {
