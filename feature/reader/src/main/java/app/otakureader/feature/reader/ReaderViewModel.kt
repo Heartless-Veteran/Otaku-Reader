@@ -180,8 +180,9 @@ class ReaderViewModel @Inject constructor(
                     return@collectLatest
                 }
 
-                val manga = _state.value.manga
-                val chapter = _state.value.chapter
+                val currentState = _state.value
+                val manga = currentState.manga
+                val chapter = currentState.chapter
                 if (manga != null && chapter != null) {
                     updateDiscordPresence(manga.title, chapter.name)
                 }
