@@ -25,7 +25,7 @@ class MigrationEntryViewModel @Inject constructor(
     private val _state = MutableStateFlow(MigrationEntryState())
     val state: StateFlow<MigrationEntryState> = _state.asStateFlow()
 
-    private val _effect = Channel<MigrationEntryEffect>()
+    private val _effect = Channel<MigrationEntryEffect>(Channel.BUFFERED)
     val effect: Flow<MigrationEntryEffect> = _effect.receiveAsFlow()
 
     init {
