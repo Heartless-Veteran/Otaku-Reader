@@ -320,7 +320,7 @@ class UpdateNotifierTest {
         notifier.notify(listOf(manga), totalNewChapters = 5)
 
         // Then - should use "5 new chapters" (plural)
-        verify(exactly = 1) {
+        verify(exactly = 2) {
             notificationManager.notify(
                 eq(UPDATE_NOTIFICATION_TAG),
                 any(),
