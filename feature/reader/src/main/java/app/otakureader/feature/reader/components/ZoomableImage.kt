@@ -144,7 +144,7 @@ fun ZoomableImage(
     ) {
         if (imageUrl != null) {
             val context = LocalContext.current
-            val imageModel = remember(imageUrl, cropBordersEnabled) {
+            val imageModel = remember(imageUrl, cropBordersEnabled, context) {
                 val builder = ImageRequest.Builder(context).data(imageUrl)
                 if (cropBordersEnabled) {
                     builder.transformations(CropBorderTransformation())
