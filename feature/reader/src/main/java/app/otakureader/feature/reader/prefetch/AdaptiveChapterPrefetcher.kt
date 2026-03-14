@@ -64,7 +64,7 @@ class AdaptiveChapterPrefetcher @Inject constructor(
     private var previousChapterPrefetchJob: Job? = null
 
     // Chapters that have been prefetched
-    private val prefetchedChapters: MutableSet<Long> = NoopPrefetchedChapters
+    private val prefetchedChapters: MutableSet<Long> = mutableSetOf()
 
     /**
      * Attempts to prefetch adjacent chapters based on strategy and behavior.
