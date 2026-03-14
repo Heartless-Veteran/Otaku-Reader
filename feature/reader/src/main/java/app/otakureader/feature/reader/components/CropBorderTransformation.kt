@@ -31,13 +31,94 @@ class CropBorderTransformation(private val config: CropConfig = CropConfig()) : 
         // If neither white nor black border detection is enabled, there is nothing to do.
         if (!config.detectWhiteBorders && !config.detectBlackBorders) return input
 
-        val pixels = IntArray(width * height)
-        input.getPixels(pixels, 0, width, 0, 0, width, height)
+        // Helper to check whether a pixel is considered part of the border (white and/or black).
+        fun isBorderPixel(color: Int): Boolean {
+            val r = (color shr 16) and 0xFF
+            val g = (color shr 8) and 0xFF
+            val b = color and 0xFF
 
-        val top = findTopCrop(pixels, width, height)
-        val bottom = findBottomCrop(pixels, width, height)
-        val left = findLeftCrop(pixels, width, height)
-        val right = findRightCrop(pixels, width, height)
+            val isWhite = config.detectWhiteBorders && r >= 240 && g >= 240 && b >= 240
+            val isBlack = config.detectBlackBorders && r <= 15 && g <= 15 && b <= 15
+
+            return isWhite || isBlack
+        }
+
+        // Helper to determine whether a full row/column buffer qualifies as a border line.
+        fun isBorderLine(buffer: IntArray): Boolean {
+            if (buffer.isEmpty()) return false
+            var borderCount = 0
+            for (pixel in buffer) {
+                if (isBorderPixel(pixel)) {
+                    borderCount++
+                }
+            }
+            val fraction = borderCount.toFloat() / buffer.size.toFloat()
+            return fraction >= config.threshold
+        }
+
+        // Reusable buffers for scanning edges without loading the entire bitmap into memory.
+        val rowBuffer = IntArray(width)
+        val colBuffer = IntArray(height)
+
+        // Scan from the top edge downward.
+        val top = run {
+            var t = 0
+            val maxTop = (height * config.maxCropPercent).toInt().coerceAtMost(height)
+            while (t < maxTop) {
+                input.getPixels(rowBuffer, 0, width, 0, t, width, 1)
+                if (!isBorderLine(rowBuffer)) {
+                    break
+                }
+                t++
+            }
+            t
+        }
+
+        // Scan from the bottom edge upward.
+        val bottom = run {
+            var b = 0
+            val maxBottom = (height * config.maxCropPercent).toInt().coerceAtMost(height - top)
+            while (b < maxBottom) {
+                val y = height - 1 - b
+                if (y <= top) break
+                input.getPixels(rowBuffer, 0, width, 0, y, width, 1)
+                if (!isBorderLine(rowBuffer)) {
+                    break
+                }
+                b++
+            }
+            b
+        }
+
+        // Scan from the left edge rightward.
+        val left = run {
+            var l = 0
+            val maxLeft = (width * config.maxCropPercent).toInt().coerceAtMost(width)
+            while (l < maxLeft) {
+                input.getPixels(colBuffer, 0, 1, l, 0, 1, height)
+                if (!isBorderLine(colBuffer)) {
+                    break
+                }
+                l++
+            }
+            l
+        }
+
+        // Scan from the right edge leftward.
+        val right = run {
+            var r = 0
+            val maxRight = (width * config.maxCropPercent).toInt().coerceAtMost(width - left)
+            while (r < maxRight) {
+                val x = width - 1 - r
+                if (x <= left) break
+                input.getPixels(colBuffer, 0, 1, x, 0, 1, height)
+                if (!isBorderLine(colBuffer)) {
+                    break
+                }
+                r++
+            }
+            r
+        }
 
         // Clamp total crop amounts per dimension to configured limits
         val maxHeightCrop = (height * config.maxCropPercent).toInt()
