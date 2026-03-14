@@ -4,12 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -25,8 +25,8 @@ class MigrationEntryViewModel @Inject constructor(
     private val _state = MutableStateFlow(MigrationEntryState())
     val state: StateFlow<MigrationEntryState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<MigrationEntryEffect>()
-    val effect: SharedFlow<MigrationEntryEffect> = _effect.asSharedFlow()
+    private val _effect = Channel<MigrationEntryEffect>()
+    val effect: Flow<MigrationEntryEffect> = _effect.receiveAsFlow()
 
     init {
         loadLibrary()
@@ -65,7 +65,7 @@ class MigrationEntryViewModel @Inject constructor(
             .catch { e ->
                 val message = e.message ?: "Failed to load library"
                 _state.update { it.copy(isLoading = false, error = message) }
-                _effect.emit(MigrationEntryEffect.ShowError(message))
+                _effect.send(MigrationEntryEffect.ShowError(message))
             }
             .launchIn(viewModelScope)
     }
@@ -100,13 +100,13 @@ class MigrationEntryViewModel @Inject constructor(
         val selected = _state.value.selectedIds.toList()
         if (selected.isEmpty()) return
         viewModelScope.launch {
-            _effect.emit(MigrationEntryEffect.NavigateToMigration(selected))
+            _effect.send(MigrationEntryEffect.NavigateToMigration(selected))
         }
     }
 
     private fun navigateBack() {
         viewModelScope.launch {
-            _effect.emit(MigrationEntryEffect.NavigateBack)
+            _effect.send(MigrationEntryEffect.NavigateBack)
         }
     }
 
