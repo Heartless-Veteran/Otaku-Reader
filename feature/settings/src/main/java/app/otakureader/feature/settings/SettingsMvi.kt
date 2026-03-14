@@ -12,6 +12,13 @@ data class TrackerInfo(
     val isLoggedIn: Boolean
 )
 
+enum class SyncStatus {
+    IDLE,
+    SYNCING,
+    SUCCESS,
+    ERROR
+}
+
 data class SettingsState(
     val themeMode: Int = 0,            // 0=system, 1=light, 2=dark
     val useDynamicColor: Boolean = true,
@@ -78,7 +85,7 @@ data class SettingsState(
     val syncProviderId: String? = null,
     val syncProviderName: String? = null,
     val lastSyncTime: Long? = null,
-    val syncStatus: String = "idle", // idle, syncing, success, error
+    val syncStatus: SyncStatus = SyncStatus.IDLE,
     val autoSyncEnabled: Boolean = false,
     val syncIntervalHours: Int = 24,
     val syncOnlyOnWifi: Boolean = true,
