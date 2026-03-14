@@ -5,12 +5,12 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
@@ -28,8 +28,8 @@ class HistoryViewModel @Inject constructor(
     private val _state = MutableStateFlow(HistoryState())
     val state: StateFlow<HistoryState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<HistoryEffect>()
-    val effect: SharedFlow<HistoryEffect> = _effect.asSharedFlow()
+    private val _effect = Channel<HistoryEffect>(Channel.BUFFERED)
+    val effect: Flow<HistoryEffect> = _effect.receiveAsFlow()
 
     private val searchQuery = MutableStateFlow("")
 
@@ -104,17 +104,17 @@ class HistoryViewModel @Inject constructor(
                         chapterRepository.removeFromHistory(chapterId)
                     }
                     clearSelection()
-                    _effect.emit(HistoryEffect.ShowSnackbar("Removed ${selectedIds.size} item(s) from history"))
+                    _effect.send(HistoryEffect.ShowSnackbar("Removed ${selectedIds.size} item(s) from history"))
                 }
             } catch (e: Exception) {
-                _effect.emit(HistoryEffect.ShowSnackbar("Failed to remove from history"))
+                _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
             }
         }
     }
 
     private fun navigateToReader(mangaId: Long, chapterId: Long) {
         viewModelScope.launch {
-            _effect.emit(HistoryEffect.NavigateToReader(mangaId, chapterId))
+            _effect.send(HistoryEffect.NavigateToReader(mangaId, chapterId))
         }
     }
 
@@ -122,9 +122,9 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.clearAllHistory()
-                _effect.emit(HistoryEffect.ShowSnackbar("History cleared"))
+                _effect.send(HistoryEffect.ShowSnackbar("History cleared"))
             } catch (e: Exception) {
-                _effect.emit(HistoryEffect.ShowSnackbar("Failed to clear history"))
+                _effect.send(HistoryEffect.ShowSnackbar("Failed to clear history"))
             }
         }
     }
@@ -134,7 +134,7 @@ class HistoryViewModel @Inject constructor(
             try {
                 chapterRepository.removeFromHistory(chapterId)
             } catch (e: Exception) {
-                _effect.emit(HistoryEffect.ShowSnackbar("Failed to remove from history"))
+                _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
             }
         }
     }
