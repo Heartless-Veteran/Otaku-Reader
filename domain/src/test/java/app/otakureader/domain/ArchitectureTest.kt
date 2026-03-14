@@ -67,6 +67,37 @@ class ArchitectureTest {
             "Domain model package should exist",
             modelDir.exists() && modelDir.isDirectory
         )
+
+        val domainDir = File("src/main/java/app/otakureader/domain")
+        assertTrue(
+            "Domain source directory should exist",
+            domainDir.exists() && domainDir.isDirectory
+        )
+
+        val nonModelDataClasses = mutableListOf<String>()
+
+        domainDir.walkTopDown()
+            .filter { it.extension == "kt" && !it.toPath().startsWith(modelDir.toPath()) }
+            .forEach { file ->
+                val lines = file.readLines()
+                lines.forEachIndexed { index, line ->
+                    if (line.trimStart().startsWith("data class ")) {
+                        nonModelDataClasses += "${file.path}:${index + 1}: ${line.trim()}"
+                    }
+                }
+            }
+
+        assertTrue(
+            buildString {
+                appendLine("Domain data classes should be located in the model package:")
+                appendLine("src/main/java/app/otakureader/domain/model")
+                if (nonModelDataClasses.isNotEmpty()) {
+                    appendLine("Found data classes outside model package:")
+                    nonModelDataClasses.forEach { appendLine(it) }
+                }
+            },
+            nonModelDataClasses.isEmpty()
+        )
     }
 
     /**
