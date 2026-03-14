@@ -653,35 +653,44 @@ class UltimateReaderViewModel @Inject constructor(
         val currentState = _state.value
         // Use cleanupScope (not viewModelScope) so the coroutine is not cancelled along with the ViewModel.
         cleanupScope.launch {
-            val isIncognito = runCatching {
-                settingsRepository.incognitoMode.first()
-            }.getOrElse {
-                currentState.incognitoMode
-            }
-            // Don't record history or progress if incognito mode is enabled
-            if (!isIncognito) {
-                runCatching {
-                    chapterRepository.recordHistory(
-                        chapterId = chapterId,
-                        readAt = sessionStartMs,
-                        readDurationMs = durationMs
-                    )
-                }
-                // Save final reading progress here rather than calling saveCurrentProgress()
-                // (which uses viewModelScope and would be a no-op after onCleared).
-                runCatching {
-                    chapterRepository.updateChapterProgress(
-                        chapterId = chapterId,
-                        read = currentState.isLastPage,
-                        lastPageRead = currentState.currentPage
-                    )
-                }
-            }
+            cleanupOnExit(durationMs, currentState)
         }
         // Clear Discord Rich Presence when reader closes
         discordRpcService.clearReadingPresence(showBrowsing = true)
         autoSaveJob?.cancel()
         preloadJob?.cancel()
+    }
+
+    /**
+     * Performs the final persistence work when the reader is closed.
+     * Extracted to an `internal` suspend function so it can be tested directly without
+     * going through the protected [onCleared] / [cleanupScope] boundary.
+     */
+    internal suspend fun cleanupOnExit(durationMs: Long, currentState: ReaderState) {
+        val isIncognito = runCatching {
+            settingsRepository.incognitoMode.first()
+        }.getOrElse {
+            currentState.incognitoMode
+        }
+        // Don't record history or progress if incognito mode is enabled
+        if (!isIncognito) {
+            runCatching {
+                chapterRepository.recordHistory(
+                    chapterId = chapterId,
+                    readAt = sessionStartMs,
+                    readDurationMs = durationMs
+                )
+            }
+            // Save final reading progress here rather than calling saveCurrentProgress()
+            // (which uses viewModelScope and would be a no-op after onCleared).
+            runCatching {
+                chapterRepository.updateChapterProgress(
+                    chapterId = chapterId,
+                    read = currentState.isLastPage,
+                    lastPageRead = currentState.currentPage
+                )
+            }
+        }
     }
 
     /**

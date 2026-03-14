@@ -112,10 +112,8 @@ class BackupRestorer @Inject constructor(
             // Restore reading history if present
             backupChapter.readingHistory?.let { history ->
                 // Ensure restore is idempotent: clear existing history first so upsert does not accumulate duration
-                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
-                    readingHistoryDao.deleteByChapterId(chapterId)
-                    readingHistoryDao.upsert(chapterId, history.readAt, history.readDurationMs)
-                }
+                readingHistoryDao.deleteHistoryForChapter(chapterId)
+                readingHistoryDao.upsert(chapterId, history.readAt, history.readDurationMs)
             }
         }
     }
