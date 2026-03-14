@@ -92,7 +92,7 @@ sealed interface PrefetchStrategy {
      * - General use
      *
      * Behavior:
-     * - Prefetch 2-3 pages ahead
+     * - Prefetch 3 pages ahead
      * - Prefetch 1 page behind
      * - Prefetch next chapter when on last 3 pages
      */
@@ -100,11 +100,8 @@ sealed interface PrefetchStrategy {
         override fun pagesBefore(currentPage: Int, totalPages: Int, behavior: ReadingBehavior): Int = 1
 
         override fun pagesAfter(currentPage: Int, totalPages: Int, behavior: ReadingBehavior): Int {
-            // Prefetch more pages if nearing the end
-            return when {
-                currentPage >= totalPages - 3 -> 5 // Near end, prefetch more
-                else -> 3
-            }
+            // Always prefetch 3 pages ahead to match documented "1 before, 3 after" behavior
+            return 3
         }
 
         override fun shouldPrefetchNextChapter(
