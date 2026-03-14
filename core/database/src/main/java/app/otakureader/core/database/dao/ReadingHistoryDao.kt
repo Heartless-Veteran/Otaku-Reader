@@ -16,16 +16,31 @@ interface ReadingHistoryDao {
      * time rather than replacing the row.  This preserves the total time spent reading a chapter
      * across multiple sessions while still updating the "last read" timestamp.
      */
+    @Transaction
+    suspend fun upsert(chapterId: Long, readAt: Long, readDurationMs: Long) {
+        val updated = updateHistory(chapterId, readAt, readDurationMs)
+        if (updated == 0) {
+            insertHistory(chapterId, readAt, readDurationMs)
+        }
+    }
+
+    @Query(
+        """
+        UPDATE reading_history
+        SET read_at = MAX(read_at, :readAt),
+            read_duration_ms = read_duration_ms + :readDurationMs
+        WHERE chapter_id = :chapterId
+        """
+    )
+    suspend fun updateHistory(chapterId: Long, readAt: Long, readDurationMs: Long): Int
+
     @Query(
         """
         INSERT INTO reading_history (chapter_id, read_at, read_duration_ms)
         VALUES (:chapterId, :readAt, :readDurationMs)
-        ON CONFLICT(chapter_id) DO UPDATE SET
-            read_at          = MAX(reading_history.read_at, excluded.read_at),
-            read_duration_ms = reading_history.read_duration_ms + excluded.read_duration_ms
         """
     )
-    suspend fun upsert(chapterId: Long, readAt: Long, readDurationMs: Long)
+    suspend fun insertHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
 
     @Query("SELECT * FROM reading_history ORDER BY read_at DESC")
     fun observeHistory(): Flow<List<ReadingHistoryEntity>>
