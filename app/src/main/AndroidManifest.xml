@@ -18,12 +18,6 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- Wake lock: prevents the CPU from sleeping during background library/download workers -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <!-- Battery optimizations: allows the app to request exemption for reliable background sync -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
     <!-- Package visibility: required to list and uninstall Tachiyomi extension packages -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
