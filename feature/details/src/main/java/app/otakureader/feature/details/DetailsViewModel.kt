@@ -14,12 +14,12 @@ import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
 import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -47,8 +47,8 @@ class DetailsViewModel @Inject constructor(
     private val _state = MutableStateFlow(DetailsContract.State())
     val state: StateFlow<DetailsContract.State> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<DetailsContract.Effect>()
-    val effect: SharedFlow<DetailsContract.Effect> = _effect.asSharedFlow()
+    private val _effect = Channel<DetailsContract.Effect>()
+    val effect: Flow<DetailsContract.Effect> = _effect.receiveAsFlow()
 
     init {
         loadMangaDetails()
@@ -199,9 +199,9 @@ class DetailsViewModel @Inject constructor(
                 } else {
                     "Added to library"
                 }
-                _effect.emit(DetailsContract.Effect.ShowSnackbar(message))
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update library: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update library: ${e.message}"))
             }
         }
     }
@@ -225,11 +225,11 @@ class DetailsViewModel @Inject constructor(
             val firstChapter = _state.value.sortedChapters.firstOrNull()
             
             if (firstChapter != null) {
-                _effect.emit(
+                _effect.send(
                     DetailsContract.Effect.NavigateToReader(mangaId, firstChapter.id)
                 )
             } else {
-                _effect.emit(DetailsContract.Effect.ShowError("No chapters available"))
+                _effect.send(DetailsContract.Effect.ShowError("No chapters available"))
             }
         }
     }
@@ -245,9 +245,9 @@ class DetailsViewModel @Inject constructor(
             }
 
             if (chapterId != null) {
-                _effect.emit(DetailsContract.Effect.NavigateToReader(mangaId, chapterId))
+                _effect.send(DetailsContract.Effect.NavigateToReader(mangaId, chapterId))
             } else {
-                _effect.emit(DetailsContract.Effect.ShowError("No chapters available"))
+                _effect.send(DetailsContract.Effect.ShowError("No chapters available"))
             }
         }
     }
@@ -257,7 +257,7 @@ class DetailsViewModel @Inject constructor(
             toggleChapterSelection(chapterId)
         } else {
             viewModelScope.launch {
-                _effect.emit(DetailsContract.Effect.NavigateToReader(mangaId, chapterId))
+                _effect.send(DetailsContract.Effect.NavigateToReader(mangaId, chapterId))
             }
         }
     }
@@ -307,7 +307,7 @@ class DetailsViewModel @Inject constructor(
                 )
             }
             clearChapterSelection()
-            _effect.emit(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
+            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
         }
     }
 
@@ -328,7 +328,7 @@ class DetailsViewModel @Inject constructor(
                 }
             }
             clearChapterSelection()
-            _effect.emit(DetailsContract.Effect.ShowSnackbar("Deleted ${chapters.size} download(s)"))
+            _effect.send(DetailsContract.Effect.ShowSnackbar("Deleted ${chapters.size} download(s)"))
         }
     }
 
@@ -343,10 +343,10 @@ class DetailsViewModel @Inject constructor(
                         lastPageRead = 0
                     )
                     clearChapterSelection()
-                    _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked ${selectedIds.size} chapter(s) as read"))
+                    _effect.send(DetailsContract.Effect.ShowSnackbar("Marked ${selectedIds.size} chapter(s) as read"))
                 }
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to mark chapters as read: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to mark chapters as read: ${e.message}"))
             }
         }
     }
@@ -362,10 +362,10 @@ class DetailsViewModel @Inject constructor(
                         lastPageRead = 0
                     )
                     clearChapterSelection()
-                    _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked ${selectedIds.size} chapter(s) as unread"))
+                    _effect.send(DetailsContract.Effect.ShowSnackbar("Marked ${selectedIds.size} chapter(s) as unread"))
                 }
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to mark chapters as unread: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to mark chapters as unread: ${e.message}"))
             }
         }
     }
@@ -379,10 +379,10 @@ class DetailsViewModel @Inject constructor(
                         chapterRepository.updateBookmark(chapterId, true)
                     }
                     clearChapterSelection()
-                    _effect.emit(DetailsContract.Effect.ShowSnackbar("Bookmarked ${selectedIds.size} chapter(s)"))
+                    _effect.send(DetailsContract.Effect.ShowSnackbar("Bookmarked ${selectedIds.size} chapter(s)"))
                 }
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to bookmark chapters: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to bookmark chapters: ${e.message}"))
             }
         }
     }
@@ -399,7 +399,7 @@ class DetailsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update chapter: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update chapter: ${e.message}"))
             }
         }
     }
@@ -412,7 +412,7 @@ class DetailsViewModel @Inject constructor(
                     chapterRepository.updateBookmark(chapterId, !it.bookmark)
                 }
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update bookmark: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update bookmark: ${e.message}"))
             }
         }
     }
@@ -434,7 +434,7 @@ class DetailsViewModel @Inject constructor(
                     mangaTitle = mangaTitle,
                     chapterTitle = chapter.name
                 )
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Download added to queue"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Download added to queue"))
             }
         }
     }
@@ -450,10 +450,10 @@ class DetailsViewModel @Inject constructor(
                     mangaTitle = manga.title,
                     chapterTitle = chapter.name
                 )
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Download removed"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Download removed"))
             } else {
                 downloadRepository.cancelDownload(chapterId)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Download removed"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Download removed"))
             }
         }
     }
@@ -463,7 +463,7 @@ class DetailsViewModel @Inject constructor(
             val chapter = _state.value.chapters.firstOrNull { it.id == chapterId }
             val manga = _state.value.manga
             if (chapter == null || manga == null) {
-                _effect.emit(DetailsContract.Effect.ShowError("Chapter not found"))
+                _effect.send(DetailsContract.Effect.ShowError("Chapter not found"))
                 return@launch
             }
             downloadRepository.exportChapterAsCbz(
@@ -471,10 +471,10 @@ class DetailsViewModel @Inject constructor(
                 mangaTitle = manga.title,
                 chapterTitle = chapter.name
             ).fold(
-                onSuccess = { _effect.emit(DetailsContract.Effect.ShowSnackbar("Exported as CBZ")) },
+                onSuccess = { _effect.send(DetailsContract.Effect.ShowSnackbar("Exported as CBZ")) },
                 onFailure = {
                     val reason = it.message ?: "Unknown error"
-                    _effect.emit(DetailsContract.Effect.ShowError("Export failed: $reason"))
+                    _effect.send(DetailsContract.Effect.ShowError("Export failed: $reason"))
                 }
             )
         }
@@ -498,9 +498,9 @@ class DetailsViewModel @Inject constructor(
                         )
                     }
                 }
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to mark chapters: ${e.message}"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to mark chapters: ${e.message}"))
             }
         }
     }
@@ -518,7 +518,7 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             val manga = _state.value.manga
             if (manga != null) {
-                _effect.emit(
+                _effect.send(
                     DetailsContract.Effect.ShareManga(
                         title = manga.title,
                         url = buildShareUrl(manga) ?: ""
@@ -532,7 +532,7 @@ class DetailsViewModel @Inject constructor(
         // Delete-after-reading feature has been removed.
         // Provide explicit feedback so the user is aware this action is no longer supported.
         viewModelScope.launch {
-            _effect.emit(
+            _effect.send(
                 DetailsContract.Effect.ShowSnackbar(
                     "Delete-after-read is no longer supported."
                 )
@@ -559,7 +559,7 @@ class DetailsViewModel @Inject constructor(
             try {
                 updateMangaNote(mangaId, text)
                 _state.update { it.copy(noteEditorVisible = false) }
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Note saved"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Note saved"))
             } catch (e: Exception) {
                 val errorMessage = buildString {
                     append("Failed to save note")
@@ -569,7 +569,7 @@ class DetailsViewModel @Inject constructor(
                         append(detail)
                     }
                 }
-                _effect.emit(DetailsContract.Effect.ShowError(errorMessage))
+                _effect.send(DetailsContract.Effect.ShowError(errorMessage))
             }
         }
     }
@@ -584,9 +584,9 @@ class DetailsViewModel @Inject constructor(
                 } else {
                     "Notifications enabled for ${manga.title}"
                 }
-                _effect.emit(DetailsContract.Effect.ShowSnackbar(message))
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update notification setting"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update notification setting"))
             }
         }
     }
@@ -596,9 +596,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updateReaderDirection(mangaId, direction)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Reader direction updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Reader direction updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update reader direction"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update reader direction"))
             }
         }
     }
@@ -607,9 +607,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updateReaderMode(mangaId, mode)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Reader mode updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Reader mode updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update reader mode"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update reader mode"))
             }
         }
     }
@@ -618,9 +618,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updateReaderColorFilter(mangaId, filter)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Color filter updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Color filter updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update color filter"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update color filter"))
             }
         }
     }
@@ -629,9 +629,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updateReaderCustomTintColor(mangaId, color)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Custom tint color updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Custom tint color updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update tint color"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update tint color"))
             }
         }
     }
@@ -640,9 +640,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updateReaderBackgroundColor(mangaId, color)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Background color updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Background color updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update background color"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update background color"))
             }
         }
     }
@@ -652,9 +652,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updatePreloadPagesBefore(mangaId, count)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Preload pages (before) updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Preload pages (before) updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update preload setting"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update preload setting"))
             }
         }
     }
@@ -663,9 +663,9 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.updatePreloadPagesAfter(mangaId, count)
-                _effect.emit(DetailsContract.Effect.ShowSnackbar("Preload pages (after) updated"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Preload pages (after) updated"))
             } catch (e: Exception) {
-                _effect.emit(DetailsContract.Effect.ShowError("Failed to update preload setting"))
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update preload setting"))
             }
         }
     }

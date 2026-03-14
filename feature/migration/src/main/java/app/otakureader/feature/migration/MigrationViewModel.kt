@@ -10,13 +10,13 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.migration.MigrateMangaUseCase
 import app.otakureader.domain.usecase.migration.SearchMigrationTargetsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,8 +33,8 @@ class MigrationViewModel @Inject constructor(
     private val _state = MutableStateFlow(MigrationState())
     val state: StateFlow<MigrationState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<MigrationEffect>()
-    val effect: SharedFlow<MigrationEffect> = _effect.asSharedFlow()
+    private val _effect = Channel<MigrationEffect>()
+    val effect: Flow<MigrationEffect> = _effect.receiveAsFlow()
 
     fun onEvent(event: MigrationEvent) {
         when (event) {
@@ -242,7 +242,7 @@ class MigrationViewModel @Inject constructor(
                         skippedCount = skippedCount
                     )
                 }
-                _effect.emit(MigrationEffect.MigrationCompleted)
+                _effect.send(MigrationEffect.MigrationCompleted)
             }
         }
     }
@@ -368,7 +368,7 @@ class MigrationViewModel @Inject constructor(
 
     private fun navigateBack() {
         viewModelScope.launch {
-            _effect.emit(MigrationEffect.NavigateBack)
+            _effect.send(MigrationEffect.NavigateBack)
         }
     }
 
