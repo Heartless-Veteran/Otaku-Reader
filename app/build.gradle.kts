@@ -80,6 +80,10 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
 
+    // Coil: required for global SingletonImageLoader.Factory configuration
+    implementation(libs.coil.compose)
+    implementation(libs.coil.okhttp)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso)
