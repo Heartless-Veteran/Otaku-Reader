@@ -161,7 +161,7 @@ class SourceHealthMonitor @Inject constructor() {
                 append(". Source has been disabled due to excessive failures.")
             } else if (!isSourceHealthy(sourceId)) {
                 val timeLeft = RETRY_COOLDOWN_MS - (System.currentTimeMillis() - health.lastFailureTimestamp)
-                val minutesLeft = (timeLeft / 60000).toInt()
+                val minutesLeft = ((timeLeft + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
                 append(". Will retry in $minutesLeft minutes.")
             }
         }
