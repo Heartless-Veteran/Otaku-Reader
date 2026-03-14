@@ -38,8 +38,8 @@ class SourceHealthMonitor @Inject constructor() {
     data class SourceHealth(
         val sourceId: String,
         val consecutiveFailures: Int = 0,
-        val lastSuccessTimestamp: Long = System.currentTimeMillis(),
-        val lastFailureTimestamp: Long = 0,
+        val lastSuccessTimestamp: Long = 0L,
+        val lastFailureTimestamp: Long = 0L,
         val lastError: String? = null,
         val isHealthy: Boolean = true,
         val canRetry: Boolean = true
