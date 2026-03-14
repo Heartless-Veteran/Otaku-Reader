@@ -82,11 +82,11 @@ class UltimateReaderViewModel @Inject constructor(
     private var cachedPreloadAfter: Int = ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
 
     /** Cached smart prefetch settings. */
-    private var cachedSmartPrefetchEnabled: Boolean = true
+    private var cachedSmartPrefetchEnabled: Boolean = false
     private var cachedPrefetchStrategy: PrefetchStrategy = PrefetchStrategy.Balanced
-    private var cachedAdaptiveLearningEnabled: Boolean = true
-    private var cachedPrefetchAdjacentChapters: Boolean = true
-    private var cachedPrefetchOnlyOnWiFi: Boolean = false
+    private var cachedAdaptiveLearningEnabled: Boolean = false
+    private var cachedPrefetchAdjacentChapters: Boolean = false
+    private var cachedPrefetchOnlyOnWiFi: Boolean = true
 
     /** Cached Discord RPC enabled state, loaded once to avoid DataStore reads on every page change. */
     private var cachedDiscordRpcEnabled: Boolean = false
