@@ -20,7 +20,7 @@
 - Automatic CBZ packing (preference-driven)
 - No advanced prefetch features (future enhancement)
 
-**Test Results:** All 28 DownloadProvider tests passed ✓
+**Test Results:** All DownloadProvider tests passed ✓
 
 ### ✅ Scoped Storage
 **Status: FULLY COMPLIANT**
