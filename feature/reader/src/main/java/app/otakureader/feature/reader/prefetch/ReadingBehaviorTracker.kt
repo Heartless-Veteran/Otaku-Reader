@@ -18,6 +18,7 @@ class ReadingBehaviorTracker @Inject constructor() {
     private val navigationHistory = ArrayDeque<PageNavigationEvent>(MAX_HISTORY_SIZE)
 
     // Current behavior profile (updated incrementally)
+    @Volatile
     private var _currentBehavior = ReadingBehavior.DEFAULT
     val currentBehavior: ReadingBehavior get() = _currentBehavior
 
@@ -153,7 +154,9 @@ class ReadingBehaviorTracker @Inject constructor() {
     /**
      * Returns the number of navigation events recorded.
      */
-    fun getSampleSize(): Int = navigationHistory.size
+    fun getSampleSize(): Int = synchronized(navigationHistory) {
+        navigationHistory.size
+    }
 
     companion object {
         /** Maximum number of navigation events to keep in history. */
