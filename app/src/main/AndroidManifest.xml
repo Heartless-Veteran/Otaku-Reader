@@ -74,9 +74,9 @@
 
         <!-- Continue Reading Widget -->
         <receiver
-            android:name=".widget.ContinueReadingWidgetReceiver"
-            android:exported="true"
-            android:label="@string/continue_reading_widget_label">
+                    android:name=".widget.ContinueReadingWidgetReceiver"
+                    android:exported="false"
+                    android:label="@string/continue_reading_widget_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
