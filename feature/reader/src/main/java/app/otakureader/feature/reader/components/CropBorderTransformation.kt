@@ -62,8 +62,16 @@ class CropBorderTransformation(private val config: CropConfig = CropConfig()) : 
             return input
         }
 
-        val newWidth = (width - effectiveLeft - effectiveRight).coerceAtLeast(1)
-        val newHeight = (height - effectiveTop - effectiveBottom).coerceAtLeast(1)
+        val newWidth = width - effectiveLeft - effectiveRight
+        val newHeight = height - effectiveTop - effectiveBottom
+
+        // Validate crop rectangle is within bitmap bounds and non-empty.
+        if (effectiveLeft < 0 || effectiveTop < 0 ||
+            effectiveLeft >= width || effectiveTop >= height ||
+            newWidth <= 0 || newHeight <= 0
+        ) {
+            return input
+        }
 
         // Return the same bitmap if nothing actually changed
         if (newWidth == width && newHeight == height) return input
