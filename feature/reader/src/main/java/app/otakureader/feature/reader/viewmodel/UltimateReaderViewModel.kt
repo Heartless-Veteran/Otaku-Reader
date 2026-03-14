@@ -429,10 +429,12 @@ class UltimateReaderViewModel @Inject constructor(
                 behaviorTracker.recordNavigation(event)
             }
 
-            // Record page view for telemetry
-            val currentPage = _state.value.pages.getOrNull(previousPage)
-            if (currentPage != null) {
-                smartPrefetchManager.recordPageView(currentPage)
+            // Record page view for telemetry only when smart prefetch is active
+            if (cachedSmartPrefetchEnabled) {
+                val currentPage = _state.value.pages.getOrNull(previousPage)
+                if (currentPage != null) {
+                    smartPrefetchManager.recordPageView(currentPage)
+                }
             }
 
             _state.update { it.copy(currentPage = validPage) }
