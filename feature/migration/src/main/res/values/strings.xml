@@ -62,10 +62,7 @@
     <string name="migration_entry_title">Select Manga to Migrate</string>
     <string name="migration_entry_clear">Clear</string>
     <string name="migration_entry_all">All</string>
-    <plurals name="migration_entry_migrate_count">
-        <item quantity="one">Migrate %1$d manga</item>
-        <item quantity="other">Migrate %1$d manga</item>
-    </plurals>
+    <string name="migration_entry_migrate_count">Migrate %1$d manga</string>
     <string name="migration_entry_search_placeholder">Search library…</string>
     <string name="migration_entry_retry">Retry</string>
     <string name="migration_entry_library_empty">Your library is empty</string>
