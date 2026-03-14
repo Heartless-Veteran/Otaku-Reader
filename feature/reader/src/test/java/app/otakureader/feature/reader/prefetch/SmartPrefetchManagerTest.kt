@@ -195,6 +195,7 @@ class SmartPrefetchManagerTest {
             onlyOnWiFi = false,
             scope = CoroutineScope(testDispatcher)
         )
+        testDispatcher.scheduler.advanceUntilIdle()
         prefetchManager.recordPageView(pages[1])
 
         // When
