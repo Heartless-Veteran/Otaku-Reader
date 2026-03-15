@@ -43,18 +43,31 @@ interface ReadingHistoryDao {
     suspend fun insertHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
 
     /**
-     * Atomically sets (replaces) the reading-history entry for the given chapter without
-     * accumulating duration.  A single `INSERT OR REPLACE` statement is used so the operation
-     * is atomic and safe to call from a restore path where the exact backed-up values must be
-     * written verbatim, regardless of any previously stored data.
+     * Atomically sets (overwrites) the reading-history entry for the given chapter without
+     * accumulating duration.  Unlike `upsert`, this is used for the restore path where the
+     * exact backed-up values must be written verbatim.
+     *
+     * Uses the same UPDATE-then-INSERT transaction pattern as [upsert] to preserve the existing
+     * row's `id` (avoiding DELETE-trigger side-effects that `INSERT OR REPLACE` would cause on a
+     * table with an auto-generated primary key).
      */
+    @Transaction
+    suspend fun replaceHistory(chapterId: Long, readAt: Long, readDurationMs: Long) {
+        val updated = overwriteHistory(chapterId, readAt, readDurationMs)
+        if (updated == 0) {
+            insertHistory(chapterId, readAt, readDurationMs)
+        }
+    }
+
     @Query(
         """
-        INSERT OR REPLACE INTO reading_history (chapter_id, read_at, read_duration_ms)
-        VALUES (:chapterId, :readAt, :readDurationMs)
+        UPDATE reading_history
+        SET read_at = :readAt,
+            read_duration_ms = :readDurationMs
+        WHERE chapter_id = :chapterId
         """
     )
-    suspend fun replaceHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
+    suspend fun overwriteHistory(chapterId: Long, readAt: Long, readDurationMs: Long): Int
 
     @Query("SELECT * FROM reading_history ORDER BY read_at DESC")
     fun observeHistory(): Flow<List<ReadingHistoryEntity>>
