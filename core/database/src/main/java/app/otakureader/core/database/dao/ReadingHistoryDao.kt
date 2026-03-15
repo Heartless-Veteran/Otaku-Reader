@@ -42,6 +42,20 @@ interface ReadingHistoryDao {
     )
     suspend fun insertHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
 
+    /**
+     * Atomically sets (replaces) the reading-history entry for the given chapter without
+     * accumulating duration.  A single `INSERT OR REPLACE` statement is used so the operation
+     * is atomic and safe to call from a restore path where the exact backed-up values must be
+     * written verbatim, regardless of any previously stored data.
+     */
+    @Query(
+        """
+        INSERT OR REPLACE INTO reading_history (chapter_id, read_at, read_duration_ms)
+        VALUES (:chapterId, :readAt, :readDurationMs)
+        """
+    )
+    suspend fun replaceHistory(chapterId: Long, readAt: Long, readDurationMs: Long)
+
     @Query("SELECT * FROM reading_history ORDER BY read_at DESC")
     fun observeHistory(): Flow<List<ReadingHistoryEntity>>
 
