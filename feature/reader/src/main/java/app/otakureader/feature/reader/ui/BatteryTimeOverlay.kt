@@ -77,7 +77,7 @@ fun BatteryTimeOverlay(
     var currentTime by remember { mutableStateOf("") }
     val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
 
-    // Register battery status receiver
+    // Register battery status receiver and capture sticky intent for initial value
     DisposableEffect(Unit) {
         val batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
