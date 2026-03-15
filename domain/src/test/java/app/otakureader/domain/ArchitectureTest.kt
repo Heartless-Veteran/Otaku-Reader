@@ -15,6 +15,41 @@ import java.io.File
 class ArchitectureTest {
 
     /**
+     * Resolves the domain module root directory.
+     * Handles different working directories (CI, IDE, command line).
+     */
+    private fun resolveDomainModuleRoot(): File {
+        // Try to locate from current working directory
+        val cwd = File(".").canonicalFile
+
+        // If we're already in the domain module
+        if (cwd.name == "domain" && File(cwd, "build.gradle.kts").exists()) {
+            return cwd
+        }
+
+        // If we're in the project root
+        val domainFromRoot = File(cwd, "domain")
+        if (domainFromRoot.exists() && File(domainFromRoot, "build.gradle.kts").exists()) {
+            return domainFromRoot
+        }
+
+        // Try parent directories (for IDE test runs from nested directories)
+        var parent = cwd.parentFile
+        while (parent != null) {
+            val domainFromParent = File(parent, "domain")
+            if (domainFromParent.exists() && File(domainFromParent, "build.gradle.kts").exists()) {
+                return domainFromParent
+            }
+            parent = parent.parentFile
+        }
+
+        // Fallback to current directory - test will fail with clear message if wrong
+        return cwd
+    }
+
+    private val domainModuleRoot by lazy { resolveDomainModuleRoot() }
+
+    /**
      * Verifies that the domain layer contains no Android framework imports.
      *
      * This is critical for Clean Architecture - the domain layer must be pure Kotlin
@@ -23,8 +58,11 @@ class ArchitectureTest {
      */
     @Test
     fun `domain layer must not import Android framework classes`() {
-        val domainSourceDir = File("src/main/java")
-        assertTrue("Domain source directory should exist", domainSourceDir.exists())
+        val domainSourceDir = File(domainModuleRoot, "src/main/java")
+        assertTrue(
+            "Domain source directory should exist at ${domainSourceDir.absolutePath}",
+            domainSourceDir.exists()
+        )
 
         val androidImports = mutableListOf<String>()
         val bannedPrefixes = listOf(
@@ -62,15 +100,15 @@ class ArchitectureTest {
      */
     @Test
     fun `domain models should be in model package`() {
-        val modelDir = File("src/main/java/app/otakureader/domain/model")
+        val modelDir = File(domainModuleRoot, "src/main/java/app/otakureader/domain/model")
         assertTrue(
-            "Domain model package should exist",
+            "Domain model package should exist at ${modelDir.absolutePath}",
             modelDir.exists() && modelDir.isDirectory
         )
 
-        val domainDir = File("src/main/java/app/otakureader/domain")
+        val domainDir = File(domainModuleRoot, "src/main/java/app/otakureader/domain")
         assertTrue(
-            "Domain source directory should exist",
+            "Domain source directory should exist at ${domainDir.absolutePath}",
             domainDir.exists() && domainDir.isDirectory
         )
 
@@ -81,7 +119,14 @@ class ArchitectureTest {
             .forEach { file ->
                 val lines = file.readLines()
                 lines.forEachIndexed { index, line ->
-                    if (line.startsWith("data class ")) {
+                    // Match data class declarations with optional modifiers/annotations
+                    // Handles: data class, internal data class, @Serializable data class, etc.
+                    // Excludes: line comments (//), block comments (/*, */), and KDoc (*)
+                    val trimmed = line.trimStart()
+                    if (Regex("""\bdata\s+class\s+\w+""").containsMatchIn(trimmed) &&
+                        !trimmed.startsWith("//") &&
+                        !trimmed.startsWith("/*") &&
+                        !trimmed.startsWith("*")) {
                         nonModelDataClasses += "${file.path}:${index + 1}: ${line.trim()}"
                     }
                 }
@@ -106,9 +151,9 @@ class ArchitectureTest {
      */
     @Test
     fun `repository interfaces should be in domain repository package`() {
-        val repoDir = File("src/main/java/app/otakureader/domain/repository")
+        val repoDir = File(domainModuleRoot, "src/main/java/app/otakureader/domain/repository")
         assertTrue(
-            "Domain repository package should exist",
+            "Domain repository package should exist at ${repoDir.absolutePath}",
             repoDir.exists() && repoDir.isDirectory
         )
 
@@ -132,9 +177,9 @@ class ArchitectureTest {
      */
     @Test
     fun `use cases should exist in domain usecase package`() {
-        val useCaseDir = File("src/main/java/app/otakureader/domain/usecase")
+        val useCaseDir = File(domainModuleRoot, "src/main/java/app/otakureader/domain/usecase")
         assertTrue(
-            "Domain usecase package should exist",
+            "Domain usecase package should exist at ${useCaseDir.absolutePath}",
             useCaseDir.exists() && useCaseDir.isDirectory
         )
 
@@ -154,8 +199,11 @@ class ArchitectureTest {
      */
     @Test
     fun `domain build file should only declare allowed dependencies`() {
-        val buildFile = File("build.gradle.kts")
-        assertTrue("Domain build.gradle.kts should exist", buildFile.exists())
+        val buildFile = File(domainModuleRoot, "build.gradle.kts")
+        assertTrue(
+            "Domain build.gradle.kts should exist at ${buildFile.absolutePath}",
+            buildFile.exists()
+        )
 
         val buildContent = buildFile.readText()
 
@@ -166,19 +214,17 @@ class ArchitectureTest {
             buildContent.contains("kotlin(\"jvm\")")
         )
 
-        // Verify no Android dependencies
+        // Verify no Android dependencies (using literal string checks, not regex)
         val androidDependencyPatterns = listOf(
             "androidx.",
             "android.arch.",
-            "com.google.android.",
-            "implementation.*androidx",
-            "api.*androidx"
+            "com.google.android."
         )
 
         androidDependencyPatterns.forEach { pattern ->
             assertTrue(
                 "Domain build.gradle.kts should not contain Android dependency: $pattern",
-                !buildContent.contains(Regex(pattern))
+                !buildContent.contains(pattern)
             )
         }
     }

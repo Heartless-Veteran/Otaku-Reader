@@ -12,6 +12,7 @@ import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InterruptedIOException
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 
@@ -54,9 +56,6 @@ class SourceRepositoryImpl(
         context,
         LocalSourcePreferences.ofDirectory(localDirectory),
         healthMonitor
-    )
-        context.packageManager,
-        context.cacheDir
     )
 
     /**
@@ -100,6 +99,16 @@ class SourceRepositoryImpl(
         return null
     }
 
+    /**
+     * Determines if an exception should be recorded as a source failure.
+     * Cancellation and interruption exceptions are expected and should not
+     * mark a source as unhealthy.
+     */
+    private fun shouldRecordFailure(e: Throwable): Boolean {
+        return e !is CancellationException &&
+               e !is InterruptedIOException
+    }
+
     override suspend fun getPopularManga(sourceId: String, page: Int): Result<MangaPage> {
         return withContext(Dispatchers.IO) {
             // Check source health before attempting request; still allow cached data
@@ -129,11 +138,13 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(mangaPage)
-            } catch (e: kotlinx.coroutines.CancellationException) {
+            } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                // Record failure for health monitoring (but not for cancellations/interruptions)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
@@ -169,8 +180,10 @@ class SourceRepositoryImpl(
 
                 Result.success(mangaPage)
             } catch (e: Exception) {
-                // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                // Record failure for health monitoring (but not for cancellations/interruptions)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
@@ -224,8 +237,10 @@ class SourceRepositoryImpl(
 
                 Result.success(mangaPage)
             } catch (e: Exception) {
-                // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                // Record failure for health monitoring (but not for cancellations/interruptions)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
@@ -255,8 +270,10 @@ class SourceRepositoryImpl(
 
                 Result.success(details)
             } catch (e: Exception) {
-                // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                // Record failure for health monitoring (but not for cancellations/interruptions)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
