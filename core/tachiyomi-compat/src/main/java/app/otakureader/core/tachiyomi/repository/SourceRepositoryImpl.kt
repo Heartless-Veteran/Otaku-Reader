@@ -1,6 +1,7 @@
 package app.otakureader.core.tachiyomi.repository
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.tachiyomi.compat.TachiyomiExtensionLoader
 import app.otakureader.core.tachiyomi.health.SourceHealthMonitor
@@ -40,11 +41,19 @@ class SourceRepositoryImpl(
     /**
      * Secondary constructor for tests or other call-sites that already know the directory path
      * and do not have a [LocalSourcePreferences] instance available.
+     *
+     * Note: [healthMonitor] must be provided explicitly to avoid bypassing DI and accidentally
+     * creating a separate monitor instance in production code.
      */
-    constructor(context: Context, localDirectory: String) : this(
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    constructor(
+        context: Context,
+        localDirectory: String,
+        healthMonitor: SourceHealthMonitor
+    ) : this(
         context,
         LocalSourcePreferences.ofDirectory(localDirectory),
-        SourceHealthMonitor()
+        healthMonitor
     )
 
     private val extensionLoader = TachiyomiExtensionLoader(
@@ -80,10 +89,36 @@ class SourceRepositoryImpl(
         return _sources.value.find { it.id == sourceId }
     }
 
+    /**
+     * Helper to perform a source health check and return a failure Result when unhealthy.
+     * Returns null when the source is healthy so the caller can proceed.
+     */
+    private fun <T> failIfUnhealthy(sourceId: String): Result<T>? {
+        if (!healthMonitor.isSourceHealthy(sourceId)) {
+            val message = healthMonitor.getHealthMessage(sourceId)
+                ?: "Source is temporarily unavailable"
+            return Result.failure(IllegalStateException(message))
+        }
+        return null
+    }
+
+    /**
+     * Determines if a failure should be recorded in the health monitor.
+     * Filters out cancellation and interruption exceptions which are normal
+     * lifecycle events rather than source health issues.
+     */
+    private fun shouldRecordFailure(error: Throwable): Boolean {
+        return error !is kotlinx.coroutines.CancellationException &&
+               error !is java.io.InterruptedIOException
+    }
+
     override suspend fun getPopularManga(sourceId: String, page: Int): Result<MangaPage> {
         return withContext(Dispatchers.IO) {
-            // Check source health before attempting request
+            // Check source health before attempting request; still allow cached data
             if (!healthMonitor.isSourceHealthy(sourceId)) {
+                popularMangaCache[sourceId]?.get(page)?.let {
+                    return@withContext Result.success(it)
+                }
                 val message = healthMonitor.getHealthMessage(sourceId) ?: "Source is temporarily unavailable"
                 return@withContext Result.failure(IllegalStateException(message))
             }
@@ -106,9 +141,13 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(mangaPage)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
@@ -116,8 +155,11 @@ class SourceRepositoryImpl(
 
     override suspend fun getLatestUpdates(sourceId: String, page: Int): Result<MangaPage> {
         return withContext(Dispatchers.IO) {
-            // Check source health before attempting request
+            // Check source health before attempting request; still allow cached data
             if (!healthMonitor.isSourceHealthy(sourceId)) {
+                latestMangaCache[sourceId]?.get(page)?.let {
+                    return@withContext Result.success(it)
+                }
                 val message = healthMonitor.getHealthMessage(sourceId) ?: "Source is temporarily unavailable"
                 return@withContext Result.failure(IllegalStateException(message))
             }
@@ -142,7 +184,9 @@ class SourceRepositoryImpl(
                 Result.success(mangaPage)
             } catch (e: Exception) {
                 // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }

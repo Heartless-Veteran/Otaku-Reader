@@ -73,7 +73,8 @@ class UltimateReaderViewModel @Inject constructor(
     private var autoSaveJob: Job? = null
     private var preloadJob: Job? = null
 
-    private val sessionStartMs = System.currentTimeMillis()
+    /** Session start timestamp - made internal for ReadingTimerOverlay access */
+    internal val sessionStartMs = System.currentTimeMillis()
 
     /** Independent scope used for cleanup work that must survive viewModelScope cancellation. */
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -129,6 +130,8 @@ class UltimateReaderViewModel @Inject constructor(
             val incognitoMode = settingsRepository.incognitoMode.first()
             val colorFilterMode = settingsRepository.colorFilterMode.first()
             val customTintColor = settingsRepository.customTintColor.first()
+            val showReadingTimer = false
+            val showBatteryTime = false
 
             // Cache preload settings so preloadPages() doesn't read DataStore per page change (#264)
             cachedPreloadBefore = try {
@@ -168,7 +171,9 @@ class UltimateReaderViewModel @Inject constructor(
                     isFullscreen = fullscreen,
                     incognitoMode = incognitoMode,
                     colorFilterMode = effectiveColorFilter,
-                    customTintColor = effectiveTintColor
+                    customTintColor = effectiveTintColor,
+                    showReadingTimer = showReadingTimer,
+                    showBatteryTime = showBatteryTime
                 )
             }
         }
@@ -648,24 +653,49 @@ class UltimateReaderViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         val durationMs = System.currentTimeMillis() - sessionStartMs
+        // Capture state before the ViewModel is torn down so the cleanupScope coroutine can
+        // safely read it after viewModelScope (and therefore state updates) are cancelled.
+        val currentState = _state.value
         // Use cleanupScope (not viewModelScope) so the coroutine is not cancelled along with the ViewModel.
         cleanupScope.launch {
-            // Don't record history if incognito mode is enabled
-            if (!_state.value.incognitoMode) {
-                runCatching {
-                    chapterRepository.recordHistory(
-                        chapterId = chapterId,
-                        readAt = sessionStartMs,
-                        readDurationMs = durationMs
-                    )
-                }
-            }
+            cleanupOnExit(durationMs, currentState)
         }
         // Clear Discord Rich Presence when reader closes
         discordRpcService.clearReadingPresence(showBrowsing = true)
-        saveCurrentProgress()
         autoSaveJob?.cancel()
         preloadJob?.cancel()
+    }
+
+    /**
+     * Performs the final persistence work when the reader is closed.
+     * Extracted to an `internal` suspend function so it can be tested directly without
+     * going through the protected [onCleared] / [cleanupScope] boundary.
+     */
+    internal suspend fun cleanupOnExit(durationMs: Long, currentState: ReaderState) {
+        val isIncognito = runCatching {
+            settingsRepository.incognitoMode.first()
+        }.getOrElse {
+            currentState.incognitoMode
+        }
+        // Don't record history or progress if incognito mode is enabled
+        if (!isIncognito) {
+            runCatching {
+                chapterRepository.recordHistory(
+                    chapterId = chapterId,
+                    readAt = sessionStartMs,
+                    readDurationMs = durationMs
+                )
+            }
+            // Save final reading progress here rather than calling saveCurrentProgress()
+            // (which uses viewModelScope and would be a no-op after onCleared).
+            runCatching {
+                chapterRepository.updateChapterProgress(
+                    chapterId = chapterId,
+                    read = currentState.isLastPage,
+                    lastPageRead = currentState.currentPage
+                )
+            }
+        }
     }
 
     /**
