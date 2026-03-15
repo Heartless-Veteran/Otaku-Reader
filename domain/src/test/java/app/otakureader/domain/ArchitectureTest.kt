@@ -17,6 +17,12 @@ class ArchitectureTest {
     /**
      * Resolves the domain module root directory.
      * Handles different working directories (CI, IDE, command line).
+     *
+     * Strategy:
+     * 1. Check if already in the domain module directory
+     * 2. Look for a 'domain' subdirectory in cwd or parent directories
+     * 3. Fall back to walking up the directory tree looking for a module with
+     *    build.gradle.kts + src/main/java (handles unusual IDE configurations)
      */
     private fun resolveDomainModuleRoot(): File {
         // Try to locate from current working directory
@@ -41,6 +47,15 @@ class ArchitectureTest {
                 return domainFromParent
             }
             parent = parent.parentFile
+        }
+
+        // Final fallback: walk up looking for any module with build.gradle.kts + src/main/java
+        var current = cwd
+        while (current.parentFile != null) {
+            if (File(current, "build.gradle.kts").exists() && File(current, "src/main/java").exists()) {
+                return current
+            }
+            current = current.parentFile
         }
 
         // Fallback to current directory - test will fail with clear message if wrong

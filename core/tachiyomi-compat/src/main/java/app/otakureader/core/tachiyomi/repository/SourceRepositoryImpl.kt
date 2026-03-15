@@ -179,6 +179,8 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(mangaPage)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Record failure for health monitoring (but not for cancellations/interruptions)
                 if (shouldRecordFailure(e)) {
@@ -236,6 +238,8 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(mangaPage)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Record failure for health monitoring (but not for cancellations/interruptions)
                 if (shouldRecordFailure(e)) {
@@ -269,6 +273,8 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(details)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Record failure for health monitoring (but not for cancellations/interruptions)
                 if (shouldRecordFailure(e)) {
@@ -297,9 +303,13 @@ class SourceRepositoryImpl(
                 healthMonitor.recordSuccess(sourceId)
 
                 Result.success(chapters)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                // Record failure for health monitoring
-                healthMonitor.recordFailure(sourceId, e)
+                // Record failure for health monitoring (but not for cancellations/interruptions)
+                if (shouldRecordFailure(e)) {
+                    healthMonitor.recordFailure(sourceId, e)
+                }
                 Result.failure(e)
             }
         }
