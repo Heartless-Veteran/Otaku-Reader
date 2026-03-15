@@ -4,6 +4,7 @@ import app.otakureader.core.ai.GeminiClient
 import app.otakureader.domain.repository.AiRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
@@ -46,6 +47,8 @@ class AiRepositoryImpl @Inject constructor(
             } else {
                 Result.success(generatedText)
             }
+        } catch (e: TimeoutCancellationException) {
+            Result.failure(IllegalStateException("AI request timed out after ${GENERATE_CONTENT_TIMEOUT_MILLIS}ms", e))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

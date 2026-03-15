@@ -2,6 +2,7 @@ package app.otakureader.core.ai
 
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.GenerateContentResponse
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,9 +25,10 @@ class GeminiClient @Inject constructor() {
     /**
      * Hash of the (apiKey, modelName) pair used during initialization.
      * Stored instead of the raw API key to avoid persisting secrets in memory.
+     * Uses SHA-256 to avoid false-positive collisions from String.hashCode().
      */
     @Volatile
-    private var configHash: Int = 0
+    private var configHash: String = ""
 
     private val initLock = Any()
 
@@ -87,6 +89,13 @@ class GeminiClient @Inject constructor() {
      */
     fun isInitialized(): Boolean = generativeModel != null
 
-    private fun configHashOf(apiKey: String, modelName: String): Int =
-        31 * apiKey.hashCode() + modelName.hashCode()
+    private fun configHashOf(apiKey: String, modelName: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        // Feed key and model separately with a null-byte delimiter to avoid collisions.
+        // Avoid concatenating the API key into a String to minimize secret exposure.
+        digest.update(apiKey.toByteArray(Charsets.UTF_8))
+        digest.update(0.toByte())
+        digest.update(modelName.toByteArray(Charsets.UTF_8))
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
 }
