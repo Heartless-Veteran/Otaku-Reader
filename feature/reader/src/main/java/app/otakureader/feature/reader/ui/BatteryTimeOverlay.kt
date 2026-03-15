@@ -57,26 +57,35 @@ fun BatteryTimeOverlay(
     var currentTime by remember { mutableStateOf("") }
     val timeFormatter = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
 
-    // Register battery status receiver
+    // Helper function to update battery state from intent
+    fun updateBatteryFromIntent(intent: Intent) {
+        val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
+        val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+        batteryLevel = if (scale > 0) (level / scale.toFloat()) * 100 else 0f
+
+        val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                     status == BatteryManager.BATTERY_STATUS_FULL
+    }
+
+    // Register battery status receiver and capture sticky intent for initial value
     DisposableEffect(Unit) {
         val batteryReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0)
-                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
-                batteryLevel = if (scale > 0) (level / scale.toFloat()) * 100 else 0f
-
-                val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
-                isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                             status == BatteryManager.BATTERY_STATUS_FULL
+                updateBatteryFromIntent(intent)
             }
         }
 
-        ContextCompat.registerReceiver(
+        // Register receiver and capture the sticky intent for initial battery state
+        val stickyIntent = ContextCompat.registerReceiver(
             context,
             batteryReceiver,
             IntentFilter(Intent.ACTION_BATTERY_CHANGED),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+
+        // Process the sticky intent immediately to set initial values
+        stickyIntent?.let { updateBatteryFromIntent(it) }
 
         onDispose {
             context.unregisterReceiver(batteryReceiver)
