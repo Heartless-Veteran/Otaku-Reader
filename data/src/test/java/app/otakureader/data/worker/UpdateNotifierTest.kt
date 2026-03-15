@@ -1,6 +1,7 @@
 package app.otakureader.data.worker
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -15,7 +16,6 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -67,13 +67,23 @@ class UpdateNotifierTest {
 
         // Mock static NotificationManagerCompat.from()
         mockkStatic(NotificationManagerCompat::class)
-        mockkStatic("coil3.SingletonImageLoader_androidKt")
         every { NotificationManagerCompat.from(context) } returns notificationManager
+
+        // Mock static PendingIntent.getActivity()
+        mockkStatic(PendingIntent::class)
+        every { PendingIntent.getActivity(any(), any(), any(), any()) } returns mockk(relaxed = true)
 
         // Mock context services
         every { context.packageName } returns "app.otakureader"
         every { context.packageManager } returns packageManager
+
+        // Mock Coil's Context.imageLoader extension property.
+        // This requires mocking the file where the extension is defined (SingletonImageLoader.android.kt in Coil3).
+        // While the generated class name could change with library updates, this is the standard approach
+        // for mocking extension properties from external libraries.
+        mockkStatic("coil3.SingletonImageLoader_androidKt")
         every { context.imageLoader } returns imageLoader
+
         every { context.getSystemService(NotificationManager::class.java) } returns systemNotificationManager
 
         // Mock package manager
@@ -248,8 +258,9 @@ class UpdateNotifierTest {
 
     @Test
     fun `notify continues when image loading times out`() = runTest {
-        // Given - image loading takes too long (simulated with delay)
-        coEvery { imageLoader.execute(any()) } throws CancellationException("simulated timeout")
+        // Given - image loading takes too long (simulated with timeout)
+        // Use a generic exception instead of CancellationException to avoid canceling the test scope
+        coEvery { imageLoader.execute(any()) } throws java.util.concurrent.TimeoutException("simulated timeout")
 
         val mangaList = listOf(testManga1)
         val notifier = UpdateNotifier(context)
