@@ -52,7 +52,7 @@ class ArchitectureTest {
         // Final fallback: walk up looking for any module with build.gradle.kts + src/main/java
         var current = cwd
         while (current.parentFile != null) {
-            if (File(current, "build.gradle.kts").exists() && File(current, "src/main/java").exists()) {
+            if (current.name == "domain" && File(current, "build.gradle.kts").exists() && File(current, "src/main/java").exists()) {
                 return current
             }
             current = current.parentFile
