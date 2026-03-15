@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import app.otakureader.domain.sync.ConflictResolutionStrategy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -34,20 +33,11 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
      * Conflict resolution strategy as a stable string name.
      * Stored as the enum name (e.g., "PREFER_NEWER", "PREFER_LOCAL") instead of ordinal
      * to avoid issues when enum order changes.
+     *
+     * Valid values: "PREFER_NEWER", "PREFER_LOCAL", "PREFER_REMOTE", "MERGE"
      */
     val conflictResolutionStrategy: Flow<String> = dataStore.data.map { prefs ->
         prefs[Keys.CONFLICT_STRATEGY] ?: "PREFER_NEWER" // Default to PREFER_NEWER
-    }
-
-    /**
-     * Conflict resolution strategy as enum. Converts from stored string to enum.
-     */
-    val conflictResolutionStrategyEnum: Flow<ConflictResolutionStrategy> = conflictResolutionStrategy.map { name ->
-        try {
-            ConflictResolutionStrategy.valueOf(name)
-        } catch (e: IllegalArgumentException) {
-            ConflictResolutionStrategy.PREFER_NEWER // Fallback to default
-        }
     }
 
     val autoSyncEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_SYNC_ENABLED] ?: false }
@@ -82,13 +72,12 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun setConflictResolutionStrategy(strategy: ConflictResolutionStrategy) {
-        dataStore.edit { prefs ->
-            prefs[Keys.CONFLICT_STRATEGY] = strategy.name
-        }
-    }
-
-    suspend fun setConflictResolutionStrategyByName(strategyName: String) {
+    /**
+     * Set conflict resolution strategy using a validated strategy name.
+     * Valid values: "PREFER_NEWER", "PREFER_LOCAL", "PREFER_REMOTE", "MERGE"
+     * Invalid values will default to "PREFER_NEWER".
+     */
+    suspend fun setConflictResolutionStrategy(strategyName: String) {
         // Validate that the strategy name is valid before storing
         val validStrategies = setOf("PREFER_NEWER", "PREFER_LOCAL", "PREFER_REMOTE", "MERGE")
         val validatedStrategy = if (strategyName in validStrategies) {
