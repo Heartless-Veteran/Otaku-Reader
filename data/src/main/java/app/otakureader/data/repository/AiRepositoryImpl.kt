@@ -2,10 +2,14 @@ package app.otakureader.data.repository
 
 import app.otakureader.core.ai.GeminiClient
 import app.otakureader.domain.repository.AiRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val GENERATE_CONTENT_TIMEOUT_MILLIS = 30_000L
 
 /**
  * Implementation of [AiRepository] using Google's Gemini AI.
@@ -32,19 +36,21 @@ class AiRepositoryImpl @Inject constructor(
                 )
             }
 
-            val response = geminiClient.generateContent(prompt)
+            val response = withTimeout(GENERATE_CONTENT_TIMEOUT_MILLIS) {
+                geminiClient.generateContent(prompt)
+            }
             val generatedText = response.text ?: ""
 
-            if (generatedText.isEmpty()) {
-                Result.failure(Exception("AI generated empty response"))
+            if (generatedText.isBlank()) {
+                Result.failure(IllegalStateException("AI generated an empty response"))
             } else {
                 Result.success(generatedText)
             }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Result.failure(e)
-                }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     /**
