@@ -1,6 +1,7 @@
 package app.otakureader.data.di
 
 import app.otakureader.domain.repository.AiRepository
+import app.otakureader.domain.ai.AiFeatureGate
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
@@ -65,6 +66,9 @@ object UseCaseModule {
         SearchOpdsCatalogUseCase(opdsRepository)
 
     @Provides
-    fun provideGenerateAiContentUseCase(aiRepository: AiRepository): GenerateAiContentUseCase =
-        GenerateAiContentUseCase(aiRepository)
+    fun provideGenerateAiContentUseCase(
+        aiRepository: AiRepository,
+        aiFeatureGate: AiFeatureGate,
+    ): GenerateAiContentUseCase =
+        GenerateAiContentUseCase(aiRepository, aiFeatureGate)
 }

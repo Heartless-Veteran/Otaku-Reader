@@ -70,6 +70,8 @@ data class SettingsState(
     val aiEnabled: Boolean = false,
     val aiTier: AiTier = AiTier.FREE,
     val aiApiKeySet: Boolean = false,
+    /** Whether the "Remove API key" confirmation dialog is visible. */
+    val showRemoveApiKeyDialog: Boolean = false,
     val aiReadingInsights: Boolean = true,
     val aiSmartSearch: Boolean = true,
     val aiRecommendations: Boolean = true,
@@ -149,6 +151,9 @@ sealed interface SettingsEvent : UiEvent {
     data class SetAiEnabled(val enabled: Boolean) : SettingsEvent
     data class SetAiTier(val tier: AiTier) : SettingsEvent
     data class SetAiApiKey(val key: String) : SettingsEvent
+    data object RemoveAiApiKey : SettingsEvent
+    data object ConfirmRemoveAiApiKey : SettingsEvent
+    data object DismissRemoveApiKeyDialog : SettingsEvent
     data class SetAiReadingInsights(val enabled: Boolean) : SettingsEvent
     data class SetAiSmartSearch(val enabled: Boolean) : SettingsEvent
     data class SetAiRecommendations(val enabled: Boolean) : SettingsEvent
