@@ -1266,8 +1266,7 @@ private fun AiSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
     if (state.aiEnabled) {
         var apiKeyInput by remember { mutableStateOf("") }
         var apiKeyVisible by remember { mutableStateOf(false) }
-        val isKeyFormatValid = apiKeyInput.isBlank() ||
-            (apiKeyInput.startsWith("AIza") && apiKeyInput.length >= 20)
+        val isKeyFormatValid = apiKeyInput.isBlank() || isGeminiApiKeyFormatValid(apiKeyInput)
 
         // Remove API key confirmation dialog
         if (state.showRemoveApiKeyDialog) {
@@ -1441,6 +1440,16 @@ private data class AiFeatureToggle(
     val enabled: Boolean,
     val makeEvent: (Boolean) -> SettingsEvent
 )
+
+/**
+ * Returns `true` if [key] is a plausibly valid Gemini API key.
+ *
+ * Gemini keys follow the Google API key convention: they start with the prefix
+ * `AIza` and are at least 20 characters long. This is a lightweight format
+ * check — it does **not** verify the key against the Gemini service.
+ */
+internal fun isGeminiApiKeyFormatValid(key: String): Boolean =
+    key.startsWith("AIza") && key.length >= 20
 
 /**
  * Preset accent colors for the custom accent color picker.

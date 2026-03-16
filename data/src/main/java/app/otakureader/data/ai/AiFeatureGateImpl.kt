@@ -3,6 +3,7 @@ package app.otakureader.data.ai
 import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.domain.ai.AiFeature
 import app.otakureader.domain.ai.AiFeatureGate
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -17,11 +18,34 @@ import javax.inject.Singleton
  *
  * This class reads preference flows on each call so that toggling a setting in the
  * UI takes effect immediately without requiring an app restart.
+ *
+ * The [featureFlows] map is built once at construction time. Whenever a new [AiFeature]
+ * is added the compiler will warn via an exhaustive `when` in [featureFlows] if the
+ * entry is missing, preventing silent "always disabled" regressions.
  */
 @Singleton
 class AiFeatureGateImpl @Inject constructor(
     private val aiPreferences: AiPreferences,
 ) : AiFeatureGate {
+
+    /**
+     * Mapping from each [AiFeature] to the preferences [Flow] that controls it.
+     * The exhaustive `when` ensures a compilation error if a new [AiFeature] entry
+     * is added without a corresponding preference flow.
+     */
+    private val featureFlows: Map<AiFeature, Flow<Boolean>> = AiFeature.entries.associateWith { feature ->
+        when (feature) {
+            AiFeature.READING_INSIGHTS -> aiPreferences.aiReadingInsights
+            AiFeature.SMART_SEARCH -> aiPreferences.aiSmartSearch
+            AiFeature.RECOMMENDATIONS -> aiPreferences.aiRecommendations
+            AiFeature.PANEL_READER -> aiPreferences.aiPanelReader
+            AiFeature.SFX_TRANSLATION -> aiPreferences.aiSfxTranslation
+            AiFeature.SUMMARY_TRANSLATION -> aiPreferences.aiSummaryTranslation
+            AiFeature.SOURCE_INTELLIGENCE -> aiPreferences.aiSourceIntelligence
+            AiFeature.SMART_NOTIFICATIONS -> aiPreferences.aiSmartNotifications
+            AiFeature.AUTO_CATEGORIZATION -> aiPreferences.aiAutoCategorization
+        }
+    }
 
     /**
      * Returns `true` when the master AI toggle is on **and** an API key is configured.
@@ -41,16 +65,6 @@ class AiFeatureGateImpl @Inject constructor(
     override suspend fun isFeatureAvailable(feature: AiFeature): Boolean {
         if (!isAiAvailable()) return false
 
-        return when (feature) {
-            AiFeature.READING_INSIGHTS -> aiPreferences.aiReadingInsights.first()
-            AiFeature.SMART_SEARCH -> aiPreferences.aiSmartSearch.first()
-            AiFeature.RECOMMENDATIONS -> aiPreferences.aiRecommendations.first()
-            AiFeature.PANEL_READER -> aiPreferences.aiPanelReader.first()
-            AiFeature.SFX_TRANSLATION -> aiPreferences.aiSfxTranslation.first()
-            AiFeature.SUMMARY_TRANSLATION -> aiPreferences.aiSummaryTranslation.first()
-            AiFeature.SOURCE_INTELLIGENCE -> aiPreferences.aiSourceIntelligence.first()
-            AiFeature.SMART_NOTIFICATIONS -> aiPreferences.aiSmartNotifications.first()
-            AiFeature.AUTO_CATEGORIZATION -> aiPreferences.aiAutoCategorization.first()
-        }
+        return featureFlows.getValue(feature).first()
     }
 }

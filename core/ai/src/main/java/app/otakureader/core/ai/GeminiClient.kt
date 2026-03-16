@@ -121,7 +121,7 @@ class GeminiClient @Inject constructor() {
     /**
      * Reinitialize the Gemini client with a new API key and/or model.
      *
-     * This is a convenience method that atomically calls [reset] followed by [initialize].
+     * This is a convenience method that calls [reset] followed by [initialize].
      * Use this for key rotation (e.g. when the user updates their API key in settings).
      *
      * This method is thread-safe.
@@ -130,18 +130,8 @@ class GeminiClient @Inject constructor() {
      * @param modelName The model name to use (default: "gemini-pro")
      */
     fun reinitialize(apiKey: String, modelName: String = "gemini-pro") {
-        require(apiKey.isNotBlank()) {
-            "Gemini API key must not be blank."
-        }
-        synchronized(initLock) {
-            generativeModel = null
-            configMac = ByteArray(0)
-            generativeModel = GenerativeModel(
-                modelName = modelName,
-                apiKey = apiKey
-            )
-            configMac = configMacOf(apiKey, modelName)
-        }
+        reset()
+        initialize(apiKey, modelName)
     }
 
     /**

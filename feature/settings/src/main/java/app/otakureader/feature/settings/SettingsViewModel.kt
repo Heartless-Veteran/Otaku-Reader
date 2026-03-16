@@ -252,6 +252,11 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAiEnabled -> aiPreferences.setAiEnabled(event.enabled)
                 is SettingsEvent.SetAiTier -> aiPreferences.setAiTier(event.tier)
                 is SettingsEvent.SetAiApiKey -> {
+                    // Validate format before persisting; reject clearly malformed keys.
+                    if (event.key.isNotBlank() && !isGeminiApiKeyFormatValid(event.key)) {
+                        _effect.send(SettingsEffect.ShowSnackbar("Invalid API key format"))
+                        return@launch
+                    }
                     aiPreferences.setGeminiApiKey(event.key)
                     val persistedKey = aiPreferences.getGeminiApiKey()
                     val isSet = persistedKey.isNotBlank()
