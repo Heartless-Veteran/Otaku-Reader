@@ -34,6 +34,20 @@ android {
         }
     }
 
+    flavorDimensions += "distribution"
+    productFlavors {
+        // Full build: includes the Gemini AI SDK and all AI features.
+        create("full") {
+            dimension = "distribution"
+        }
+        // FOSS build: excludes the Gemini AI SDK; AI features are replaced with
+        // no-op stubs so the app compiles and runs without any AI functionality.
+        create("foss") {
+            dimension = "distribution"
+            applicationIdSuffix = ".foss"
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -62,6 +76,10 @@ dependencies {
     implementation(projects.feature.migration)
     implementation(projects.feature.tracking)
     implementation(projects.feature.opds)
+
+    // AI: full flavor uses the real Gemini SDK; foss flavor uses a no-op stub.
+    "fullImplementation"(projects.core.ai)
+    "fossImplementation"(projects.core.aiNoop)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

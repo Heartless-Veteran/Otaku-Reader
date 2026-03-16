@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -1265,6 +1266,27 @@ private fun AiSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
     if (state.aiEnabled) {
         var apiKeyInput by remember { mutableStateOf("") }
         var apiKeyVisible by remember { mutableStateOf(false) }
+        val isKeyFormatValid = apiKeyInput.isBlank() ||
+            (apiKeyInput.startsWith("AIza") && apiKeyInput.length >= 20)
+
+        // Remove API key confirmation dialog
+        if (state.showRemoveApiKeyDialog) {
+            AlertDialog(
+                onDismissRequest = { onEvent(SettingsEvent.DismissRemoveApiKeyDialog) },
+                title = { Text(stringResource(R.string.settings_ai_remove_key_dialog_title)) },
+                text = { Text(stringResource(R.string.settings_ai_remove_key_dialog_text)) },
+                confirmButton = {
+                    Button(onClick = { onEvent(SettingsEvent.ConfirmRemoveAiApiKey) }) {
+                        Text(stringResource(R.string.settings_ai_remove_key_confirm))
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { onEvent(SettingsEvent.DismissRemoveApiKeyDialog) }) {
+                        Text(stringResource(R.string.settings_ai_remove_key_cancel))
+                    }
+                }
+            )
+        }
 
         ListItem(
             headlineContent = { Text(stringResource(R.string.settings_ai_gemini_api_key)) },
@@ -1282,6 +1304,10 @@ private fun AiSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
                         onValueChange = { apiKeyInput = it },
                         label = { Text(stringResource(R.string.settings_ai_api_key_label)) },
                         singleLine = true,
+                        isError = !isKeyFormatValid,
+                        supportingText = if (!isKeyFormatValid) {
+                            { Text(stringResource(R.string.settings_ai_api_key_invalid_format)) }
+                        } else null,
                         visualTransformation = if (apiKeyVisible) VisualTransformation.None
                         else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -1301,12 +1327,22 @@ private fun AiSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
                             onEvent(SettingsEvent.SetAiApiKey(apiKeyInput))
                             apiKeyInput = ""
                         },
-                        enabled = apiKeyInput.isNotBlank(),
+                        enabled = apiKeyInput.isNotBlank() && isKeyFormatValid,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                     ) {
                         Text(stringResource(R.string.settings_ai_save_api_key))
+                    }
+                    if (state.aiApiKeySet) {
+                        OutlinedButton(
+                            onClick = { onEvent(SettingsEvent.RemoveAiApiKey) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp)
+                        ) {
+                            Text(stringResource(R.string.settings_ai_remove_key))
+                        }
                     }
                 }
             }

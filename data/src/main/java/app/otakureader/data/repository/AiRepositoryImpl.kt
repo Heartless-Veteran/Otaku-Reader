@@ -89,4 +89,14 @@ class AiRepositoryImpl @Inject constructor(
     override suspend fun initialize(apiKey: String) {
         geminiClient.initialize(apiKey)
     }
+
+    /**
+     * Clear the active API key and reset the Gemini client to an uninitialized state.
+     *
+     * Callers should also remove the persisted key from [AiPreferences] so that the client
+     * is not re-initialized on the next app start.
+     */
+    override suspend fun clearApiKey() {
+        geminiClient.reset()
+    }
 }

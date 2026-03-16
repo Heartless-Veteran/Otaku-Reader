@@ -203,4 +203,10 @@
     <string name="settings_ai_clear_cache">Clear AI Cache</string>
     <string name="settings_ai_clear_cache_description">Remove cached AI responses to free up space</string>
     <string name="settings_ai_clear">Clear</string>
+    <string name="settings_ai_remove_key">Remove API Key</string>
+    <string name="settings_ai_remove_key_dialog_title">Remove API Key?</string>
+    <string name="settings_ai_remove_key_dialog_text">This will clear your saved Gemini API key. AI features will be disabled until a new key is added.</string>
+    <string name="settings_ai_remove_key_confirm">Remove</string>
+    <string name="settings_ai_remove_key_cancel">Cancel</string>
+    <string name="settings_ai_api_key_invalid_format">Invalid key format. Gemini API keys should start with \"AIza\" and be at least 20 characters.</string>
 </resources>

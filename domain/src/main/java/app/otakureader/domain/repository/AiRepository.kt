@@ -29,4 +29,12 @@ interface AiRepository {
      * @param apiKey The API key for the AI service
      */
     suspend fun initialize(apiKey: String)
+
+    /**
+     * Clear the active API key and reset the AI client to an uninitialized state.
+     *
+     * After this call, [isAvailable] returns false until a new key is configured
+     * and [initialize] is called again.
+     */
+    suspend fun clearApiKey()
 }

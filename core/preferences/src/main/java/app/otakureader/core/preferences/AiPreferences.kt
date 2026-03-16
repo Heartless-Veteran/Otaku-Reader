@@ -303,6 +303,17 @@ class AiPreferences(
     }
 
     /**
+     * Remove the stored Gemini API key.
+     *
+     * After calling this method, [getGeminiApiKey] returns an empty string. The caller
+     * is responsible for also resetting any live [GeminiClient] instance that was
+     * previously initialized with the key.
+     */
+    suspend fun clearGeminiApiKey() = withContext(Dispatchers.IO) {
+        encryptedPrefs.edit().remove(GEMINI_API_KEY_PREF).apply()
+    }
+
+    /**
      * One-time migration: reads any legacy plaintext Gemini API key stored in DataStore,
      * copies it into the encrypted store (if encrypted store has no key yet), then removes
      * the plaintext entry. Safe to call on every app start — it is a no-op after the first
