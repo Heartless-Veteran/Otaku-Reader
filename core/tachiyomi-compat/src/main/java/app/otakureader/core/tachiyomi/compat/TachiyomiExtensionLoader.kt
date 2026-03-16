@@ -152,9 +152,15 @@ class TachiyomiExtensionLoader(
         val nativeLibDir = appInfo.nativeLibraryDir
         val optimizedDir = File(cacheDir, "tachiyomi-dex")
 
-        // Ensure the optimized directory exists and is writable
+        // Ensure the optimized directory exists and is usable
         if (!optimizedDir.exists() && !optimizedDir.mkdirs()) {
             // Failed to create directory - cannot proceed with class loading
+            return null
+        }
+
+        // Validate that the path is actually a directory and is writable
+        if (!optimizedDir.isDirectory || !optimizedDir.canWrite()) {
+            // Directory is not usable - cannot proceed with class loading
             return null
         }
 
@@ -267,6 +273,15 @@ class TachiyomiExtensionLoader(
             null
         } catch (e: SecurityException) {
             // Security manager denies access - rare but expected
+            null
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            // Constructor threw an exception - expected for extension code with initialization errors
+            null
+        } catch (e: ExceptionInInitializerError) {
+            // Static initializer threw an exception - expected for extension code with init errors
+            null
+        } catch (e: LinkageError) {
+            // Class linking failed - expected for extensions with missing dependencies
             null
         }
     }

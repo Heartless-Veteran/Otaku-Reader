@@ -185,6 +185,8 @@ class ExtensionLoader(
             )
         } catch (e: IllegalStateException) {
             return ExtensionLoadResult.Error("Failed to create class loader: ${e.message}", e)
+        } catch (e: IllegalArgumentException) {
+            return ExtensionLoadResult.Error("Invalid parameters for class loader: ${e.message}", e)
         }
 
         // Resolve source instances from the metadata

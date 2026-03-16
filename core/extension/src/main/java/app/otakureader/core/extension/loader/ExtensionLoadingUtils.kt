@@ -52,8 +52,17 @@ object ExtensionLoadingUtils {
     ): DexClassLoader {
         require(apkPath.isNotBlank()) { "APK path must not be blank" }
 
+        // Ensure directory exists and is usable
         if (!optimizedDir.exists() && !optimizedDir.mkdirs()) {
             throw IllegalStateException("Failed to create optimized directory: ${optimizedDir.absolutePath}")
+        }
+
+        // Validate that the path is actually a directory and is writable
+        if (!optimizedDir.isDirectory) {
+            throw IllegalStateException("Optimized path exists but is not a directory: ${optimizedDir.absolutePath}")
+        }
+        if (!optimizedDir.canWrite()) {
+            throw IllegalStateException("Optimized directory is not writable: ${optimizedDir.absolutePath}")
         }
 
         return DexClassLoader(
@@ -103,6 +112,15 @@ object ExtensionLoadingUtils {
             null
         } catch (e: SecurityException) {
             // Security manager denies access - rare but expected
+            null
+        } catch (e: java.lang.reflect.InvocationTargetException) {
+            // Constructor threw an exception - expected for extension code with initialization errors
+            null
+        } catch (e: ExceptionInInitializerError) {
+            // Static initializer threw an exception - expected for extension code with init errors
+            null
+        } catch (e: LinkageError) {
+            // Class linking failed - expected for extensions with missing dependencies
             null
         }
     }

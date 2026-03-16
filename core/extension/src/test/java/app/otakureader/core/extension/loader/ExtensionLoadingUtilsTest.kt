@@ -1,8 +1,8 @@
 package app.otakureader.core.extension.loader
 
 import dalvik.system.DexClassLoader
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import io.mockk.mockk
+import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
@@ -28,29 +28,30 @@ class ExtensionLoadingUtilsTest {
 
     @Test
     fun `createClassLoader throws IllegalStateException when mkdirs fails`() {
-        // Use a path that cannot be created (e.g., under /dev/null)
-        val impossibleDir = File("/dev/null/impossible")
+        // Create a temporary file, then try to use it as a directory (will fail mkdirs)
+        val tempFile = File.createTempFile("test_", ".tmp")
+        tempFile.deleteOnExit()
 
         try {
             ExtensionLoadingUtils.createClassLoader(
                 apkPath = "/test/path.apk",
-                optimizedDir = impossibleDir,
+                optimizedDir = File(tempFile, "impossible"),  // Cannot create dir under a file
                 nativeLibDir = null
             )
             fail("Expected IllegalStateException")
         } catch (e: IllegalStateException) {
             // Expected - directory creation should fail
+        } finally {
+            tempFile.delete()
         }
     }
 
     @Test
-    fun `instantiateClass returns null for blank className`() {
+    fun `instantiateClass throws IllegalArgumentException for blank className`() {
         // className validation happens before classLoader is used
-        try {
-            // We pass a mock classLoader but it won't be used because className is blank
-            val mockClassLoader = this::class.java.classLoader as? DexClassLoader
-                ?: return // Skip test if we can't get a DexClassLoader
+        val mockClassLoader = mockk<DexClassLoader>(relaxed = true)
 
+        try {
             ExtensionLoadingUtils.instantiateClass(
                 classLoader = mockClassLoader,
                 className = ""
@@ -70,7 +71,7 @@ class ExtensionLoadingUtilsTest {
             className = ".MySource",
             pkgName = "com.example"
         )
-        assert(result == "com.example.MySource")
+        assertEquals("com.example.MySource", result)
     }
 
     @Test
@@ -79,6 +80,6 @@ class ExtensionLoadingUtilsTest {
             className = "com.example.MySource",
             pkgName = "com.test"
         )
-        assert(result == "com.example.MySource")
+        assertEquals("com.example.MySource", result)
     }
 }
