@@ -4,6 +4,7 @@ import app.otakureader.core.ai.GeminiClient
 import com.google.ai.client.generativeai.type.GenerateContentResponse
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
@@ -167,5 +168,16 @@ class AiRepositoryImplTest {
         every { geminiClient.isInitialized() } returns false
 
         assertFalse(repository.isAvailable())
+    }
+
+    // ---- clearApiKey ----
+
+    @Test
+    fun `clearApiKey calls reset on geminiClient`() = runTest {
+        justRun { geminiClient.reset() }
+
+        repository.clearApiKey()
+
+        io.mockk.verify(exactly = 1) { geminiClient.reset() }
     }
 }

@@ -15,6 +15,7 @@ import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
 import app.otakureader.data.worker.ReadingReminderScheduler
+import app.otakureader.domain.repository.AiRepository
 import app.otakureader.feature.reader.model.ImageQuality
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -42,6 +43,7 @@ class SettingsViewModel @Inject constructor(
     private val trackManager: TrackManager,
     private val appPreferences: AppPreferences,
     private val aiPreferences: AiPreferences,
+    private val aiRepository: AiRepository,
     private val readingGoalPreferences: ReadingGoalPreferences,
     private val readingReminderScheduler: ReadingReminderScheduler,
     private val discordRpcService: DiscordRpcService
@@ -156,6 +158,7 @@ class SettingsViewModel @Inject constructor(
                         aiEnabled = current.aiEnabled,
                         aiTier = current.aiTier,
                         aiApiKeySet = current.aiApiKeySet,
+                        showRemoveApiKeyDialog = current.showRemoveApiKeyDialog,
                         aiReadingInsights = current.aiReadingInsights,
                         aiSmartSearch = current.aiSmartSearch,
                         aiRecommendations = current.aiRecommendations,
@@ -249,13 +252,37 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAiEnabled -> aiPreferences.setAiEnabled(event.enabled)
                 is SettingsEvent.SetAiTier -> aiPreferences.setAiTier(event.tier)
                 is SettingsEvent.SetAiApiKey -> {
+                    // Validate format before persisting; reject clearly malformed keys.
+                    if (event.key.isNotBlank() && !isGeminiApiKeyFormatValid(event.key)) {
+                        _effect.send(SettingsEffect.ShowSnackbar("Invalid API key format"))
+                        return@launch
+                    }
                     aiPreferences.setGeminiApiKey(event.key)
                     val persistedKey = aiPreferences.getGeminiApiKey()
                     val isSet = persistedKey.isNotBlank()
                     _state.update { it.copy(aiApiKeySet = isSet) }
                     if (event.key.isNotBlank() && !isSet) {
                         _effect.send(SettingsEffect.ShowSnackbar("Failed to save AI API key"))
+                    } else if (isSet) {
+                        // Reset any existing client state first so re-initialization with a
+                        // new key does not throw. Uses clearApiKey() rather than calling
+                        // initialize() directly to avoid the "already initialized" guard.
+                        aiRepository.clearApiKey()
+                        aiRepository.initialize(persistedKey)
                     }
+                }
+                SettingsEvent.RemoveAiApiKey -> {
+                    _state.update { it.copy(showRemoveApiKeyDialog = true) }
+                }
+                SettingsEvent.ConfirmRemoveAiApiKey -> {
+                    _state.update { it.copy(showRemoveApiKeyDialog = false) }
+                    aiPreferences.clearGeminiApiKey()
+                    aiRepository.clearApiKey()
+                    _state.update { it.copy(aiApiKeySet = false) }
+                    _effect.send(SettingsEffect.ShowSnackbar("AI API key removed"))
+                }
+                SettingsEvent.DismissRemoveApiKeyDialog -> {
+                    _state.update { it.copy(showRemoveApiKeyDialog = false) }
                 }
                 is SettingsEvent.SetAiReadingInsights -> aiPreferences.setAiReadingInsights(event.enabled)
                 is SettingsEvent.SetAiSmartSearch -> aiPreferences.setAiSmartSearch(event.enabled)

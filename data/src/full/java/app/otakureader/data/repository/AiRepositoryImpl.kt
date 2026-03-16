@@ -18,6 +18,9 @@ private const val DEFAULT_GENERATE_CONTENT_TIMEOUT_MILLIS = 30_000L
  * This repository provides AI-powered features by interfacing with
  * the Gemini client from the core:ai module.
  *
+ * This class lives in the `full` flavor source set so it (and its Gemini SDK
+ * transitive dependency) are excluded from FOSS builds entirely.
+ *
  * @property geminiClient Client for Gemini AI operations
  * @property timeoutMillis Timeout for AI requests in milliseconds (default: 30s)
  */
@@ -88,5 +91,15 @@ class AiRepositoryImpl @Inject constructor(
      */
     override suspend fun initialize(apiKey: String) {
         geminiClient.initialize(apiKey)
+    }
+
+    /**
+     * Clear the active API key and reset the Gemini client to an uninitialized state.
+     *
+     * Callers should also remove the persisted key from [AiPreferences] so that the client
+     * is not re-initialized on the next app start.
+     */
+    override suspend fun clearApiKey() {
+        geminiClient.reset()
     }
 }

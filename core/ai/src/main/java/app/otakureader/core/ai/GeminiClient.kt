@@ -61,6 +61,10 @@ class GeminiClient @Inject constructor() {
      * This method is thread-safe: concurrent callers will not produce duplicate
      * models or time-of-check/time-of-use races.
      *
+     * If the client is already initialized with the same configuration, this is a no-op.
+     * If the client is already initialized with a **different** configuration, call [reset]
+     * before calling this method; otherwise an [IllegalStateException] is thrown.
+     *
      * @param apiKey The Gemini API key for authentication
      * @param modelName The model name to use (default: "gemini-pro")
      */
@@ -77,8 +81,8 @@ class GeminiClient @Inject constructor() {
                     return
                 } else {
                     throw IllegalStateException(
-                        "GeminiClient has already been initialized. " +
-                            "Re-initialization with a different API key or model is not allowed."
+                        "GeminiClient has already been initialized with a different configuration. " +
+                            "Call reset() before re-initializing with a new API key or model."
                     )
                 }
             }
@@ -92,6 +96,54 @@ class GeminiClient @Inject constructor() {
                 apiKey = apiKey
             )
             // Store an HMAC rather than the raw API key to reduce secret exposure.
+            configMac = configMacOf(apiKey, modelName)
+        }
+    }
+
+    /**
+     * Reset the Gemini client, clearing the current model and configuration.
+     *
+     * After calling this method, [isInitialized] returns false and [initialize] may
+     * be called again with the same or a different API key/model combination.
+     *
+     * This is the correct way to support key rotation: call [reset] followed by
+     * [initialize] with the new key.
+     *
+     * This method is thread-safe.
+     */
+    fun reset() {
+        synchronized(initLock) {
+            generativeModel = null
+            configMac = ByteArray(0)
+        }
+    }
+
+    /**
+     * Reinitialize the Gemini client with a new API key and/or model.
+     *
+     * Atomically clears the current state and initializes with the new configuration
+     * in a single [synchronized] block, preventing other threads from observing a
+     * partially-reset state between the clear and the new init.
+     *
+     * Use this for key rotation (e.g. when the user updates their API key in settings).
+     *
+     * This method is thread-safe.
+     *
+     * @param apiKey The new Gemini API key for authentication
+     * @param modelName The model name to use (default: "gemini-pro")
+     */
+    fun reinitialize(apiKey: String, modelName: String = "gemini-pro") {
+        synchronized(initLock) {
+            require(apiKey.isNotBlank()) {
+                "Gemini API key must not be blank."
+            }
+            generativeModel = null
+            configMac = ByteArray(0)
+            generativeModel = GenerativeModel(
+                modelName = modelName,
+                // SECURITY NOTE: The raw API key is passed to the SDK here. See initialize().
+                apiKey = apiKey
+            )
             configMac = configMacOf(apiKey, modelName)
         }
     }
