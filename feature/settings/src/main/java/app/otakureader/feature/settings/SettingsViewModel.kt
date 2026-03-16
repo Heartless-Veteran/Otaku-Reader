@@ -264,7 +264,10 @@ class SettingsViewModel @Inject constructor(
                     if (event.key.isNotBlank() && !isSet) {
                         _effect.send(SettingsEffect.ShowSnackbar("Failed to save AI API key"))
                     } else if (isSet) {
-                        // Reinitialize the client with the new key so it takes effect immediately.
+                        // Reset any existing client state first so re-initialization with a
+                        // new key does not throw. Uses clearApiKey() rather than calling
+                        // initialize() directly to avoid the "already initialized" guard.
+                        aiRepository.clearApiKey()
                         aiRepository.initialize(persistedKey)
                     }
                 }

@@ -1,6 +1,5 @@
 package app.otakureader.data.di
 
-import app.otakureader.domain.repository.AiRepository
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
@@ -8,7 +7,6 @@ import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
-import app.otakureader.data.repository.AiRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
@@ -19,6 +17,15 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
+/**
+ * Hilt module binding all non-AI repositories.
+ *
+ * The [AiRepository] binding is intentionally absent here — it lives in a
+ * flavor-specific DI module so it can be swapped between the real Gemini
+ * implementation (`full`) and the no-op stub (`foss`):
+ *  - `full`: [app.otakureader.data.di.AiRepositoryModule] (data/src/full/...)
+ *  - `foss`: [app.otakureader.core.ainoop.di.NoOpAiModule] (core/ai-noop)
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
@@ -52,9 +59,4 @@ abstract class RepositoryModule {
     abstract fun bindOpdsRepository(
         impl: OpdsRepositoryImpl
     ): OpdsRepository
-
-    @Binds
-    abstract fun bindAiRepository(
-        impl: AiRepositoryImpl
-    ): AiRepository
 }

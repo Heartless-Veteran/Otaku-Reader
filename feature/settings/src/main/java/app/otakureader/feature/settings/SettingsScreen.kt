@@ -1442,16 +1442,6 @@ private data class AiFeatureToggle(
 )
 
 /**
- * Returns `true` if [key] is a plausibly valid Gemini API key.
- *
- * Gemini keys follow the Google API key convention: they start with the prefix
- * `AIza` and are at least 20 characters long. This is a lightweight format
- * check — it does **not** verify the key against the Gemini service.
- */
-internal fun isGeminiApiKeyFormatValid(key: String): Boolean =
-    key.startsWith("AIza") && key.length >= 20
-
-/**
  * Preset accent colors for the custom accent color picker.
  * Each pair is (display name, ARGB Long).
  */

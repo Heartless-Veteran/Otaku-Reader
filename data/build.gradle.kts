@@ -7,6 +7,14 @@ plugins {
 
 android {
     namespace = "app.otakureader.data"
+
+    // Mirror the flavor dimension from :app so that flavor-specific source sets
+    // (full/foss) compile correctly and the Gemini SDK is excluded in foss builds.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("full") { dimension = "distribution" }
+        create("foss") { dimension = "distribution" }
+    }
 }
 
 dependencies {
@@ -14,7 +22,8 @@ dependencies {
     implementation(projects.core.network)
     implementation(projects.core.database)
     implementation(projects.core.preferences)
-    implementation(projects.core.ai)
+    // core:ai is only needed for the full flavor; foss uses core:ai-noop via :app.
+    "fullImplementation"(projects.core.ai)
     implementation(projects.domain)
     implementation(projects.sourceApi)
 
@@ -29,4 +38,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    // AiRepositoryImplTest needs GeminiClient on the classpath (it mocks it).
+    "testFullImplementation"(projects.core.ai)
 }
