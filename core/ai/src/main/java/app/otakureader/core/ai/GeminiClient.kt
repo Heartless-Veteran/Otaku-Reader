@@ -133,10 +133,10 @@ class GeminiClient @Inject constructor() {
      * @param modelName The model name to use (default: "gemini-pro")
      */
     fun reinitialize(apiKey: String, modelName: String = "gemini-pro") {
-        require(apiKey.isNotBlank()) {
-            "Gemini API key must not be blank."
-        }
         synchronized(initLock) {
+            require(apiKey.isNotBlank()) {
+                "Gemini API key must not be blank."
+            }
             generativeModel = null
             configMac = ByteArray(0)
             generativeModel = GenerativeModel(

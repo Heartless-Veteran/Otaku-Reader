@@ -12,8 +12,8 @@ import javax.inject.Singleton
  * Hilt module that binds the real [AiRepository] implementation in `full` builds.
  *
  * This module lives in the `full` flavor source set so it is excluded from FOSS
- * builds. FOSS builds get their [AiRepository] binding from
- * [app.otakureader.core.ainoop.di.NoOpAiModule] via `:core:ai-noop`.
+ * builds. FOSS builds get their [AiRepository] binding from [NoOpAiModule] via
+ * `:core:ai-noop`.
  */
 @Module
 @InstallIn(SingletonComponent::class)
