@@ -27,39 +27,79 @@ SECRET_PATTERNS=(
     "OPENAI_API_KEY"
 )
 
-# Files to check
-BUILD_FILES=(
-    "core/database/build.gradle.kts"
-    "core/extension/build.gradle.kts"
-    "app/build.gradle.kts"
+# Hardcoded credential regex patterns (extensible list)
+# Add new patterns here as needed
+CREDENTIAL_REGEXES=(
+    # Google API Keys (AIza followed by 35 chars)
+    "AIza[0-9A-Za-z_-]{35}"
+    # OpenAI API Keys (sk- followed by 48 chars)
+    "sk-[A-Za-z0-9]{48}"
+    # Generic API keys (32+ hex chars)
+    "['\"][0-9a-fA-F]{32,}['\"]"
+    # AWS Access Key ID format
+    "AKIA[0-9A-Z]{16}"
+    # GitHub Personal Access Token (classic)
+    "ghp_[0-9a-zA-Z]{36}"
+    # Generic Bearer tokens
+    "Bearer [A-Za-z0-9_-]{20,}"
 )
 
-FOUND_ISSUES=0
+# Dynamically discover all build.gradle.kts files
+echo "Discovering build files..."
+mapfile -t BUILD_FILES < <(find . -type f -name "build.gradle.kts" ! -path "*/build/*" ! -path "*/.gradle/*" | sort)
 
+if [ ${#BUILD_FILES[@]} -eq 0 ]; then
+    echo -e "${YELLOW}⚠️  No build.gradle.kts files found${NC}"
+    exit 0
+fi
+
+echo "Found ${#BUILD_FILES[@]} build files to scan"
+echo ""
+
+# Use associative arrays to track unique findings
+declare -A SECRET_FINDINGS
+declare -A CREDENTIAL_FINDINGS
+
+# Scan for buildConfigField with secret patterns
 for BUILD_FILE in "${BUILD_FILES[@]}"; do
+    # Skip if file doesn't exist (shouldn't happen with find, but defensive)
     if [ ! -f "$BUILD_FILE" ]; then
         continue
     fi
 
-    echo "Checking: $BUILD_FILE"
+    # Remove leading ./ for cleaner output
+    CLEAN_PATH="${BUILD_FILE#./}"
 
-    # Check for buildConfigField declarations
-    if grep -q "buildConfigField" "$BUILD_FILE"; then
-        echo -e "${YELLOW}⚠️  Found buildConfigField in $BUILD_FILE${NC}"
+    # Check for buildConfigField declarations (excluding comments)
+    # Use grep with -v to exclude comment lines, then check for buildConfigField
+    if grep -v "^\s*//\|^\s*/\*\|^\s*\*" "$BUILD_FILE" | grep -q "buildConfigField"; then
+        echo "Checking: $CLEAN_PATH"
 
         # Check each secret pattern
         for PATTERN in "${SECRET_PATTERNS[@]}"; do
-            if grep -i "buildConfigField.*$PATTERN" "$BUILD_FILE"; then
-                echo -e "${RED}❌ SECURITY RISK: Found potential secret pattern '$PATTERN' in $BUILD_FILE${NC}"
-                echo -e "${RED}   BuildConfig fields are embedded in APK and can be decompiled!${NC}"
-                echo -e "${RED}   Use EncryptedSharedPreferences or secure storage instead.${NC}"
-                FOUND_ISSUES=$((FOUND_ISSUES + 1))
+            # Match buildConfigField lines (excluding comments) with the pattern
+            # Use a more precise regex:
+            # 1. Line must not start with // or be in /* */ block
+            # 2. Must contain buildConfigField
+            # 3. Must contain the secret pattern (case insensitive)
+
+            # Extract non-comment lines containing buildConfigField and the pattern
+            MATCHES=$(grep -v "^\s*//\|^\s*/\*\|^\s*\*" "$BUILD_FILE" | \
+                      grep -i "buildConfigField" | \
+                      grep -i "$PATTERN" || true)
+
+            if [ -n "$MATCHES" ]; then
+                # Store unique finding (file:pattern)
+                FINDING_KEY="${CLEAN_PATH}:${PATTERN}"
+                if [ -z "${SECRET_FINDINGS[$FINDING_KEY]}" ]; then
+                    SECRET_FINDINGS[$FINDING_KEY]="$CLEAN_PATH|$PATTERN|$MATCHES"
+                fi
             fi
         done
     fi
 done
 
-# Check for hardcoded secrets in build files
+# Check for hardcoded credentials using regex patterns
 echo ""
 echo "Checking for hardcoded credentials..."
 
@@ -68,21 +108,61 @@ for BUILD_FILE in "${BUILD_FILES[@]}"; do
         continue
     fi
 
-    # Check for common hardcoded credential patterns
-    if grep -E "(AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9]{48})" "$BUILD_FILE"; then
-        echo -e "${RED}❌ SECURITY RISK: Found hardcoded API key in $BUILD_FILE${NC}"
-        FOUND_ISSUES=$((FOUND_ISSUES + 1))
-    fi
+    CLEAN_PATH="${BUILD_FILE#./}"
+
+    # Check each credential regex pattern
+    for REGEX in "${CREDENTIAL_REGEXES[@]}"; do
+        # Search for the pattern, excluding comment lines
+        MATCHES=$(grep -v "^\s*//\|^\s*/\*\|^\s*\*" "$BUILD_FILE" | \
+                  grep -E "$REGEX" || true)
+
+        if [ -n "$MATCHES" ]; then
+            # Store unique finding (file:regex_index)
+            FINDING_KEY="${CLEAN_PATH}:CREDENTIAL:${REGEX}"
+            if [ -z "${CREDENTIAL_FINDINGS[$FINDING_KEY]}" ]; then
+                CREDENTIAL_FINDINGS[$FINDING_KEY]="$CLEAN_PATH|$REGEX"
+            fi
+        fi
+    done
 done
 
 echo ""
 
-if [ $FOUND_ISSUES -eq 0 ]; then
+# Report unique findings
+TOTAL_ISSUES=0
+
+if [ ${#SECRET_FINDINGS[@]} -gt 0 ]; then
+    echo -e "${RED}Found ${#SECRET_FINDINGS[@]} unique BuildConfig secret pattern(s):${NC}"
+    for KEY in "${!SECRET_FINDINGS[@]}"; do
+        IFS='|' read -r FILE PATTERN MATCHES <<< "${SECRET_FINDINGS[$KEY]}"
+        echo -e "${RED}❌ SECURITY RISK: Found potential secret pattern '$PATTERN' in $FILE${NC}"
+        echo -e "${RED}   BuildConfig fields are embedded in APK and can be decompiled!${NC}"
+        echo -e "${RED}   Use EncryptedSharedPreferences or secure storage instead.${NC}"
+        # Show first match as example (truncate if too long)
+        EXAMPLE=$(echo "$MATCHES" | head -n 1 | cut -c 1-100)
+        echo -e "${YELLOW}   Example: $EXAMPLE${NC}"
+        echo ""
+        TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+    done
+fi
+
+if [ ${#CREDENTIAL_FINDINGS[@]} -gt 0 ]; then
+    echo -e "${RED}Found ${#CREDENTIAL_FINDINGS[@]} unique hardcoded credential(s):${NC}"
+    for KEY in "${!CREDENTIAL_FINDINGS[@]}"; do
+        IFS='|' read -r FILE REGEX <<< "${CREDENTIAL_FINDINGS[$KEY]}"
+        echo -e "${RED}❌ SECURITY RISK: Found hardcoded credential pattern in $FILE${NC}"
+        echo -e "${RED}   Pattern: $REGEX${NC}"
+        echo ""
+        TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+    done
+fi
+
+if [ $TOTAL_ISSUES -eq 0 ]; then
     echo -e "${GREEN}✅ No security issues found in BuildConfig declarations${NC}"
-    echo -e "${GREEN}✅ All checks passed${NC}"
+    echo -e "${GREEN}✅ All checks passed (scanned ${#BUILD_FILES[@]} files)${NC}"
     exit 0
 else
-    echo -e "${RED}❌ Found $FOUND_ISSUES potential security issue(s)${NC}"
+    echo -e "${RED}❌ Found $TOTAL_ISSUES unique security issue(s)${NC}"
     echo ""
     echo "Security best practices for Otaku Reader:"
     echo "1. Never add secrets to BuildConfig (they're embedded in APK)"
