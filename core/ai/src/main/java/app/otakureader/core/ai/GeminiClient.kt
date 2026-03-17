@@ -158,7 +158,6 @@ class GeminiClient @Inject constructor() {
 
             // Zero and clear the old state first
             configMac.fill(0)
-            val oldModel = generativeModel
             generativeModel = null
             configMac = ByteArray(0)
 

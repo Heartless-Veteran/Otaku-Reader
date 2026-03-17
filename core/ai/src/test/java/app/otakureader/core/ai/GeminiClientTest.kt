@@ -2,15 +2,12 @@ package app.otakureader.core.ai
 
 import com.google.ai.client.generativeai.GenerativeModel
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.unmockkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -83,14 +80,25 @@ class GeminiClientTest {
 
     @Test
     fun `reset zeroes configMac buffer to prevent secret residue`() {
-        // This test verifies that reset() calls configMac.fill(0) before reassignment.
-        // We can't directly inspect the private configMac field, but we can verify
-        // that reset() completes without errors and re-initialization works correctly,
-        // which implies the buffer was properly zeroed.
+        // This test uses reflection to verify that reset() actually zeroes the configMac
+        // buffer before reassignment, preventing HMAC-derived secrets from lingering in memory.
         client.initialize("AIzaKey123")
+
+        // Capture the configMac ByteArray using reflection before reset
+        val configMacField = GeminiClient::class.java.getDeclaredField("configMac")
+        configMacField.isAccessible = true
+        val macBeforeReset = configMacField.get(client) as ByteArray
+
+        // Verify the MAC is non-empty before reset
+        assertTrue("configMac should be non-empty before reset", macBeforeReset.isNotEmpty())
+
         client.reset()
 
-        // If the buffer wasn't properly handled, re-initialization might fail
+        // After reset, the captured ByteArray should be all zeros (it was zeroed in-place)
+        assertTrue("configMac buffer should be zeroed after reset",
+            macBeforeReset.all { it == 0.toByte() })
+
+        // Also verify re-initialization works
         client.initialize("AIzaDifferentKey456")
         assertTrue(client.isInitialized())
     }
