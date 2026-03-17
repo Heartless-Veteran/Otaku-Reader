@@ -2,13 +2,15 @@
 
 ## Summary
 
-This document verifies that all exception handling concerns raised in issue #435 have been properly addressed in the codebase.
+This document verifies that all exception handling concerns raised in the code review for PR #435 have been properly addressed in the codebase.
+
+**Verified against commit**: `ce500fc` (Verify exception handling is complete - all concerns addressed)
 
 ## Concerns Raised and Status
 
 ### 1. ✅ Missing InvocationTargetException in ExtensionLoadingUtils
 
-**Location**: `core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoadingUtils.kt:116-118`
+**Location**: [`ExtensionLoadingUtils.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoadingUtils.kt#L116-L118)
 
 **Status**: **ADDRESSED**
 
@@ -25,7 +27,7 @@ This properly handles cases where the constructor itself throws an exception dur
 
 ### 2. ✅ Missing InvocationTargetException in TachiyomiExtensionLoader
 
-**Location**: `core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/compat/TachiyomiExtensionLoader.kt:277-279`
+**Location**: [`TachiyomiExtensionLoader.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/compat/TachiyomiExtensionLoader.kt#L277-L279)
 
 **Status**: **ADDRESSED**
 
@@ -53,14 +55,14 @@ Both `instantiateClass()` methods now catch a comprehensive set of exceptions:
 7. **`ExceptionInInitializerError`** - Static initializer threw an exception ✅
 8. **`LinkageError`** - Class linking failed ✅
 
-This comprehensive exception handling ensures that:
+This comprehensive exception handling ensures that (within the extension-loading code paths):
 - Extension discovery continues even when individual extensions fail to load
-- No uncaught exceptions propagate to crash the application
+- Reflection-related exceptions are handled gracefully without crashing the loader
 - Each exception type is documented with expected scenarios
 
 ### 4. ✅ Directory Creation Error Handling
 
-**Location**: `core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoadingUtils.kt:55-66`
+**Location**: [`ExtensionLoadingUtils.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoadingUtils.kt#L55-L66)
 
 **Status**: **ADDRESSED**
 
@@ -89,7 +91,7 @@ This provides:
 
 ### 5. ✅ Caller Error Handling - ExtensionLoader
 
-**Location**: `core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoader.kt:179-190`
+**Location**: [`ExtensionLoader.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/extension/src/main/java/app/otakureader/core/extension/loader/ExtensionLoader.kt#L179-L190)
 
 **Status**: **ADDRESSED**
 
@@ -118,7 +120,7 @@ This ensures:
 
 ### 6. ✅ TachiyomiExtensionLoader Directory Validation
 
-**Location**: `core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/compat/TachiyomiExtensionLoader.kt:155-165`
+**Location**: [`TachiyomiExtensionLoader.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/compat/TachiyomiExtensionLoader.kt#L155-L165)
 
 **Status**: **ADDRESSED**
 
@@ -142,7 +144,7 @@ if (!optimizedDir.isDirectory || !optimizedDir.canWrite()) {
 
 ### 7. ✅ Caller Error Handling - ExtensionInstaller
 
-**Location**: `core/extension/src/main/java/app/otakureader/core/extension/installer/ExtensionInstaller.kt:137-149`
+**Location**: [`ExtensionInstaller.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/extension/src/main/java/app/otakureader/core/extension/installer/ExtensionInstaller.kt#L137-L149)
 
 **Status**: **ADDRESSED**
 
@@ -170,7 +172,7 @@ when (loadResult) {
 
 ### 8. ✅ Caller Error Handling - SourceRepositoryImpl
 
-**Location**: `core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/repository/SourceRepositoryImpl.kt:328-329, 380`
+**Location**: [`SourceRepositoryImpl.kt`](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/repository/SourceRepositoryImpl.kt#L328-L329) and [line 380](https://github.com/Heartless-Veteran/Otaku-Reader/blob/ce500fc/core/tachiyomi-compat/src/main/java/app/otakureader/core/tachiyomi/repository/SourceRepositoryImpl.kt#L380)
 
 **Status**: **ADDRESSED**
 
@@ -216,4 +218,4 @@ The current implementation provides robust error handling that:
 
 The current exception handling is comprehensive and correct. No changes are needed.
 
-**Optional Enhancement** (not required): Consider adding logging for caught exceptions to help diagnose extension loading issues in production. This could be done via a callback or logger interface to avoid adding Android dependencies to the utility classes.
+**Optional Enhancement** (not required): Consider adding logging for caught exceptions to help diagnose extension loading issues in production. This could be done via a callback or logger interface to keep the API surface minimal and avoid introducing a logging framework dependency.
