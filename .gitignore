@@ -30,3 +30,7 @@ keystore.properties
 # Distribution / package
 dist/
 .kotlin/
+
+# Server environment files
+server/.env
+.env

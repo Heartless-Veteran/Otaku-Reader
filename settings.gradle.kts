@@ -7,6 +7,13 @@ pluginManagement {
         maven("https://maven.google.com")
         gradlePluginPortal()
     }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jetbrains.kotlin.plugin.serialization") {
+                useVersion("2.3.10")
+            }
+        }
+    }
 }
 
 dependencyResolutionManagement {
@@ -61,3 +68,6 @@ include(":feature:tracking")
 include(":feature:onboarding")
 include(":feature:about")
 include(":feature:opds")
+
+// Self-hosted sync server
+include(":server")

@@ -39,7 +39,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 | **📊 Tracking** | MyAnimeList, AniList, Kitsu, MangaUpdates, Shikimori |
 | **🔔 Notifications** | Rich new chapter alerts with covers, grouped by series |
 | **☁️ Backup** | Scheduled backups, JSON export/import |
-| **🔄 Cloud Sync** | Core engine complete with conflict resolution and background sync; Google Drive OAuth integration pending |
+| **🔄 Cloud Sync** | Self-hosted Docker server for personal sync; manual backup/restore with conflict resolution |
 | **📡 OPDS** | Self-hosted catalog support (Komga, Kavita), add/browse/search OPDS servers |
 | **🤖 AI Recommendations** | Gemini API integration complete; recommendation engine implementation pending |
 | **🎮 Discord RPC** | Rich Presence showing currently reading manga |
@@ -83,7 +83,7 @@ Clean Architecture + MVI with modular feature structure.
 | **Features** | [docs/features/](docs/features/) |
 | **Architecture** | [docs/architecture/](docs/architecture/) |
 | **API Reference** | [docs/architecture/api.md](docs/architecture/api.md) |
-| **Cloud Sync** | [docs/architecture/sync.md](docs/architecture/sync.md) |
+| **Cloud Sync** | [docs/architecture/self-hosted-sync.md](docs/architecture/self-hosted-sync.md) |
 | **Contributing** | [docs/contributing/contributing.md](docs/contributing/contributing.md) |
 | **Changelog** | [CHANGELOG.md](CHANGELOG.md) |
 
@@ -91,8 +91,8 @@ Clean Architecture + MVI with modular feature structure.
 
 ## 🗺️ Roadmap
 
-- **✅ Shipped:** Smart Panels (panel-by-panel navigation), Smart Prefetch, OPDS Catalog, Discord Rich Presence, Statistics, Migration, Background Sync
-- **🚧 In Progress:** Cloud Sync (core complete, OAuth pending), AI Recommendations (API integration complete, recommendation engine pending), Smart Panels ML model (TensorFlow Lite)
+- **✅ Shipped:** Smart Panels (panel-by-panel navigation), Smart Prefetch, OPDS Catalog, Discord Rich Presence, Statistics, Migration, Self-Hosted Cloud Sync
+- **🚧 In Progress:** AI Recommendations (API integration complete, recommendation engine pending), Smart Panels ML model (TensorFlow Lite)
 - **🔮 Future:** Cloud Sync provider expansion (Dropbox, WebDAV), Widget improvements, KMP expansion, Macrobenchmark baseline profiles
 
 ---

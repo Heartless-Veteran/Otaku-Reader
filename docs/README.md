@@ -16,7 +16,8 @@ Welcome to the Otaku Reader documentation. This is the central index for all pro
 ### 📐 Architecture
 - [Architecture Overview](architecture/) — Clean Architecture, MVI, and module structure
 - [API Reference](architecture/api.md) — REST API and extension API documentation
-- [Sync Architecture](architecture/sync.md) — Cloud sync implementation details
+- [Self-Hosted Sync](architecture/self-hosted-sync.md) — Self-hosted Docker sync server
+- [Sync Architecture (Legacy)](architecture/sync.md) — Historical cloud sync docs
 
 ### 🔍 Audits
 - [Network & Extension Audit](audits/network-extension.md) — Network layer and extension system audit
