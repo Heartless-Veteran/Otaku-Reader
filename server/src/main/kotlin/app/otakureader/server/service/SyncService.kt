@@ -17,9 +17,10 @@ class SyncService(private val config: AppConfig) {
      * @return The size of stored data in bytes
      */
     fun storeSnapshot(data: String, timestamp: Long): Result<Int> = try {
-        snapshotFile.writeText(data)
+        val bytes = data.toByteArray(Charsets.UTF_8)
+        snapshotFile.writeBytes(bytes)
         timestampFile.writeText(timestamp.toString())
-        Result.success(data.length)
+        Result.success(bytes.size)
     } catch (e: IOException) {
         Result.failure(e)
     }

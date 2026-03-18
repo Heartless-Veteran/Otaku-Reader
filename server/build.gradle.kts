@@ -1,16 +1,12 @@
 plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
+    id("org.jetbrains.kotlin.jvm")
+    id("org.jetbrains.kotlin.plugin.serialization")
     application
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.5"
 }
 
 group = "app.otakureader"
 version = "1.0.0"
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     // Ktor
