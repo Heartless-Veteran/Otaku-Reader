@@ -1,0 +1,76 @@
+package app.otakureader.server
+
+import app.otakureader.server.config.AppConfig
+import app.otakureader.server.routes.syncRoutes
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.auth.Authentication
+import io.ktor.server.auth.authenticate
+import io.ktor.server.auth.bearer
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.calllogging.CallLogging
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
+import kotlinx.serialization.json.Json
+
+fun main() {
+    val config = AppConfig.load()
+    
+    embeddedServer(Netty, port = config.port, host = config.host) {
+        module(config)
+    }.start(wait = true)
+}
+
+fun Application.module(config: AppConfig) {
+    install(CallLogging)
+    
+    install(ContentNegotiation) {
+        json(Json {
+            ignoreUnknownKeys = true
+            prettyPrint = true
+        })
+    }
+    
+    install(StatusPages) {
+        exception<Throwable> { call, cause ->
+            call.application.environment.log.error("Unhandled exception", cause)
+            call.respondText(
+                text = "Internal Server Error: ${cause.message}",
+                status = HttpStatusCode.InternalServerError
+            )
+        }
+    }
+    
+    install(Authentication) {
+        bearer("auth-bearer") {
+            realm = "Otaku Reader Sync Server"
+            authenticate { tokenCredential ->
+                if (tokenCredential.token == config.authToken) {
+                    UserPrincipal("user")
+                } else {
+                    null
+                }
+            }
+        }
+    }
+    
+    routing {
+        // Health check (no auth required)
+        get("/health") {
+            call.respondText("OK")
+        }
+        
+        // Protected sync routes
+        authenticate("auth-bearer") {
+            syncRoutes(config)
+        }
+    }
+}
+
+data class UserPrincipal(val username: String) : io.ktor.server.auth.Principal
