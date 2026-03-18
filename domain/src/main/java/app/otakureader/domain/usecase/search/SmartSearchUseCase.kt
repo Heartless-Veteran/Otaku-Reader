@@ -1,26 +1,36 @@
 package app.otakureader.domain.usecase.search
 
-import app.otakureader.core.ai.GeminiClient
-import app.otakureader.core.common.result.Result
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.search.CachedSmartSearch
 import app.otakureader.domain.model.search.ParsedSearchQuery
 import app.otakureader.domain.model.search.SearchIntent
+import app.otakureader.domain.repository.AiRepository
 import app.otakureader.domain.repository.SmartSearchCacheRepository
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.double
+import kotlinx.serialization.json.float
+import kotlinx.serialization.json.int
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * Use case for converting natural language queries into structured search intents.
- * Uses Gemini AI for NLP processing and caches results locally.
+ * Uses AI via [AiRepository] for NLP processing and caches results locally.
  */
 @Singleton
 class SmartSearchUseCase @Inject constructor(
-    private val geminiClient: GeminiClient,
+    private val aiRepository: AiRepository,
     private val cacheRepository: SmartSearchCacheRepository
 ) {
+    private val json = Json { ignoreUnknownKeys = true }
+
     /**
      * Convert a natural language query to structured search intents.
      *
@@ -33,7 +43,7 @@ class SmartSearchUseCase @Inject constructor(
         skipCache: Boolean = false
     ): Result<ParsedSearchQuery> {
         if (query.isBlank()) {
-            return Result.Error(IllegalArgumentException("Query cannot be blank"))
+            return Result.failure(IllegalArgumentException("Query cannot be blank"))
         }
 
         val queryHash = hashQuery(query)
@@ -42,20 +52,19 @@ class SmartSearchUseCase @Inject constructor(
         if (!skipCache) {
             val cached = cacheRepository.getCachedSearch(queryHash).firstOrNull()
             if (cached != null && isCacheValid(cached)) {
-                return Result.Success(cached.parsedQuery)
+                return Result.success(cached.parsedQuery)
             }
         }
 
-        // Check if Gemini is initialized
-        if (!geminiClient.isInitialized()) {
-            return Result.Error(SmartSearchException.AiNotInitialized)
+        // Check if AI is available
+        if (!aiRepository.isAvailable()) {
+            return Result.failure(SmartSearchException.AiNotInitialized)
         }
 
         // Process with AI
-        return when (val aiResult = processWithAi(query)) {
-            is Result.Success -> {
-                val parsedQuery = aiResult.data
-                // Cache the result
+        return processWithAi(query).also { result ->
+            // Cache successful results
+            result.getOrNull()?.let { parsedQuery ->
                 cacheRepository.cacheSearch(
                     CachedSmartSearch(
                         queryHash = queryHash,
@@ -63,9 +72,7 @@ class SmartSearchUseCase @Inject constructor(
                         parsedQuery = parsedQuery
                     )
                 )
-                Result.Success(parsedQuery)
             }
-            is Result.Error -> Result.Error(aiResult.exception)
         }
     }
 
@@ -84,30 +91,29 @@ class SmartSearchUseCase @Inject constructor(
     }
 
     /**
-     * Process the query with Gemini AI.
+     * Process the query with AI.
      */
     private suspend fun processWithAi(query: String): Result<ParsedSearchQuery> {
         val prompt = buildPrompt(query)
 
-        return when (val result = geminiClient.generateContent(prompt)) {
-            is Result.Success -> {
-                try {
-                    val parsedQuery = parseAiResponse(query, result.data)
-                    Result.Success(parsedQuery)
-                } catch (e: Exception) {
-                    Result.Error(SmartSearchException.ParsingError(e.message ?: "Failed to parse AI response"))
-                }
+        return aiRepository.generateContent(prompt).mapCatching { response ->
+            parseAiResponse(query, response)
+        }.recoverCatching { e ->
+            throw when (e) {
+                is SmartSearchException -> e
+                // Map JSON/serialization exceptions to ParsingError
+                is kotlinx.serialization.SerializationException ->
+                    SmartSearchException.ParsingError(e.message ?: "JSON parsing failed")
+                is IllegalArgumentException ->
+                    SmartSearchException.ParsingError(e.message ?: "Invalid JSON structure")
+                // Other errors are AI processing failures
+                else -> SmartSearchException.AiProcessingError(e.message ?: "AI processing failed")
             }
-            is Result.Error -> Result.Error(
-                SmartSearchException.AiProcessingError(
-                    result.exception.message ?: "AI processing failed"
-                )
-            )
         }
     }
 
     /**
-     * Build the prompt for Gemini AI.
+     * Build the prompt for AI.
      */
     private fun buildPrompt(query: String): String {
         return """
@@ -174,72 +180,86 @@ class SmartSearchUseCase @Inject constructor(
             .removeSuffix("```")
             .trim()
 
-        val json = org.json.JSONObject(cleanResponse)
-        val intentsArray = json.getJSONArray("intents")
+        val root = json.parseToJsonElement(cleanResponse).jsonObject
+        val intentsArray = root["intents"]?.jsonArray
+            ?: throw SmartSearchException.ParsingError("Missing 'intents' array")
         val intents = mutableListOf<SearchIntent>()
 
-        for (i in 0 until intentsArray.length()) {
-            val intentObj = intentsArray.getJSONObject(i)
-            val type = intentObj.getString("type")
+        for (element in intentsArray) {
+            val intentObj = element.jsonObject
+            val type = intentObj["type"]?.jsonPrimitive?.content ?: continue
 
-            val intent = when (type) {
-                "title" -> SearchIntent.TitleSearch(
-                    title = intentObj.getString("title"),
-                    fuzzyMatch = intentObj.optBoolean("fuzzyMatch", true)
-                )
-                "genre" -> {
-                    val genresArray = intentObj.getJSONArray("genres")
-                    val genres = mutableListOf<String>()
-                    for (j in 0 until genresArray.length()) {
-                        genres.add(genresArray.getString(j))
-                    }
-                    SearchIntent.GenreSearch(
-                        genres = genres,
-                        matchMode = SearchIntent.GenreSearch.MatchMode.valueOf(
-                            intentObj.optString("matchMode", "ANY").uppercase()
-                        )
-                    )
-                }
-                "author" -> SearchIntent.AuthorSearch(
-                    author = intentObj.getString("author"),
-                    includeArtist = intentObj.optBoolean("includeArtist", true)
-                )
-                "description" -> {
-                    val keywordsArray = intentObj.getJSONArray("keywords")
-                    val keywords = mutableListOf<String>()
-                    for (j in 0 until keywordsArray.length()) {
-                        keywords.add(keywordsArray.getString(j))
-                    }
-                    SearchIntent.DescriptionSearch(
-                        keywords = keywords,
-                        matchMode = SearchIntent.DescriptionSearch.MatchMode.valueOf(
-                            intentObj.optString("matchMode", "ANY").uppercase()
-                        )
-                    )
-                }
-                "mood" -> SearchIntent.MoodSearch(
-                    mood = SearchIntent.MoodSearch.Mood.valueOf(intentObj.getString("mood").uppercase())
-                )
-                "status" -> SearchIntent.StatusSearch(
-                    status = MangaStatus.valueOf(intentObj.getString("status").uppercase())
-                )
-                "popularity" -> SearchIntent.PopularitySearch(
-                    minRating = intentObj.optDouble("minRating", -1.0).takeIf { it >= 0 }?.toFloat(),
-                    minPopularity = intentObj.optInt("minPopularity", -1).takeIf { it >= 0 }
-                )
-                else -> null
-            }
-
+            val intent = parseIntent(type, intentObj)
             intent?.let { intents.add(it) }
         }
 
         return ParsedSearchQuery(
             originalQuery = originalQuery,
             intents = intents,
-            confidence = json.optDouble("confidence", 0.5).toFloat(),
-            isAmbiguous = json.optBoolean("isAmbiguous", false),
-            clarificationPrompt = json.optString("clarificationPrompt").takeIf { it.isNotBlank() }
+            confidence = root["confidence"]?.jsonPrimitive?.float ?: 0.5f,
+            isAmbiguous = root["isAmbiguous"]?.jsonPrimitive?.boolean ?: false,
+            clarificationPrompt = root["clarificationPrompt"]
+                ?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
         )
+    }
+
+    /**
+     * Parse a single intent from a JSON object.
+     */
+    private fun parseIntent(type: String, obj: JsonObject): SearchIntent? {
+        return try {
+            when (type) {
+                "title" -> SearchIntent.TitleSearch(
+                    title = obj["title"]!!.jsonPrimitive.content,
+                    fuzzyMatch = obj["fuzzyMatch"]?.jsonPrimitive?.boolean ?: true
+                )
+                "genre" -> {
+                    val genres = obj["genres"]!!.jsonArray.map { it.jsonPrimitive.content }
+                    SearchIntent.GenreSearch(
+                        genres = genres,
+                        matchMode = SearchIntent.GenreSearch.MatchMode.valueOf(
+                            (obj["matchMode"]?.jsonPrimitive?.content ?: "ANY").uppercase()
+                        )
+                    )
+                }
+                "author" -> SearchIntent.AuthorSearch(
+                    author = obj["author"]!!.jsonPrimitive.content,
+                    includeArtist = obj["includeArtist"]?.jsonPrimitive?.boolean ?: true
+                )
+                "description" -> {
+                    val keywords = obj["keywords"]!!.jsonArray.map { it.jsonPrimitive.content }
+                    SearchIntent.DescriptionSearch(
+                        keywords = keywords,
+                        matchMode = SearchIntent.DescriptionSearch.MatchMode.valueOf(
+                            (obj["matchMode"]?.jsonPrimitive?.content ?: "ANY").uppercase()
+                        )
+                    )
+                }
+                "mood" -> SearchIntent.MoodSearch(
+                    mood = SearchIntent.MoodSearch.Mood.valueOf(
+                        obj["mood"]!!.jsonPrimitive.content.uppercase()
+                    )
+                )
+                "status" -> SearchIntent.StatusSearch(
+                    status = MangaStatus.valueOf(
+                        obj["status"]!!.jsonPrimitive.content.uppercase()
+                    )
+                )
+                "popularity" -> {
+                    val minRating = obj["minRating"]?.jsonPrimitive
+                        ?.double?.takeIf { it >= 0 }?.toFloat()
+                    val minPopularity = obj["minPopularity"]?.jsonPrimitive
+                        ?.int?.takeIf { it >= 0 }
+                    SearchIntent.PopularitySearch(
+                        minRating = minRating,
+                        minPopularity = minPopularity
+                    )
+                }
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     /**
@@ -256,7 +276,7 @@ class SmartSearchUseCase @Inject constructor(
      * Check if a cached search is still valid (less than 7 days old).
      */
     private fun isCacheValid(cached: CachedSmartSearch): Boolean {
-        val maxAgeMs = 7 * 24 * 60 * 60 * 1000L // 7 days
+        val maxAgeMs = 7L * 24 * 60 * 60 * 1000 // 7 days
         return System.currentTimeMillis() - cached.timestamp < maxAgeMs
     }
 }

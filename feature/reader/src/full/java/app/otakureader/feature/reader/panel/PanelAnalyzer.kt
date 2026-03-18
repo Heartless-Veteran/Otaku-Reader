@@ -7,7 +7,6 @@ import android.util.Base64
 import app.otakureader.core.ai.GeminiClient
 import app.otakureader.core.ai.model.AiConfig
 import app.otakureader.core.ai.model.AiException
-import app.otakureader.core.common.result.Result
 import app.otakureader.feature.reader.model.PanelAnalysisException
 import app.otakureader.feature.reader.model.PanelAnalysisRequest
 import app.otakureader.feature.reader.model.PanelAnalysisResultWrapper
@@ -67,16 +66,11 @@ class PanelAnalyzer @Inject constructor(
      * Must be called before using analyzePage.
      *
      * @param apiKey The Gemini API key
-     * @param config Optional AI configuration (defaults to vision-optimized settings)
      */
-    fun initialize(
-        apiKey: String,
-        config: AiConfig = VISION_CONFIG
-    ) {
+    fun initialize(apiKey: String) {
         geminiClient.initialize(
             apiKey = apiKey,
-            modelName = VISION_MODEL,
-            config = config
+            modelName = VISION_MODEL
         )
     }
 
@@ -195,29 +189,23 @@ class PanelAnalyzer @Inject constructor(
         // Create multimodal content
         val content = buildMultimodalContent(prompt, base64Image)
 
-        // Call Gemini API
-        when (val result = geminiClient.generateContent(content)) {
-            is Result.Success -> {
-                parsePanelResponse(
-                    response = result.data,
-                    imageHash = imageHash,
-                    readingDirection = readingDirection
-                )
-            }
-            is Result.Error -> {
-                val error = result.exception
-                if (error is AiException) {
-                    throw when (error) {
-                        is AiException.NotInitialized -> PanelAnalysisException.NotInitialized()
-                        is AiException.Timeout -> PanelAnalysisException.Timeout()
-                        is AiException.NetworkError -> PanelAnalysisException.ApiError("Network error", error)
-                        else -> PanelAnalysisException.ApiError(error.message ?: "Unknown error", error)
-                    }
-                } else {
-                    throw PanelAnalysisException.ApiError(error.message ?: "Unknown error", error)
-                }
-            }
+        // Call Gemini API — generateContent returns GenerateContentResponse directly
+        val response = try {
+            geminiClient.generateContent(content)
+        } catch (e: IllegalStateException) {
+            throw PanelAnalysisException.NotInitialized()
+        } catch (e: Exception) {
+            throw PanelAnalysisException.ApiError(e.message ?: "Unknown error", e)
         }
+
+        val responseText = response.text
+            ?: throw PanelAnalysisException.ApiError("Empty response from AI", null)
+
+        parsePanelResponse(
+            response = responseText,
+            imageHash = imageHash,
+            readingDirection = readingDirection
+        )
     }
 
     /**

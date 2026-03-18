@@ -1,8 +1,5 @@
-package app.otakureader.feature.reader.panel
+package app.otakureader.feature.reader.model
 
-import app.otakureader.feature.reader.model.ComicPanel
-import app.otakureader.feature.reader.model.PanelBounds
-import app.otakureader.feature.reader.model.ReadingDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -130,7 +127,7 @@ data class PageAnalysisResult(
      * Check if analysis is stale (older than specified days)
      */
     fun isStale(maxAgeDays: Int = CACHE_MAX_AGE_DAYS): Boolean {
-        val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
+        val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
         return System.currentTimeMillis() - analysisTimestamp > maxAgeMillis
     }
 
@@ -198,6 +195,7 @@ sealed class PanelAnalysisResultWrapper {
  */
 sealed class PanelAnalysisException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class NotInitialized(message: String = "Panel analyzer not initialized") : PanelAnalysisException(message)
+    class NotAvailableInFoss(message: String = "Panel-aware reading is not available in FOSS builds") : PanelAnalysisException(message)
     class ApiError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)
     class InvalidResponse(message: String) : PanelAnalysisException(message)
     class ImageLoadError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)

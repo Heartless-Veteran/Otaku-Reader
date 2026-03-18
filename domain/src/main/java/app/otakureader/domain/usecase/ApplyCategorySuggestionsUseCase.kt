@@ -5,6 +5,7 @@ import app.otakureader.domain.model.CategorySuggestion
 import app.otakureader.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 /**

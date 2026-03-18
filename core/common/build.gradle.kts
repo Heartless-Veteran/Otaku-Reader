@@ -9,6 +9,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.palette)
     implementation(libs.kotlinx.coroutines.android)
     api(libs.kotlinx.coroutines.core)
 }

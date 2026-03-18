@@ -1,6 +1,5 @@
 package app.otakureader.domain.usecase
 
-import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.domain.model.CategorizationResult
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.CategoryRepository
@@ -10,11 +9,13 @@ import javax.inject.Inject
 /**
  * Use case for automatically categorizing manga when added to library.
  * This handles both auto-applying categories and storing suggestions for later review.
+ *
+ * **Note:** The caller is responsible for checking whether auto-categorization is
+ * enabled (e.g. via preferences) before invoking this use case.
  */
 class AutoCategorizeMangaUseCase @Inject constructor(
     private val suggestCategories: SuggestCategoriesUseCase,
-    private val categoryRepository: CategoryRepository,
-    private val aiPreferences: AiPreferences
+    private val categoryRepository: CategoryRepository
 ) {
     companion object {
         /** Minimum confidence threshold for auto-applying categories */
@@ -30,12 +31,6 @@ class AutoCategorizeMangaUseCase @Inject constructor(
      * @return Result containing the categorization result, or error if AI is unavailable
      */
     suspend operator fun invoke(manga: Manga): Result<CategorizationResult> {
-        // Check if auto-categorization is enabled
-        val isEnabled = aiPreferences.aiAutoCategorization.first()
-        if (!isEnabled) {
-            return Result.failure(IllegalStateException("Auto-categorization is disabled"))
-        }
-
         // Get category suggestions from AI
         val suggestionsResult = suggestCategories(manga)
         
@@ -91,9 +86,9 @@ class AutoCategorizeMangaUseCase @Inject constructor(
                 // Add manga to category
                 categoryRepository.addMangaToCategory(mangaId, categoryId)
                 applied.add(categoryName)
-            } catch (e: Exception) {
-                // Log but don't fail if one category fails
-                e.printStackTrace()
+            } catch (_: Exception) {
+                // Continue silently — failing to apply one category must not
+                // prevent the remaining categories from being applied.
             }
         }
         
