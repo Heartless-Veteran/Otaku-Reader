@@ -198,7 +198,7 @@ class PanelCacheService @Inject constructor(
         try {
             val allMetadata = getAllMetadata()
             val now = System.currentTimeMillis()
-            val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
+            val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
 
             allMetadata.forEach { metadata ->
                 if (now - metadata.timestamp > maxAgeMillis) {
@@ -311,7 +311,7 @@ private data class CacheMetadata(
     val fileSize: Long
 ) {
     fun isStale(maxAgeDays: Int = 30): Boolean {
-        val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
+        val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
         return System.currentTimeMillis() - timestamp > maxAgeMillis
     }
 

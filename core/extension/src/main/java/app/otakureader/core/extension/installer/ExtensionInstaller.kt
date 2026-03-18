@@ -162,7 +162,7 @@ class ExtensionInstaller(
                     // Save to repository
                     val result = repository.installExtension(
                         finalExtension.pkgName,
-                        finalExtension.apkPath!!
+                        destFile.absolutePath
                     )
                     
                     result.onSuccess { ext ->

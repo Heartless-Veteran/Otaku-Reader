@@ -1,8 +1,5 @@
 package app.otakureader.domain.usecase.ai
 
-import app.otakureader.core.ai.model.AiException
-import app.otakureader.core.ai.model.AiRequest
-import app.otakureader.core.common.result.Result
 import app.otakureader.domain.repository.AiRepository
 
 /**
@@ -22,7 +19,7 @@ class GenerateMangaSummaryUseCase(
      * @param title The manga title
      * @param description The full description text to summarize
      * @param maxLength Maximum word count for the summary (default: 100)
-     * @return [Result.Success] with the generated summary, or [Result.Error]
+     * @return [Result] containing the generated summary, or an error
      */
     suspend operator fun invoke(
         title: String,
@@ -30,7 +27,7 @@ class GenerateMangaSummaryUseCase(
         maxLength: Int = 100
     ): Result<String> {
         if (description.isBlank()) {
-            return Result.Error(AiException.InvalidRequest("Description cannot be blank"))
+            return Result.failure(IllegalArgumentException("Description cannot be blank"))
         }
 
         val prompt = buildString {
@@ -49,7 +46,7 @@ class GenerateMangaSummaryUseCase(
      * @param title The manga title
      * @param chapterTitles List of recent chapter titles
      * @param maxLength Maximum word count for the summary
-     * @return [Result.Success] with the arc summary, or [Result.Error]
+     * @return [Result] containing the arc summary, or an error
      */
     suspend fun summarizeArc(
         title: String,
@@ -57,7 +54,7 @@ class GenerateMangaSummaryUseCase(
         maxLength: Int = 150
     ): Result<String> {
         if (chapterTitles.isEmpty()) {
-            return Result.Error(AiException.InvalidRequest("Chapter titles cannot be empty"))
+            return Result.failure(IllegalArgumentException("Chapter titles cannot be empty"))
         }
 
         val prompt = buildString {

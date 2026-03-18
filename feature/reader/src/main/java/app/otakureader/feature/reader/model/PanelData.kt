@@ -130,7 +130,7 @@ data class PageAnalysisResult(
      * Check if analysis is stale (older than specified days)
      */
     fun isStale(maxAgeDays: Int = CACHE_MAX_AGE_DAYS): Boolean {
-        val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
+        val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
         return System.currentTimeMillis() - analysisTimestamp > maxAgeMillis
     }
 
