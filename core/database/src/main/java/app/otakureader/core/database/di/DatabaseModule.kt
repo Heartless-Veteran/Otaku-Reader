@@ -120,6 +120,104 @@ object DatabaseModule {
         }
     }
 
+    /**
+     * Adds Feed feature tables and Tracker Sync tables in database version 10.
+     */
+    private val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Feed feature tables
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `feed_items` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `mangaId` INTEGER NOT NULL,
+                    `mangaTitle` TEXT NOT NULL,
+                    `mangaThumbnailUrl` TEXT,
+                    `chapterId` INTEGER NOT NULL,
+                    `chapterName` TEXT NOT NULL,
+                    `chapterNumber` REAL NOT NULL,
+                    `sourceId` INTEGER NOT NULL,
+                    `sourceName` TEXT NOT NULL,
+                    `timestamp` INTEGER NOT NULL,
+                    `isRead` INTEGER NOT NULL DEFAULT 0
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_sourceId` ON `feed_items` (`sourceId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_timestamp` ON `feed_items` (`timestamp`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_mangaId` ON `feed_items` (`mangaId`)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `feed_sources` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `sourceId` INTEGER NOT NULL,
+                    `sourceName` TEXT NOT NULL,
+                    `isEnabled` INTEGER NOT NULL DEFAULT 1,
+                    `itemCount` INTEGER NOT NULL DEFAULT 20,
+                    `order` INTEGER NOT NULL DEFAULT 0
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_feed_sources_sourceId` ON `feed_sources` (`sourceId`)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `feed_saved_searches` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `sourceId` INTEGER NOT NULL,
+                    `sourceName` TEXT NOT NULL,
+                    `query` TEXT NOT NULL,
+                    `filtersJson` TEXT,
+                    `order` INTEGER NOT NULL DEFAULT 0
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_saved_searches_sourceId` ON `feed_saved_searches` (`sourceId`)")
+
+            // Tracker Sync tables
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `tracker_sync_state` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `mangaId` INTEGER NOT NULL,
+                    `trackerId` INTEGER NOT NULL,
+                    `remoteId` TEXT NOT NULL,
+                    `localLastChapterRead` REAL NOT NULL,
+                    `localTotalChapters` INTEGER NOT NULL,
+                    `localStatus` INTEGER NOT NULL,
+                    `localLastModified` INTEGER NOT NULL,
+                    `remoteLastChapterRead` REAL NOT NULL,
+                    `remoteTotalChapters` INTEGER NOT NULL,
+                    `remoteStatus` INTEGER NOT NULL,
+                    `remoteLastModified` INTEGER,
+                    `syncStatus` INTEGER NOT NULL,
+                    `lastSyncAttempt` INTEGER,
+                    `lastSuccessfulSync` INTEGER,
+                    `syncError` TEXT
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tracker_sync_state_mangaId_trackerId` ON `tracker_sync_state` (`mangaId`, `trackerId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_tracker_sync_state_syncStatus` ON `tracker_sync_state` (`syncStatus`)")
+
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `sync_configuration` (
+                    `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    `trackerId` INTEGER NOT NULL UNIQUE,
+                    `enabled` INTEGER NOT NULL DEFAULT 1,
+                    `syncDirection` INTEGER NOT NULL,
+                    `conflictResolution` INTEGER NOT NULL,
+                    `autoSyncInterval` INTEGER NOT NULL DEFAULT 300000,
+                    `syncOnChapterRead` INTEGER NOT NULL DEFAULT 1,
+                    `syncOnMarkComplete` INTEGER NOT NULL DEFAULT 1
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
     @Provides
     @Singleton
     fun provideDatabase(
@@ -130,7 +228,7 @@ object DatabaseModule {
             OtakuReaderDatabase::class.java,
             OtakuReaderDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
         // Only allow destructive migration in debug builds to avoid silently wiping
         // user data (including notes) in production if a migration is missing.
         if (BuildConfig.DEBUG) {
@@ -156,4 +254,10 @@ object DatabaseModule {
 
     @Provides
     fun provideOpdsServerDao(database: OtakuReaderDatabase) = database.opdsServerDao()
+
+    @Provides
+    fun provideFeedDao(database: OtakuReaderDatabase) = database.feedDao()
+
+    @Provides
+    fun provideTrackerSyncDao(database: OtakuReaderDatabase) = database.trackerSyncDao()
 }
