@@ -32,7 +32,7 @@ object SyncModule {
     @Singleton
     fun provideSyncProviders(
         selfHostedProvider: SelfHostedSyncProvider
-    ): Set<SyncProvider> = setOf(selfHostedProvider)
+    ): Set<SyncProvider> = setOf<SyncProvider>(selfHostedProvider)
 
     @Provides
     @Singleton

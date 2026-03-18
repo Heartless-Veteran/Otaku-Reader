@@ -86,10 +86,7 @@ class SourceRepositoryImpl(
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val extensionLoader by lazy {
-        TachiyomiExtensionLoader(
-            context.packageManager,
-            File(context.cacheDir, "tachiyomi-extensions")
-        )
+        TachiyomiExtensionLoader(context.packageManager)
     }
 
     init {
