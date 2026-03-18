@@ -101,6 +101,12 @@ class SmartSearchUseCase @Inject constructor(
         }.recoverCatching { e ->
             throw when (e) {
                 is SmartSearchException -> e
+                // Map JSON/serialization exceptions to ParsingError
+                is kotlinx.serialization.SerializationException ->
+                    SmartSearchException.ParsingError(e.message ?: "JSON parsing failed")
+                is IllegalArgumentException ->
+                    SmartSearchException.ParsingError(e.message ?: "Invalid JSON structure")
+                // Other errors are AI processing failures
                 else -> SmartSearchException.AiProcessingError(e.message ?: "AI processing failed")
             }
         }

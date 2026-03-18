@@ -3,11 +3,11 @@ package app.otakureader.domain.usecase.ai
 import app.otakureader.domain.repository.AiRepository
 
 /**
- * Use case for generating AI-powered content with advanced configuration.
+ * Use case for generating AI-powered content.
  *
- * This use case wraps [AiRepository.generateContent] with a fluent API for
- * temperature and max-token overrides.  Callers that do not need custom
- * parameters should prefer [GenerateAiContentUseCase] instead.
+ * This use case wraps [AiRepository.generateContent] and validates the prompt
+ * before sending it to the AI. Configuration parameters (temperature, max tokens)
+ * are handled by the repository layer.
  *
  * @property aiRepository Repository for AI operations
  */
