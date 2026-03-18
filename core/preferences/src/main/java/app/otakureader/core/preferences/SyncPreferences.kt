@@ -129,15 +129,15 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    // Self-hosted server settings
-    val selfHostedServerUrl: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_URL] }
-    val selfHostedAuthToken: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_TOKEN] }
+    // Self-hosted server settings (Flow-based for reactive access)
+    val selfHostedServerUrlFlow: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_URL] }
+    val selfHostedAuthTokenFlow: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_TOKEN] }
 
     /**
      * Get self-hosted server URL (blocking for synchronous access)
      */
     var selfHostedServerUrl: String
-        get() = runBlocking { selfHostedServerUrl.first() ?: "" }
+        get() = runBlocking { selfHostedServerUrlFlow.first() ?: "" }
         set(value) = runBlocking {
             dataStore.edit { prefs ->
                 if (value.isBlank()) {
@@ -152,7 +152,7 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
      * Get self-hosted auth token (blocking for synchronous access)
      */
     var selfHostedAuthToken: String
-        get() = runBlocking { selfHostedAuthToken.first() ?: "" }
+        get() = runBlocking { selfHostedAuthTokenFlow.first() ?: "" }
         set(value) = runBlocking {
             dataStore.edit { prefs ->
                 if (value.isBlank()) {
@@ -163,7 +163,7 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
             }
         }
 
-    val lastSyncTimestamp: Long
+    var lastSyncTimestamp: Long
         get() = runBlocking { dataStore.data.first()[Keys.LAST_SYNC_TIMESTAMP] ?: 0L }
         set(value) = runBlocking {
             dataStore.edit { prefs ->
