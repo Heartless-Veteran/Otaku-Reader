@@ -1,273 +1,110 @@
 # Cloud Sync Architecture
 
-**Implementation Status:** Core Complete, OAuth Integration Pending
+> **Note:** This project has moved from Google Drive sync to **self-hosted sync**. The original cloud sync architecture docs are preserved below for reference, but the current implementation uses a lightweight Docker-based server.
 
-This document describes the cloud sync architecture in Otaku Reader. The core sync engine is production-ready with comprehensive testing, but Google Drive OAuth authentication is not yet implemented and is required for end-to-end functionality.
+## Current Implementation: Self-Hosted Sync
 
-## Overview
+See [self-hosted-sync.md](./self-hosted-sync.md) for the current architecture.
 
-The cloud sync architecture enables cross-device synchronization of library data (favorites, categories, read progress) while keeping the system flexible and extensible.
+## Quick Links
 
-## Design Principles
+- **[Self-Hosted Sync Guide](./self-hosted-sync.md)** - Current implementation
+- **[Server Setup](../../server/README.md)** - Docker deployment
+- **Issue #462** - Original feature request
 
-1. **Provider Abstraction**: `SyncProvider` interface allows multiple cloud storage backends
-2. **Lightweight Snapshots**: `SyncSnapshot` contains only essential sync data (smaller than full backups)
+---
+
+## Historical: Cloud Sync Architecture (Reference)
+
+The following sections document the original cloud sync design that supported multiple providers (Google Drive, Dropbox, WebDAV). This has been superseded by the simpler self-hosted approach.
+
+### Overview (Historical)
+
+The cloud sync architecture was designed to enable cross-device synchronization of library data (favorites, categories, read progress) while keeping the system flexible and extensible.
+
+### Design Principles (Historical)
+
+1. **Provider Abstraction**: `SyncProvider` interface allowed multiple cloud storage backends
+2. **Lightweight Snapshots**: `SyncSnapshot` contains only essential sync data
 3. **Conflict Resolution**: Multiple strategies for handling concurrent modifications
 4. **Incremental Sync**: Metadata tracking for version-based conflict detection
-5. **Device Tracking**: Each snapshot includes device ID for debugging and conflict resolution
+5. **Device Tracking**: Each snapshot includes device ID for debugging
 
-## Architecture Layers
+### Why We Moved to Self-Hosted
 
-### Domain Layer (`domain/src/main/java/app/otakureader/domain/sync/`)
+| Aspect | Cloud (Google Drive) | Self-Hosted |
+|--------|---------------------|-------------|
+| **Complexity** | OAuth 2.0, token refresh, API quotas | Simple Bearer token |
+| **Privacy** | Data on Google's servers | Your own server |
+| **Control** | Subject to API changes/charges | Fully controlled |
+| **Setup** | Complex OAuth consent screen | Docker one-liner |
+| **Use Case** | Multi-user, enterprise | Personal, single-user |
 
-#### `SyncManager` Interface
-Central coordinator for all sync operations. Responsibilities:
-- Enable/disable sync for a specific provider
-- Trigger manual or automatic sync
+For a personal manga reader app, the self-hosted approach is simpler, more private, and easier to maintain.
+
+### Removed Components
+
+The following were removed in PR #461:
+
+- `GoogleDriveSyncProvider` - Google Drive integration
+- `GoogleDriveAuthenticator` - OAuth flow
+- `DropboxSyncProvider` - Dropbox integration stub
+- `WebDavSyncProvider` - WebDAV integration stub
+- `EncryptedGoogleDriveTokenStore` - OAuth token storage
+- Firebase Firestore dependencies
+
+### Preserved Components
+
+The following remain and are used by the self-hosted implementation:
+
+- `SyncManager` - Core sync orchestration
+- `SyncProvider` interface - Provider abstraction
+- `SyncSnapshot` - Data model for sync payloads
+- `SyncManagerImpl` - Business logic
+- Conflict resolution strategies
+- Unit tests (31 tests passing)
+
+### Architecture Layers (Historical Reference)
+
+#### Domain Layer (`domain/src/main/java/app/otakureader/domain/sync/`)
+
+**`SyncManager`** - Central coordinator:
+- Enable/disable sync for a provider
+- Trigger manual sync
 - Create and apply sync snapshots
-- Manage sync status (idle, syncing, success, error)
-- Handle conflict resolution strategies
+- Manage sync status
+- Handle conflict resolution
 
-#### `SyncProvider` Interface
-Abstract cloud storage provider. Responsibilities:
-- Authenticate with cloud service
-- Upload/download sync snapshots
-- Query last snapshot timestamp
-- Manage cloud storage lifecycle
+**`SyncProvider`** interface:
+- Authenticate with service
+- Upload/download snapshots
+- Query timestamps
+- Manage storage lifecycle
 
-#### Sync Models (`domain/model/SyncModels.kt`)
+#### Data Layer (`data/src/main/java/app/otakureader/data/sync/`)
 
-**`SyncSnapshot`**: Lightweight sync data structure
-- Version tracking for format evolution
-- Device identification for conflict resolution
-- Timestamp-based modification tracking
-- Metadata for incremental sync
+**`SyncManagerImpl`**:
+- Creates snapshots from local DB
+- Applies snapshots with conflict resolution
+- Handles merge strategies
 
-**Key differences from `BackupData`**:
-- ✅ Excludes user preferences (device-specific)
-- ✅ Excludes reading history (too large, can sync separately)
-- ✅ Includes `lastModified` timestamps on all entities
-- ✅ Includes device ID and sync version
-- ✅ Focuses on library state only
+### Conflict Resolution (Still Used)
 
-**`SyncResult`**: Detailed sync operation statistics
-- Counts for additions, updates, deletions
-- Conflict count
-- Success/error status
+Strategies preserved in current implementation:
 
-### Data Layer (`data/src/main/java/app/otakureader/data/sync/`)
+1. **PREFER_NEWER** (default): Use modification timestamp
+2. **PREFER_LOCAL**: Keep local changes
+3. **PREFER_REMOTE**: Accept remote changes
+4. **MERGE**: Intelligent merge (union of favorites, max progress)
 
-#### `GoogleDriveSyncProvider` (Prototype - OAuth Not Implemented)
-Reference implementation using Google Drive REST API v3.
+### Migration Path
 
-**Implemented Features**:
-- ✅ Drive REST API v3 integration
-- ✅ Single-file storage in app data folder (hidden from user)
-- ✅ JSON serialization of snapshots
-- ✅ CRUD operations on Drive files
+If you were using the old cloud sync stubs (they weren't functional), migrate to self-hosted:
 
-**Not Implemented (Critical Gap)**:
-- ❌ OAuth 2.0 authentication - `GoogleDriveAuthenticator.authenticate()` throws `NotImplementedError`
-- ❌ Automatic token refresh
-- ❌ Token storage encryption
+1. Deploy the sync server (see [server/README.md](../../server/README.md))
+2. Configure server URL and token in app settings
+3. Use Backup/Restore buttons to sync
 
-**Production Requirements**:
-- Implement OAuth using Google Sign-In SDK (`com.google.android.gms:play-services-auth`)
-- Add automatic token refresh mechanism
-- Implement retry logic with exponential backoff
-- Add compression for large snapshots (gzip)
-- Parse modification timestamps properly
-- Handle rate limiting
-- Add progress callbacks for large uploads
+---
 
-#### `GoogleDriveAuthenticator`
-Manages OAuth 2.0 authentication flow.
-
-**Current state**: Stub implementation - throws `NotImplementedError` at line 80
-**Critical Gap**: OAuth flow is not implemented; users cannot authenticate
-
-**Required for production**:
-- Integrate Google Sign-In SDK (`com.google.android.gms:play-services-auth`)
-- Request `drive.appdata` scope (user can't see/delete sync file)
-- Implement token refresh mechanism
-- Use EncryptedSharedPreferences for token storage
-- Handle re-authentication on token expiry
-
-## Data Flow
-
-### Push Flow
-```
-Local DB → SyncManager.createSnapshot()
-         → SyncSnapshot (JSON)
-         → SyncProvider.uploadSnapshot()
-         → Google Drive appDataFolder
-```
-
-### Pull Flow
-```
-Google Drive → SyncProvider.downloadSnapshot()
-            → SyncSnapshot (JSON)
-            → SyncManager.applySnapshot()
-            → Conflict Resolution
-            → Local DB updates
-```
-
-### Full Sync Flow
-```
-1. Create local snapshot
-2. Upload to cloud
-3. Download latest cloud snapshot
-4. Merge with conflict resolution
-5. Apply merged state to local DB
-6. Report statistics
-```
-
-## Conflict Resolution
-
-Supported strategies:
-
-1. **PREFER_NEWER** (default): Use modification timestamp to pick most recent
-2. **PREFER_LOCAL**: Keep local changes, discard remote
-3. **PREFER_REMOTE**: Accept all remote changes
-4. **MERGE**: Intelligent merge (e.g., union of favorites, max progress)
-
-### Resolution Logic
-
-For each entity type:
-
-**Manga**:
-- Compare `lastModified` timestamps
-- Merge `favorite` status (OR operation for MERGE strategy)
-- Merge `categoryIds` (union for MERGE strategy)
-- Prefer most recent `notes` field
-
-**Chapters**:
-- Compare `lastModified` timestamps
-- Merge `read` status (prefer true)
-- Take max of `lastPageRead`
-- Merge `bookmark` (prefer true)
-
-**Categories**:
-- Match by `id` (stable identifier)
-- Compare `lastModified` timestamps
-- Prefer newer name and order
-
-## Security Considerations
-
-1. **OAuth Scope**: Use `drive.appdata` not `drive.file`
-   - Files in appDataFolder are hidden from user
-   - Deleted when app is uninstalled
-   - Can't be accessed by other apps
-
-2. **Token Storage**: Use EncryptedSharedPreferences
-   - Android Keystore backing
-   - Prevent token theft from rooted devices
-
-3. **Data Privacy**:
-   - No user preferences synced (locale, theme)
-   - No reading history (privacy-sensitive)
-   - Only library structure and progress
-
-4. **Validation**:
-   - Version checks on snapshot format
-   - Hash verification (future: `previousSnapshotHash`)
-   - Size limits to prevent abuse
-
-## Size Optimization
-
-Target: Keep snapshots under 1MB for fast sync.
-
-**Techniques**:
-1. Exclude reading history (grows unbounded)
-2. Exclude preferences (device-specific)
-3. Minimal chapter data (URL + read state only)
-4. No full chapter metadata (name, scanlator, etc.)
-5. Future: gzip compression (typical 10x reduction for JSON)
-
-**Estimates** (for 1000 favorite manga, 10 chapters each):
-- Manga: ~500 bytes each = 500KB
-- Chapters: ~100 bytes each × 10,000 = 1MB
-- Categories: negligible
-- **Total**: ~1.5MB uncompressed, ~150KB with gzip
-
-## Future Enhancements
-
-### Phase 1: Complete Core Functionality (Critical)
-- [ ] **Google Sign-In SDK integration** - Required for OAuth authentication
-- [ ] **Sync Settings UI** - Connect UI to settings screen
-- [ ] **Token refresh mechanism** - Automatic token renewal
-- [ ] **Error handling improvements** - Retry logic, user-friendly messages
-
-### Phase 2: Advanced Sync
-- [ ] Automatic background sync (WorkManager) - ✅ Infrastructure complete, needs OAuth
-- [ ] Differential sync (only changed entities since last sync)
-- [ ] Three-way merge for complex conflicts
-- [ ] Sync history/audit log
-- [ ] Multiple device management UI
-
-### Phase 3: Additional Providers
-- [ ] Dropbox implementation
-- [ ] WebDAV (Nextcloud, ownCloud)
-- [ ] Custom backend server
-- [ ] Self-hosted solution
-
-### Phase 4: Extended Data
-- [ ] Optional reading history sync (with size limits)
-- [ ] Tracking list sync
-- [ ] Extension list sync
-- [ ] Source login credentials (encrypted)
-
-## Testing Strategy
-
-### Unit Tests (Completed ✅)
-- [x] Conflict resolution logic - 11 tests in SyncManagerImplTest
-- [x] Timestamp comparison
-- [x] Merge strategies
-- [x] Serialization/deserialization - 11 tests in SyncModelsTest
-- [x] Use case tests - 9 tests in SyncUseCasesTest
-
-**Total: 31 tests passing**
-
-### Integration Tests (Pending)
-- [ ] Mock Google Drive API responses
-- [ ] Full sync flow end-to-end
-- [ ] OAuth flow (UI tests)
-- [ ] Multi-device simulation
-
-### Manual Testing (Pending OAuth Implementation)
-- [ ] Actual Google Drive integration
-- [ ] Token refresh
-- [ ] Network error handling
-- [ ] Large library sync performance
-
-## Implementation Checklist
-
-### Completed ✅
-- [x] `SyncManager` interface
-- [x] `SyncProvider` interface
-- [x] `SyncSnapshot` data structures
-- [x] `GoogleDriveSyncProvider` prototype (REST API calls)
-- [x] `SyncManagerImpl` implementation
-- [x] Sync preferences (enable/disable, provider selection)
-- [x] Conflict resolution implementation
-- [x] Snapshot creation from DB
-- [x] Snapshot application to DB
-- [x] Unit tests (31 tests passing)
-- [x] Background sync worker (SyncWorker)
-- [x] Sync notifications (SyncNotifier)
-
-### Pending ❌
-- [ ] `GoogleDriveAuthenticator` OAuth implementation (currently throws `NotImplementedError`)
-- [ ] UI for sync settings (MVI events exist, UI not connected)
-- [ ] Google Sign-In SDK integration
-- [ ] Token refresh mechanism
-- [ ] Integration tests
-- [ ] Dropbox provider implementation
-- [ ] WebDAV provider implementation
-
-## References
-
-- [Google Drive REST API v3](https://developers.google.com/drive/api/v3/reference)
-- [OAuth 2.0 for Mobile Apps](https://developers.google.com/identity/protocols/oauth2/native-app)
-- [Google Sign-In SDK](https://developers.google.com/identity/sign-in/android/start)
-- [AppAuth for Android](https://github.com/openid/AppAuth-Android) (alternative OAuth library)
+*Last updated: March 2026*
