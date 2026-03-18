@@ -142,7 +142,7 @@ otaku-reader/
 │   ├── download/          # Download manager & provider
 │   ├── loader/            # Page loader (local-first)
 │   ├── repository/        # Repository implementations
-│   ├── sync/              # Cloud sync providers & manager
+│   ├── sync/              # Self-hosted sync provider & manager
 │   └── worker/            # WorkManager background jobs
 ├── feature/               # Feature modules
 │   ├── about/             # About screen
@@ -158,6 +158,7 @@ otaku-reader/
 │   ├── statistics/        # Reading statistics & charts
 │   ├── tracking/          # Tracker integration (MAL, AniList, Kitsu…)
 │   └── updates/           # Updates & downloads
+├── server/                # Self-hosted sync server (Ktor + Docker)
 ├── source-api/            # Extension API contracts
 └── baselineprofile/       # Baseline profile for startup optimization
 ```
@@ -610,6 +611,17 @@ class LibraryViewModel @Inject constructor(
 - ❌ Don't create circular dependencies
 - ❌ Don't expose mutable state from ViewModels
 - ❌ Don't use callbacks, prefer Flow/StateFlow
+
+## Self-Hosted Sync
+
+Otaku Reader includes a self-hosted sync solution for personal cross-device synchronization:
+
+- **Server**: Ktor-based HTTP API with Bearer authentication
+- **Client**: `SelfHostedSyncProvider` implementing `SyncProvider` interface
+- **Deployment**: Docker/Docker Compose for easy self-hosting
+- **Mode**: Manual backup/restore (no automatic sync)
+
+See [Self-Hosted Sync Architecture](self-hosted-sync.md) for implementation details and [Server Setup](../../server/README.md) for deployment instructions.
 
 ---
 
