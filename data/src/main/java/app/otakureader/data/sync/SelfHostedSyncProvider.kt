@@ -5,6 +5,7 @@ import app.otakureader.core.preferences.SyncPreferences
 import app.otakureader.data.sync.remote.SelfHostedSyncApi
 import app.otakureader.data.sync.remote.SelfHostedSyncApiFactory
 import app.otakureader.domain.model.SyncSnapshot
+import app.otakureader.domain.sync.SyncProvider
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString

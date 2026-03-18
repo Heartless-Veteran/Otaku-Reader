@@ -178,6 +178,13 @@ class ExtensionInstaller(
                     
                     result
                 }
+                is ExtensionLoadResult.Untrusted -> {
+                    _installationState.value = InstallationState.Error(
+                        "Extension is not trusted. Please verify its signature before installing.",
+                        null
+                    )
+                    Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
+                }
             }
         } catch (e: Exception) {
             _installationState.value = InstallationState.Error("Installation failed", e)
@@ -254,6 +261,13 @@ class ExtensionInstaller(
                         }
                         
                         result
+                    }
+                    is ExtensionLoadResult.Untrusted -> {
+                        _installationState.value = InstallationState.Error(
+                            "Extension is not trusted. Please verify its signature before updating.",
+                            null
+                        )
+                        Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                     }
                 }
             } catch (e: Exception) {

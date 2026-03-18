@@ -193,7 +193,7 @@ class ExtensionLoaderTest {
         val apkPath = createTempApkFile()
         val packageInfo = createMockPackageInfo(
             pkgName = "eu.kanade.tachiyomi.extension.en.test",
-            versionName = "1.0.5"  // Below minimum 1.2
+            versionName = "1.0.5"  // Below minimum 1.4
         )
         every { packageManager.getPackageArchiveInfo(apkPath, any<Int>()) } returns packageInfo
 
@@ -245,12 +245,12 @@ class ExtensionLoaderTest {
     }
 
     @Test
-    fun `loadExtension accepts valid library version 1_2`() {
+    fun `loadExtension accepts valid library version 1_4`() {
         // Given
         val apkPath = createTempApkFile()
         val packageInfo = createMockPackageInfo(
             pkgName = "eu.kanade.tachiyomi.extension.en.test",
-            versionName = "1.2.100"
+            versionName = "1.4.100"
         )
         every { packageManager.getPackageArchiveInfo(apkPath, any<Int>()) } returns packageInfo
 
