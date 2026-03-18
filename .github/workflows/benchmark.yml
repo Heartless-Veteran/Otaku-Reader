@@ -1,0 +1,73 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run Unit Tests with Coverage
+        run: ./gradlew testFullDebugUnitTest --no-daemon
+        env:
+          CI: true
+
+      - name: Generate Coverage Report
+        run: ./gradlew jacocoFullDebugReport --no-daemon || true
+        env:
+          CI: true
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: '**/build/reports/jacoco/**/*.xml'
+          retention-days: 30
+
+      - name: Run Build Time Benchmark
+        run: |
+          echo "## Build Time Benchmark" > benchmark.md
+          echo "" >> benchmark.md
+          echo "| Step | Time |" >> benchmark.md
+          echo "|------|------|" >> benchmark.md
+          
+          START=$(date +%s)
+          ./gradlew :app:assembleFullDebug --no-daemon
+          END=$(date +%s)
+          echo "| Full Debug Build | $((END-START))s |" >> benchmark.md
+          
+          START=$(date +%s)
+          ./gradlew testFullDebugUnitTest --no-daemon
+          END=$(date +%s)
+          echo "| Unit Tests | $((END-START))s |" >> benchmark.md
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark.md
+          retention-days: 30

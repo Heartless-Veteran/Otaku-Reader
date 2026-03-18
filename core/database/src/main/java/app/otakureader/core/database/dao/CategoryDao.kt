@@ -48,4 +48,17 @@ interface CategoryDao {
 
     @Query("SELECT COALESCE(MAX(`order`), 0) FROM categories")
     suspend fun getMaxCategoryOrder(): Int
+
+    // Hidden category support
+    @Query("SELECT * FROM categories WHERE (flags & 1) = 0 ORDER BY `order` ASC")
+    fun getVisibleCategories(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories WHERE (flags & 1) = 1 ORDER BY `order` ASC")
+    fun getHiddenCategories(): Flow<List<CategoryEntity>>
+
+    @Query("UPDATE categories SET flags = flags ^ 1 WHERE id = :categoryId")
+    suspend fun toggleHiddenFlag(categoryId: Long)
+
+    @Query("UPDATE categories SET flags = flags ^ 2 WHERE id = :categoryId")
+    suspend fun toggleNsfwFlag(categoryId: Long)
 }

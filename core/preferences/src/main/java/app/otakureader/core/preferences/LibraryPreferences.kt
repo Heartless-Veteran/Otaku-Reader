@@ -47,6 +47,16 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         if (value != null) it[Keys.LIBRARY_FILTER_SOURCE] = value else it.remove(Keys.LIBRARY_FILTER_SOURCE)
     }
 
+    // --- NSFW Filter ---
+
+    /** Whether to show NSFW content in the library. false = hide NSFW categories. */
+    val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: false }
+    suspend fun setShowNsfwContent(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW_CONTENT] = value }
+
+    /** Whether to show hidden categories in the library. */
+    val showHiddenCategories: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_HIDDEN_CATEGORIES] ?: false }
+    suspend fun setShowHiddenCategories(value: Boolean) = dataStore.edit { it[Keys.SHOW_HIDDEN_CATEGORIES] = value }
+
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
@@ -54,5 +64,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val LIBRARY_DISPLAY_MODE = intPreferencesKey("library_display_mode")
         val LIBRARY_FILTER_MODE = intPreferencesKey("library_filter_mode")
         val LIBRARY_FILTER_SOURCE = longPreferencesKey("library_filter_source")
+        val SHOW_NSFW_CONTENT = booleanPreferencesKey("library_show_nsfw_content")
+        val SHOW_HIDDEN_CATEGORIES = booleanPreferencesKey("library_show_hidden_categories")
     }
 }

@@ -20,6 +20,26 @@ class CategoryRepositoryImpl @Inject constructor(
             entities.map { it.toDomain() }
         }
     }
+
+    override fun getVisibleCategories(): Flow<List<Category>> {
+        return categoryDao.getVisibleCategories().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getHiddenCategories(): Flow<List<Category>> {
+        return categoryDao.getHiddenCategories().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun toggleCategoryHidden(categoryId: Long) {
+        categoryDao.toggleHiddenFlag(categoryId)
+    }
+
+    override suspend fun toggleCategoryNsfw(categoryId: Long) {
+        categoryDao.toggleNsfwFlag(categoryId)
+    }
     
     override suspend fun getCategoryById(id: Long): Category? {
         return categoryDao.getCategoryById(id)?.toDomain()
@@ -54,12 +74,16 @@ class CategoryRepositoryImpl @Inject constructor(
     private fun CategoryEntity.toDomain() = Category(
         id = id,
         name = name,
-        order = order
+        order = order,
+        isHidden = isHidden,
+        isNsfw = isNsfw
     )
-    
+
     private fun Category.toEntity() = CategoryEntity(
         id = id,
         name = name,
-        order = order
+        order = order,
+        flags = (if (isHidden) CategoryEntity.FLAG_HIDDEN else 0) or
+                (if (isNsfw) CategoryEntity.FLAG_NSFW else 0)
     )
 }

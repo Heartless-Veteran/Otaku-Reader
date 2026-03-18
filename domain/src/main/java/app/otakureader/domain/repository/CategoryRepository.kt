@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
     fun getCategories(): Flow<List<Category>>
+    fun getVisibleCategories(): Flow<List<Category>>
+    fun getHiddenCategories(): Flow<List<Category>>
     suspend fun getCategoryById(id: Long): Category?
     suspend fun createCategory(name: String): Long
     suspend fun updateCategory(category: Category)
@@ -13,4 +15,6 @@ interface CategoryRepository {
     suspend fun addMangaToCategory(mangaId: Long, categoryId: Long)
     suspend fun removeMangaFromCategory(mangaId: Long, categoryId: Long)
     fun getMangaIdsByCategoryId(categoryId: Long): Flow<List<Long>>
+    suspend fun toggleCategoryHidden(categoryId: Long)
+    suspend fun toggleCategoryNsfw(categoryId: Long)
 }
