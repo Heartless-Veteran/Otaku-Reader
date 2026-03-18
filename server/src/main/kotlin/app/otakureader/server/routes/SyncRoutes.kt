@@ -31,25 +31,28 @@ fun Route.syncRoutes(config: AppConfig) {
         post("/upload") {
             try {
                 val request = call.receive<UploadRequest>()
-                
-                when (val result = syncService.storeSnapshot(request.data, request.timestamp)) {
-                    is kotlin.Result.Success -> {
+
+                syncService.storeSnapshot(request.data, request.timestamp).fold(
+                    onSuccess = { size ->
                         call.respond(
                             HttpStatusCode.OK,
                             UploadResponse(
                                 success = true,
                                 timestamp = request.timestamp,
-                                size = result.getOrDefault(request.data.length)
+                                size = size
                             )
                         )
-                    }
-                    is kotlin.Result.Failure -> {
+                    },
+                    onFailure = { error ->
+                        // Log detailed error server-side
+                        call.application.environment.log.error("Failed to store snapshot", error)
+                        // Return generic error to client
                         call.respond(
                             HttpStatusCode.InternalServerError,
-                            ErrorResponse("Failed to store snapshot: ${result.exceptionOrNull()?.message}")
+                            ErrorResponse("Failed to store snapshot")
                         )
                     }
-                }
+                )
             } catch (e: Exception) {
                 call.respond(
                     HttpStatusCode.BadRequest,
@@ -107,20 +110,23 @@ fun Route.syncRoutes(config: AppConfig) {
          * Delete the stored snapshot.
          */
         delete {
-            when (val result = syncService.deleteSnapshot()) {
-                is kotlin.Result.Success -> {
+            syncService.deleteSnapshot().fold(
+                onSuccess = {
                     call.respond(
                         HttpStatusCode.OK,
                         mapOf("success" to true)
                     )
-                }
-                is kotlin.Result.Failure -> {
+                },
+                onFailure = { error ->
+                    // Log detailed error server-side
+                    call.application.environment.log.error("Failed to delete snapshot", error)
+                    // Return generic error to client
                     call.respond(
                         HttpStatusCode.InternalServerError,
-                        ErrorResponse("Failed to delete snapshot: ${result.exceptionOrNull()?.message}")
+                        ErrorResponse("Failed to delete snapshot")
                     )
                 }
-            }
+            )
         }
     }
 }

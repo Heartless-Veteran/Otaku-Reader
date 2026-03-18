@@ -8,10 +8,6 @@ plugins {
 group = "app.otakureader"
 version = "1.0.0"
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     // Ktor (updated to 3.1.2 for security fixes)
     implementation("io.ktor:ktor-server-core:3.1.2")
@@ -21,16 +17,16 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:3.1.2")
     implementation("io.ktor:ktor-server-status-pages:3.1.2")
     implementation("io.ktor:ktor-server-call-logging:3.1.2")
-    
+
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    
+    implementation(libs.kotlinx.serialization.json)
+
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.18")
-    
+
     // Testing
     testImplementation("io.ktor:ktor-server-test-host:3.1.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.1.10")
+    testImplementation(libs.kotlin.test)
 }
 
 kotlin {

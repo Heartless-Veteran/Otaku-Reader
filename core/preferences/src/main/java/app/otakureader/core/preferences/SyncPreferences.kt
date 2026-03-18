@@ -130,49 +130,47 @@ class SyncPreferences(private val dataStore: DataStore<Preferences>) {
     }
 
     // Self-hosted server settings
-    val selfHostedServerUrl: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_URL] }
-    val selfHostedAuthToken: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_TOKEN] }
+    val selfHostedServerUrlFlow: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_URL] }
+    val selfHostedAuthTokenFlow: Flow<String?> = dataStore.data.map { it[Keys.SELF_HOSTED_TOKEN] }
+    val lastSyncTimestampFlow: Flow<Long> = dataStore.data.map { it[Keys.LAST_SYNC_TIMESTAMP] ?: 0L }
 
-    /**
-     * Get self-hosted server URL (blocking for synchronous access)
-     */
-    var selfHostedServerUrl: String
-        get() = runBlocking { selfHostedServerUrl.first() ?: "" }
-        set(value) = runBlocking {
-            dataStore.edit { prefs ->
-                if (value.isBlank()) {
-                    prefs.remove(Keys.SELF_HOSTED_URL)
-                } else {
-                    prefs[Keys.SELF_HOSTED_URL] = value
-                }
+    suspend fun setSelfHostedServerUrl(url: String) {
+        dataStore.edit { prefs ->
+            if (url.isBlank()) {
+                prefs.remove(Keys.SELF_HOSTED_URL)
+            } else {
+                prefs[Keys.SELF_HOSTED_URL] = url
             }
         }
+    }
 
-    /**
-     * Get self-hosted auth token (blocking for synchronous access)
-     */
-    var selfHostedAuthToken: String
-        get() = runBlocking { selfHostedAuthToken.first() ?: "" }
-        set(value) = runBlocking {
-            dataStore.edit { prefs ->
-                if (value.isBlank()) {
-                    prefs.remove(Keys.SELF_HOSTED_TOKEN)
-                } else {
-                    prefs[Keys.SELF_HOSTED_TOKEN] = value
-                }
+    suspend fun setSelfHostedAuthToken(token: String) {
+        dataStore.edit { prefs ->
+            if (token.isBlank()) {
+                prefs.remove(Keys.SELF_HOSTED_TOKEN)
+            } else {
+                prefs[Keys.SELF_HOSTED_TOKEN] = token
             }
         }
+    }
 
-    val lastSyncTimestamp: Long
-        get() = runBlocking { dataStore.data.first()[Keys.LAST_SYNC_TIMESTAMP] ?: 0L }
-        set(value) = runBlocking {
-            dataStore.edit { prefs ->
-                prefs[Keys.LAST_SYNC_TIMESTAMP] = value
-            }
+    suspend fun getSelfHostedServerUrl(): String {
+        return selfHostedServerUrlFlow.first() ?: ""
+    }
+
+    suspend fun getSelfHostedAuthToken(): String {
+        return selfHostedAuthTokenFlow.first() ?: ""
+    }
+
+    suspend fun setLastSyncTimestamp(timestamp: Long) {
+        dataStore.edit { prefs ->
+            prefs[Keys.LAST_SYNC_TIMESTAMP] = timestamp
         }
+    }
 
-    private fun <T> runBlocking(block: suspend () -> T): T =
-        kotlinx.coroutines.runBlocking { block() }
+    suspend fun getLastSyncTimestamp(): Long {
+        return lastSyncTimestampFlow.first()
+    }
 
     private object Keys {
         val SYNC_ENABLED = booleanPreferencesKey("sync_enabled")

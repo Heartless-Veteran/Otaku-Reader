@@ -6,6 +6,7 @@ import app.otakureader.data.sync.remote.SelfHostedSyncApi
 import app.otakureader.data.sync.remote.SelfHostedSyncApiFactory
 import app.otakureader.domain.model.SyncSnapshot
 import app.otakureader.domain.sync.SyncProvider
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -26,36 +27,54 @@ class SelfHostedSyncProvider @Inject constructor(
     override val name: String = "Self-Hosted Server"
 
     override val isAuthenticated: Boolean
-        get() = syncPreferences.selfHostedServerUrl.isNotBlank() &&
-                syncPreferences.selfHostedAuthToken.isNotBlank()
+        get() {
+            // Use runBlocking only for property getter required by interface.
+            // All suspend functions check auth inline to avoid blocking.
+            return runBlocking {
+                checkAuthentication()
+            }
+        }
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    private fun getApi(): SelfHostedSyncApi? {
+    /**
+     * Check if user is authenticated (non-blocking suspend version).
+     */
+    private suspend fun checkAuthentication(): Boolean {
+        return syncPreferences.getSelfHostedServerUrl().isNotBlank() &&
+                syncPreferences.getSelfHostedAuthToken().isNotBlank()
+    }
+
+    private suspend fun getApi(): SelfHostedSyncApi? {
         return apiFactory.createOrNull()
     }
 
-    private fun getAuthHeader(): String {
-        return "Bearer ${syncPreferences.selfHostedAuthToken}"
+    private suspend fun getAuthHeader(): String {
+        return "Bearer ${syncPreferences.getSelfHostedAuthToken()}"
     }
 
     override suspend fun authenticate(): Result<Unit> {
-        val url = syncPreferences.selfHostedServerUrl
-        val token = syncPreferences.selfHostedAuthToken
+        val url = syncPreferences.getSelfHostedServerUrl()
+        val token = syncPreferences.getSelfHostedAuthToken()
 
         if (url.isBlank() || token.isBlank()) {
             return Result.failure(IllegalStateException("Server URL and auth token must be configured"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Failed to create API client"))
 
         return try {
-            val response = api.healthCheck()
-            if (response.isSuccessful) {
-                Result.success(Unit)
-            } else {
-                Result.failure(IllegalStateException("Server health check failed: ${response.code()}"))
+            // Validate credentials by calling an authenticated endpoint
+            val response = api.getTimestamp(getAuthHeader())
+            when {
+                response.isSuccessful -> Result.success(Unit)
+                response.code() == 401 || response.code() == 403 -> {
+                    Result.failure(IllegalStateException("Authentication failed: Invalid credentials"))
+                }
+                else -> {
+                    Result.failure(IllegalStateException("Server error: ${response.code()}"))
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -63,16 +82,17 @@ class SelfHostedSyncProvider @Inject constructor(
     }
 
     override suspend fun logout() {
-        syncPreferences.selfHostedServerUrl = ""
-        syncPreferences.selfHostedAuthToken = ""
+        syncPreferences.setSelfHostedServerUrl("")
+        syncPreferences.setSelfHostedAuthToken("")
+        apiFactory.clearCache()
     }
 
     override suspend fun uploadSnapshot(snapshot: SyncSnapshot): Result<Unit> {
-        if (!isAuthenticated) {
+        if (!checkAuthentication()) {
             return Result.failure(IllegalStateException("Not authenticated"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Server URL not configured"))
 
         return try {
@@ -89,7 +109,7 @@ class SelfHostedSyncProvider @Inject constructor(
             )
 
             if (response.isSuccessful && response.body()?.success == true) {
-                syncPreferences.lastSyncTimestamp = timestamp
+                syncPreferences.setLastSyncTimestamp(timestamp)
                 Result.success(Unit)
             } else {
                 Result.failure(
@@ -104,11 +124,11 @@ class SelfHostedSyncProvider @Inject constructor(
     }
 
     override suspend fun downloadSnapshot(): Result<SyncSnapshot?> {
-        if (!isAuthenticated) {
+        if (!checkAuthentication()) {
             return Result.failure(IllegalStateException("Not authenticated"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Server URL not configured"))
 
         return try {
@@ -136,7 +156,7 @@ class SelfHostedSyncProvider @Inject constructor(
     }
 
     override suspend fun getLastSnapshotTime(): Long? {
-        if (!isAuthenticated) return null
+        if (!checkAuthentication()) return null
 
         val api = getApi() ?: return null
 
@@ -153,11 +173,11 @@ class SelfHostedSyncProvider @Inject constructor(
     }
 
     override suspend fun deleteAllData(): Result<Unit> {
-        if (!isAuthenticated) {
+        if (!checkAuthentication()) {
             return Result.failure(IllegalStateException("Not authenticated"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Server URL not configured"))
 
         return try {

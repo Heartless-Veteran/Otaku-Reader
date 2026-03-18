@@ -47,13 +47,4 @@ object SyncModule {
         syncPreferences = syncPreferences,
         providers = providers
     )
-
-    /**
-     * Provides the API factory for self-hosted sync.
-     */
-    @Provides
-    @Singleton
-    fun provideSelfHostedSyncApiFactory(
-        syncPreferences: SyncPreferences
-    ): SelfHostedSyncApiFactory = SelfHostedSyncApiFactory(syncPreferences)
 }
