@@ -39,9 +39,11 @@ fun Application.module(config: AppConfig) {
     
     install(StatusPages) {
         exception<Throwable> { call, cause ->
+            // Log detailed error server-side
             call.application.environment.log.error("Unhandled exception", cause)
+            // Return generic error to client to avoid leaking internal details
             call.respondText(
-                text = "Internal Server Error: ${cause.message}",
+                text = "Internal Server Error",
                 status = HttpStatusCode.InternalServerError
             )
         }

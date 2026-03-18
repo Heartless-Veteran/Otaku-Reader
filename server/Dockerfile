@@ -11,6 +11,7 @@ WORKDIR /app
 COPY gradle/ gradle/
 COPY gradlew .
 COPY build.gradle.kts settings.gradle.kts ./
+COPY build-logic/ build-logic/
 COPY server/ server/
 
 # Build the server
