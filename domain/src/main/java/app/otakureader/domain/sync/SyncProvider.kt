@@ -3,21 +3,20 @@ package app.otakureader.domain.sync
 import app.otakureader.domain.model.SyncSnapshot
 
 /**
- * Abstract interface for cloud storage providers used for syncing.
+ * Abstract interface for sync providers used for backing up and restoring data.
  *
- * Different implementations can provide sync via Google Drive, Dropbox,
- * WebDAV, or custom backend servers. Each provider handles its own
- * authentication and API specifics.
+ * Implementations can provide sync via self-hosted servers or other storage backends.
+ * Each provider handles its own authentication and API specifics.
  */
 interface SyncProvider {
 
     /**
-     * Unique identifier for this provider (e.g., "google_drive", "dropbox").
+     * Unique identifier for this provider (e.g., "self_hosted").
      */
     val id: String
 
     /**
-     * Human-readable name shown in UI (e.g., "Google Drive", "Dropbox").
+     * Human-readable name shown in UI (e.g., "Self-Hosted Server").
      */
     val name: String
 

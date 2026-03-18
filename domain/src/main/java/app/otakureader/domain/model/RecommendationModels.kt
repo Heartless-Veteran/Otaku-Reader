@@ -70,7 +70,8 @@ enum class RecommendationType {
  * @property favoriteAuthors Authors the user follows
  * @property preferredStatus Preferred manga status (ongoing, completed, etc.)
  * @property averageReadingTime Average time spent per manga
- * @property preferredChapterCount Preferred manga length based on reading patterns
+ * @property preferredChapterCountMin Minimum preferred manga length based on reading patterns
+ * @property preferredChapterCountMax Maximum preferred manga length based on reading patterns
  * @property commonThemes Extracted themes from manga descriptions
  * @property readingVelocity How quickly the user reads through series
  */
@@ -80,7 +81,8 @@ data class UserReadingPattern(
     val favoriteAuthors: List<AuthorPreference> = emptyList(),
     val preferredStatus: List<MangaStatus> = emptyList(),
     val averageReadingTimeMs: Long = 0L,
-    val preferredChapterCount: IntRange? = null,
+    val preferredChapterCountMin: Int? = null,
+    val preferredChapterCountMax: Int? = null,
     val commonThemes: List<String> = emptyList(),
     val readingVelocity: ReadingVelocity = ReadingVelocity.MODERATE,
     val favoriteTropes: List<String> = emptyList()

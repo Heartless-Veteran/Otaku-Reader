@@ -42,6 +42,10 @@ class SourceRepositoryImpl(
     private val httpClient: OkHttpClient
 ) : SourceRepository {
 
+    private companion object {
+        const val TAG = "SourceRepositoryImpl"
+    }
+
     /**
      * Secondary constructor for tests or other call-sites that already know the directory path
      * and do not have a [LocalSourcePreferences] instance available.
@@ -389,7 +393,7 @@ class SourceRepositoryImpl(
             val local = try {
                 currentLocalSource()
             } catch (e: Exception) {
-                e.printStackTrace()
+                android.util.Log.w(TAG, "Failed to resolve local source", e)
                 return@withContext
             }
             try {
@@ -400,7 +404,7 @@ class SourceRepositoryImpl(
                 _sources.value = (listOf(local) + extensionSources).distinctBy { it.id }
             } catch (e: Exception) {
                 // Log error but don't crash; still expose the local source
-                e.printStackTrace()
+                android.util.Log.w(TAG, "Failed to load extensions, falling back to local source", e)
                 _sources.value = listOf(local)
             }
         }

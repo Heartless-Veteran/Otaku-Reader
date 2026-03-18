@@ -143,7 +143,7 @@ class ExtensionRepositoryImpl(
         return try {
             val remoteResult = remoteDataSource.fetchAvailableExtensions()
             if (remoteResult.isFailure) {
-                return Result.failure(remoteResult.exceptionOrNull()!!)
+                return Result.failure(remoteResult.exceptionOrNull() ?: Exception("Unknown error fetching extensions"))
             }
             
             val remoteExtensions = remoteResult.getOrThrow()

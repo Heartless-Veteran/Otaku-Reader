@@ -1,15 +1,12 @@
-package app.otakureader.feature.reader.panel
+package app.otakureader.feature.reader.model
 
-import app.otakureader.feature.reader.model.ComicPanel
-import app.otakureader.feature.reader.model.PanelBounds
-import app.otakureader.feature.reader.model.ReadingDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
  * Data models for panel analysis results from Gemini Vision API.
- * 
+ *
  * These models extend the basic ComicPanel with additional metadata
  * from AI-based panel detection, including confidence scores and
  * detected text regions.
@@ -130,7 +127,7 @@ data class PageAnalysisResult(
      * Check if analysis is stale (older than specified days)
      */
     fun isStale(maxAgeDays: Int = CACHE_MAX_AGE_DAYS): Boolean {
-        val maxAgeMillis = maxAgeDays * 24 * 60 * 60 * 1000L
+        val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
         return System.currentTimeMillis() - analysisTimestamp > maxAgeMillis
     }
 

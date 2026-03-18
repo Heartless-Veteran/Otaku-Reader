@@ -1,51 +1,29 @@
 package app.otakureader.domain.usecase.ai
 
-import app.otakureader.core.ai.model.AiConfig
-import app.otakureader.core.ai.model.AiException
-import app.otakureader.core.ai.model.AiRequest
-import app.otakureader.core.common.result.Result
 import app.otakureader.domain.repository.AiRepository
 
 /**
  * Use case for generating AI-powered content with advanced configuration.
  *
- * This use case provides a clean interface for features to interact
- * with AI capabilities, supporting:
- * - Custom generation parameters (temperature, max tokens, etc.)
- * - Timeout configuration
- * - Safety filter controls
+ * This use case wraps [AiRepository.generateContent] with a fluent API for
+ * temperature and max-token overrides.  Callers that do not need custom
+ * parameters should prefer [GenerateAiContentUseCase] instead.
  *
  * @property aiRepository Repository for AI operations
  */
 class GenerateAiContentWithConfigUseCase(
-    private val aiRepository: app.otakureader.data.repository.AiRepositoryImpl
+    private val aiRepository: AiRepository
 ) {
     /**
-     * Generate content with full configuration control.
+     * Generate content from a text prompt.
      *
-     * @param request The AI request containing prompt and parameters
-     * @return [Result.Success] with generated text, or [Result.Error]
+     * @param prompt The text prompt to send to the AI
+     * @return [Result] containing the generated text on success, or an error
      */
-    suspend operator fun invoke(request: AiRequest): Result<String> {
-        return when (val result = aiRepository.generateContentWithConfig(request)) {
-            is Result.Success -> Result.Success(result.data.content)
-            is Result.Error -> Result.Error(result.exception)
-            is Result.Loading -> Result.Loading
+    suspend operator fun invoke(prompt: String): Result<String> {
+        if (prompt.isBlank()) {
+            return Result.failure(IllegalArgumentException("Prompt cannot be blank"))
         }
-    }
-
-    /**
-     * Generate content with a simple prompt and custom config.
-     *
-     * @param prompt The text prompt
-     * @param config Generation configuration
-     * @return [Result.Success] with generated text, or [Result.Error]
-     */
-    suspend operator fun invoke(
-        prompt: String,
-        config: AiConfig
-    ): Result<String> {
-        aiRepository.updateConfig(config)
         return aiRepository.generateContent(prompt)
     }
 }

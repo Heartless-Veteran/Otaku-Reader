@@ -4,9 +4,9 @@ import app.otakureader.domain.sync.SyncManager
 import javax.inject.Inject
 
 /**
- * Use case to enable cloud sync with a specific provider.
+ * Use case to enable sync with a specific provider.
  *
- * @param providerId Unique identifier for the sync provider (e.g., "google_drive", "dropbox")
+ * @param providerId Unique identifier for the sync provider (e.g., "self_hosted")
  */
 class EnableSyncUseCase @Inject constructor(
     private val syncManager: SyncManager
