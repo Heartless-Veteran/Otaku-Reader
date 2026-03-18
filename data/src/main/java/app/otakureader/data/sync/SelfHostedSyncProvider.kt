@@ -8,6 +8,7 @@ import app.otakureader.domain.model.SyncSnapshot
 import app.otakureader.domain.sync.SyncProvider
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,15 +48,16 @@ class SelfHostedSyncProvider @Inject constructor(
             return Result.failure(IllegalStateException("Server URL and auth token must be configured"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Failed to create API client"))
 
         return try {
-            val response = api.healthCheck()
+            // Call a protected endpoint to verify the token
+            val response = api.getTimestamp(getAuthHeader())
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(IllegalStateException("Server health check failed: ${response.code()}"))
+                Result.failure(IllegalStateException("Authentication failed: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -72,13 +74,14 @@ class SelfHostedSyncProvider @Inject constructor(
             return Result.failure(IllegalStateException("Not authenticated"))
         }
 
-        val api = getApi() 
+        val api = getApi()
             ?: return Result.failure(IllegalStateException("Server URL not configured"))
 
         return try {
             val snapshotJson = json.encodeToString(snapshot)
             val base64Data = Base64.encodeToString(snapshotJson.toByteArray(), Base64.NO_WRAP)
-            val timestamp = System.currentTimeMillis()
+            // Use snapshot.createdAt for timestamp to maintain consistency with snapshot metadata
+            val timestamp = snapshot.createdAt
 
             val response = api.uploadSnapshot(
                 authHeader = getAuthHeader(),
