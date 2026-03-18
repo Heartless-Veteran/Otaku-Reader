@@ -29,4 +29,10 @@ interface MangaRepository {
     // Page preloading settings (#264)
     suspend fun updatePreloadPagesBefore(id: Long, count: Int?)
     suspend fun updatePreloadPagesAfter(id: Long, count: Int?)
+
+    // Bulk operations
+    suspend fun addToFavorites(id: Long)
+    suspend fun removeFromFavorites(id: Long)
+    suspend fun addMangaToCategory(mangaId: Long, categoryId: Long)
+    suspend fun deleteDownloadsForManga(mangaId: Long)
 }
