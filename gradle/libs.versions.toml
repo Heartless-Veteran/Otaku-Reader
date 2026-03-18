@@ -9,6 +9,7 @@ core-ktx = "1.18.0"
 appcompat = "1.7.1"
 activity-compose = "1.13.0"
 material = "1.13.0"
+palette = "1.0.0"
 
 # Compose
 compose-bom = "2026.03.00"
@@ -84,6 +85,7 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
 androidx-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-palette = { group = "androidx.palette", name = "palette", version.ref = "palette" }
 
 # Compose
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }

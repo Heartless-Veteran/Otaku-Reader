@@ -66,12 +66,8 @@ class PanelAnalyzer @Inject constructor(
      * Must be called before using analyzePage.
      *
      * @param apiKey The Gemini API key
-     * @param config Optional AI configuration (defaults to vision-optimized settings)
      */
-    fun initialize(
-        apiKey: String,
-        @Suppress("UNUSED_PARAMETER") config: AiConfig = VISION_CONFIG
-    ) {
+    fun initialize(apiKey: String) {
         geminiClient.initialize(
             apiKey = apiKey,
             modelName = VISION_MODEL

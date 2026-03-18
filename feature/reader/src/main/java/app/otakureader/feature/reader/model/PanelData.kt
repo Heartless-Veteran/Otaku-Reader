@@ -195,6 +195,7 @@ sealed class PanelAnalysisResultWrapper {
  */
 sealed class PanelAnalysisException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class NotInitialized(message: String = "Panel analyzer not initialized") : PanelAnalysisException(message)
+    class NotAvailableInFoss(message: String = "Panel-aware reading is not available in FOSS builds") : PanelAnalysisException(message)
     class ApiError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)
     class InvalidResponse(message: String) : PanelAnalysisException(message)
     class ImageLoadError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)
