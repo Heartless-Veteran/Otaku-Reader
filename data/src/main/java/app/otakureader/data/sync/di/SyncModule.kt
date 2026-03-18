@@ -52,8 +52,10 @@ object SyncModule {
 
     /**
      * Provides the API factory for self-hosted sync.
-     * SelfHostedSyncApiFactory uses @Inject constructor, so Hilt can provide it
-     * automatically. We declare it here to ensure it's treated as a singleton.
+     *
+     * Note: Although SelfHostedSyncApiFactory has @Singleton + @Inject constructor
+     * and Hilt could auto-provide it, this explicit @Provides method ensures consistent
+     * module structure and allows for future customization if needed.
      */
     @Provides
     @Singleton

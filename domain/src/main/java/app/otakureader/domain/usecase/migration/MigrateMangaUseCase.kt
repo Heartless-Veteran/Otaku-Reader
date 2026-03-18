@@ -130,10 +130,9 @@ class MigrateMangaUseCase @Inject constructor(
                             }
                         }
                     }
-                    // Delete old tracker entries since they've been migrated
-                    trackerEntries.forEach { entry ->
-                        trackRepository.deleteEntry(entry.trackerId, entry.remoteId)
-                    }
+                    // Note: Tracker entries are NOT explicitly deleted here because upsertEntry()
+                    // replaces entries by (trackerId, remoteId), effectively migrating them.
+                    // The in-memory tracker repository doesn't use mangaId for keying.
                     mangaRepository.deleteManga(sourceManga.id)
                     // Chapters will be cascade deleted by foreign key
                 }

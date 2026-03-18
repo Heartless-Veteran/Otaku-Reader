@@ -3,6 +3,7 @@ package app.otakureader.data.worker
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -74,7 +75,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     }
 
                     // Auto-download new chapters if conditions are met.
-                    // Per-manga autoDownload overrides the global setting.
+                    // Per-manga autoDownload can opt-in even when global is off,
+                    // but cannot opt-out when global is on.
                     if (newChapterCount > 0 && onWifi) {
                         val shouldDownloadForManga = manga.autoDownload || autoDownloadEnabled
 
@@ -95,8 +97,10 @@ class LibraryUpdateWorker @AssistedInject constructor(
                         mangaWithNewChapters,
                         totalNewChapters
                     )
-                } catch (_: Exception) {
-                    // Notification failures should not fail the entire library update
+                } catch (e: Exception) {
+                    // Notification failures should not fail the entire library update.
+                    // Log the error for diagnostics (e.g., SecurityException, channel creation issues).
+                    Log.w(TAG, "Failed to send library update notification", e)
                 }
             }
 
@@ -153,6 +157,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     }
 
     companion object {
+        private const val TAG = "LibraryUpdateWorker"
         const val WORK_NAME = "library_update"
     }
 }
