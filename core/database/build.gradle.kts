@@ -25,5 +25,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)
-    testImplementation(libs.room.testing)
+    // room-testing not needed: tests use Robolectric + Room.inMemoryDatabaseBuilder()
+    // MigrationTestHelper (provided by room-testing) is not used
+    // If migration tests are needed in the future, add room-testing and use MigrationTestHelper
 }
