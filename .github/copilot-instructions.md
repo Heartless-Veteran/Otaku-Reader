@@ -44,7 +44,7 @@ The project is strictly organized into three layers:
 ### Core Modules (`/core/*`)
 
 - `core/common` - Shared utilities, extensions, helpers
-- `core/database` - Room database v9 with migrations, entities, DAOs
+- `core/database` - Room database v10 with migrations, entities, DAOs
 - `core/network` - Retrofit + OkHttp configuration
 - `core/preferences` - DataStore for type-safe preferences
 - `core/ui` - Shared Jetpack Compose components (Material 3)
@@ -273,7 +273,7 @@ object NetworkModule {
 
 ### Room Database
 
-**Current version**: 9 (with migrations from v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9)
+**Current version**: 10 (with migrations from v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v10)
 
 **Entity example**:
 ```kotlin
