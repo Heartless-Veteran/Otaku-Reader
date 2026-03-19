@@ -173,6 +173,7 @@ class MangaRepositoryImpl @Inject constructor(
         autoDownload = autoDownload,
         notes = notes,
         notifyNewChapters = notifyNewChapters,
+        dateAdded = dateAdded,
         // Per-manga reader settings (#260)
         readerDirection = readerDirection,
         readerMode = readerMode,
@@ -200,6 +201,7 @@ class MangaRepositoryImpl @Inject constructor(
         autoDownload = autoDownload,
         notes = notes,
         notifyNewChapters = notifyNewChapters,
+        dateAdded = dateAdded,
         // Per-manga reader settings (#260)
         readerDirection = readerDirection,
         readerMode = readerMode,

@@ -7,6 +7,8 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -33,7 +36,9 @@ class LibraryViewModel @Inject constructor(
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
     private val libraryPreferences: LibraryPreferences,
     private val generalPreferences: GeneralPreferences,
-    private val chapterRepository: ChapterRepository
+    private val chapterRepository: ChapterRepository,
+    private val downloadRepository: DownloadRepository,
+    private val trackRepository: TrackRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -116,7 +121,29 @@ class LibraryViewModel @Inject constructor(
 
         getLibraryManga()
             .map { mangaList ->
-                mangaList.map { it.toLibraryItem() }
+                // Build tracking lookup: set of manga IDs that have at least one tracking entry
+                val trackedMangaIds = mangaList.mapNotNull { manga ->
+                    val entries = trackRepository.observeEntriesForManga(manga.id)
+                    // Use first() to snapshot the current tracking state
+                    val hasEntries = entries.first().isNotEmpty()
+                    if (hasEntries) manga.id else null
+                }.toSet()
+
+                // Build download lookup: set of manga IDs that have downloaded chapters
+                val downloadedMangaIds = mangaList.mapNotNull { manga ->
+                    val hasDownloads = downloadRepository.hasMangaDownloads(
+                        sourceName = manga.sourceId.toString(),
+                        mangaTitle = manga.title
+                    )
+                    if (hasDownloads) manga.id else null
+                }.toSet()
+
+                mangaList.map { manga ->
+                    manga.toLibraryItem(
+                        isDownloaded = manga.id in downloadedMangaIds,
+                        hasTracking = manga.id in trackedMangaIds
+                    )
+                }
             }
             .onEach { items ->
                 _allItems.value = items
@@ -187,13 +214,10 @@ class LibraryViewModel @Inject constructor(
 
         // Filter mode
         filtered = when (params.filterMode) {
-            // TODO: Re-enable download filtering when isDownloaded is correctly populated
-            LibraryFilterMode.DOWNLOADED -> filtered
+            LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
             LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
             LibraryFilterMode.COMPLETED -> filtered.filter { it.status == MangaStatus.COMPLETED }
-            // TODO: Re-enable tracking filtering when hasTracking is correctly populated
-            // (currently left as a no-op because hasTracking is always false until tracking is wired)
-            LibraryFilterMode.TRACKING -> filtered
+            LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
             LibraryFilterMode.ALL -> filtered
         }
 
@@ -201,8 +225,7 @@ class LibraryViewModel @Inject constructor(
         return when (params.sortMode) {
             LibrarySortMode.ALPHABETICAL -> filtered.sortedBy { it.title }
             LibrarySortMode.LAST_READ -> filtered.sortedByDescending { it.lastRead ?: 0L }
-            // TODO: Add dateAdded to Manga model to implement DATE_ADDED sort properly
-            LibrarySortMode.DATE_ADDED -> filtered.sortedBy { it.title }
+            LibrarySortMode.DATE_ADDED -> filtered.sortedByDescending { it.dateAdded }
             LibrarySortMode.UNREAD_COUNT -> filtered.sortedByDescending { it.unreadCount }
             LibrarySortMode.SOURCE -> filtered.sortedBy { it.sourceId }
         }
@@ -280,7 +303,10 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private fun Manga.toLibraryItem() = LibraryMangaItem(
+    private fun Manga.toLibraryItem(
+        isDownloaded: Boolean = false,
+        hasTracking: Boolean = false
+    ) = LibraryMangaItem(
         id = id,
         title = title,
         thumbnailUrl = thumbnailUrl,
@@ -288,10 +314,11 @@ class LibraryViewModel @Inject constructor(
         isFavorite = favorite,
         hasNote = !notes.isNullOrBlank(),
         sourceId = sourceId,
-        isDownloaded = false, // TODO: Check download status
-        hasTracking = false, // TODO: Check tracking status
-        isNsfw = false, // TODO: Derive from source/extension NSFW flag
+        isDownloaded = isDownloaded,
+        hasTracking = hasTracking,
+        isNsfw = false, // Requires source/extension metadata not yet available in the Manga model
         lastRead = lastRead,
+        dateAdded = dateAdded,
         status = status
     )
 }

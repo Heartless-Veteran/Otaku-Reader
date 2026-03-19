@@ -92,6 +92,17 @@ object DownloadProvider {
     ): Boolean = isChapterDownloaded(rootFor(context), sourceName, mangaTitle, chapterName)
 
     /**
+     * Returns `true` when the manga directory exists and contains at least one
+     * chapter subdirectory with downloaded pages. This is a coarse check suitable
+     * for library-level "downloaded" badges without per-chapter iteration.
+     */
+    fun hasMangaDownloads(
+        context: Context,
+        sourceName: String,
+        mangaTitle: String
+    ): Boolean = hasMangaDownloads(rootFor(context), sourceName, mangaTitle)
+
+    /**
      * Returns an ordered list of `file://` URIs for every page that has been
      * downloaded for the given chapter. Pages are sorted by their numeric filename.
      *
@@ -195,6 +206,28 @@ object DownloadProvider {
         return fileList.take(MAX_PAGE_FILES).any { filename ->
             filename == CbzCreator.CBZ_FILE_NAME ||
                 filename.substringAfterLast('.', "").lowercase() in PAGE_EXTENSIONS
+        }
+    }
+
+    /**
+     * Returns `true` when the manga directory contains at least one chapter subdirectory
+     * with at least one downloaded page file or CBZ archive.
+     */
+    fun hasMangaDownloads(
+        root: File,
+        sourceName: String,
+        mangaTitle: String
+    ): Boolean {
+        val mangaDir = File(root, "$ROOT_DIR/${sanitize(sourceName)}/${sanitize(mangaTitle)}")
+        if (!mangaDir.isDirectory) return false
+
+        val chapterDirs = mangaDir.listFiles { file -> file.isDirectory } ?: return false
+        return chapterDirs.any { chapterDir ->
+            val fileList = chapterDir.list() ?: return@any false
+            fileList.any { filename ->
+                filename == CbzCreator.CBZ_FILE_NAME ||
+                    filename.substringAfterLast('.', "").lowercase() in PAGE_EXTENSIONS
+            }
         }
     }
 
