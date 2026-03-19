@@ -1,6 +1,6 @@
 plugins {
-    id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     application
     id("com.gradleup.shadow") version "9.4.0"
 }
@@ -19,14 +19,14 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging:3.4.1")
     
     // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    
+    implementation(libs.kotlinx.serialization.json)
+
     // Logging
     implementation("ch.qos.logback:logback-classic:1.5.32")
-    
+
     // Testing
     testImplementation("io.ktor:ktor-server-test-host:3.4.1")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.3.20")
+    testImplementation(libs.kotlin.test)
 }
 
 kotlin {
