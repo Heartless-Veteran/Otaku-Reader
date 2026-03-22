@@ -9,6 +9,23 @@ plugins {
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
+    // R-4: detekt static analysis applied to all subprojects
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    toolVersion = libs.versions.detekt.get()
+    config.setFrom(files("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    allRules = false
+    source.setFrom(
+        "app/src",
+        "core",
+        "data/src",
+        "domain/src",
+        "feature",
+        "server/src"
+    )
 }
 
 // Security: Force secure versions of transitive dependencies
