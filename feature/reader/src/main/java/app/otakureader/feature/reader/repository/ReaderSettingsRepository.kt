@@ -353,7 +353,7 @@ class ReaderSettingsRepository @Inject constructor(
      */
     private suspend inline fun safeEdit(crossinline block: (MutablePreferences) -> Unit) {
         try {
-            safeEdit { block(it) }
+            dataStore.edit { block(it) }
         } catch (_: java.io.IOException) {
             // Disk write failure — preference change is lost for this session.
             // TODO(H-6): Surface this failure to the UI layer.

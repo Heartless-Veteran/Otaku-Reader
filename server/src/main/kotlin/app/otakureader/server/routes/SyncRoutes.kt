@@ -119,9 +119,13 @@ fun Route.syncRoutes(config: AppConfig) {
                     mapOf("success" to true)
                 )
             } else {
+                // H-9: Log the full exception server-side; return a generic message to the
+                // client so that internal implementation details are never exposed.
+                val cause = result.exceptionOrNull()
+                System.err.println("[SyncRoutes] deleteSnapshot failed: ${cause?.message}")
                 call.respond(
                     HttpStatusCode.InternalServerError,
-                    ErrorResponse("Failed to delete snapshot: ${result.exceptionOrNull()?.message}")
+                    ErrorResponse("Failed to delete snapshot. Please try again later.")
                 )
             }
         }

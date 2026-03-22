@@ -85,7 +85,7 @@ class ReaderViewModel @Inject constructor(
                     current.copy(
                         isLoading = false,
                         chapter = chapter,
-                        currentPage = chapter.lastPageRead ?: 0
+                        currentPage = chapter.lastPageRead
                     )
                 }
                 recordHistoryOpen()
