@@ -1,6 +1,7 @@
 package app.otakureader.domain.usecase
 
 import app.otakureader.domain.repository.MangaRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -66,6 +67,9 @@ class BulkAddToLibraryUseCase @Inject constructor(
                                 errors.add("Manga not found: $mangaId")
                             }
                         }
+                    } catch (e: CancellationException) {
+                        // Re-throw CancellationException to allow proper coroutine cancellation
+                        throw e
                     } catch (e: Exception) {
                         mutex.withLock {
                             failCount++
