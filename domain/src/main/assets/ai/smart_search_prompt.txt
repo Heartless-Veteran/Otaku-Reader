@@ -1,0 +1,49 @@
+Analyze this manga search query and extract search intents. Return ONLY a JSON object.
+
+Query: "{{QUERY}}"
+
+Available intent types:
+- TitleSearch: {"type": "title", "title": "...", "fuzzyMatch": true/false}
+- GenreSearch: {"type": "genre", "genres": ["..."], "matchMode": "ANY" or "ALL"}
+- AuthorSearch: {"type": "author", "author": "...", "includeArtist": true/false}
+- DescriptionSearch: {"type": "description", "keywords": ["..."], "matchMode": "ANY" or "ALL"}
+- MoodSearch: {"type": "mood", "mood": "DARK|LIGHTHEARTED|ACTION_PACKED|ROMANTIC|MYSTERIOUS|COMEDY|DRAMATIC|HORROR|ADVENTURE|SLICE_OF_LIFE|PSYCHOLOGICAL|THRILLING|HEARTWARMING|EPIC|TRAGIC"}
+- StatusSearch: {"type": "status", "status": "ONGOING|COMPLETED|LICENSED|PUBLISHING_FINISHED|CANCELLED|ON_HIATUS|UNKNOWN"}
+- PopularitySearch: {"type": "popularity", "minRating": number/null, "minPopularity": number/null}
+
+Genre examples: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, ISEKAI, MECHA, MYSTERY, PSYCHOLOGICAL, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER
+
+Return format:
+{
+    "intents": [...],
+    "confidence": 0.0-1.0,
+    "isAmbiguous": true/false,
+    "clarificationPrompt": "..." or null
+}
+
+Example:
+Query: "dark fantasy with magic schools"
+Response: {
+    "intents": [
+        {"type": "mood", "mood": "DARK"},
+        {"type": "genre", "genres": ["FANTASY"], "matchMode": "ANY"},
+        {"type": "description", "keywords": ["magic school"], "matchMode": "ANY"}
+    ],
+    "confidence": 0.92,
+    "isAmbiguous": false,
+    "clarificationPrompt": null
+}
+
+Example:
+Query: "something like Berserk but finished"
+Response: {
+    "intents": [
+        {"type": "title", "title": "Berserk", "fuzzyMatch": true},
+        {"type": "status", "status": "COMPLETED"}
+    ],
+    "confidence": 0.85,
+    "isAmbiguous": false,
+    "clarificationPrompt": null
+}
+
+Analyze the query and return ONLY the JSON response, no markdown, no explanations.

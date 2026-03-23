@@ -6,6 +6,7 @@ import app.otakureader.domain.model.search.ParsedSearchQuery
 import app.otakureader.domain.model.search.MatchMode
 import app.otakureader.domain.model.search.SearchIntent
 import app.otakureader.domain.repository.AiRepository
+import app.otakureader.domain.repository.PromptLoader
 import app.otakureader.domain.repository.SmartSearchCacheRepository
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.json.Json
@@ -24,11 +25,16 @@ import javax.inject.Singleton
 /**
  * Use case for converting natural language queries into structured search intents.
  * Uses AI via [AiRepository] for NLP processing and caches results locally.
+ * 
+ * **H-7: Externalized Prompts**
+ * The AI prompt template is loaded via [PromptLoader] from external assets,
+ * allowing updates without code changes.
  */
 @Singleton
 class SmartSearchUseCase @Inject constructor(
     private val aiRepository: AiRepository,
-    private val cacheRepository: SmartSearchCacheRepository
+    private val cacheRepository: SmartSearchCacheRepository,
+    private val promptLoader: PromptLoader
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -114,61 +120,20 @@ class SmartSearchUseCase @Inject constructor(
     }
 
     /**
-     * Build the prompt for AI.
+     * Build the prompt for AI by loading the template from external assets.
+     *
+     * **H-7: Externalized Prompts**
+     * The prompt template is loaded via [PromptLoader] from `assets/ai/smart_search_prompt.txt`,
+     * allowing updates without code changes.
+     *
+     * @param query The user's search query to substitute into the template
+     * @return The formatted prompt string
      */
-    private fun buildPrompt(query: String): String {
-        return """
-            Analyze this manga search query and extract search intents. Return ONLY a JSON object.
-
-            Query: "$query"
-
-            Available intent types:
-            - TitleSearch: {"type": "title", "title": "...", "fuzzyMatch": true/false}
-            - GenreSearch: {"type": "genre", "genres": ["..."], "matchMode": "ANY" or "ALL"}
-            - AuthorSearch: {"type": "author", "author": "...", "includeArtist": true/false}
-            - DescriptionSearch: {"type": "description", "keywords": ["..."], "matchMode": "ANY" or "ALL"}
-            - MoodSearch: {"type": "mood", "mood": "DARK|LIGHTHEARTED|ACTION_PACKED|ROMANTIC|MYSTERIOUS|COMEDY|DRAMATIC|HORROR|ADVENTURE|SLICE_OF_LIFE|PSYCHOLOGICAL|THRILLING|HEARTWARMING|EPIC|TRAGIC"}
-            - StatusSearch: {"type": "status", "status": "ONGOING|COMPLETED|LICENSED|PUBLISHING_FINISHED|CANCELLED|ON_HIATUS|UNKNOWN"}
-            - PopularitySearch: {"type": "popularity", "minRating": number/null, "minPopularity": number/null}
-
-            Genre examples: ACTION, ADVENTURE, COMEDY, DRAMA, FANTASY, HORROR, ISEKAI, MECHA, MYSTERY, PSYCHOLOGICAL, ROMANCE, SCI_FI, SLICE_OF_LIFE, SPORTS, SUPERNATURAL, THRILLER
-
-            Return format:
-            {
-                "intents": [...],
-                "confidence": 0.0-1.0,
-                "isAmbiguous": true/false,
-                "clarificationPrompt": "..." or null
-            }
-
-            Example:
-            Query: "dark fantasy with magic schools"
-            Response: {
-                "intents": [
-                    {"type": "mood", "mood": "DARK"},
-                    {"type": "genre", "genres": ["FANTASY"], "matchMode": "ANY"},
-                    {"type": "description", "keywords": ["magic school"], "matchMode": "ANY"}
-                ],
-                "confidence": 0.92,
-                "isAmbiguous": false,
-                "clarificationPrompt": null
-            }
-
-            Example:
-            Query: "something like Berserk but finished"
-            Response: {
-                "intents": [
-                    {"type": "title", "title": "Berserk", "fuzzyMatch": true},
-                    {"type": "mood", "mood": "DARK"},
-                    {"type": "status", "status": "COMPLETED"}
-                ],
-                "confidence": 0.88,
-                "isAmbiguous": false,
-                "clarificationPrompt": null
-            }
-
-            Return ONLY the JSON object, no markdown formatting, no explanations.
-        """.trimIndent()
+    private suspend fun buildPrompt(query: String): String {
+        val template = promptLoader.loadPrompt("smart_search")
+            ?: throw SmartSearchException.PromptNotFound("Failed to load smart search prompt template")
+        
+        return template.replace("{{QUERY}}", query)
     }
 
     /**
@@ -304,4 +269,5 @@ sealed class SmartSearchException(message: String) : Exception(message) {
     data object AiNotInitialized : SmartSearchException("AI client not initialized. Please configure API key in settings.")
     data class ParsingError(val details: String) : SmartSearchException("Failed to parse AI response: $details")
     data class AiProcessingError(val details: String) : SmartSearchException("AI processing failed: $details")
+    data class PromptNotFound(val details: String) : SmartSearchException("Prompt template not found: $details")
 }

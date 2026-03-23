@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -11,6 +12,7 @@ import app.otakureader.feature.reader.model.PageAnalysisResult
 import app.otakureader.feature.reader.model.PanelAnalysisException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -28,7 +30,7 @@ import javax.inject.Singleton
  * 
  * **Key features:**
  * - Image hash-based lookup
- * - Configurable cache size limits
+ * - Configurable cache size limits (M-10/M-11)
  * - LRU (Least Recently Used) eviction
  * - Automatic stale data cleanup
  * 
@@ -58,6 +60,50 @@ class PanelCacheService @Inject constructor(
     }
 
     /**
+     * **M-10/M-11: Configurable Cache Limits**
+     * 
+     * Flow of maximum cache size in bytes. Defaults to 50 MB.
+     */
+    val maxCacheSizeBytes: Flow<Long> = metadataDataStore.data.map { prefs ->
+        prefs[Keys.MAX_CACHE_SIZE_BYTES] ?: DEFAULT_MAX_CACHE_SIZE_BYTES
+    }
+
+    /**
+     * **M-10/M-11: Configurable Cache Limits**
+     * 
+     * Flow of maximum cache age in days. Defaults to 30 days.
+     */
+    val maxCacheAgeDays: Flow<Int> = metadataDataStore.data.map { prefs ->
+        prefs[Keys.MAX_CACHE_AGE_DAYS] ?: DEFAULT_MAX_AGE_DAYS
+    }
+
+    /**
+     * **M-10/M-11: Configurable Cache Limits**
+     * 
+     * Update the maximum cache size.
+     *
+     * @param sizeBytes Maximum size in bytes (minimum 10 MB)
+     */
+    suspend fun setMaxCacheSize(sizeBytes: Long) {
+        metadataDataStore.edit { prefs ->
+            prefs[Keys.MAX_CACHE_SIZE_BYTES] = sizeBytes.coerceAtLeast(10 * 1024 * 1024L)
+        }
+    }
+
+    /**
+     * **M-10/M-11: Configurable Cache Limits**
+     * 
+     * Update the maximum cache age.
+     *
+     * @param days Maximum age in days (minimum 1)
+     */
+    suspend fun setMaxCacheAgeDays(days: Int) {
+        metadataDataStore.edit { prefs ->
+            prefs[Keys.MAX_CACHE_AGE_DAYS] = days.coerceAtLeast(1)
+        }
+    }
+
+    /**
      * Get cached analysis result for an image hash.
      *
      * @param imageHash The SHA-256 hash of the image
@@ -72,8 +118,9 @@ class PanelCacheService @Inject constructor(
                 return@withContext null
             }
 
-            // Check if result is stale
-            if (metadata.isStale()) {
+            // Check if result is stale using configurable max age
+            val maxAge = maxCacheAgeDays.first()
+            if (metadata.isStale(maxAge)) {
                 deleteCachedResult(imageHash)
                 return@withContext null
             }
@@ -182,23 +229,25 @@ class PanelCacheService @Inject constructor(
             val allMetadata = getAllMetadata()
             val totalSize = allMetadata.sumOf { it.fileSize }
             val resultCount = allMetadata.size
+            val maxSize = maxCacheSizeBytes.first()
 
             CacheStats(
                 entryCount = resultCount,
                 totalSizeBytes = totalSize,
-                maxSizeBytes = MAX_CACHE_SIZE_BYTES,
+                maxSizeBytes = maxSize,
                 oldestEntryTimestamp = allMetadata.minByOrNull { it.timestamp }?.timestamp
             )
         } catch (e: Exception) {
-            CacheStats(0, 0, MAX_CACHE_SIZE_BYTES, null)
+            CacheStats(0, 0, DEFAULT_MAX_CACHE_SIZE_BYTES, null)
         }
     }
 
     /**
-     * Clean up stale entries from cache.
+     * Clean up stale entries from cache using configurable max age.
      */
-    suspend fun cleanupStaleEntries(maxAgeDays: Int = DEFAULT_MAX_AGE_DAYS) = withContext(Dispatchers.IO) {
+    suspend fun cleanupStaleEntries() = withContext(Dispatchers.IO) {
         try {
+            val maxAgeDays = maxCacheAgeDays.first()
             val allMetadata = getAllMetadata()
             val now = System.currentTimeMillis()
             val maxAgeMillis = maxAgeDays.toLong() * 24 * 60 * 60 * 1000
@@ -215,12 +264,13 @@ class PanelCacheService @Inject constructor(
 
     /**
      * Ensure there's enough space in the cache.
-     * Evicts oldest entries if needed.
+     * Evicts oldest entries if needed using configurable max size.
      */
     private suspend fun ensureCacheSpace() {
         val stats = getCacheStats()
+        val maxSize = maxCacheSizeBytes.first()
         
-        if (stats.totalSizeBytes < MAX_CACHE_SIZE_BYTES * 0.8) {
+        if (stats.totalSizeBytes < maxSize * 0.8) {
             // Plenty of space
             return
         }
@@ -231,7 +281,7 @@ class PanelCacheService @Inject constructor(
 
         var currentSize = stats.totalSizeBytes
         for (metadata in sortedByAccess) {
-            if (currentSize < MAX_CACHE_SIZE_BYTES * 0.6) {
+            if (currentSize < maxSize * 0.6) {
                 // Reduced to 60% capacity, stop evicting
                 break
             }
@@ -295,7 +345,7 @@ class PanelCacheService @Inject constructor(
     companion object {
         private const val CACHE_DIR_NAME = "panel_analysis"
         private const val DEFAULT_MAX_AGE_DAYS = 30
-        private const val MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024L  // 50 MB
+        private const val DEFAULT_MAX_CACHE_SIZE_BYTES = 50 * 1024 * 1024L  // 50 MB
 
         /**
          * Validates that [imageHash] contains only hex characters (0-9, a-f, A-F) and
@@ -316,6 +366,14 @@ class PanelCacheService @Inject constructor(
         private val Context.panelCacheDataStore: DataStore<Preferences> by preferencesDataStore(
             name = "panel_cache_metadata"
         )
+
+        /**
+         * **M-10/M-11: Configurable Cache Limits**
+         */
+        private object Keys {
+            val MAX_CACHE_SIZE_BYTES = longPreferencesKey("max_cache_size_bytes")
+            val MAX_CACHE_AGE_DAYS = intPreferencesKey("max_cache_age_days")
+        }
     }
 }
 
