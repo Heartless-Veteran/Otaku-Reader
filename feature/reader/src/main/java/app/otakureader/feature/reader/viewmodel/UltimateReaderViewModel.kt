@@ -261,6 +261,28 @@ class UltimateReaderViewModel @Inject constructor(
                 false
             }
 
+            // Load new settings with safe fallbacks
+            val showContentInCutout = settingsRepository.showContentInCutout.first()
+            val backgroundColor = settingsRepository.backgroundColor.first()
+            val animatePageTransitions = settingsRepository.animatePageTransitions.first()
+            val showReadingModeOverlay = settingsRepository.showReadingModeOverlay.first()
+            val showTapZonesOverlay = settingsRepository.showTapZonesOverlay.first()
+            val readerScale = settingsRepository.readerScale.first()
+            val autoZoomWideImages = settingsRepository.autoZoomWideImages.first()
+            val invertTapZones = settingsRepository.invertTapZones.first()
+            val webtoonSidePadding = settingsRepository.webtoonSidePadding.first()
+            val webtoonMenuHideSensitivity = settingsRepository.webtoonMenuHideSensitivity.first()
+            val webtoonDoubleTapZoom = settingsRepository.webtoonDoubleTapZoom.first()
+            val webtoonDisableZoomOut = settingsRepository.webtoonDisableZoomOut.first()
+            val einkFlashOnPageChange = settingsRepository.einkFlashOnPageChange.first()
+            val einkBlackAndWhite = settingsRepository.einkBlackAndWhite.first()
+            val skipReadChapters = settingsRepository.skipReadChapters.first()
+            val skipFilteredChapters = settingsRepository.skipFilteredChapters.first()
+            val skipDuplicateChapters = settingsRepository.skipDuplicateChapters.first()
+            val alwaysShowChapterTransition = settingsRepository.alwaysShowChapterTransition.first()
+            val showActionsOnLongTap = settingsRepository.showActionsOnLongTap.first()
+            val savePagesToSeparateFolders = settingsRepository.savePagesToSeparateFolders.first()
+
             // Apply per-manga overrides if they exist (#260)
             val effectiveMode = manga?.readerMode?.let { ReaderMode.entries.getOrNull(it) } ?: mode
             val effectiveDirection = manga?.readerDirection?.let { 
@@ -288,7 +310,27 @@ class UltimateReaderViewModel @Inject constructor(
                     showBatteryTime = showBatteryTime,
                     cropBordersEnabled = cropBordersEnabled,
                     imageQuality = imageQuality,
-                    dataSaverEnabled = dataSaverEnabled
+                    dataSaverEnabled = dataSaverEnabled,
+                    showContentInCutout = showContentInCutout,
+                    backgroundColor = backgroundColor,
+                    animatePageTransitions = animatePageTransitions,
+                    showReadingModeOverlay = showReadingModeOverlay,
+                    showTapZonesOverlay = showTapZonesOverlay,
+                    readerScale = readerScale,
+                    autoZoomWideImages = autoZoomWideImages,
+                    invertTapZones = invertTapZones,
+                    webtoonSidePadding = webtoonSidePadding,
+                    webtoonMenuHideSensitivity = webtoonMenuHideSensitivity,
+                    webtoonDoubleTapZoom = webtoonDoubleTapZoom,
+                    webtoonDisableZoomOut = webtoonDisableZoomOut,
+                    einkFlashOnPageChange = einkFlashOnPageChange,
+                    einkBlackAndWhite = einkBlackAndWhite,
+                    skipReadChapters = skipReadChapters,
+                    skipFilteredChapters = skipFilteredChapters,
+                    skipDuplicateChapters = skipDuplicateChapters,
+                    alwaysShowChapterTransition = alwaysShowChapterTransition,
+                    showActionsOnLongTap = showActionsOnLongTap,
+                    savePagesToSeparateFolders = savePagesToSeparateFolders
                 )
             }
         }

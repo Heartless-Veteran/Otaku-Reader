@@ -341,6 +341,185 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SHOW_BATTERY_TIME] = enabled }
     }
 
+    // ==================== Display Settings ====================
+
+    val showContentInCutout: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_CONTENT_IN_CUTOUT] ?: true
+    }
+
+    suspend fun setShowContentInCutout(enabled: Boolean) {
+        safeEdit { it[Keys.SHOW_CONTENT_IN_CUTOUT] = enabled }
+    }
+
+    /** Background color: 0 = Black, 1 = White, 2 = Gray, 3 = Auto */
+    val backgroundColor: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.BACKGROUND_COLOR] ?: 0
+    }
+
+    suspend fun setBackgroundColor(color: Int) {
+        safeEdit { it[Keys.BACKGROUND_COLOR] = color.coerceIn(0, 3) }
+    }
+
+    val animatePageTransitions: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true
+    }
+
+    suspend fun setAnimatePageTransitions(enabled: Boolean) {
+        safeEdit { it[Keys.ANIMATE_PAGE_TRANSITIONS] = enabled }
+    }
+
+    val showReadingModeOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_READING_MODE_OVERLAY] ?: true
+    }
+
+    suspend fun setShowReadingModeOverlay(enabled: Boolean) {
+        safeEdit { it[Keys.SHOW_READING_MODE_OVERLAY] = enabled }
+    }
+
+    val showTapZonesOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_TAP_ZONES_OVERLAY] ?: false
+    }
+
+    suspend fun setShowTapZonesOverlay(enabled: Boolean) {
+        safeEdit { it[Keys.SHOW_TAP_ZONES_OVERLAY] = enabled }
+    }
+
+    // ==================== Scale Settings ====================
+
+    /** Scale type: 0 = Fit Screen, 1 = Fit Width, 2 = Fit Height, 3 = Original, 4 = Smart Fit */
+    val readerScale: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.READER_SCALE] ?: 0
+    }
+
+    suspend fun setReaderScale(scale: Int) {
+        safeEdit { it[Keys.READER_SCALE] = scale.coerceIn(0, 4) }
+    }
+
+    val autoZoomWideImages: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true
+    }
+
+    suspend fun setAutoZoomWideImages(enabled: Boolean) {
+        safeEdit { it[Keys.AUTO_ZOOM_WIDE_IMAGES] = enabled }
+    }
+
+    // ==================== Tap Zone Settings ====================
+
+    val invertTapZones: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.INVERT_TAP_ZONES] ?: false
+    }
+
+    suspend fun setInvertTapZones(enabled: Boolean) {
+        safeEdit { it[Keys.INVERT_TAP_ZONES] = enabled }
+    }
+
+    // ==================== Webtoon Settings ====================
+
+    /** Side padding: 0 = None, 1 = Small, 2 = Medium, 3 = Large */
+    val webtoonSidePadding: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0
+    }
+
+    suspend fun setWebtoonSidePadding(padding: Int) {
+        safeEdit { it[Keys.WEBTOON_SIDE_PADDING] = padding.coerceIn(0, 3) }
+    }
+
+    /** Menu hide sensitivity: 0 = Low, 1 = Medium, 2 = High */
+    val webtoonMenuHideSensitivity: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] ?: 0
+    }
+
+    suspend fun setWebtoonMenuHideSensitivity(sensitivity: Int) {
+        safeEdit { it[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] = sensitivity.coerceIn(0, 2) }
+    }
+
+    val webtoonDoubleTapZoom: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_DOUBLE_TAP_ZOOM] ?: true
+    }
+
+    suspend fun setWebtoonDoubleTapZoom(enabled: Boolean) {
+        safeEdit { it[Keys.WEBTOON_DOUBLE_TAP_ZOOM] = enabled }
+    }
+
+    val webtoonDisableZoomOut: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_DISABLE_ZOOM_OUT] ?: false
+    }
+
+    suspend fun setWebtoonDisableZoomOut(enabled: Boolean) {
+        safeEdit { it[Keys.WEBTOON_DISABLE_ZOOM_OUT] = enabled }
+    }
+
+    // ==================== E-ink Settings ====================
+
+    val einkFlashOnPageChange: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.EINK_FLASH_ON_PAGE_CHANGE] ?: false
+    }
+
+    suspend fun setEinkFlashOnPageChange(enabled: Boolean) {
+        safeEdit { it[Keys.EINK_FLASH_ON_PAGE_CHANGE] = enabled }
+    }
+
+    val einkBlackAndWhite: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.EINK_BLACK_AND_WHITE] ?: false
+    }
+
+    suspend fun setEinkBlackAndWhite(enabled: Boolean) {
+        safeEdit { it[Keys.EINK_BLACK_AND_WHITE] = enabled }
+    }
+
+    // ==================== Reading Behavior ====================
+
+    val skipReadChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SKIP_READ_CHAPTERS] ?: false
+    }
+
+    suspend fun setSkipReadChapters(enabled: Boolean) {
+        safeEdit { it[Keys.SKIP_READ_CHAPTERS] = enabled }
+    }
+
+    val skipFilteredChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true
+    }
+
+    suspend fun setSkipFilteredChapters(enabled: Boolean) {
+        safeEdit { it[Keys.SKIP_FILTERED_CHAPTERS] = enabled }
+    }
+
+    val skipDuplicateChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SKIP_DUPLICATE_CHAPTERS] ?: false
+    }
+
+    suspend fun setSkipDuplicateChapters(enabled: Boolean) {
+        safeEdit { it[Keys.SKIP_DUPLICATE_CHAPTERS] = enabled }
+    }
+
+    val alwaysShowChapterTransition: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.ALWAYS_SHOW_CHAPTER_TRANSITION] ?: true
+    }
+
+    suspend fun setAlwaysShowChapterTransition(enabled: Boolean) {
+        safeEdit { it[Keys.ALWAYS_SHOW_CHAPTER_TRANSITION] = enabled }
+    }
+
+    // ==================== Actions ====================
+
+    val showActionsOnLongTap: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_ACTIONS_ON_LONG_TAP] ?: true
+    }
+
+    suspend fun setShowActionsOnLongTap(enabled: Boolean) {
+        safeEdit { it[Keys.SHOW_ACTIONS_ON_LONG_TAP] = enabled }
+    }
+
+    val savePagesToSeparateFolders: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] ?: false
+    }
+
+    suspend fun setSavePagesToSeparateFolders(enabled: Boolean) {
+        safeEdit { it[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] = enabled }
+    }
+
+
     /**
      * Wrapper around [DataStore.edit] that catches [java.io.IOException] so that a
      * transient disk write failure does not propagate as an unhandled exception and
@@ -398,6 +577,40 @@ class ReaderSettingsRepository @Inject constructor(
         val DATA_SAVER_ENABLED = booleanPreferencesKey("reader_data_saver_enabled")
         val SHOW_READING_TIMER = booleanPreferencesKey("reader_show_reading_timer")
         val SHOW_BATTERY_TIME = booleanPreferencesKey("reader_show_battery_time")
+        
+        // --- Display Settings ---
+        val SHOW_CONTENT_IN_CUTOUT = booleanPreferencesKey("reader_show_content_in_cutout")
+        val BACKGROUND_COLOR = intPreferencesKey("reader_background_color")
+        val ANIMATE_PAGE_TRANSITIONS = booleanPreferencesKey("reader_animate_page_transitions")
+        val SHOW_READING_MODE_OVERLAY = booleanPreferencesKey("reader_show_reading_mode_overlay")
+        val SHOW_TAP_ZONES_OVERLAY = booleanPreferencesKey("reader_show_tap_zones_overlay")
+        
+        // --- Scale Settings ---
+        val READER_SCALE = intPreferencesKey("reader_scale")
+        val AUTO_ZOOM_WIDE_IMAGES = booleanPreferencesKey("reader_auto_zoom_wide_images")
+        
+        // --- Tap Zone Settings ---
+        val INVERT_TAP_ZONES = booleanPreferencesKey("reader_invert_tap_zones")
+        
+        // --- Webtoon Settings ---
+        val WEBTOON_SIDE_PADDING = intPreferencesKey("reader_webtoon_side_padding")
+        val WEBTOON_MENU_HIDE_SENSITIVITY = intPreferencesKey("reader_webtoon_menu_hide_sensitivity")
+        val WEBTOON_DOUBLE_TAP_ZOOM = booleanPreferencesKey("reader_webtoon_double_tap_zoom")
+        val WEBTOON_DISABLE_ZOOM_OUT = booleanPreferencesKey("reader_webtoon_disable_zoom_out")
+        
+        // --- E-ink Settings ---
+        val EINK_FLASH_ON_PAGE_CHANGE = booleanPreferencesKey("reader_eink_flash_on_page_change")
+        val EINK_BLACK_AND_WHITE = booleanPreferencesKey("reader_eink_black_and_white")
+        
+        // --- Reading Behavior ---
+        val SKIP_READ_CHAPTERS = booleanPreferencesKey("reader_skip_read_chapters")
+        val SKIP_FILTERED_CHAPTERS = booleanPreferencesKey("reader_skip_filtered_chapters")
+        val SKIP_DUPLICATE_CHAPTERS = booleanPreferencesKey("reader_skip_duplicate_chapters")
+        val ALWAYS_SHOW_CHAPTER_TRANSITION = booleanPreferencesKey("reader_always_show_chapter_transition")
+        
+        // --- Actions ---
+        val SHOW_ACTIONS_ON_LONG_TAP = booleanPreferencesKey("reader_show_actions_on_long_tap")
+        val SAVE_PAGES_TO_SEPARATE_FOLDERS = booleanPreferencesKey("reader_save_pages_to_separate_folders")
     }
     
     companion object {

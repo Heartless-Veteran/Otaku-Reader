@@ -117,7 +117,61 @@ data class ReaderState(
     val imageQuality: ImageQuality = ImageQuality.ORIGINAL,
 
     /** Whether data saver mode is enabled to reduce image quality and bandwidth usage */
-    val dataSaverEnabled: Boolean = false
+    val dataSaverEnabled: Boolean = false,
+    
+    // --- Display Settings ---
+    /** Show content in display cutout/notch area */
+    val showContentInCutout: Boolean = true,
+    /** Reader background color: 0 = Black, 1 = White, 2 = Gray, 3 = Auto */
+    val backgroundColor: Int = 0,
+    /** Animate page transitions */
+    val animatePageTransitions: Boolean = true,
+    /** Show reading mode overlay briefly when switching */
+    val showReadingModeOverlay: Boolean = true,
+    /** Show tap zones overlay for learning */
+    val showTapZonesOverlay: Boolean = false,
+    
+    // --- Scale Settings ---
+    /** Scale type: 0 = Fit Screen, 1 = Fit Width, 2 = Fit Height, 3 = Original, 4 = Smart Fit */
+    val readerScale: Int = 0,
+    /** Auto-zoom wide images (double-page spreads) */
+    val autoZoomWideImages: Boolean = true,
+    
+    // --- Tap Zone Settings ---
+    /** Invert tap zone actions (swap prev/next) */
+    val invertTapZones: Boolean = false,
+    
+    // --- Webtoon Settings ---
+    /** Side padding for webtoon: 0 = None, 1 = Small, 2 = Medium, 3 = Large */
+    val webtoonSidePadding: Int = 0,
+    /** Menu hide sensitivity: 0 = Low, 1 = Medium, 2 = High */
+    val webtoonMenuHideSensitivity: Int = 0,
+    /** Enable double-tap zoom in webtoon mode */
+    val webtoonDoubleTapZoom: Boolean = true,
+    /** Disable zooming out past fit-width in webtoon */
+    val webtoonDisableZoomOut: Boolean = false,
+    
+    // --- E-ink Settings ---
+    /** Flash screen on page change for E-ink displays */
+    val einkFlashOnPageChange: Boolean = false,
+    /** Black and white mode for E-ink displays */
+    val einkBlackAndWhite: Boolean = false,
+    
+    // --- Reading Behavior ---
+    /** Skip chapters already marked as read when navigating */
+    val skipReadChapters: Boolean = false,
+    /** Skip chapters hidden by filters */
+    val skipFilteredChapters: Boolean = true,
+    /** Skip duplicate chapter names */
+    val skipDuplicateChapters: Boolean = false,
+    /** Always show chapter transition info */
+    val alwaysShowChapterTransition: Boolean = true,
+    
+    // --- Actions ---
+    /** Show actions menu on long tap */
+    val showActionsOnLongTap: Boolean = true,
+    /** Save pages to separate folders by manga title */
+    val savePagesToSeparateFolders: Boolean = false
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size
