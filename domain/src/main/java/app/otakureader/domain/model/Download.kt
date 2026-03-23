@@ -1,5 +1,7 @@
 package app.otakureader.domain.model
 
+import androidx.compose.runtime.Immutable
+
 /**
  * Represents a single download operation in the queue.
  *
@@ -9,6 +11,7 @@ package app.otakureader.domain.model
  *   [DownloadPriority.HIGH] (or any value below [DownloadPriority.NORMAL]) to move an item
  *   ahead of the normal queue, and [DownloadPriority.LOW] to push it towards the end.
  */
+@Immutable
 data class DownloadItem(
     val id: Long,
     val mangaId: Long,

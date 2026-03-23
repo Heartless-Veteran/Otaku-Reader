@@ -8,6 +8,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(projects.sourceApi)
     compileOnly("javax.inject:javax.inject:1")
+    
+    // Compose runtime for @Immutable annotations (compile-only, not bundled)
+    compileOnly(platform(libs.compose.bom))
+    compileOnly(libs.compose.runtime)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
