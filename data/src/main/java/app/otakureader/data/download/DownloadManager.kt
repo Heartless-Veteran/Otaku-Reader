@@ -77,12 +77,24 @@ class DownloadManager @Inject constructor(
     /** Internal map for O(1) lookup and updates of download items by chapterId. */
     private val downloadMap = mutableMapOf<Long, DownloadItem>()
 
+    /** Maximum concurrent downloads from user preference (default: 2) */
+    private var maxConcurrentDownloads: Int = 2
+
+    init {
+        // Load concurrent download preference
+        scope.launch {
+            downloadPreferences.concurrentDownloads.collect { max ->
+                maxConcurrentDownloads = max.coerceIn(1, 5)
+            }
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Public API
     // -------------------------------------------------------------------------
 
     suspend fun enqueue(request: ChapterDownloadRequest) {
-        mutex.withLock {
+        val shouldStart = mutex.withLock {
             val existing = downloadMap[request.chapterId]
             // Allow re-enqueueing for terminal states (COMPLETED, FAILED) or when the item
             // is not present at all (i.e., never queued, or previously canceled via cancel()
@@ -105,8 +117,15 @@ class DownloadManager @Inject constructor(
             )
             downloadMap[request.chapterId] = newItem
             refreshDownloadsList()
+
+            // Check if we can start immediately or need to wait for a slot
+            jobs.size < maxConcurrentDownloads
         }
-        startDownload(request)
+        
+        // Start download only if under the concurrent limit
+        if (shouldStart) {
+            launchDownloadJob(request.chapterId, request)
+        }
     }
 
     suspend fun pause(chapterId: Long) {
@@ -117,13 +136,21 @@ class DownloadManager @Inject constructor(
     }
 
     suspend fun resume(chapterId: Long) {
-        val request = mutex.withLock {
+        val canStart = mutex.withLock {
             val item = downloadMap[chapterId]
             if (item?.status != DownloadStatus.PAUSED) return
-            requests[chapterId]
-        } ?: return
-
-        startDownload(request)
+            // Only start immediately if under the limit
+            jobs.size < maxConcurrentDownloads
+        }
+        
+        val request = requests[chapterId] ?: return
+        
+        if (canStart) {
+            launchDownloadJob(chapterId, request)
+        } else {
+            // Just mark as queued, will be picked up when a slot opens
+            mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
+        }
     }
 
     suspend fun cancel(chapterId: Long) {
@@ -278,97 +305,6 @@ class DownloadManager @Inject constructor(
     // Internal helpers
     // -------------------------------------------------------------------------
 
-    private suspend fun startDownload(request: ChapterDownloadRequest) {
-        val chapterId = request.chapterId
-
-        mutex.withLock {
-            // Cancel any existing job for this chapter
-            jobs.remove(chapterId)?.cancel()
-
-            // Bail out if the item was removed while waiting for the lock
-            if (!downloadMap.containsKey(chapterId)) return
-
-            updateStatus(chapterId, DownloadStatus.DOWNLOADING)
-
-            // Launch and register the job under the same lock to eliminate the window
-            // where cancel() could run before the job is stored in `jobs`.
-            jobs[chapterId] = scope.launch {
-                try {
-                    val pageUrls = request.pageUrls
-                    val totalPages = pageUrls.size
-
-                    if (totalPages == 0) {
-                        // No pages provided yet – keep the chapter queued so it can be retried
-                        // later when the caller supplies the actual URLs.
-                        mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
-                        return@launch
-                    }
-
-                    // Read the CBZ preference once before downloading to avoid
-                    // repeated Flow emissions during the download loop.
-                    val packAsCbz = downloadPreferences.saveAsCbz.first()
-
-                    pageUrls.forEachIndexed { index, url ->
-                        if (!isActive) return@launch
-
-                        val destFile = DownloadProvider.getPageFile(
-                            context,
-                            request.sourceName,
-                            request.mangaTitle,
-                            request.chapterTitle,
-                            index
-                        )
-
-                        // Download only if the file is missing or empty (partial write).
-                        if (!destFile.exists() || destFile.length() == 0L) {
-                            // Remove a partial file so the download starts from scratch.
-                            destFile.delete()
-
-                            val result = downloader.downloadPage(url, destFile)
-                            if (result.isFailure) {
-                                // Clean up any partial write so future retries start fresh.
-                                destFile.delete()
-                                mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
-                                return@launch
-                            }
-                        }
-
-                        // Always update progress whether the file was downloaded or already existed.
-                        mutex.withLock { updateProgress(chapterId, ((index + 1) * 100) / totalPages) }
-                    }
-
-                    if (isActive) {
-                        // Optionally pack pages into a CBZ archive when the preference is enabled.
-                        if (packAsCbz) {
-                            val chapterDir = DownloadProvider.getChapterDir(
-                                context,
-                                request.sourceName,
-                                request.mangaTitle,
-                                request.chapterTitle
-                            )
-                            CbzCreator.createCbz(chapterDir).onSuccess {
-                                // Remove loose page files once the archive is created.
-                                chapterDir.listFiles()
-                                    ?.filter { file ->
-                                        file.isFile &&
-                                            file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
-                                    }
-                                    ?.forEach { it.delete() }
-                            }
-                        }
-                        mutex.withLock {
-                            updateStatus(chapterId, DownloadStatus.COMPLETED)
-                        }
-                    }
-                } finally {
-                    // Always remove the job reference on all terminal paths (success, failure,
-                    // cancellation, or early return) to prevent stale entries.
-                    mutex.withLock { jobs.remove(chapterId) }
-                }
-            }
-        }
-    }
-
     private fun updateStatus(chapterId: Long, status: DownloadStatus) {
         updateDownloadInPlace(chapterId) { item ->
             item.copy(status = status)
@@ -413,5 +349,103 @@ class DownloadManager @Inject constructor(
      */
     private fun refreshDownloadsList() {
         _downloads.value = downloadMap.values.sortedBy { it.priority }
+    }
+
+    /**
+     * Processes the pending download queue when slots become available.
+     * Finds the highest priority queued download and starts it if under the limit.
+     * Must NOT be called while holding [mutex].
+     */
+    private fun processPendingQueue() {
+        scope.launch {
+            mutex.withLock {
+                // Check if we have room for more downloads
+                if (jobs.size >= maxConcurrentDownloads) return@withLock
+
+                // Find highest priority queued item that's not already downloading
+                val pendingItem = downloadMap.values
+                    .filter { it.status == DownloadStatus.QUEUED && !jobs.containsKey(it.chapterId) }
+                    .minByOrNull { it.priority }
+                    ?: return@withLock
+
+                val request = requests[pendingItem.chapterId] ?: return@withLock
+
+                // Launch download outside the lock to avoid blocking
+                launchDownloadJob(pendingItem.chapterId, request)
+            }
+        }
+    }
+
+    /**
+     * Launches a download job for the given chapter. Must be called outside [mutex] lock.
+     */
+    private suspend fun launchDownloadJob(chapterId: Long, request: ChapterDownloadRequest) {
+        mutex.withLock {
+            // Double-check we haven't exceeded the limit
+            if (jobs.size >= maxConcurrentDownloads) return@withLock
+
+            updateStatus(chapterId, DownloadStatus.DOWNLOADING)
+
+            jobs[chapterId] = scope.launch {
+                try {
+                    val pageUrls = request.pageUrls
+                    val totalPages = pageUrls.size
+
+                    if (totalPages == 0) {
+                        mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
+                        return@launch
+                    }
+
+                    val packAsCbz = downloadPreferences.saveAsCbz.first()
+
+                    pageUrls.forEachIndexed { index, url ->
+                        if (!isActive) return@launch
+
+                        val destFile = DownloadProvider.getPageFile(
+                            context,
+                            request.sourceName,
+                            request.mangaTitle,
+                            request.chapterTitle,
+                            index
+                        )
+
+                        if (!destFile.exists() || destFile.length() == 0L) {
+                            destFile.delete()
+                            val result = downloader.downloadPage(url, destFile)
+                            if (result.isFailure) {
+                                destFile.delete()
+                                mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
+                                return@launch
+                            }
+                        }
+
+                        mutex.withLock { updateProgress(chapterId, ((index + 1) * 100) / totalPages) }
+                    }
+
+                    if (isActive) {
+                        if (packAsCbz) {
+                            val chapterDir = DownloadProvider.getChapterDir(
+                                context,
+                                request.sourceName,
+                                request.mangaTitle,
+                                request.chapterTitle
+                            )
+                            CbzCreator.createCbz(chapterDir).onSuccess {
+                                chapterDir.listFiles()
+                                    ?.filter { file ->
+                                        file.isFile &&
+                                            file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
+                                    }
+                                    ?.forEach { it.delete() }
+                            }
+                        }
+                        mutex.withLock { updateStatus(chapterId, DownloadStatus.COMPLETED) }
+                    }
+                } finally {
+                    mutex.withLock { jobs.remove(chapterId) }
+                    processPendingQueue()
+                }
+            }
+        }
     }
 }
