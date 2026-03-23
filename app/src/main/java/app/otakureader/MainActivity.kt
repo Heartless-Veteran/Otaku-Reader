@@ -25,11 +25,14 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
+import app.otakureader.data.worker.LibraryUpdateWorker
 import app.otakureader.util.DeepLinkHandler
 import app.otakureader.util.DeepLinkResult
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -45,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
 
     @Inject lateinit var generalPreferences: GeneralPreferences
+    @Inject lateinit var libraryPreferences: LibraryPreferences
     
     // Hold deep link result across recompositions for the current Activity instance
     private var pendingDeepLinkResult by mutableStateOf<DeepLinkResult?>(null)
@@ -53,6 +57,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         applyLocaleFromPreferences()
+        
+        // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation)
+        if (savedInstanceState == null) {
+            lifecycleScope.launch {
+                val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
+                if (autoRefresh) {
+                    LibraryUpdateWorker.enqueue(applicationContext)
+                }
+            }
+        }
         
         // Handle deep link or share intent only on initial launch
         if (savedInstanceState == null) {

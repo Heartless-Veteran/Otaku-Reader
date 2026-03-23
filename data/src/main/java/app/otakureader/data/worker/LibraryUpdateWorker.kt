@@ -204,5 +204,19 @@ class LibraryUpdateWorker @AssistedInject constructor(
     companion object {
         private const val TAG = "LibraryUpdateWorker"
         const val WORK_NAME = "library_update"
+
+        /**
+         * Enqueues a one-time library update work request.
+         * This can be called from MainActivity for auto-refresh on start.
+         *
+         * @param context Application context
+         */
+        fun enqueue(context: Context) {
+            val workRequest = androidx.work.OneTimeWorkRequestBuilder<LibraryUpdateWorker>()
+                .build()
+
+            androidx.work.WorkManager.getInstance(context)
+                .enqueueUniqueWork(WORK_NAME, androidx.work.ExistingWorkPolicy.KEEP, workRequest)
+        }
     }
 }
