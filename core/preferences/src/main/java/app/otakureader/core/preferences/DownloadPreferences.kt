@@ -31,6 +31,30 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
     val autoDownloadLimit: Flow<Int> = dataStore.data.map { it[Keys.AUTO_DOWNLOAD_LIMIT] ?: 3 }
     suspend fun setAutoDownloadLimit(value: Int) = dataStore.edit { it[Keys.AUTO_DOWNLOAD_LIMIT] = value }
 
+    // --- Download Location ---
+
+    /** Custom download directory URI (null = default app storage) */
+    val downloadLocation: Flow<String?> = dataStore.data.map { it[Keys.DOWNLOAD_LOCATION] }
+    suspend fun setDownloadLocation(value: String?) = dataStore.edit { 
+        if (value != null) it[Keys.DOWNLOAD_LOCATION] = value else it.remove(Keys.DOWNLOAD_LOCATION)
+    }
+
+    // --- Concurrent Downloads ---
+
+    /** Maximum concurrent downloads (1-5). Default: 2. */
+    val concurrentDownloads: Flow<Int> = dataStore.data.map { it[Keys.CONCURRENT_DOWNLOADS] ?: 2 }
+    suspend fun setConcurrentDownloads(value: Int) = dataStore.edit { it[Keys.CONCURRENT_DOWNLOADS] = value }
+
+    // --- Download Ahead ---
+
+    /** Number of chapters to download ahead while reading. Default: 0 (disabled). */
+    val downloadAheadWhileReading: Flow<Int> = dataStore.data.map { it[Keys.DOWNLOAD_AHEAD_WHILE_READING] ?: 0 }
+    suspend fun setDownloadAheadWhileReading(value: Int) = dataStore.edit { it[Keys.DOWNLOAD_AHEAD_WHILE_READING] = value }
+
+    /** Only download ahead on Wi-Fi. Default: true. */
+    val downloadAheadOnlyOnWifi: Flow<Boolean> = dataStore.data.map { it[Keys.DOWNLOAD_AHEAD_ONLY_ON_WIFI] ?: true }
+    suspend fun setDownloadAheadOnlyOnWifi(value: Boolean) = dataStore.edit { it[Keys.DOWNLOAD_AHEAD_ONLY_ON_WIFI] = value }
+
     // --- Save as CBZ ---
 
     /**
@@ -103,6 +127,10 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         val AUTO_DOWNLOAD_ENABLED = booleanPreferencesKey("auto_download_enabled")
         val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
         val AUTO_DOWNLOAD_LIMIT = intPreferencesKey("auto_download_limit")
+        val DOWNLOAD_LOCATION = stringPreferencesKey("download_location")
+        val CONCURRENT_DOWNLOADS = intPreferencesKey("concurrent_downloads")
+        val DOWNLOAD_AHEAD_WHILE_READING = intPreferencesKey("download_ahead_while_reading")
+        val DOWNLOAD_AHEAD_ONLY_ON_WIFI = booleanPreferencesKey("download_ahead_only_on_wifi")
         val SAVE_AS_CBZ = booleanPreferencesKey("save_as_cbz")
         val DELETE_AFTER_READING = booleanPreferencesKey("delete_after_reading")
         val PER_MANGA_OVERRIDES = stringPreferencesKey("delete_after_reading_overrides")
