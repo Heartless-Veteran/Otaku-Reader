@@ -23,6 +23,7 @@ const val UPDATE_CHANNEL_ID = "library_updates_channel"
 const val GROUP_KEY_UPDATES = "library_updates"
 const val UPDATE_NOTIFICATION_TAG = "library_update"
 const val SUMMARY_NOTIFICATION_ID = Int.MAX_VALUE
+const val PROGRESS_NOTIFICATION_ID = Int.MAX_VALUE - 1
 
 private const val EXTRA_MANGA_ID = "mangaId"
 private const val EXTRA_DESTINATION = "destination"
@@ -197,5 +198,45 @@ class UpdateNotifier(private val context: Context) {
             context.getSystemService(NotificationManager::class.java)
                 ?.createNotificationChannel(channel)
         }
+    }
+
+    /**
+     * Shows a progress notification during library update.
+     *
+     * @param current Current number of manga processed
+     * @param total Total number of manga to process
+     * @param mangaTitle Title of the manga currently being processed
+     */
+    @SuppressLint("MissingPermission")
+    fun showProgress(current: Int, total: Int, mangaTitle: String) {
+        // Check for notification permission on Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return
+        }
+
+        val progress = (current * 100) / total
+
+        val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_sync)
+            .setContentTitle("Updating library…")
+            .setContentText("Checking: $mangaTitle")
+            .setProgress(100, progress, false)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .build()
+
+        notificationManager.notify(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Cancels the progress notification.
+     */
+    fun cancelProgress() {
+        notificationManager.cancel(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID)
     }
 }

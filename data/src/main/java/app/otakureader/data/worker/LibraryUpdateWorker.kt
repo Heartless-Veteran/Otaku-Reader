@@ -9,6 +9,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.repository.ChapterRepository
@@ -29,6 +30,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val getLibraryManga: GetLibraryMangaUseCase,
     private val updateLibraryManga: UpdateLibraryMangaUseCase,
+    private val libraryPreferences: LibraryPreferences,
     private val downloadPreferences: DownloadPreferences,
     private val generalPreferences: GeneralPreferences,
     private val downloadManager: DownloadManager,
@@ -37,8 +39,27 @@ class LibraryUpdateWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         return try {
+            // Check if update should only run on Wi-Fi
+            val updateOnlyOnWifi = libraryPreferences.updateOnlyOnWifi.first()
+            if (updateOnlyOnWifi && !isConnectedToWifi()) {
+                Log.d(TAG, "Skipping library update - not on Wi-Fi")
+                return Result.retry()
+            }
+
+            // Get skip categories
+            val skipCategoryIds = libraryPreferences.skipUpdateCategoryIds.first()
+                .mapNotNull { it.toLongOrNull() }
+                .toSet()
+
             // Get all library manga
-            val libraryManga = getLibraryManga().first()
+            var libraryManga = getLibraryManga().first()
+
+            // Filter out manga in skipped categories
+            if (skipCategoryIds.isNotEmpty()) {
+                libraryManga = libraryManga.filter { manga ->
+                    manga.categoryIds.none { it in skipCategoryIds }
+                }
+            }
 
             if (libraryManga.isEmpty()) {
                 return Result.success()
@@ -48,15 +69,32 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val downloadOnlyOnWifi = downloadPreferences.downloadOnlyOnWifi.first()
             val autoDownloadLimit = downloadPreferences.autoDownloadLimit.first()
             val notificationsEnabled = generalPreferences.notificationsEnabled.first()
+            val showUpdateProgress = libraryPreferences.showUpdateProgress.first()
 
             // Check if Wi-Fi is available for downloads requiring Wi-Fi
             val onWifi = !downloadOnlyOnWifi || isConnectedToWifi()
 
             val mangaWithNewChapters = mutableListOf<NotificationManga>()
             var failedUpdates = 0
+            var processedCount = 0
+            val totalCount = libraryManga.size
+
+            // Show progress notification if enabled
+            val progressNotifier = if (showUpdateProgress) {
+                UpdateNotifier(applicationContext)
+            } else null
 
             // Update each manga
             for (manga in libraryManga) {
+                // Update progress notification
+                if (showUpdateProgress) {
+                    progressNotifier?.showProgress(
+                        current = processedCount,
+                        total = totalCount,
+                        mangaTitle = manga.title
+                    )
+                }
+
                 val result = updateLibraryManga(manga)
 
                 result.onSuccess { newChapterCount ->
@@ -87,6 +125,13 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 }.onFailure {
                     failedUpdates++
                 }
+
+                processedCount++
+            }
+
+            // Cancel progress notification
+            if (showUpdateProgress) {
+                progressNotifier?.cancelProgress()
             }
 
             // Send notification if new chapters were found and notifications are enabled
