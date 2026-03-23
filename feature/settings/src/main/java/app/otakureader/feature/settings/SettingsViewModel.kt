@@ -65,7 +65,6 @@ class SettingsViewModel @Inject constructor(
             try {
                 aiPreferences.migrateLegacyApiKeyIfNeeded()
             } catch (e: Exception) {
-                // Migration failure is non-fatal; the user can re-enter the API key.
                 _effect.send(SettingsEffect.ShowSnackbar("Failed to load AI settings. You may need to re-enter your API key."))
             }
         }
@@ -78,89 +77,297 @@ class SettingsViewModel @Inject constructor(
 
     private fun observePreferences() {
         viewModelScope.launch {
+            // Start with general preferences
             combine(
                 generalPreferences.themeMode,
                 generalPreferences.useDynamicColor,
                 generalPreferences.locale,
                 generalPreferences.notificationsEnabled,
-                generalPreferences.updateCheckInterval
-            ) { themeMode, dynamicColor, locale, notificationsEnabled, updateInterval ->
-                SettingsState(
-                    themeMode = themeMode,
-                    useDynamicColor = dynamicColor,
-                    locale = locale,
-                    notificationsEnabled = notificationsEnabled,
-                    updateCheckInterval = updateInterval
-                    // deleteAfterReading feature has been removed
-                )
-            }.combine(generalPreferences.usePureBlackDarkMode) { state, usePureBlack ->
-                state.copy(usePureBlackDarkMode = usePureBlack)
-            }.combine(generalPreferences.useHighContrast) { state, highContrast ->
-                state.copy(useHighContrast = highContrast)
-            }.combine(generalPreferences.colorScheme) { state, colorScheme ->
-                state.copy(colorScheme = colorScheme)
-            }.combine(generalPreferences.customAccentColor) { state, customAccent ->
-                state.copy(customAccentColor = customAccent)
-            }.combine(downloadPreferences.deleteAfterReading) { state, deleteAfterReading ->
-                state.copy(deleteAfterReading = deleteAfterReading)
-            }.combine(libraryPreferences.gridSize) { state, gridSize ->
-                state.copy(libraryGridSize = gridSize)
-            }.combine(libraryPreferences.showBadges) { state, showBadges ->
-                state.copy(showBadges = showBadges)
-            }.combine(readerPreferences.readerMode) { state, readerMode ->
-                state.copy(readerMode = readerMode)
-            }.combine(readerPreferences.keepScreenOn) { state, keepScreenOn ->
-                state.copy(keepScreenOn = keepScreenOn)
-            }.combine(readerSettingsRepository.incognitoMode) { state, incognitoMode ->
-                state.copy(incognitoMode = incognitoMode)
-            }.combine(readerSettingsRepository.preloadPagesBefore) { state, preloadBefore ->
-                state.copy(preloadPagesBefore = preloadBefore)
-            }.combine(readerSettingsRepository.preloadPagesAfter) { state, preloadAfter ->
-                state.copy(preloadPagesAfter = preloadAfter)
-            }.combine(readerSettingsRepository.cropBordersEnabled) { state, cropBorders ->
-                state.copy(cropBordersEnabled = cropBorders)
-            }.combine(readerSettingsRepository.imageQuality) { state, imageQuality ->
-                state.copy(imageQuality = imageQuality.name)
-            }.combine(readerSettingsRepository.dataSaverEnabled) { state, dataSaver ->
-                state.copy(dataSaverEnabled = dataSaver)
-            }.combine(downloadPreferences.autoDownloadEnabled) { state, autoDownloadEnabled ->
-                state.copy(autoDownloadEnabled = autoDownloadEnabled)
-            }.combine(downloadPreferences.downloadOnlyOnWifi) { state, downloadOnlyOnWifi ->
-                state.copy(downloadOnlyOnWifi = downloadOnlyOnWifi)
-            }.combine(downloadPreferences.autoDownloadLimit) { state, autoDownloadLimit ->
-                state.copy(autoDownloadLimit = autoDownloadLimit)
-            }.combine(downloadPreferences.saveAsCbz) { state, saveAsCbz ->
-                state.copy(saveAsCbz = saveAsCbz)
-            }.combine(localSourcePreferences.localSourceDirectory) { state, localDir ->
-                state.copy(localSourceDirectory = localDir)
-            }.combine(appPreferences.migrationSimilarityThreshold) { state, threshold ->
-                state.copy(migrationSimilarityThreshold = threshold)
-            }.combine(appPreferences.migrationAlwaysConfirm) { state, alwaysConfirm ->
-                state.copy(migrationAlwaysConfirm = alwaysConfirm)
-            }.combine(appPreferences.migrationMinChapterCount) { state, minChapters ->
-                state.copy(migrationMinChapterCount = minChapters)
-            }.combine(generalPreferences.showNsfwContent) { state, showNsfw ->
-                state.copy(showNsfwContent = showNsfw)
-            }.combine(generalPreferences.discordRpcEnabled) { state, discordRpc ->
-                state.copy(discordRpcEnabled = discordRpc)
-            }.combine(backupPreferences.autoBackupEnabled) { state, enabled ->
-                state.copy(autoBackupEnabled = enabled)
-            }.combine(backupPreferences.autoBackupIntervalHours) { state, hours ->
-                state.copy(autoBackupIntervalHours = hours)
-            }.combine(backupPreferences.autoBackupMaxCount) { state, count ->
-                state.copy(autoBackupMaxCount = count)
-            }.collect { newState ->
+                generalPreferences.updateCheckInterval,
+                generalPreferences.usePureBlackDarkMode,
+                generalPreferences.useHighContrast,
+                generalPreferences.colorScheme,
+                generalPreferences.customAccentColor
+            ) { values ->
+                @Suppress("UNCHECKED_CAST")
+                Triple(
+                    values[0] as Int,      // themeMode
+                    values[1] as Boolean,  // useDynamicColor
+                    Triple(
+                        values[2] as String,   // locale
+                        values[3] as Boolean,  // notificationsEnabled
+                        values[4] as Int       // updateCheckInterval
+                    )
+                ) to Triple(
+                    values[5] as Boolean,  // usePureBlackDarkMode
+                    values[6] as Boolean,  // useHighContrast
+                    values[7] as Int       // colorScheme
+                ) to (values[8] as Long)  // customAccentColor
+            }.combine(generalPreferences.showNsfwContent) { base, showNsfw ->
+                base to showNsfw
+            }.combine(generalPreferences.discordRpcEnabled) { base, discordRpc ->
+                base to discordRpc
+            }
+            // Library preferences
+            .combine(libraryPreferences.gridSize) { base, gridSize ->
+                base to gridSize
+            }.combine(libraryPreferences.showBadges) { base, showBadges ->
+                base to showBadges
+            }.combine(libraryPreferences.updateOnlyOnWifi) { base, updateOnWifi ->
+                base to updateOnWifi
+            }.combine(libraryPreferences.updateOnlyPinnedCategories) { base, pinnedOnly ->
+                base to pinnedOnly
+            }.combine(libraryPreferences.autoRefreshOnStart) { base, autoRefresh ->
+                base to autoRefresh
+            }.combine(libraryPreferences.showUpdateProgress) { base, showProgress ->
+                base to showProgress
+            }
+            // Reader preferences - Display
+            .combine(readerPreferences.readerMode) { base, readerMode ->
+                base to readerMode
+            }.combine(readerPreferences.keepScreenOn) { base, keepScreenOn ->
+                base to keepScreenOn
+            }.combine(readerPreferences.fullscreen) { base, fullscreen ->
+                base to fullscreen
+            }.combine(readerPreferences.showContentInCutout) { base, showCutout ->
+                base to showCutout
+            }.combine(readerPreferences.showPageNumber) { base, showPageNum ->
+                base to showPageNum
+            }.combine(readerPreferences.backgroundColor) { base, bgColor ->
+                base to bgColor
+            }.combine(readerPreferences.animatePageTransitions) { base, animate ->
+                base to animate
+            }.combine(readerPreferences.showReadingModeOverlay) { base, showMode ->
+                base to showMode
+            }.combine(readerPreferences.showTapZonesOverlay) { base, showZones ->
+                base to showZones
+            }
+            // Reader preferences - Scale
+            .combine(readerPreferences.readerScale) { base, scale ->
+                base to scale
+            }.combine(readerPreferences.autoZoomWideImages) { base, autoZoom ->
+                base to autoZoom
+            }
+            // Reader preferences - Tap Zones
+            .combine(readerPreferences.tapZoneConfig) { base, tapConfig ->
+                base to tapConfig
+            }.combine(readerPreferences.invertTapZones) { base, invertZones ->
+                base to invertZones
+            }
+            // Reader preferences - Volume Keys
+            .combine(readerPreferences.volumeKeysEnabled) { base, volKeys ->
+                base to volKeys
+            }.combine(readerPreferences.volumeKeysInverted) { base, volInvert ->
+                base to volInvert
+            }
+            // Reader preferences - Interaction
+            .combine(readerPreferences.doubleTapAnimationSpeed) { base, animSpeed ->
+                base to animSpeed
+            }.combine(readerPreferences.showActionsOnLongTap) { base, longTap ->
+                base to longTap
+            }.combine(readerPreferences.savePagesToSeparateFolders) { base, separateFolders ->
+                base to separateFolders
+            }
+            // Reader preferences - Webtoon
+            .combine(readerPreferences.webtoonSidePadding) { base, padding ->
+                base to padding
+            }.combine(readerPreferences.webtoonMenuHideSensitivity) { base, sensitivity ->
+                base to sensitivity
+            }.combine(readerPreferences.webtoonDoubleTapZoom) { base, dtZoom ->
+                base to dtZoom
+            }.combine(readerPreferences.webtoonDisableZoomOut) { base, disableZoom ->
+                base to disableZoom
+            }
+            // Reader preferences - E-ink
+            .combine(readerPreferences.einkFlashOnPageChange) { base, flash ->
+                base to flash
+            }.combine(readerPreferences.einkBlackAndWhite) { base, bw ->
+                base to bw
+            }
+            // Reader preferences - Behavior
+            .combine(readerPreferences.skipReadChapters) { base, skipRead ->
+                base to skipRead
+            }.combine(readerPreferences.skipFilteredChapters) { base, skipFiltered ->
+                base to skipFiltered
+            }.combine(readerPreferences.skipDuplicateChapters) { base, skipDupes ->
+                base to skipDupes
+            }.combine(readerPreferences.alwaysShowChapterTransition) { base, showTransition ->
+                base to showTransition
+            }
+            // Reader preferences - Other
+            .combine(readerSettingsRepository.incognitoMode) { base, incognito ->
+                base to incognito
+            }.combine(readerSettingsRepository.preloadPagesBefore) { base, preloadBefore ->
+                base to preloadBefore
+            }.combine(readerSettingsRepository.preloadPagesAfter) { base, preloadAfter ->
+                base to preloadAfter
+            }.combine(readerSettingsRepository.cropBordersEnabled) { base, cropBorders ->
+                base to cropBorders
+            }.combine(readerSettingsRepository.imageQuality) { base, imageQuality ->
+                base to imageQuality
+            }.combine(readerSettingsRepository.dataSaverEnabled) { base, dataSaver ->
+                base to dataSaver
+            }
+            // Download preferences
+            .combine(downloadPreferences.deleteAfterReading) { base, deleteAfter ->
+                base to deleteAfter
+            }.combine(downloadPreferences.saveAsCbz) { base, saveCbz ->
+                base to saveCbz
+            }.combine(downloadPreferences.autoDownloadEnabled) { base, autoDownload ->
+                base to autoDownload
+            }.combine(downloadPreferences.downloadOnlyOnWifi) { base, dlWifi ->
+                base to dlWifi
+            }.combine(downloadPreferences.autoDownloadLimit) { base, dlLimit ->
+                base to dlLimit
+            }.combine(downloadPreferences.concurrentDownloads) { base, concurrent ->
+                base to concurrent
+            }.combine(downloadPreferences.downloadAheadWhileReading) { base, dlAhead ->
+                base to dlAhead
+            }.combine(downloadPreferences.downloadAheadOnlyOnWifi) { base, dlAheadWifi ->
+                base to dlAheadWifi
+            }.combine(downloadPreferences.downloadLocation) { base, dlLocation ->
+                base to dlLocation
+            }
+            // Local source and other preferences
+            .combine(localSourcePreferences.localSourceDirectory) { base, localDir ->
+                base to localDir
+            }.combine(appPreferences.migrationSimilarityThreshold) { base, threshold ->
+                base to threshold
+            }.combine(appPreferences.migrationAlwaysConfirm) { base, alwaysConfirm ->
+                base to alwaysConfirm
+            }.combine(appPreferences.migrationMinChapterCount) { base, minChapters ->
+                base to minChapters
+            }.combine(backupPreferences.autoBackupEnabled) { base, autoBackup ->
+                base to autoBackup
+            }.combine(backupPreferences.autoBackupIntervalHours) { base, backupInterval ->
+                base to backupInterval
+            }.combine(backupPreferences.autoBackupMaxCount) { base, backupMax ->
+                base to backupMax
+            }
+            .collect { result ->
+                // Unpack all the values
+                @Suppress("UNCHECKED_CAST")
+                val ((((((
+                    (((((
+                        (((((
+                            (((((
+                                (((((
+                                    (((((
+                                        ((((((
+                                            themeData
+                                        ), showNsfw), discordRpc)
+                                    ), gridSize), showBadges)
+                                ), updateOnWifi), updatePinned)
+                            ), autoRefresh), showProgress)
+                        ), readerMode), keepScreenOn)
+                    ), fullscreen), showCutout)
+                ), showPageNum), bgColor)
+            ), animate), showMode)
+        ), showZones)
+    ), scale), autoZoom)
+), tapConfig), invertZones)
+), volKeys), volInvert)
+), animSpeed), longTap)
+), separateFolders)
+), sidePadding), menuSensitivity)
+), dtZoom), disableZoomOut)
+), einkFlash), einkBw)
+), skipRead), skipFiltered)
+), skipDupes), showTransition)
+), incognito), preloadBefore)
+), preloadAfter), cropBorders)
+), imageQuality), dataSaver)
+), deleteAfter), saveCbz)
+), autoDownload), dlWifi)
+), dlLimit), concurrent)
+), dlAhead), dlAheadWifi)
+), dlLocation), localDir)
+), threshold), alwaysConfirm)
+), minChapters), autoBackup)
+), backupInterval), backupMax) = result
+
+                @Suppress("UNCHECKED_CAST")
+                val ((((themeMode, useDynamicColor, generalData), pureBlackHighContrast), colorScheme), customAccent) = themeData
+                val (locale, notificationsEnabled, updateInterval) = generalData
+                val (usePureBlackDarkMode, useHighContrast, colorSchemeValue) = pureBlackHighContrast
+
                 _state.update { current ->
-                    newState.copy(
-                        // Preserve in-flight backup/restore state so a preference change
-                        // doesn't cancel progress indicators mid-operation.
+                    current.copy(
+                        themeMode = themeMode,
+                        useDynamicColor = useDynamicColor,
+                        usePureBlackDarkMode = usePureBlackDarkMode,
+                        useHighContrast = useHighContrast,
+                        colorScheme = colorSchemeValue,
+                        customAccentColor = customAccent,
+                        locale = locale,
+                        notificationsEnabled = notificationsEnabled,
+                        updateCheckInterval = updateInterval,
+                        showNsfwContent = showNsfw,
+                        discordRpcEnabled = discordRpc,
+                        libraryGridSize = gridSize,
+                        showBadges = showBadges,
+                        updateOnlyOnWifi = updateOnWifi,
+                        updateOnlyPinnedCategories = updatePinned,
+                        autoRefreshOnStart = autoRefresh,
+                        showUpdateProgress = showProgress,
+                        readerMode = readerMode,
+                        keepScreenOn = keepScreenOn,
+                        fullscreen = fullscreen,
+                        showContentInCutout = showCutout,
+                        showPageNumber = showPageNum,
+                        backgroundColor = bgColor,
+                        animatePageTransitions = animate,
+                        showReadingModeOverlay = showMode,
+                        showTapZonesOverlay = showZones,
+                        readerScale = scale,
+                        autoZoomWideImages = autoZoom,
+                        tapZoneConfig = tapConfig,
+                        invertTapZones = invertZones,
+                        volumeKeysEnabled = volKeys,
+                        volumeKeysInverted = volInvert,
+                        doubleTapAnimationSpeed = animSpeed,
+                        showActionsOnLongTap = longTap,
+                        savePagesToSeparateFolders = separateFolders,
+                        webtoonSidePadding = sidePadding,
+                        webtoonMenuHideSensitivity = menuSensitivity,
+                        webtoonDoubleTapZoom = dtZoom,
+                        webtoonDisableZoomOut = disableZoomOut,
+                        einkFlashOnPageChange = einkFlash,
+                        einkBlackAndWhite = einkBw,
+                        skipReadChapters = skipRead,
+                        skipFilteredChapters = skipFiltered,
+                        skipDuplicateChapters = skipDupes,
+                        alwaysShowChapterTransition = showTransition,
+                        incognitoMode = incognito,
+                        preloadPagesBefore = preloadBefore,
+                        preloadPagesAfter = preloadAfter,
+                        cropBordersEnabled = cropBorders,
+                        imageQuality = imageQuality.name,
+                        dataSaverEnabled = dataSaver,
+                        deleteAfterReading = deleteAfter,
+                        saveAsCbz = saveCbz,
+                        autoDownloadEnabled = autoDownload,
+                        downloadOnlyOnWifi = dlWifi,
+                        autoDownloadLimit = dlLimit,
+                        concurrentDownloads = concurrent,
+                        downloadAheadWhileReading = dlAhead,
+                        downloadAheadOnlyOnWifi = dlAheadWifi,
+                        downloadLocation = dlLocation,
+                        localSourceDirectory = localDir,
+                        migrationSimilarityThreshold = threshold,
+                        migrationAlwaysConfirm = alwaysConfirm,
+                        migrationMinChapterCount = minChapters,
+                        autoBackupEnabled = autoBackup,
+                        autoBackupIntervalHours = backupInterval,
+                        autoBackupMaxCount = backupMax,
+                        // Preserve in-flight states
                         isBackupInProgress = current.isBackupInProgress,
                         isRestoreInProgress = current.isRestoreInProgress,
                         restoringBackupFileName = current.restoringBackupFileName,
                         localBackupFiles = current.localBackupFiles,
                         trackers = current.trackers,
                         trackingLoginInProgress = current.trackingLoginInProgress,
-                        // Preserve AI fields managed by observeAiPreferences()
+                        // Preserve AI fields
                         aiEnabled = current.aiEnabled,
                         aiTier = current.aiTier,
                         aiApiKeySet = current.aiApiKeySet,
@@ -176,12 +383,12 @@ class SettingsViewModel @Inject constructor(
                         aiAutoCategorization = current.aiAutoCategorization,
                         aiTokensUsedThisMonth = current.aiTokensUsedThisMonth,
                         aiTokenTrackingPeriod = current.aiTokenTrackingPeriod,
-                        // Preserve reading goal fields managed by observeReadingGoalPreferences()
+                        // Preserve reading goal fields
                         dailyChapterGoal = current.dailyChapterGoal,
                         weeklyChapterGoal = current.weeklyChapterGoal,
                         readingRemindersEnabled = current.readingRemindersEnabled,
                         readingReminderHour = current.readingReminderHour,
-                        // Preserve sync fields managed by observeSyncPreferences()
+                        // Preserve sync fields
                         syncEnabled = current.syncEnabled,
                         syncProviderId = current.syncProviderId,
                         syncProviderName = current.syncProviderName,
@@ -204,44 +411,100 @@ class SettingsViewModel @Inject constructor(
     fun onEvent(event: SettingsEvent) {
         viewModelScope.launch {
             when (event) {
+                // Appearance
                 is SettingsEvent.SetThemeMode -> generalPreferences.setThemeMode(event.mode)
                 is SettingsEvent.SetDynamicColor -> generalPreferences.setUseDynamicColor(event.enabled)
                 is SettingsEvent.SetPureBlackDarkMode -> generalPreferences.setUsePureBlackDarkMode(event.enabled)
                 is SettingsEvent.SetHighContrast -> generalPreferences.setUseHighContrast(event.enabled)
                 is SettingsEvent.SetColorScheme -> generalPreferences.setColorScheme(event.scheme)
+                is SettingsEvent.SetCustomAccentColor -> generalPreferences.setCustomAccentColor(event.color)
                 is SettingsEvent.SetLocale -> generalPreferences.setLocale(event.locale)
-                is SettingsEvent.SetNotificationsEnabled -> generalPreferences.setNotificationsEnabled(event.enabled)
-                is SettingsEvent.SetUpdateInterval -> generalPreferences.setUpdateCheckInterval(event.hours)
-                is SettingsEvent.SetLibraryGridSize -> libraryPreferences.setGridSize(event.size)
-                is SettingsEvent.SetShowBadges -> libraryPreferences.setShowBadges(event.enabled)
+
+                // Reader - Display
                 is SettingsEvent.SetReaderMode -> readerPreferences.setReaderMode(event.mode)
                 is SettingsEvent.SetKeepScreenOn -> readerPreferences.setKeepScreenOn(event.enabled)
+                is SettingsEvent.SetFullscreen -> readerPreferences.setFullscreen(event.enabled)
+                is SettingsEvent.SetShowContentInCutout -> readerPreferences.setShowContentInCutout(event.enabled)
+                is SettingsEvent.SetShowPageNumber -> readerPreferences.setShowPageNumber(event.enabled)
+                is SettingsEvent.SetBackgroundColor -> readerPreferences.setBackgroundColor(event.color)
+                is SettingsEvent.SetAnimatePageTransitions -> readerPreferences.setAnimatePageTransitions(event.enabled)
+                is SettingsEvent.SetShowReadingModeOverlay -> readerPreferences.setShowReadingModeOverlay(event.enabled)
+                is SettingsEvent.SetShowTapZonesOverlay -> readerPreferences.setShowTapZonesOverlay(event.enabled)
+
+                // Reader - Scale
+                is SettingsEvent.SetReaderScale -> readerPreferences.setReaderScale(event.scale)
+                is SettingsEvent.SetAutoZoomWideImages -> readerPreferences.setAutoZoomWideImages(event.enabled)
+
+                // Reader - Tap Zones
+                is SettingsEvent.SetTapZoneConfig -> readerPreferences.setTapZoneConfig(event.config)
+                is SettingsEvent.SetInvertTapZones -> readerPreferences.setInvertTapZones(event.enabled)
+
+                // Reader - Volume Keys
+                is SettingsEvent.SetVolumeKeysEnabled -> readerPreferences.setVolumeKeysEnabled(event.enabled)
+                is SettingsEvent.SetVolumeKeysInverted -> readerPreferences.setVolumeKeysInverted(event.enabled)
+
+                // Reader - Interaction
+                is SettingsEvent.SetDoubleTapAnimationSpeed -> readerPreferences.setDoubleTapAnimationSpeed(event.speed)
+                is SettingsEvent.SetShowActionsOnLongTap -> readerPreferences.setShowActionsOnLongTap(event.enabled)
+                is SettingsEvent.SetSavePagesToSeparateFolders -> readerPreferences.setSavePagesToSeparateFolders(event.enabled)
+
+                // Reader - Webtoon
+                is SettingsEvent.SetWebtoonSidePadding -> readerPreferences.setWebtoonSidePadding(event.padding)
+                is SettingsEvent.SetWebtoonMenuHideSensitivity -> readerPreferences.setWebtoonMenuHideSensitivity(event.sensitivity)
+                is SettingsEvent.SetWebtoonDoubleTapZoom -> readerPreferences.setWebtoonDoubleTapZoom(event.enabled)
+                is SettingsEvent.SetWebtoonDisableZoomOut -> readerPreferences.setWebtoonDisableZoomOut(event.enabled)
+
+                // Reader - E-ink
+                is SettingsEvent.SetEinkFlashOnPageChange -> readerPreferences.setEinkFlashOnPageChange(event.enabled)
+                is SettingsEvent.SetEinkBlackAndWhite -> readerPreferences.setEinkBlackAndWhite(event.enabled)
+
+                // Reader - Behavior
+                is SettingsEvent.SetSkipReadChapters -> readerPreferences.setSkipReadChapters(event.enabled)
+                is SettingsEvent.SetSkipFilteredChapters -> readerPreferences.setSkipFilteredChapters(event.enabled)
+                is SettingsEvent.SetSkipDuplicateChapters -> readerPreferences.setSkipDuplicateChapters(event.enabled)
+                is SettingsEvent.SetAlwaysShowChapterTransition -> readerPreferences.setAlwaysShowChapterTransition(event.enabled)
+
+                // Reader - Other
                 is SettingsEvent.SetIncognitoMode -> readerSettingsRepository.setIncognitoMode(event.enabled)
                 is SettingsEvent.SetPreloadPagesBefore -> readerSettingsRepository.setPreloadPagesBefore(event.count)
                 is SettingsEvent.SetPreloadPagesAfter -> readerSettingsRepository.setPreloadPagesAfter(event.count)
                 is SettingsEvent.SetCropBordersEnabled -> readerSettingsRepository.setCropBordersEnabled(event.enabled)
                 is SettingsEvent.SetImageQuality -> {
-                    // Validate and normalize the incoming quality string with case-insensitive matching
                     val normalizedInput = event.quality.trim().uppercase()
                     val quality = ImageQuality.entries.firstOrNull { 
                         it.name.equals(normalizedInput, ignoreCase = true) 
-                    } ?: run {
-                        // Log invalid value for debugging (non-fatal)
-                        android.util.Log.w(
-                            "SettingsViewModel",
-                            "Invalid image quality value '${event.quality}', falling back to ORIGINAL"
-                        )
-                        ImageQuality.ORIGINAL
-                    }
+                    } ?: ImageQuality.ORIGINAL
                     readerSettingsRepository.setImageQuality(quality)
                 }
                 is SettingsEvent.SetDataSaverEnabled -> readerSettingsRepository.setDataSaverEnabled(event.enabled)
+
+                // Library
+                is SettingsEvent.SetLibraryGridSize -> libraryPreferences.setGridSize(event.size)
+                is SettingsEvent.SetShowBadges -> libraryPreferences.setShowBadges(event.enabled)
+                is SettingsEvent.SetUpdateOnlyOnWifi -> libraryPreferences.setUpdateOnlyOnWifi(event.enabled)
+                is SettingsEvent.SetUpdateOnlyPinnedCategories -> libraryPreferences.setUpdateOnlyPinnedCategories(event.enabled)
+                is SettingsEvent.SetAutoRefreshOnStart -> libraryPreferences.setAutoRefreshOnStart(event.enabled)
+                is SettingsEvent.SetShowUpdateProgress -> libraryPreferences.setShowUpdateProgress(event.enabled)
+
+                // Downloads
                 is SettingsEvent.SetDeleteAfterReading -> downloadPreferences.setDeleteAfterReading(event.enabled)
+                is SettingsEvent.SetSaveAsCbz -> downloadPreferences.setSaveAsCbz(event.enabled)
                 is SettingsEvent.SetAutoDownloadEnabled -> downloadPreferences.setAutoDownloadEnabled(event.enabled)
                 is SettingsEvent.SetDownloadOnlyOnWifi -> downloadPreferences.setDownloadOnlyOnWifi(event.enabled)
                 is SettingsEvent.SetAutoDownloadLimit -> downloadPreferences.setAutoDownloadLimit(event.limit)
-                is SettingsEvent.SetSaveAsCbz -> downloadPreferences.setSaveAsCbz(event.enabled)
+                is SettingsEvent.SetConcurrentDownloads -> downloadPreferences.setConcurrentDownloads(event.count)
+                is SettingsEvent.SetDownloadAheadWhileReading -> downloadPreferences.setDownloadAheadWhileReading(event.count)
+                is SettingsEvent.SetDownloadAheadOnlyOnWifi -> downloadPreferences.setDownloadAheadOnlyOnWifi(event.enabled)
+                is SettingsEvent.SetDownloadLocation -> downloadPreferences.setDownloadLocation(event.location)
+
+                // Local Source
                 is SettingsEvent.SetLocalSourceDirectory -> localSourcePreferences.setLocalSourceDirectory(event.path)
+
+                // Notifications
+                is SettingsEvent.SetNotificationsEnabled -> generalPreferences.setNotificationsEnabled(event.enabled)
+                is SettingsEvent.SetUpdateInterval -> generalPreferences.setUpdateCheckInterval(event.hours)
+
+                // Backup
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
                 SettingsEvent.OnRestoreBackup -> _effect.send(SettingsEffect.ShowRestorePicker)
                 is SettingsEvent.SetAutoBackupEnabled -> handleSetAutoBackupEnabled(event.enabled)
@@ -249,57 +512,30 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAutoBackupMaxCount -> backupPreferences.setAutoBackupMaxCount(event.count)
                 SettingsEvent.RefreshLocalBackups -> refreshLocalBackups()
                 is SettingsEvent.RestoreLocalBackup -> restoreLocalBackup(event.fileName)
+
+                // Tracking
                 is SettingsEvent.LoginTracker -> loginTracker(event.trackerId, event.username, event.password)
                 is SettingsEvent.LogoutTracker -> logoutTracker(event.trackerId)
-                is SettingsEvent.SetMigrationSimilarityThreshold ->
-                    appPreferences.setMigrationSimilarityThreshold(event.threshold)
-                is SettingsEvent.SetMigrationAlwaysConfirm ->
-                    appPreferences.setMigrationAlwaysConfirm(event.enabled)
-                is SettingsEvent.SetMigrationMinChapterCount ->
-                    appPreferences.setMigrationMinChapterCount(event.count)
-                SettingsEvent.OnNavigateToMigration ->
-                    _effect.send(SettingsEffect.NavigateToMigrationEntry)
-                is SettingsEvent.SetShowNsfwContent ->
-                    generalPreferences.setShowNsfwContent(event.enabled)
-                is SettingsEvent.SetDiscordRpcEnabled ->
-                    handleSetDiscordRpcEnabled(event.enabled)
-                is SettingsEvent.SetCustomAccentColor ->
-                    generalPreferences.setCustomAccentColor(event.color)
+
+                // Migration
+                is SettingsEvent.SetMigrationSimilarityThreshold -> appPreferences.setMigrationSimilarityThreshold(event.threshold)
+                is SettingsEvent.SetMigrationAlwaysConfirm -> appPreferences.setMigrationAlwaysConfirm(event.enabled)
+                is SettingsEvent.SetMigrationMinChapterCount -> appPreferences.setMigrationMinChapterCount(event.count)
+                SettingsEvent.OnNavigateToMigration -> _effect.send(SettingsEffect.NavigateToMigrationEntry)
+
+                // Browse
+                is SettingsEvent.SetShowNsfwContent -> generalPreferences.setShowNsfwContent(event.enabled)
+
+                // Discord
+                is SettingsEvent.SetDiscordRpcEnabled -> handleSetDiscordRpcEnabled(event.enabled)
+
+                // AI
                 is SettingsEvent.SetAiEnabled -> aiPreferences.setAiEnabled(event.enabled)
                 is SettingsEvent.SetAiTier -> aiPreferences.setAiTier(event.tier)
-                is SettingsEvent.SetAiApiKey -> {
-                    // Validate format before persisting; reject clearly malformed keys.
-                    if (event.key.isNotBlank() && !isGeminiApiKeyFormatValid(event.key)) {
-                        _effect.send(SettingsEffect.ShowSnackbar("Invalid API key format"))
-                        return@launch
-                    }
-                    aiPreferences.setGeminiApiKey(event.key)
-                    val persistedKey = aiPreferences.getGeminiApiKey()
-                    val isSet = persistedKey.isNotBlank()
-                    _state.update { it.copy(aiApiKeySet = isSet) }
-                    if (event.key.isNotBlank() && !isSet) {
-                        _effect.send(SettingsEffect.ShowSnackbar("Failed to save AI API key"))
-                    } else if (isSet) {
-                        // Reset any existing client state first so re-initialization with a
-                        // new key does not throw. Uses clearApiKey() rather than calling
-                        // initialize() directly to avoid the "already initialized" guard.
-                        aiRepository.clearApiKey()
-                        aiRepository.initialize(persistedKey)
-                    }
-                }
-                SettingsEvent.RemoveAiApiKey -> {
-                    _state.update { it.copy(showRemoveApiKeyDialog = true) }
-                }
-                SettingsEvent.ConfirmRemoveAiApiKey -> {
-                    _state.update { it.copy(showRemoveApiKeyDialog = false) }
-                    aiPreferences.clearGeminiApiKey()
-                    aiRepository.clearApiKey()
-                    _state.update { it.copy(aiApiKeySet = false) }
-                    _effect.send(SettingsEffect.ShowSnackbar("AI API key removed"))
-                }
-                SettingsEvent.DismissRemoveApiKeyDialog -> {
-                    _state.update { it.copy(showRemoveApiKeyDialog = false) }
-                }
+                is SettingsEvent.SetAiApiKey -> handleSetAiApiKey(event.key)
+                SettingsEvent.RemoveAiApiKey -> _state.update { it.copy(showRemoveApiKeyDialog = true) }
+                SettingsEvent.ConfirmRemoveAiApiKey -> handleConfirmRemoveAiApiKey()
+                SettingsEvent.DismissRemoveApiKeyDialog -> _state.update { it.copy(showRemoveApiKeyDialog = false) }
                 is SettingsEvent.SetAiReadingInsights -> aiPreferences.setAiReadingInsights(event.enabled)
                 is SettingsEvent.SetAiSmartSearch -> aiPreferences.setAiSmartSearch(event.enabled)
                 is SettingsEvent.SetAiRecommendations -> aiPreferences.setAiRecommendations(event.enabled)
@@ -309,20 +545,17 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetAiSourceIntelligence -> aiPreferences.setAiSourceIntelligence(event.enabled)
                 is SettingsEvent.SetAiSmartNotifications -> aiPreferences.setAiSmartNotifications(event.enabled)
                 is SettingsEvent.SetAiAutoCategorization -> aiPreferences.setAiAutoCategorization(event.enabled)
-                SettingsEvent.ClearAiCache -> {
-                    aiPreferences.setAiCacheLastCleared(System.currentTimeMillis())
-                    _effect.send(SettingsEffect.ShowSnackbar("AI suggestions will refresh for future requests"))
-                }
-                is SettingsEvent.SetDailyChapterGoal ->
-                    readingGoalPreferences.setDailyChapterGoal(event.goal)
-                is SettingsEvent.SetWeeklyChapterGoal ->
-                    readingGoalPreferences.setWeeklyChapterGoal(event.goal)
-                is SettingsEvent.SetReadingRemindersEnabled ->
-                    handleSetReadingRemindersEnabled(event.enabled)
-                is SettingsEvent.SetReadingReminderHour ->
-                    handleSetReadingReminderHour(event.hour)
+                SettingsEvent.ClearAiCache -> handleClearAiCache()
+
+                // Reading Goals
+                is SettingsEvent.SetDailyChapterGoal -> readingGoalPreferences.setDailyChapterGoal(event.goal)
+                is SettingsEvent.SetWeeklyChapterGoal -> readingGoalPreferences.setWeeklyChapterGoal(event.goal)
+                is SettingsEvent.SetReadingRemindersEnabled -> handleSetReadingRemindersEnabled(event.enabled)
+                is SettingsEvent.SetReadingReminderHour -> handleSetReadingReminderHour(event.hour)
+
+                // Cloud Sync
                 is SettingsEvent.SetSyncEnabled -> handleSetSyncEnabled(event.enabled, event.providerId)
-                is SettingsEvent.TriggerManualSync -> handleTriggerManualSync()
+                SettingsEvent.TriggerManualSync -> handleTriggerManualSync()
                 is SettingsEvent.SetAutoSyncEnabled -> syncPreferences.setAutoSyncEnabled(event.enabled)
                 is SettingsEvent.SetSyncIntervalHours -> syncPreferences.setSyncIntervalHours(event.hours)
                 is SettingsEvent.SetSyncOnlyOnWifi -> syncPreferences.setSyncOnlyOnWifi(event.onlyWifi)
@@ -331,186 +564,124 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun observeAiPreferences() {
+    private fun handleSetAiApiKey(key: String) {
         viewModelScope.launch {
-            aiPreferences.aiEnabled
-                .combine(aiPreferences.aiTier) { enabled, tier ->
-                    _state.value.copy(
-                        aiEnabled = enabled,
-                        aiTier = tier,
-                        aiApiKeySet = aiPreferences.getGeminiApiKey().isNotBlank()
-                    )
-                }.combine(aiPreferences.aiReadingInsights) { state, v -> state.copy(aiReadingInsights = v) }
-                .combine(aiPreferences.aiSmartSearch) { state, v -> state.copy(aiSmartSearch = v) }
-                .combine(aiPreferences.aiRecommendations) { state, v -> state.copy(aiRecommendations = v) }
-                .combine(aiPreferences.aiPanelReader) { state, v -> state.copy(aiPanelReader = v) }
-                .combine(aiPreferences.aiSfxTranslation) { state, v -> state.copy(aiSfxTranslation = v) }
-                .combine(aiPreferences.aiSummaryTranslation) { state, v -> state.copy(aiSummaryTranslation = v) }
-                .combine(aiPreferences.aiSourceIntelligence) { state, v -> state.copy(aiSourceIntelligence = v) }
-                .combine(aiPreferences.aiSmartNotifications) { state, v -> state.copy(aiSmartNotifications = v) }
-                .combine(aiPreferences.aiAutoCategorization) { state, v -> state.copy(aiAutoCategorization = v) }
-                .combine(aiPreferences.aiTokensUsedThisMonth) { state, v -> state.copy(aiTokensUsedThisMonth = v) }
-                .combine(aiPreferences.aiTokenTrackingPeriod) { state, v -> state.copy(aiTokenTrackingPeriod = v) }
-                .collect { newAiState ->
-                    _state.update { current ->
-                        current.copy(
-                            aiEnabled = newAiState.aiEnabled,
-                            aiTier = newAiState.aiTier,
-                            aiApiKeySet = newAiState.aiApiKeySet,
-                            aiReadingInsights = newAiState.aiReadingInsights,
-                            aiSmartSearch = newAiState.aiSmartSearch,
-                            aiRecommendations = newAiState.aiRecommendations,
-                            aiPanelReader = newAiState.aiPanelReader,
-                            aiSfxTranslation = newAiState.aiSfxTranslation,
-                            aiSummaryTranslation = newAiState.aiSummaryTranslation,
-                            aiSourceIntelligence = newAiState.aiSourceIntelligence,
-                            aiSmartNotifications = newAiState.aiSmartNotifications,
-                            aiAutoCategorization = newAiState.aiAutoCategorization,
-                            aiTokensUsedThisMonth = newAiState.aiTokensUsedThisMonth,
-                            aiTokenTrackingPeriod = newAiState.aiTokenTrackingPeriod
-                        )
-                    }
-                }
-        }
-    }
-
-    private fun observeReadingGoalPreferences() {
-        viewModelScope.launch {
-            combine(
-                readingGoalPreferences.dailyChapterGoal,
-                readingGoalPreferences.weeklyChapterGoal,
-                readingGoalPreferences.remindersEnabled,
-                readingGoalPreferences.reminderHour
-            ) { daily, weekly, enabled, hour ->
-                ReadingGoalState(daily, weekly, enabled, hour)
-            }.collect { goalState ->
-                _state.update { current ->
-                    current.copy(
-                        dailyChapterGoal = goalState.dailyGoal,
-                        weeklyChapterGoal = goalState.weeklyGoal,
-                        readingRemindersEnabled = goalState.remindersEnabled,
-                        readingReminderHour = goalState.reminderHour
-                    )
-                }
+            if (key.isNotBlank() && !isGeminiApiKeyFormatValid(key)) {
+                _effect.send(SettingsEffect.ShowSnackbar("Invalid API key format"))
+                return@launch
+            }
+            aiPreferences.setGeminiApiKey(key)
+            val persistedKey = aiPreferences.getGeminiApiKey()
+            val isSet = persistedKey.isNotBlank()
+            _state.update { it.copy(aiApiKeySet = isSet) }
+            if (key.isNotBlank() && !isSet) {
+                _effect.send(SettingsEffect.ShowSnackbar("Failed to save AI API key"))
+            } else if (isSet) {
+                aiRepository.clearApiKey()
+                aiRepository.initialize(persistedKey)
             }
         }
     }
 
-    /** Intermediate holder to avoid destructuring a 4-element array. */
-    private data class ReadingGoalState(
-        val dailyGoal: Int,
-        val weeklyGoal: Int,
-        val remindersEnabled: Boolean,
-        val reminderHour: Int
-    )
-
-    private suspend fun handleSetReadingRemindersEnabled(enabled: Boolean) {
-        readingGoalPreferences.setRemindersEnabled(enabled)
-        if (enabled) {
-            val hour = readingGoalPreferences.reminderHour.first()
-            readingReminderScheduler.schedule(hour)
-        } else {
-            readingReminderScheduler.cancel()
-        }
-    }
-
-    private suspend fun handleSetReadingReminderHour(hour: Int) {
-        readingGoalPreferences.setReminderHour(hour)
-        val enabled = readingGoalPreferences.remindersEnabled.first()
-        if (enabled) {
-            readingReminderScheduler.schedule(hour)
-        }
-    }
-
-    private fun observeSyncPreferences() {
+    private fun handleConfirmRemoveAiApiKey() {
         viewModelScope.launch {
-            combine(
-                syncPreferences.isSyncEnabled,
-                syncPreferences.providerId,
-                syncPreferences.lastSyncTime,
-                syncPreferences.autoSyncEnabled
-            ) { enabled, providerId, lastSync, autoSync ->
-                SyncPrefsState(
-                    enabled = enabled,
-                    providerId = providerId,
-                    lastSyncTime = lastSync,
-                    autoSyncEnabled = autoSync
-                )
-            }.combine(syncPreferences.syncIntervalHours) { state, hours ->
-                state.copy(syncIntervalHours = hours)
-            }.combine(syncPreferences.syncOnlyOnWifi) { state, onlyWifi ->
-                state.copy(syncOnlyOnWifi = onlyWifi)
-            }.combine(syncPreferences.conflictResolutionStrategy) { state, strategy ->
-                state.copy(conflictResolutionStrategy = strategy)
-            }.collect { syncState ->
-                _state.update { current ->
-                    current.copy(
-                        syncEnabled = syncState.enabled,
-                        syncProviderId = syncState.providerId,
-                        lastSyncTime = syncState.lastSyncTime,
-                        autoSyncEnabled = syncState.autoSyncEnabled,
-                        syncIntervalHours = syncState.syncIntervalHours,
-                        syncOnlyOnWifi = syncState.syncOnlyOnWifi,
-                        conflictResolutionStrategy = syncState.conflictResolutionStrategy
-                    )
-                }
+            _state.update { it.copy(showRemoveApiKeyDialog = false) }
+            aiPreferences.clearGeminiApiKey()
+            aiRepository.clearApiKey()
+            _state.update { it.copy(aiApiKeySet = false) }
+            _effect.send(SettingsEffect.ShowSnackbar("AI API key removed"))
+        }
+    }
+
+    private fun handleClearAiCache() {
+        viewModelScope.launch {
+            aiPreferences.setAiCacheLastCleared(System.currentTimeMillis())
+            _effect.send(SettingsEffect.ShowSnackbar("AI suggestions will refresh for future requests"))
+        }
+    }
+
+    private fun isGeminiApiKeyFormatValid(key: String): Boolean {
+        return key.matches(Regex("^AIza[0-9A-Za-z_-]{35}$"))
+    }
+
+    private fun handleSetDiscordRpcEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            generalPreferences.setDiscordRpcEnabled(enabled)
+            if (enabled) {
+                discordRpcService.connect()
+            } else {
+                discordRpcService.disconnect()
             }
         }
     }
 
-    /** Intermediate holder to avoid destructuring a large array. */
-    private data class SyncPrefsState(
-        val enabled: Boolean,
-        val providerId: String?,
-        val lastSyncTime: Long?,
-        val autoSyncEnabled: Boolean,
-        val syncIntervalHours: Int = 24,
-        val syncOnlyOnWifi: Boolean = true,
-        val conflictResolutionStrategy: String = "PREFER_NEWER"
-    )
-
-    private suspend fun handleSetSyncEnabled(enabled: Boolean, providerId: String?) {
-        if (enabled && providerId != null) {
-            syncManager.enableSync(providerId).fold(
-                onSuccess = {
-                    _effect.send(SettingsEffect.ShowSnackbar("Cloud sync enabled"))
-                },
-                onFailure = { e ->
-                    _effect.send(SettingsEffect.ShowSnackbar("Failed to enable sync: ${e.message}"))
-                }
-            )
-        } else {
-            syncManager.disableSync(clearMetadata = true)
-            _effect.send(SettingsEffect.ShowSnackbar("Cloud sync disabled"))
+    private fun handleSetAutoBackupEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            backupPreferences.setAutoBackupEnabled(enabled)
+            if (enabled) {
+                val intervalHours = backupPreferences.autoBackupIntervalHours.first()
+                backupScheduler.scheduleAutoBackup(intervalHours)
+            } else {
+                backupScheduler.cancelAutoBackup()
+            }
         }
     }
 
-    private suspend fun handleTriggerManualSync() {
-        _state.update { it.copy(syncStatus = SyncStatus.SYNCING) }
-        syncManager.sync().fold(
-            onSuccess = { result ->
-                _state.update { it.copy(syncStatus = SyncStatus.IDLE) }
-                _effect.send(SettingsEffect.ShowSnackbar(
-                    "Sync complete: ${result.mangaUpdated} manga, ${result.chaptersUpdated} chapters updated"
-                ))
-            },
-            onFailure = { e ->
-                _state.update { it.copy(syncStatus = SyncStatus.ERROR) }
-                _effect.send(SettingsEffect.ShowSnackbar("Sync failed: ${e.message}"))
+    private fun handleSetAutoBackupInterval(hours: Int) {
+        viewModelScope.launch {
+            backupPreferences.setAutoBackupIntervalHours(hours)
+            if (backupPreferences.autoBackupEnabled.first()) {
+                backupScheduler.scheduleAutoBackup(hours)
             }
-        )
+        }
+    }
+
+    private fun refreshLocalBackups() {
+        viewModelScope.launch {
+            val files = backupRepository.listLocalBackupFiles()
+            _state.update { it.copy(localBackupFiles = files) }
+        }
+    }
+
+    private fun restoreLocalBackup(fileName: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(
+                isRestoreInProgress = true,
+                restoringBackupFileName = fileName
+            )}
+            try {
+                backupRepository.restoreLocalBackup(fileName)
+                _effect.send(SettingsEffect.ShowSnackbar("Backup restored successfully"))
+            } catch (e: Exception) {
+                _effect.send(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
+            } finally {
+                _state.update { it.copy(
+                    isRestoreInProgress = false,
+                    restoringBackupFileName = null
+                )}
+            }
+        }
     }
 
     private fun loginTracker(trackerId: Int, username: String, password: String) {
         viewModelScope.launch {
             _state.update { it.copy(trackingLoginInProgress = true) }
-            val tracker = trackManager.get(trackerId)
-            val success = tracker?.login(username, password) ?: false
-            refreshTrackers()
-            _state.update { it.copy(trackingLoginInProgress = false) }
-            val trackerName = tracker?.name ?: "tracker"
-            val message = if (success) "Logged in to $trackerName" else "Login failed"
-            _effect.send(SettingsEffect.ShowSnackbar(message))
+            try {
+                val tracker = trackManager.get(trackerId)
+                if (tracker != null) {
+                    val success = tracker.login(username, password)
+                    if (success) {
+                        refreshTrackers()
+                        _effect.send(SettingsEffect.ShowSnackbar("Logged in to ${tracker.name}"))
+                    } else {
+                        _effect.send(SettingsEffect.ShowSnackbar("Failed to login to ${tracker.name}"))
+                    }
+                }
+            } catch (e: Exception) {
+                _effect.send(SettingsEffect.ShowSnackbar("Error: ${e.message}"))
+            } finally {
+                _state.update { it.copy(trackingLoginInProgress = false) }
+            }
         }
     }
 
@@ -519,94 +690,138 @@ class SettingsViewModel @Inject constructor(
             val tracker = trackManager.get(trackerId)
             tracker?.logout()
             refreshTrackers()
-            val trackerName = tracker?.name ?: "tracker"
-            _effect.send(SettingsEffect.ShowSnackbar("Logged out of $trackerName"))
+            _effect.send(SettingsEffect.ShowSnackbar("Logged out from ${tracker?.name}"))
         }
     }
 
-    /**
-     * Handles backup creation after user selects a destination URI.
-     */
-    fun createBackup(uri: android.net.Uri) {
+    private fun handleSetReadingRemindersEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            _state.update { it.copy(isBackupInProgress = true) }
-            try {
-                backupRepository.createBackup(uri)
-                _effect.send(SettingsEffect.ShowSnackbar("Backup created successfully"))
-            } catch (e: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Backup failed: ${e.message}"))
-            } finally {
-                _state.update { it.copy(isBackupInProgress = false) }
+            readingGoalPreferences.setReadingRemindersEnabled(enabled)
+            if (enabled) {
+                val hour = readingGoalPreferences.readingReminderHour.first()
+                readingReminderScheduler.scheduleDailyReminder(hour)
+            } else {
+                readingReminderScheduler.cancelReminders()
             }
         }
     }
 
-    /**
-     * Handles backup restoration after user selects a source URI.
-     */
-    fun restoreBackup(uri: android.net.Uri) {
+    private fun handleSetReadingReminderHour(hour: Int) {
         viewModelScope.launch {
-            _state.update { it.copy(isRestoreInProgress = true) }
-            try {
-                backupRepository.restoreBackup(uri)
-                _effect.send(SettingsEffect.ShowSnackbar("Backup restored successfully"))
-            } catch (e: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Restore failed: ${e.message}"))
-            } finally {
-                _state.update { it.copy(isRestoreInProgress = false) }
+            readingGoalPreferences.setReadingReminderHour(hour)
+            if (readingGoalPreferences.readingRemindersEnabled.first()) {
+                readingReminderScheduler.scheduleDailyReminder(hour)
             }
         }
     }
 
-    private suspend fun handleSetAutoBackupEnabled(enabled: Boolean) {
-        backupPreferences.setAutoBackupEnabled(enabled)
-        if (enabled) {
-            val hours = backupPreferences.autoBackupIntervalHours.first()
-            backupScheduler.schedule(hours)
-        } else {
-            backupScheduler.cancel()
+    private fun observeAiPreferences() {
+        viewModelScope.launch {
+            combine(
+                aiPreferences.aiEnabled,
+                aiPreferences.aiTier,
+                aiPreferences.aiReadingInsights,
+                aiPreferences.aiSmartSearch,
+                aiPreferences.aiRecommendations,
+                aiPreferences.aiPanelReader,
+                aiPreferences.aiSfxTranslation,
+                aiPreferences.aiSummaryTranslation,
+                aiPreferences.aiSourceIntelligence,
+                aiPreferences.aiSmartNotifications,
+                aiPreferences.aiAutoCategorization
+            ) { values ->
+                val enabled = values[0] as Boolean
+                val tier = values[1] as AiTier
+                _state.update { current ->
+                    current.copy(
+                        aiEnabled = enabled,
+                        aiTier = tier,
+                        aiApiKeySet = aiPreferences.getGeminiApiKey().isNotBlank(),
+                        aiReadingInsights = values[2] as Boolean,
+                        aiSmartSearch = values[3] as Boolean,
+                        aiRecommendations = values[4] as Boolean,
+                        aiPanelReader = values[5] as Boolean,
+                        aiSfxTranslation = values[6] as Boolean,
+                        aiSummaryTranslation = values[7] as Boolean,
+                        aiSourceIntelligence = values[8] as Boolean,
+                        aiSmartNotifications = values[9] as Boolean,
+                        aiAutoCategorization = values[10] as Boolean
+                    )
+                }
+            }.collect()
         }
     }
 
-    private suspend fun handleSetAutoBackupInterval(hours: Int) {
-        backupPreferences.setAutoBackupIntervalHours(hours)
-        val enabled = backupPreferences.autoBackupEnabled.first()
-        if (enabled) {
-            backupScheduler.schedule(hours)
+    private fun observeReadingGoalPreferences() {
+        viewModelScope.launch {
+            combine(
+                readingGoalPreferences.dailyChapterGoal,
+                readingGoalPreferences.weeklyChapterGoal,
+                readingGoalPreferences.readingRemindersEnabled,
+                readingGoalPreferences.readingReminderHour
+            ) { daily, weekly, reminders, hour ->
+                _state.update { current ->
+                    current.copy(
+                        dailyChapterGoal = daily,
+                        weeklyChapterGoal = weekly,
+                        readingRemindersEnabled = reminders,
+                        readingReminderHour = hour
+                    )
+                }
+            }.collect()
         }
     }
 
-    private suspend fun handleSetDiscordRpcEnabled(enabled: Boolean) {
-        generalPreferences.setDiscordRpcEnabled(enabled)
-        if (enabled) {
-            discordRpcService.initialize()
-        } else {
-            discordRpcService.disconnect()
+    private fun observeSyncPreferences() {
+        viewModelScope.launch {
+            combine(
+                syncPreferences.syncEnabled,
+                syncPreferences.syncProviderId,
+                syncPreferences.autoSyncEnabled,
+                syncPreferences.syncIntervalHours,
+                syncPreferences.syncOnlyOnWifi,
+                syncPreferences.conflictResolutionStrategy
+            ) { enabled, providerId, autoSync, interval, wifiOnly, strategy ->
+                val providerName = providerId?.let { 
+                    syncManager.getProviderName(it)
+                }
+                val lastSync = if (enabled) syncManager.getLastSyncTime() else null
+                val status = when (syncManager.syncStatus.value) {
+                    is DomainSyncStatus.Syncing -> SyncStatus.SYNCING
+                    is DomainSyncStatus.Success -> SyncStatus.SUCCESS
+                    is DomainSyncStatus.Error -> SyncStatus.ERROR
+                    else -> if (enabled) SyncStatus.IDLE else SyncStatus.DISABLED
+                }
+                _state.update { current ->
+                    current.copy(
+                        syncEnabled = enabled,
+                        syncProviderId = providerId,
+                        syncProviderName = providerName,
+                        autoSyncEnabled = autoSync,
+                        syncIntervalHours = interval,
+                        syncOnlyOnWifi = wifiOnly,
+                        conflictResolutionStrategy = strategy,
+                        lastSyncTime = lastSync,
+                        syncStatus = status
+                    )
+                }
+            }.collect()
         }
     }
 
-    private suspend fun refreshLocalBackups() {
-        try {
-            val files = backupRepository.listLocalBackups().map { it.name }
-            _state.update { it.copy(localBackupFiles = files) }
-        } catch (e: Exception) {
-            _effect.send(SettingsEffect.ShowSnackbar("Could not list backups: ${e.message}"))
+    private fun handleSetSyncEnabled(enabled: Boolean, providerId: String?) {
+        viewModelScope.launch {
+            if (enabled && providerId != null) {
+                syncManager.enableSync(providerId)
+            } else {
+                syncManager.disableSync()
+            }
         }
     }
 
-    private suspend fun restoreLocalBackup(fileName: String) {
-        _state.update { it.copy(isRestoreInProgress = true, restoringBackupFileName = fileName) }
-        try {
-            val files = backupRepository.listLocalBackups()
-            val file = files.firstOrNull { it.name == fileName }
-                ?: throw IllegalArgumentException("Backup file not found: $fileName")
-            backupRepository.restoreLocalBackup(file)
-            _effect.send(SettingsEffect.ShowSnackbar("Backup restored successfully"))
-        } catch (e: Exception) {
-            _effect.send(SettingsEffect.ShowSnackbar("Restore failed: ${e.message}"))
-        } finally {
-            _state.update { it.copy(isRestoreInProgress = false, restoringBackupFileName = null) }
+    private fun handleTriggerManualSync() {
+        viewModelScope.launch {
+            syncManager.triggerManualSync()
         }
     }
 }
-

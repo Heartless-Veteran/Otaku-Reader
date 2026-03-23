@@ -103,6 +103,13 @@ fun SettingsScreen(
         uri?.let { viewModel.restoreBackup(it) }
     }
 
+    // Directory picker for download location
+    val downloadLocationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        uri?.let { viewModel.onEvent(SettingsEvent.SetDownloadLocation(it.toString())) }
+    }
+
     // Collect effects
     LaunchedEffect(Unit) {
         viewModel.onEvent(SettingsEvent.RefreshLocalBackups)
@@ -118,6 +125,9 @@ fun SettingsScreen(
                     restoreFileLauncher.launch(arrayOf("application/json"))
                 }
                 SettingsEffect.NavigateToMigrationEntry -> onNavigateToMigrationEntry()
+                is SettingsEffect.ShowDownloadLocationPicker -> {
+                    downloadLocationLauncher.launch(null)
+                }
             }
         }
     }
