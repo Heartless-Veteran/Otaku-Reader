@@ -81,6 +81,7 @@ class UltimateReaderViewModel @Inject constructor(
     private val panelDetectionService: PanelDetectionService,
     private val aiRepository: AiRepository,
     private val aiPreferences: AiPreferences,
+    private val translateSfxUseCase: TranslateSfxUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -1197,8 +1198,7 @@ class UltimateReaderViewModel @Inject constructor(
                 return@launch
             }
             _state.update { it.copy(isSfxTranslating = true) }
-            val useCase = TranslateSfxUseCase(aiRepository)
-            useCase(sfxText)
+            translateSfxUseCase(sfxText)
                 .onSuccess { translation ->
                     _state.update { state ->
                         state.copy(

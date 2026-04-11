@@ -50,7 +50,8 @@ class DetailsViewModel @Inject constructor(
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
     private val aiRepository: AiRepository,
-    private val aiPreferences: AiPreferences
+    private val aiPreferences: AiPreferences,
+    private val generateMangaSummary: GenerateMangaSummaryUseCase
 ) : ViewModel() {
 
     private val mangaId: Long = savedStateHandle.get<Long>(MANGA_ID_ARG) 
@@ -868,8 +869,7 @@ class DetailsViewModel @Inject constructor(
             }
 
             _state.update { it.copy(isGeneratingSummary = true) }
-            val useCase = GenerateMangaSummaryUseCase(aiRepository)
-            useCase(title = manga.title, description = description)
+            generateMangaSummary(title = manga.title, description = description)
                 .onSuccess { summary ->
                     _state.update { it.copy(aiSummary = summary, isGeneratingSummary = false) }
                 }

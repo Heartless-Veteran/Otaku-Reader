@@ -1,6 +1,7 @@
 package app.otakureader.domain.usecase.ai
 
 import app.otakureader.domain.repository.AiRepository
+import javax.inject.Inject
 
 /**
  * Use case for analyzing a manga source using AI to produce quality indicators.
@@ -10,7 +11,7 @@ import app.otakureader.domain.repository.AiRepository
  *
  * @property aiRepository Repository for AI operations
  */
-class AnalyzeSourceUseCase(
+class AnalyzeSourceUseCase @Inject constructor(
     private val aiRepository: AiRepository
 ) {
     /**
