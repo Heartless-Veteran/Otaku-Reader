@@ -109,6 +109,9 @@ class DetailsViewModel @Inject constructor(
             // Page preloading settings (#264)
             is DetailsContract.Event.SetPreloadPagesBefore -> setPreloadPagesBefore(event.count)
             is DetailsContract.Event.SetPreloadPagesAfter -> setPreloadPagesAfter(event.count)
+            
+            // Chapter thumbnail loading
+            is DetailsContract.Event.LoadChapterThumbnail -> loadChapterThumbnail(event.chapterId)
         }
     }
 
@@ -750,6 +753,75 @@ class DetailsViewModel @Inject constructor(
                 _effect.send(DetailsContract.Effect.ShowSnackbar("Preload pages (after) updated"))
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to update preload setting"))
+            }
+        }
+    }
+
+    /**
+     * Load thumbnail for a specific chapter on demand.
+     * Called when user taps "Load preview" on a chapter without a thumbnail.
+     */
+    private fun loadChapterThumbnail(chapterId: Long) {
+        viewModelScope.launch {
+            val chapter = _state.value.chapters.find { it.id == chapterId } ?: return@launch
+            val manga = _state.value.manga ?: return@launch
+            
+            // Don't reload if already in cache
+            if (thumbnailCache.containsKey(chapterId)) return@launch
+            
+            _effect.send(DetailsContract.Effect.ShowSnackbar("Loading preview..."))
+            
+            try {
+                val source = sourceRepository.getSource(manga.sourceId.toString())
+                if (source == null) {
+                    _effect.send(DetailsContract.Effect.ShowError("Source not available"))
+                    return@launch
+                }
+                
+                val sourceChapter = SourceChapter(
+                    id = chapter.id.toString(),
+                    name = chapter.name,
+                    url = chapter.url,
+                    uploadDate = chapter.dateUpload,
+                    chapterNumber = chapter.chapterNumber,
+                    scanlator = chapter.scanlator
+                )
+                
+                source.getPageList(sourceChapter)
+                    .onSuccess { pages ->
+                        if (pages.isNotEmpty()) {
+                            val firstPageUrl = pages.first().imageUrl
+                            thumbnailCache[chapterId] = firstPageUrl to pages.size
+                            
+                            // Update the chapter in state
+                            _state.update { state ->
+                                val updatedChapters = state.chapters.map { item ->
+                                    if (item.id == chapterId) {
+                                        item.copy(
+                                            thumbnailUrl = firstPageUrl,
+                                            totalPages = pages.size
+                                        )
+                                    } else item
+                                }
+                                state.copy(chapters = updatedChapters)
+                            }
+                            
+                            _effect.send(DetailsContract.Effect.ShowSnackbar("Preview loaded"))
+                        } else {
+                            _effect.send(DetailsContract.Effect.ShowError("No pages found"))
+                        }
+                    }
+                    .onFailure { error ->
+                        _effect.send(
+                            DetailsContract.Effect.ShowError(
+                                "Failed to load preview: ${error.message ?: "Unknown error"}"
+                            )
+                        )
+                    }
+            } catch (e: Exception) {
+                _effect.send(
+                    DetailsContract.Effect.ShowError("Failed to load preview: ${e.message ?: "Unknown error"}")
+                )
             }
         }
     }

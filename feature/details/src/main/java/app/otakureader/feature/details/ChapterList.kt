@@ -81,6 +81,7 @@ fun ChapterList(
     onDeleteDownload: (Long) -> Unit,
     onMarkPreviousRead: (Long) -> Unit,
     onExportAsCbz: (Long) -> Unit = {},
+    onLoadThumbnail: (Long) -> Unit = {},
     onClearSelection: () -> Unit = {},
     onSelectAll: () -> Unit = {},
     onDownloadSelected: () -> Unit = {},
@@ -134,7 +135,8 @@ fun ChapterList(
                         onDownload = { onDownloadChapter(chapter.id) },
                         onDeleteDownload = { onDeleteDownload(chapter.id) },
                         onMarkPreviousRead = { onMarkPreviousRead(chapter.id) },
-                        onExportAsCbz = { onExportAsCbz(chapter.id) }
+                        onExportAsCbz = { onExportAsCbz(chapter.id) },
+                        onLoadThumbnail = { onLoadThumbnail(chapter.id) }
                     )
                 }
             }
@@ -283,6 +285,7 @@ fun ChapterListItem(
     onDeleteDownload: () -> Unit = {},
     onMarkPreviousRead: () -> Unit = {},
     onExportAsCbz: () -> Unit = {},
+    onLoadThumbnail: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val alpha by animateFloatAsState(
@@ -316,24 +319,41 @@ fun ChapterListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Thumbnail (if available)
-            if (chapter.thumbnailUrl != null) {
-                Box(
-                    modifier = Modifier
-                        .size(width = 48.dp, height = 64.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(end = 12.dp)
-                ) {
+            // Thumbnail (if available) or Load Preview button
+            Box(
+                modifier = Modifier
+                    .size(width = 48.dp, height = 64.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                if (chapter.thumbnailUrl != null) {
                     AsyncImage(
                         model = chapter.thumbnailUrl,
                         contentDescription = "Chapter thumbnail",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
+                } else {
+                    // Show load preview button
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        TextButton(
+                            onClick = onLoadThumbnail,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                text = "Load\npreview",
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
             }
+            Spacer(modifier = Modifier.width(12.dp))
 
             // Show checkbox when selected
             if (isSelected) {

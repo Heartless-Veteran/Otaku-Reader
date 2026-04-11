@@ -136,6 +136,9 @@ object DetailsContract {
         // Page preloading settings (#264)
         data class SetPreloadPagesBefore(val count: Int?) : Event
         data class SetPreloadPagesAfter(val count: Int?) : Event
+        
+        // Chapter thumbnail loading
+        data class LoadChapterThumbnail(val chapterId: Long) : Event
     }
 
     /**
