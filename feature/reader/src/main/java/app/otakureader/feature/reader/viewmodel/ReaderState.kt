@@ -171,7 +171,13 @@ data class ReaderState(
     /** Show actions menu on long tap */
     val showActionsOnLongTap: Boolean = true,
     /** Save pages to separate folders by manga title */
-    val savePagesToSeparateFolders: Boolean = false
+    val savePagesToSeparateFolders: Boolean = false,
+
+    /** AI-generated SFX translations keyed by zero-based page index. */
+    val sfxTranslations: Map<Int, List<app.otakureader.domain.model.SfxTranslation>> = emptyMap(),
+
+    /** Whether the SFX overlay is currently visible. */
+    val sfxOverlayVisible: Boolean = false,
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size

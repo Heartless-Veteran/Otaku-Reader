@@ -31,7 +31,10 @@ object DetailsContract {
         val deleteAfterReadOverride: DeleteAfterReadMode = DeleteAfterReadMode.INHERIT,
         val globalDeleteAfterRead: Boolean = false,
         val noteEditorVisible: Boolean = false,
-        val noteEditorText: String = ""
+        val noteEditorText: String = "",
+
+        /** AI-generated chapter summaries keyed by chapter ID. */
+        val chapterSummaries: Map<Long, String> = emptyMap(),
     ) : UiState {
         
         val canStartReading: Boolean
@@ -139,6 +142,9 @@ object DetailsContract {
         
         // Chapter thumbnail loading
         data class LoadChapterThumbnail(val chapterId: Long) : Event
+
+        // AI Summary
+        data class RequestChapterSummary(val chapterId: Long) : Event
     }
 
     /**

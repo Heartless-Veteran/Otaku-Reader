@@ -8,6 +8,8 @@ import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
+import app.otakureader.domain.usecase.ai.ScoreSourcesForMangaUseCase
+import app.otakureader.domain.usecase.ai.SourceInfo
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
@@ -29,7 +31,8 @@ class BrowseViewModel @Inject constructor(
     private val getLatestUpdatesUseCase: GetLatestUpdatesUseCase,
     private val searchMangaUseCase: SearchMangaUseCase,
     private val getSourceFiltersUseCase: GetSourceFiltersUseCase,
-    private val generalPreferences: GeneralPreferences
+    private val generalPreferences: GeneralPreferences,
+    private val scoreSourcesForManga: ScoreSourcesForMangaUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowseState())
@@ -108,6 +111,9 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ApplyFilters -> {
                 _state.update { it.copy(showFilterSheet = false) }
                 performSearch()
+            }
+            is BrowseEvent.RequestSourceScores -> {
+                requestSourceScores(event.mangaId, event.mangaTitle)
             }
         }
     }
@@ -281,5 +287,33 @@ class BrowseViewModel @Inject constructor(
     private fun getCurrentSource(): MangaSource? {
         val sourceId = _state.value.currentSourceId ?: return null
         return _sources.value.find { it.id == sourceId }
+    }
+
+    /**
+     * Requests AI source intelligence scoring for the given manga.
+     *
+     * Available sources are mapped to [SourceInfo] objects and passed to
+     * [ScoreSourcesForMangaUseCase]. Results are stored in [BrowseState.sourceScores]
+     * sorted by overall score descending so the UI can suggest the best source.
+     *
+     * When AI is disabled or unavailable the use case returns an empty list and no
+     * state update is performed – the UI continues to show sources unsorted.
+     */
+    private fun requestSourceScores(mangaId: Long, mangaTitle: String) {
+        viewModelScope.launch {
+            val sourceInfoList = _sources.value.map { source ->
+                SourceInfo(
+                    sourceId = source.id,
+                    sourceName = source.name,
+                    chapterCount = 0, // Not available at browse level; AI uses name/language as proxy
+                    language = source.lang,
+                )
+            }
+            val result = scoreSourcesForManga(mangaId, mangaTitle, sourceInfoList)
+            val scores = result.getOrNull() ?: return@launch
+            if (scores.isNotEmpty()) {
+                _state.update { it.copy(sourceScores = scores) }
+            }
+        }
     }
 }

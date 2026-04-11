@@ -29,6 +29,7 @@ import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.feature.reader.panel.PanelDetectionService
+import app.otakureader.domain.usecase.ai.TranslateSfxUseCase
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -73,6 +74,7 @@ class UltimateReaderViewModel @Inject constructor(
     private val smartPrefetchManager: SmartPrefetchManager,
     private val chapterPrefetcher: AdaptiveChapterPrefetcher,
     private val panelDetectionService: PanelDetectionService,
+    private val translateSfx: TranslateSfxUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -572,6 +574,7 @@ class UltimateReaderViewModel @Inject constructor(
             }
             preloadPages(validPage)
             scheduleProgressSave()
+            loadSfxTranslationsForPage(validPage)
 
             // Update Discord presence with current page
             val manga = currentManga
@@ -1156,6 +1159,34 @@ class UltimateReaderViewModel @Inject constructor(
         const val ZOOM_INCREMENT = 0.25f
         const val BRIGHTNESS_INCREMENT = 0.1f
         const val AUTO_SCROLL_INCREMENT = 50f
+    }
+
+    /**
+     * Asynchronously loads SFX translations for the given page index.
+     *
+     * The result is merged into [ReaderState.sfxTranslations] keyed by [pageIndex].
+     * When AI is disabled or unavailable the use case returns an empty list
+     * and no state update is emitted, so the reader is unaffected.
+     */
+    private fun loadSfxTranslationsForPage(pageIndex: Int) {
+        val chapter = currentChapter ?: return
+        val pageUrl = _state.value.pages.getOrNull(pageIndex)?.imageUrl ?: return
+
+        viewModelScope.launch {
+            val result = translateSfx(
+                chapterId = chapter.id,
+                pageIndex = pageIndex,
+                pageImageUrl = pageUrl,
+            )
+            val translations = result.getOrNull() ?: return@launch
+            if (translations.isNotEmpty()) {
+                _state.update { state ->
+                    state.copy(
+                        sfxTranslations = state.sfxTranslations + (pageIndex to translations)
+                    )
+                }
+            }
+        }
     }
 }
 
