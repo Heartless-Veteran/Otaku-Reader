@@ -58,9 +58,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 
 /**
  * Chapter list with grouping, sorting, and chapter actions
@@ -315,6 +316,25 @@ fun ChapterListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Thumbnail (if available)
+            if (chapter.thumbnailUrl != null) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 48.dp, height = 64.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(end = 12.dp)
+                ) {
+                    AsyncImage(
+                        model = chapter.thumbnailUrl,
+                        contentDescription = "Chapter thumbnail",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+            }
+
             // Show checkbox when selected
             if (isSelected) {
                 Checkbox(
@@ -360,6 +380,16 @@ fun ChapterListItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+
+                // Reading progress indicator
+                if (chapter.lastPageRead > 0 && !chapter.read && chapter.totalPages > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Page ${chapter.lastPageRead} / ${chapter.totalPages}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 

@@ -71,7 +71,9 @@ object DetailsContract {
         val bookmark: Boolean,
         val lastPageRead: Int,
         val dateUpload: Long,
-        val downloadStatus: DownloadStatus = DownloadStatus.NOT_DOWNLOADED
+        val downloadStatus: DownloadStatus = DownloadStatus.NOT_DOWNLOADED,
+        val thumbnailUrl: String? = null,
+        val totalPages: Int = 0
     )
 
     /**
@@ -151,7 +153,7 @@ object DetailsContract {
 /**
  * Extension to convert domain Chapter to ChapterItem
  */
-fun Chapter.toChapterItem(): DetailsContract.ChapterItem {
+fun Chapter.toChapterItem(thumbnailUrl: String? = null, totalPages: Int = 0): DetailsContract.ChapterItem {
     // Extract volume from chapter name if available (e.g., "Vol. 1 Chapter 1")
     val volumeRegex = Regex("""Vol\.?\s*(\d+)""", RegexOption.IGNORE_CASE)
     val volume = volumeRegex.find(name)?.groupValues?.get(1)?.let { "Volume $it" }
@@ -167,7 +169,9 @@ fun Chapter.toChapterItem(): DetailsContract.ChapterItem {
         bookmark = bookmark,
         lastPageRead = lastPageRead,
         dateUpload = dateUpload,
-        downloadStatus = DetailsContract.DownloadStatus.NOT_DOWNLOADED
+        downloadStatus = DetailsContract.DownloadStatus.NOT_DOWNLOADED,
+        thumbnailUrl = thumbnailUrl,
+        totalPages = totalPages
     )
 }
 
