@@ -122,7 +122,8 @@ class ScoreSourcesForMangaUseCase @Inject constructor(
         val parsedById = mutableMapOf<String, SourceScore>()
 
         response.trim().lines().forEach { line ->
-            val parts = line.split("|")
+            // Split with a limit so pipes inside the recommendation text are preserved.
+            val parts = line.split("|", limit = RESPONSE_PARTS_COUNT)
             if (parts.size < RESPONSE_PARTS_COUNT) return@forEach
             val sourceId = parts[SOURCE_ID_INDEX].trim()
             val quality = parts[QUALITY_INDEX].trim().toFloatOrNull() ?: return@forEach

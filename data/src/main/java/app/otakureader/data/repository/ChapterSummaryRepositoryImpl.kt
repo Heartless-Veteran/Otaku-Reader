@@ -33,12 +33,12 @@ class ChapterSummaryRepositoryImpl @Inject constructor() : ChapterSummaryReposit
 
     override suspend fun saveSummary(summary: ChapterSummary) {
         cache[summary.chapterId] = summary
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 
     override suspend fun clearSummariesForManga(mangaId: Long) {
         val toRemove = cache.values.filter { it.mangaId == mangaId }.map { it.chapterId }
         toRemove.forEach { cache.remove(it) }
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 }

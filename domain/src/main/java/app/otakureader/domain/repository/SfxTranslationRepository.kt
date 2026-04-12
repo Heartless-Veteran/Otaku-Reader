@@ -16,9 +16,10 @@ interface SfxTranslationRepository {
      *
      * @param chapterId Database chapter ID.
      * @param pageIndex Zero-based page index within the chapter.
-     * @return Cached translations, or an empty list if none are stored.
+     * @return Cached translations, or `null` if no cache entry exists.
+     *   An empty list means the page was previously analyzed and contains no SFX.
      */
-    suspend fun getTranslations(chapterId: Long, pageIndex: Int): List<SfxTranslation>
+    suspend fun getTranslations(chapterId: Long, pageIndex: Int): List<SfxTranslation>?
 
     /**
      * Observe translations for a specific page as a [Flow].

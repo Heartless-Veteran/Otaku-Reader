@@ -173,10 +173,14 @@ data class ReaderState(
     /** Save pages to separate folders by manga title */
     val savePagesToSeparateFolders: Boolean = false,
 
+    // --- SFX Translation ---
+    /** Whether the SFX translation feature is enabled in settings. */
+    val sfxTranslationEnabled: Boolean = false,
     /** AI-generated SFX translations keyed by zero-based page index. */
     val sfxTranslations: Map<Int, List<app.otakureader.domain.model.SfxTranslation>> = emptyMap(),
-
-    /** Whether the SFX overlay is currently visible. */
+    /** True while an SFX translation request is in progress. */
+    val isSfxTranslating: Boolean = false,
+    /** Whether the SFX translation overlay is currently visible. */
     val sfxOverlayVisible: Boolean = false,
 ) {
     /** Total pages in chapter (derived from pages.size) */

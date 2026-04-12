@@ -13,6 +13,8 @@ import javax.inject.Inject
  * The use case:
  * 1. Checks the [AiFeatureGate] for [AiFeature.SFX_TRANSLATION].
  * 2. Returns the cached result from [SfxTranslationRepository] if one exists.
+ *    A cached *empty* list is a valid result (the page has no SFX) and will not
+ *    trigger a redundant AI call.
  * 3. Otherwise, sends a structured prompt to the AI asking it to identify SFX
  *    in the page and translate them into the requested [targetLanguage].
  * 4. Persists the result so subsequent calls for the same page are instant.
@@ -49,9 +51,11 @@ class TranslateSfxUseCase @Inject constructor(
             return Result.success(emptyList())
         }
 
-        // Return cached result if available
+        // Return cached result if available.
+        // A null means "not yet cached"; an empty list means "page has no SFX" — both
+        // are distinct from a non-empty list. We only call the AI on a true cache miss.
         val cached = sfxTranslationRepository.getTranslations(chapterId, pageIndex)
-        if (cached.isNotEmpty()) {
+        if (cached != null) {
             return Result.success(cached)
         }
 
@@ -87,6 +91,8 @@ class TranslateSfxUseCase @Inject constructor(
      * Parse the structured AI response into a list of [SfxTranslation] objects.
      *
      * Lines that don't conform to the expected format are silently skipped.
+     * The position column is treated as optional continuation text — anything
+     * after the third pipe is joined back to handle pipes inside the position hint.
      */
     internal fun parseAiResponse(response: String, pageIndex: Int): List<SfxTranslation> {
         val trimmed = response.trim()
@@ -94,7 +100,8 @@ class TranslateSfxUseCase @Inject constructor(
 
         return trimmed.lines()
             .mapNotNull { line ->
-                val parts = line.split("|")
+                // Split with a limit so trailing pipes in position text are preserved.
+                val parts = line.split("|", limit = RESPONSE_PARTS_COUNT)
                 if (parts.size < RESPONSE_PARTS_COUNT) return@mapNotNull null
                 val confidence = parts[CONFIDENCE_INDEX].trim().toFloatOrNull() ?: return@mapNotNull null
                 SfxTranslation(

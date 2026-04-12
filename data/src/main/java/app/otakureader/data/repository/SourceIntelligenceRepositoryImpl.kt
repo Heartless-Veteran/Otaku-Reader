@@ -33,11 +33,11 @@ class SourceIntelligenceRepositoryImpl @Inject constructor() : SourceIntelligenc
 
     override suspend fun saveScores(mangaId: Long, scores: List<SourceScore>) {
         cache[mangaId] = scores.sortedByDescending { it.overallScore }
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 
     override suspend fun clearScores(mangaId: Long) {
         cache.remove(mangaId)
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 }

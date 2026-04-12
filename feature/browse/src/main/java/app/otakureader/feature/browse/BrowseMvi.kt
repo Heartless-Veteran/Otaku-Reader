@@ -23,6 +23,10 @@ data class BrowseState(
     val showFilterSheet: Boolean = false,
     /** AI-ranked source scores for the manga currently being browsed, sorted by overall score desc. */
     val sourceScores: List<SourceScore> = emptyList(),
+    /** True while AI is analyzing sources. */
+    val isAnalyzingSource: Boolean = false,
+    /** Whether the Source Intelligence feature is enabled in settings. */
+    val sourceIntelligenceEnabled: Boolean = false,
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {

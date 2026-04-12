@@ -30,8 +30,8 @@ class SfxTranslationRepositoryImpl @Inject constructor() : SfxTranslationReposit
     /** Hot flow that emits whenever the cache changes. Subscribers re-derive their slice. */
     private val cacheVersion = MutableStateFlow(0L)
 
-    override suspend fun getTranslations(chapterId: Long, pageIndex: Int): List<SfxTranslation> {
-        return cache[chapterId to pageIndex] ?: emptyList()
+    override suspend fun getTranslations(chapterId: Long, pageIndex: Int): List<SfxTranslation>? {
+        return cache[chapterId to pageIndex]
     }
 
     override fun observeTranslations(chapterId: Long, pageIndex: Int): Flow<List<SfxTranslation>> {
@@ -44,11 +44,11 @@ class SfxTranslationRepositoryImpl @Inject constructor() : SfxTranslationReposit
         translations: List<SfxTranslation>,
     ) {
         cache[chapterId to pageIndex] = translations
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 
     override suspend fun clearTranslations(chapterId: Long) {
         cache.keys.removeAll { (cId, _) -> cId == chapterId }
-        cacheVersion.value++
+        cacheVersion.update { it + 1 }
     }
 }

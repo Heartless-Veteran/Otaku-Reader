@@ -41,7 +41,7 @@ class TranslateSfxUseCaseTest {
         coVerify(exactly = 0) { aiRepository.generateContent(any()) }
     }
 
-    // ---- cache hit ----
+    // ---- cache hit (non-empty) ----
 
     @Test
     fun `returns cached translations without calling AI`() = runTest {
@@ -58,12 +58,25 @@ class TranslateSfxUseCaseTest {
         coVerify(exactly = 0) { aiRepository.generateContent(any()) }
     }
 
+    @Test
+    fun `returns empty list without calling AI when cache has empty entry (no SFX page)`() = runTest {
+        coEvery { aiFeatureGate.isFeatureAvailable(AiFeature.SFX_TRANSLATION) } returns true
+        // Empty list in cache = page was previously analyzed and has no SFX
+        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns emptyList()
+
+        val result = useCase(chapterId = 1L, pageIndex = 0, pageImageUrl = "https://example.com/page.jpg")
+
+        assertTrue(result.isSuccess)
+        assertTrue(result.getOrNull()!!.isEmpty())
+        coVerify(exactly = 0) { aiRepository.generateContent(any()) }
+    }
+
     // ---- AI call and parse ----
 
     @Test
-    fun `calls AI and parses valid response when cache is empty`() = runTest {
+    fun `calls AI and parses valid response when cache is null (true cache miss)`() = runTest {
         coEvery { aiFeatureGate.isFeatureAvailable(AiFeature.SFX_TRANSLATION) } returns true
-        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns emptyList()
+        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns null
         coEvery { aiRepository.generateContent(any()) } returns
             Result.success("ドカン|BOOM|0.95|top-left\nバキ|CRACK|0.80|bottom-right")
 
@@ -82,7 +95,7 @@ class TranslateSfxUseCaseTest {
     @Test
     fun `returns empty list when AI responds with NONE`() = runTest {
         coEvery { aiFeatureGate.isFeatureAvailable(AiFeature.SFX_TRANSLATION) } returns true
-        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns emptyList()
+        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns null
         coEvery { aiRepository.generateContent(any()) } returns Result.success("NONE")
 
         val result = useCase(chapterId = 1L, pageIndex = 0, pageImageUrl = "https://example.com/page.jpg")
@@ -94,7 +107,7 @@ class TranslateSfxUseCaseTest {
     @Test
     fun `returns empty list when AI call fails`() = runTest {
         coEvery { aiFeatureGate.isFeatureAvailable(AiFeature.SFX_TRANSLATION) } returns true
-        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns emptyList()
+        coEvery { sfxTranslationRepository.getTranslations(1L, 0) } returns null
         coEvery { aiRepository.generateContent(any()) } returns
             Result.failure(RuntimeException("network error"))
 

@@ -38,13 +38,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import app.otakureader.core.preferences.AiPreferences
+import app.otakureader.domain.usecase.ai.TranslateSfxUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -74,6 +79,7 @@ class UltimateReaderViewModel @Inject constructor(
     private val smartPrefetchManager: SmartPrefetchManager,
     private val chapterPrefetcher: AdaptiveChapterPrefetcher,
     private val panelDetectionService: PanelDetectionService,
+    private val aiPreferences: AiPreferences,
     private val translateSfx: TranslateSfxUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -134,6 +140,7 @@ class UltimateReaderViewModel @Inject constructor(
         loadSettings()
         loadChapter()
         cacheDiscordPreference()
+        observeSfxSettings()
     }
 
     private fun recordHistoryOpen() {
@@ -529,6 +536,11 @@ class UltimateReaderViewModel @Inject constructor(
             }
             ReaderEvent.RotateCW -> cyclePageRotation()
             ReaderEvent.ResetRotation -> _state.update { it.copy(pageRotation = PageRotation.NONE) }
+
+            // SFX Translation
+            ReaderEvent.OpenSfxDialog -> _state.update { it.copy(showSfxDialog = true) }
+            ReaderEvent.CloseSfxDialog -> _state.update { it.copy(showSfxDialog = false) }
+            is ReaderEvent.TranslateSfx -> translateSfx(event.sfxText)
         }
     }
 
@@ -1162,33 +1174,63 @@ class UltimateReaderViewModel @Inject constructor(
     }
 
     /**
+     * Observes the combined AI master toggle + SFX translation toggle from preferences.
+     * The [ReaderState.sfxTranslationEnabled] flag is kept in sync so the UI can
+     * conditionally show/hide the SFX overlay.
+     */
+    private fun observeSfxSettings() {
+        combine(
+            aiPreferences.aiEnabled,
+            aiPreferences.aiSfxTranslation,
+        ) { aiEnabled, sfxEnabled ->
+            aiEnabled && sfxEnabled
+        }.onEach { enabled ->
+            _state.update { it.copy(sfxTranslationEnabled = enabled) }
+        }.launchIn(viewModelScope)
+    }
+
+    /**
+     * In-flight jobs per page index, used to avoid duplicate AI calls when the user
+     * scrolls quickly or a page is revisited before its first request completes.
+     * Keyed by [pageIndex]; an active entry means a request is already in progress.
+     */
+    private val sfxPageJobs = mutableMapOf<Int, kotlinx.coroutines.Job>()
+
+    /**
      * Asynchronously loads SFX translations for the given page index.
      *
+     * If a job is already in progress for [pageIndex] (e.g., rapid back-and-forth
+     * scrolling), this function is a no-op to avoid duplicate AI calls.
      * The result is merged into [ReaderState.sfxTranslations] keyed by [pageIndex].
      * When AI is disabled or unavailable the use case returns an empty list
      * and no state update is emitted, so the reader is unaffected.
      */
     private fun loadSfxTranslationsForPage(pageIndex: Int) {
+        // Skip if a request for this page is already in-flight
+        if (sfxPageJobs[pageIndex]?.isActive == true) return
+
         val chapter = currentChapter ?: return
         val pageUrl = _state.value.pages.getOrNull(pageIndex)?.imageUrl ?: return
 
-        viewModelScope.launch {
+        sfxPageJobs[pageIndex] = viewModelScope.launch {
+            _state.update { it.copy(isSfxTranslating = true) }
             val result = translateSfx(
                 chapterId = chapter.id,
                 pageIndex = pageIndex,
                 pageImageUrl = pageUrl,
             )
-            val translations = result.getOrNull() ?: return@launch
-            if (translations.isNotEmpty()) {
-                _state.update { state ->
-                    state.copy(
-                        sfxTranslations = state.sfxTranslations + (pageIndex to translations)
-                    )
-                }
+            val translations = result.getOrNull() ?: emptyList()
+            _state.update { state ->
+                val updatedTranslations = state.sfxTranslations + (pageIndex to translations)
+                state.copy(
+                    sfxTranslations = updatedTranslations,
+                    isSfxTranslating = false,
+                )
             }
+        }.also { job ->
+            job.invokeOnCompletion { sfxPageJobs.remove(pageIndex) }
         }
     }
-}
 
 /**
  * Effects emitted by the reader

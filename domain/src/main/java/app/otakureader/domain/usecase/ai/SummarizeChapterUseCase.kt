@@ -57,7 +57,7 @@ class SummarizeChapterUseCase @Inject constructor(
             return Result.success(cached)
         }
 
-        val prompt = buildPrompt(mangaTitle, chapterName, precedingChapterTitles)
+        val prompt = buildPrompt(mangaTitle, chapterName, precedingChapterTitles, language)
         val aiResult = aiRepository.generateContent(prompt)
 
         if (aiResult.isFailure) {
@@ -88,8 +88,10 @@ class SummarizeChapterUseCase @Inject constructor(
         mangaTitle: String,
         chapterName: String,
         precedingChapters: List<String>,
+        language: String,
     ): String = buildString {
         appendLine("You are a manga content assistant. Provide a concise, spoiler-aware summary.")
+        appendLine("Respond in the following language: $language")
         appendLine()
         appendLine("Manga: $mangaTitle")
         appendLine("Chapter: $chapterName")
