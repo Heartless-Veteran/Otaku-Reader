@@ -1,17 +1,18 @@
 package app.otakureader.feature.reader
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
+import app.otakureader.data.worker.RecordReadingHistoryWorker
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.discord.ReadingStatus
 import app.otakureader.core.preferences.GeneralPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val discordRpcService: DiscordRpcService,
     private val generalPreferences: GeneralPreferences,
+    @ApplicationContext private val appContext: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -45,9 +47,6 @@ class ReaderViewModel @Inject constructor(
 
     /** Cached Discord RPC enabled state, loaded once to avoid DataStore reads on every page change. */
     private var cachedDiscordRpcEnabled: Boolean = false
-
-    /** Independent scope used for cleanup work that must survive viewModelScope cancellation. */
-    private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         loadChapter()
@@ -162,28 +161,22 @@ class ReaderViewModel @Inject constructor(
     /**
      * Saves reading history when the ViewModel is cleared.
      *
-     * **H-5 — Unsafe coroutine scope for critical cleanup:**
-     * [cleanupScope] survives [viewModelScope] cancellation, which means the history
-     * write will complete as long as the *process* stays alive. However, if the OS
-     * kills the process (e.g., low-memory kill while the app is in the background),
-     * the coroutine will not complete and the reading duration will be lost.
-     *
-     * TODO(H-5): Replace this coroutine with a [androidx.work.WorkManager] one-shot
-     * task so that the history write is guaranteed to complete even after a process
-     * death. The WorkManager task should be enqueued here and the coroutine removed.
+     * **H-5 — Fixed:** Reading history is now persisted via a [WorkManager] one-shot
+     * task ([RecordReadingHistoryWorker]) instead of a custom coroutine scope. This
+     * guarantees the write is eventually completed even if the OS terminates the process
+     * due to low memory while the app is in the background — WorkManager will restart
+     * the task after the process is recreated.
      */
     override fun onCleared() {
         super.onCleared()
         val durationMs = System.currentTimeMillis() - sessionStartMs
-        // Use cleanupScope (not viewModelScope) so the coroutine is not cancelled along with the ViewModel.
-        cleanupScope.launch {
-            runCatching {
-                chapterRepository.recordHistory(
-                    chapterId = chapterId,
-                    readAt = sessionStartMs,
-                    readDurationMs = durationMs
-                )
-            }
+        runCatching {
+            val request = RecordReadingHistoryWorker.buildRequest(
+                chapterId = chapterId,
+                readAt = sessionStartMs,
+                durationMs = durationMs,
+            )
+            WorkManager.getInstance(appContext).enqueue(request)
         }
         // Clear Discord Rich Presence when reader closes
         discordRpcService.clearReadingPresence(showBrowsing = false)

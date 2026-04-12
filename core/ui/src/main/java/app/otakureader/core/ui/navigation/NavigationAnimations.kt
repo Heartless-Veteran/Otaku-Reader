@@ -155,7 +155,7 @@ fun NavGraphBuilder.animatedComposable(
         exitTransition = exitTransition,
         popEnterTransition = popEnterTransition,
         popExitTransition = popExitTransition,
-        content = content
+        content = { backStackEntry -> content(backStackEntry) }
     )
 }
 
@@ -176,7 +176,7 @@ fun NavGraphBuilder.modalComposable(
         exitTransition = { NavigationAnimations.fadeOutWithScale },
         popEnterTransition = { NavigationAnimations.fadeInWithScale },
         popExitTransition = { NavigationAnimations.fadeOutWithScale },
-        content = content
+        content = { backStackEntry -> content(backStackEntry) }
     )
 }
 
@@ -194,9 +194,9 @@ fun NavGraphBuilder.bottomSheetComposable(
         arguments = arguments,
         deepLinks = deepLinks,
         enterTransition = { NavigationAnimations.slideInFromBottom },
-        exitTransition = { NavigationAnimations.fadeOut },
-        popEnterTransition = { NavigationAnimations.fadeIn },
+        exitTransition = { NavigationAnimations.fadeOutWithScale },
+        popEnterTransition = { NavigationAnimations.fadeInWithScale },
         popExitTransition = { NavigationAnimations.slideOutToBottom },
-        content = content
+        content = { backStackEntry -> content(backStackEntry) }
     )
 }

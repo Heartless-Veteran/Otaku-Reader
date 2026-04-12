@@ -180,6 +180,8 @@ data class ReaderState(
     val sfxTranslations: Map<Int, List<app.otakureader.domain.model.SfxTranslation>> = emptyMap(),
     /** True while an SFX translation request is in progress. */
     val isSfxTranslating: Boolean = false,
+    /** Whether the SFX translation dialog is visible. */
+    val showSfxDialog: Boolean = false,
     /** Whether the SFX translation overlay is currently visible. */
     val sfxOverlayVisible: Boolean = false,
 ) {

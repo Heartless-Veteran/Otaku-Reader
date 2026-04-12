@@ -3,6 +3,7 @@ package app.otakureader.core.ui.modifiers
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -130,7 +131,7 @@ fun Modifier.fadeIn(
     visible: Boolean,
     durationMillis: Int = 300
 ): Modifier = composed {
-    val alpha by androidx.compose.animation.core.animateFloatAsState(
+    val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = tween(durationMillis = durationMillis),
         label = "fade"
@@ -162,15 +163,3 @@ fun Modifier.bottomGradientScrim(
         )
     )
 }
-
-// Extension for animateFloatAsState that doesn't require explicit import
-@Composable
-private fun androidx.compose.animation.core.animateFloatAsState(
-    targetValue: Float,
-    animationSpec: androidx.compose.animation.core.AnimationSpec<Float>,
-    label: String
-) = androidx.compose.animation.core.animateFloatAsState(
-    targetValue = targetValue,
-    animationSpec = animationSpec,
-    label = label
-)

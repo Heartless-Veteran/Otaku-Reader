@@ -92,7 +92,7 @@ class RecommendationRepositoryImpl @Inject constructor(
     override suspend fun analyzeReadingPatterns(): Result<UserReadingPattern> {
         return try {
             // Get user's library
-            val libraryManga = mangaRepository.getFavoriteManga().first()
+            val libraryManga = mangaRepository.getLibraryManga().first()
 
             if (libraryManga.size < MIN_LIBRARY_SIZE_FOR_AI) {
                 return Result.failure(
@@ -111,7 +111,7 @@ class RecommendationRepositoryImpl @Inject constructor(
 
             libraryManga.forEach { manga ->
                 // Count genres
-                manga.genres.forEach { genre ->
+                manga.genre.forEach { genre ->
                     genreCounts[genre] = genreCounts.getOrDefault(genre, 0) + 1
                 }
 
@@ -120,7 +120,7 @@ class RecommendationRepositoryImpl @Inject constructor(
                     authorCounts[author] = authorCounts.getOrDefault(author, 0) + 1
                 }
 
-                totalChapters += manga.chapters
+                totalChapters += manga.totalChapters
                 if (manga.status == app.otakureader.domain.model.MangaStatus.COMPLETED) {
                     completedCount++
                 }
@@ -205,7 +205,7 @@ class RecommendationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLastRefreshTime(): Long? {
-        return lastRefreshTime ?: recommendationDao.getLatestTimestamp()
+        return lastRefreshTime ?: recommendationDao.getLastSuccessfulRefresh()?.timestamp
     }
 
     override suspend fun needsRefresh(): Boolean {
@@ -230,11 +230,11 @@ class RecommendationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun dismissRecommendation(recommendationId: String) {
-        recommendationDao.markAsDismissed(recommendationId)
+        recommendationDao.dismissRecommendation(recommendationId)
     }
 
     override suspend fun getSimilarManga(mangaId: Long, limit: Int): Result<List<MangaRecommendation>> {
-        val manga = mangaRepository.getMangaById(mangaId).first() ?: return Result.failure(
+        val manga = mangaRepository.getMangaById(mangaId) ?: return Result.failure(
             IllegalArgumentException("Manga not found: $mangaId")
         )
 
@@ -243,7 +243,7 @@ class RecommendationRepositoryImpl @Inject constructor(
             
             Title: ${manga.title}
             Author: ${manga.author ?: "Unknown"}
-            Genres: ${manga.genres.joinToString(", ")}
+            Genres: ${manga.genre.joinToString(", ")}
             Description: ${manga.description ?: "No description"}
             
             Provide $limit recommendations in this exact format:
@@ -284,7 +284,7 @@ class RecommendationRepositoryImpl @Inject constructor(
     private suspend fun getCachedRecommendations(): RecommendationResult? {
         if (needsRefresh()) return null
 
-        val entities = recommendationDao.getAllRecommendations()
+        val entities = recommendationDao.getRecommendations()
         if (entities.isEmpty()) return null
 
         val recommendations = entities.map { it.toDomainModel() }
@@ -292,8 +292,8 @@ class RecommendationRepositoryImpl @Inject constructor(
         return RecommendationResult(
             recommendations = recommendations,
             pattern = null,
-            refreshedAt = entities.firstOrNull()?.createdAt ?: System.currentTimeMillis(),
-            expiresAt = entities.firstOrNull()?.createdAt?.plus(CACHE_DURATION_MS) ?: System.currentTimeMillis(),
+            refreshedAt = entities.firstOrNull()?.generatedAt ?: System.currentTimeMillis(),
+            expiresAt = entities.firstOrNull()?.generatedAt?.plus(CACHE_DURATION_MS) ?: System.currentTimeMillis(),
             isCached = true
         )
     }
@@ -318,7 +318,7 @@ class RecommendationRepositoryImpl @Inject constructor(
     }
 
     private fun buildGeminiPrompt(input: RecommendationInput): String {
-        val genreList = input.libraryManga.flatMap { it.manga.genres }.distinct().take(10)
+        val genreList = input.libraryManga.flatMap { it.manga.genre }.distinct().take(10)
 
         return """
             You are a manga recommendation engine. Analyze the user's preferences and suggest $MAX_RECOMMENDATIONS manga they would enjoy.
@@ -422,7 +422,7 @@ class RecommendationRepositoryImpl @Inject constructor(
             basedOnMangaIds = basedOnMangaIds.split(",").mapNotNull { it.toLongOrNull() },
             basedOnGenres = basedOnGenres.split(",").filter { it.isNotBlank() },
             recommendationType = RecommendationType.valueOf(recommendationType),
-            generatedAt = createdAt
+            generatedAt = generatedAt
         )
     }
 
@@ -442,10 +442,10 @@ class RecommendationRepositoryImpl @Inject constructor(
             basedOnMangaIds = basedOnMangaIds.joinToString(","),
             basedOnGenres = basedOnGenres.joinToString(","),
             recommendationType = recommendationType.name,
-            isViewed = false,
-            isActioned = false,
-            isDismissed = false,
-            createdAt = generatedAt,
+            viewed = false,
+            actioned = false,
+            dismissed = false,
+            generatedAt = generatedAt,
             expiresAt = generatedAt + CACHE_DURATION_MS
         )
     }
