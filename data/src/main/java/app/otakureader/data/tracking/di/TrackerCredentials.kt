@@ -29,16 +29,16 @@ import app.otakureader.data.BuildConfig
  */
 object TrackerCredentials {
     // Kitsu — register at https://kitsu.app/api/edge/
-    val KITSU_CLIENT_ID: String     get() = BuildConfig.KITSU_CLIENT_ID
-    val KITSU_CLIENT_SECRET: String get() = BuildConfig.KITSU_CLIENT_SECRET
+    val KITSU_CLIENT_ID: String     get() = runCatching { BuildConfig.KITSU_CLIENT_ID }.getOrDefault("")
+    val KITSU_CLIENT_SECRET: String get() = runCatching { BuildConfig.KITSU_CLIENT_SECRET }.getOrDefault("")
 
     // MyAnimeList — register at https://myanimelist.net/apiconfig
-    val MAL_CLIENT_ID: String     get() = BuildConfig.MAL_CLIENT_ID
-    val MAL_CLIENT_SECRET: String get() = BuildConfig.MAL_CLIENT_SECRET
+    val MAL_CLIENT_ID: String     get() = runCatching { BuildConfig.MAL_CLIENT_ID }.getOrDefault("")
+    val MAL_CLIENT_SECRET: String get() = runCatching { BuildConfig.MAL_CLIENT_SECRET }.getOrDefault("")
     const val MAL_REDIRECT_URI = "app.otakureader://mal-oauth"
 
     // Shikimori — register at https://shikimori.one/oauth/applications
-    val SHIKIMORI_CLIENT_ID: String     get() = BuildConfig.SHIKIMORI_CLIENT_ID
-    val SHIKIMORI_CLIENT_SECRET: String get() = BuildConfig.SHIKIMORI_CLIENT_SECRET
+    val SHIKIMORI_CLIENT_ID: String     get() = runCatching { BuildConfig.SHIKIMORI_CLIENT_ID }.getOrDefault("")
+    val SHIKIMORI_CLIENT_SECRET: String get() = runCatching { BuildConfig.SHIKIMORI_CLIENT_SECRET }.getOrDefault("")
     const val SHIKIMORI_REDIRECT_URI = "app.otakureader://shikimori-oauth"
 }

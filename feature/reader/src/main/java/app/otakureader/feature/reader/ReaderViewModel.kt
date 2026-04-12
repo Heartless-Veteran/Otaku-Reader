@@ -177,6 +177,8 @@ class ReaderViewModel @Inject constructor(
                 durationMs = durationMs,
             )
             WorkManager.getInstance(appContext).enqueue(request)
+        }.onFailure { e ->
+            android.util.Log.w(TAG, "WorkManager enqueue failed in onCleared", e)
         }
         // Clear Discord Rich Presence when reader closes
         discordRpcService.clearReadingPresence(showBrowsing = false)
@@ -223,5 +225,9 @@ class ReaderViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    companion object {
+        private const val TAG = "ReaderViewModel"
     }
 }

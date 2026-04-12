@@ -1062,6 +1062,8 @@ class UltimateReaderViewModel @Inject constructor(
                 isRead = currentState.isLastPage,
             )
             WorkManager.getInstance(context).enqueue(request)
+        }.onFailure { e ->
+            android.util.Log.w(TAG, "WorkManager enqueue failed in onCleared", e)
         }
 
         // Clear Discord Rich Presence when reader closes
@@ -1155,6 +1157,7 @@ class UltimateReaderViewModel @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "UltimateReaderViewModel"
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
         private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
