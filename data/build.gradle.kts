@@ -16,6 +16,23 @@ android {
         create("foss") { dimension = "distribution" }
     }
 
+    buildFeatures {
+        // Needed to expose tracker OAuth credentials via BuildConfig (C-5).
+        buildConfig = true
+    }
+
+    defaultConfig {
+        // Tracker OAuth credentials injected from CI/CD environment variables (audit C-5).
+        // In local development these default to empty strings; provide real values via
+        // the corresponding GitHub Actions secrets (KITSU_CLIENT_ID, etc.).
+        buildConfigField("String", "KITSU_CLIENT_ID",     "\"${System.getenv("KITSU_CLIENT_ID")     ?: ""}\"")
+        buildConfigField("String", "KITSU_CLIENT_SECRET", "\"${System.getenv("KITSU_CLIENT_SECRET") ?: ""}\"")
+        buildConfigField("String", "MAL_CLIENT_ID",       "\"${System.getenv("MAL_CLIENT_ID")       ?: ""}\"")
+        buildConfigField("String", "MAL_CLIENT_SECRET",   "\"${System.getenv("MAL_CLIENT_SECRET")   ?: ""}\"")
+        buildConfigField("String", "SHIKIMORI_CLIENT_ID",     "\"${System.getenv("SHIKIMORI_CLIENT_ID")     ?: ""}\"")
+        buildConfigField("String", "SHIKIMORI_CLIENT_SECRET", "\"${System.getenv("SHIKIMORI_CLIENT_SECRET") ?: ""}\"")
+    }
+
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }

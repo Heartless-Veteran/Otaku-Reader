@@ -26,20 +26,18 @@ import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.discord.ReadingStatus
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.DownloadPreferences
-import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
+import app.otakureader.data.download.DownloadProvider
+import app.otakureader.data.worker.RecordReadingHistoryWorker
 import app.otakureader.feature.reader.panel.PanelDetectionService
 import app.otakureader.domain.usecase.ai.TranslateSfxUseCase
+import androidx.work.WorkManager
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import app.otakureader.core.preferences.AiPreferences
-import app.otakureader.domain.usecase.ai.TranslateSfxUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -132,9 +130,6 @@ class UltimateReaderViewModel @Inject constructor(
      * This timestamp is never updated and represents the start of the reading session.
      */
     internal val sessionStartMs: Long = SystemClock.elapsedRealtime()
-
-    /** Independent scope used for cleanup work that must survive viewModelScope cancellation. */
-    private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         loadSettings()
@@ -540,7 +535,7 @@ class UltimateReaderViewModel @Inject constructor(
             // SFX Translation
             ReaderEvent.OpenSfxDialog -> _state.update { it.copy(showSfxDialog = true) }
             ReaderEvent.CloseSfxDialog -> _state.update { it.copy(showSfxDialog = false) }
-            is ReaderEvent.TranslateSfx -> translateSfx(event.sfxText)
+            is ReaderEvent.TranslateSfx -> loadSfxTranslationsForPage(_state.value.currentPage)
         }
     }
 
@@ -1009,8 +1004,8 @@ class UltimateReaderViewModel @Inject constructor(
         if (currentProgress < progressThreshold) return
 
         viewModelScope.launch {
-            val downloadAheadEnabled = downloadPreferences.downloadAheadWhileReading.first()
-            if (!downloadAheadEnabled) return@launch
+            val downloadAheadChapters = downloadPreferences.downloadAheadWhileReading.first()
+            if (downloadAheadChapters <= 0) return@launch
 
             // Check WiFi requirement if set
             val onlyOnWifi = downloadPreferences.downloadAheadOnlyOnWifi.first()
@@ -1035,45 +1030,42 @@ class UltimateReaderViewModel @Inject constructor(
             if (existingDownload != null) return@launch
 
             // Check if already downloaded to storage
-            val manga = currentManga ?: mangaRepository.getMangaById(mangaId).first() ?: return@launch
-            val source = sourceRepository.getSourceById(manga.sourceId) ?: return@launch
+            val manga = currentManga ?: mangaRepository.getMangaById(mangaId) ?: return@launch
+            val source = sourceRepository.getSource(manga.sourceId.toString()) ?: return@launch
             
             val isDownloaded = DownloadProvider.isChapterDownloaded(
                 context, source.name, manga.title, nextChapter.name
             )
             if (isDownloaded) return@launch
 
-            // Get pages for the chapter
-            val pages = runCatching {
-                pageLoader.loadPages(nextChapter.id, nextChapter.url)
-            }.getOrNull() ?: return@launch
-
-            val pageUrls = pages.mapNotNull { it.imageUrl }
-            if (pageUrls.isEmpty()) return@launch
-
-            // Queue the download
-            val request = ChapterDownloadRequest(
-                chapterId = nextChapter.id,
-                mangaId = mangaId,
-                chapterTitle = nextChapter.name,
-                mangaTitle = manga.title,
-                sourceName = source.name,
-                pageUrls = pageUrls
-            )
-            downloadManager.enqueue(request)
+            // TODO: fetch page URLs via source.fetchPageList() and enqueue download.
+            // This requires converting domain Chapter → source-api Chapter, which is
+            // tracked as a separate task. For now, download-ahead is a no-op.
         }
     }
 
     override fun onCleared() {
         super.onCleared()
         val durationMs = SystemClock.elapsedRealtime() - sessionStartMs
-        // Capture state before the ViewModel is torn down so the cleanupScope coroutine can
-        // safely read it after viewModelScope (and therefore state updates) are cancelled.
+        // Capture state before viewModelScope is cancelled so we can read incognito/page data.
         val currentState = _state.value
-        // Use cleanupScope (not viewModelScope) so the coroutine is not cancelled along with the ViewModel.
-        cleanupScope.launch {
-            cleanupOnExit(durationMs, currentState)
+
+        // H-5 Fix: Use WorkManager to guarantee history + progress are persisted even if
+        // the OS kills the process before a raw coroutine could complete.
+        runCatching {
+            val request = RecordReadingHistoryWorker.buildRequest(
+                chapterId = chapterId,
+                readAt = sessionReadAt,
+                durationMs = durationMs,
+                isIncognito = currentState.incognitoMode,
+                lastPageRead = currentState.currentPage,
+                isRead = currentState.isLastPage,
+            )
+            WorkManager.getInstance(context).enqueue(request)
+        }.onFailure { e ->
+            android.util.Log.w(TAG, "WorkManager enqueue failed in onCleared", e)
         }
+
         // Clear Discord Rich Presence when reader closes
         discordRpcService.clearReadingPresence(showBrowsing = true)
         autoSaveJob?.cancel()
@@ -1165,6 +1157,7 @@ class UltimateReaderViewModel @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "UltimateReaderViewModel"
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
         private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
@@ -1231,6 +1224,7 @@ class UltimateReaderViewModel @Inject constructor(
             job.invokeOnCompletion { sfxPageJobs.remove(pageIndex) }
         }
     }
+}
 
 /**
  * Effects emitted by the reader

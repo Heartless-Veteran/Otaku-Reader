@@ -176,8 +176,9 @@ class TrackerSyncRepositoryImpl @Inject constructor(
 
             val lastSync = syncState.lastSuccessfulSync
             val localChanged = lastSync == null || syncState.localLastModified > lastSync
+            val remoteLastModified = syncState.remoteLastModified
             val remoteChanged = lastSync == null ||
-                (syncState.remoteLastModified != null && syncState.remoteLastModified > lastSync)
+                (remoteLastModified != null && remoteLastModified > lastSync)
 
             // Conflict: both sides changed and their chapter progress diverged
             val hasConflict = localChanged && remoteChanged &&

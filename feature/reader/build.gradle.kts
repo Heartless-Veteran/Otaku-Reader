@@ -32,6 +32,8 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
+    // WorkManager is used in ReaderViewModel.onCleared() to enqueue guaranteed history writes (H-5)
+    implementation(libs.workmanager.ktx)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

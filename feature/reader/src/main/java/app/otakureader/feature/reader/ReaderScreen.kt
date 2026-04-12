@@ -342,7 +342,9 @@ fun ReaderScreen(
         // SFX Translation Dialog
         if (state.sfxTranslationEnabled && state.showSfxDialog) {
             SfxTranslationDialog(
-                sfxTranslations = state.sfxTranslations,
+                sfxTranslations = state.sfxTranslations.values
+                    .flatten()
+                    .associate { it.originalText to it.translatedText },
                 isSfxTranslating = state.isSfxTranslating,
                 onTranslate = { viewModel.onEvent(ReaderEvent.TranslateSfx(it)) },
                 onDismiss = { viewModel.onEvent(ReaderEvent.CloseSfxDialog) }
