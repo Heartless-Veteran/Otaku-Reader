@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./.github/banner.svg" alt="Otaku Reader" width="100%"/>
+  <img src="./.github/logo.jpg" alt="Otaku Reader" width="200"/>
 
   <p><em>🌸 The ultimate manga reader. Better than Perfect Viewer.</em></p>
 
