@@ -8,6 +8,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
@@ -45,6 +46,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var workerParams: WorkerParameters
     private lateinit var getLibraryManga: GetLibraryMangaUseCase
     private lateinit var updateLibraryManga: UpdateLibraryMangaUseCase
+    private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadPreferences: DownloadPreferences
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var downloadManager: DownloadManager
@@ -108,6 +110,7 @@ class LibraryUpdateWorkerTest {
         workerParams = mockk(relaxed = true)
         getLibraryManga = mockk()
         updateLibraryManga = mockk()
+        libraryPreferences = mockk()
         downloadPreferences = mockk()
         generalPreferences = mockk()
         downloadManager = mockk(relaxed = true)
@@ -118,6 +121,9 @@ class LibraryUpdateWorkerTest {
         networkCapabilities = mockk()
 
         // Default preference values
+        every { libraryPreferences.updateOnlyOnWifi } returns flowOf(false)
+        every { libraryPreferences.skipUpdateCategoryIds } returns flowOf(emptySet<String>())
+        every { libraryPreferences.showUpdateProgress } returns flowOf(true)
         every { downloadPreferences.autoDownloadEnabled } returns flowOf(false)
         every { downloadPreferences.downloadOnlyOnWifi } returns flowOf(false)
         every { downloadPreferences.autoDownloadLimit } returns flowOf(3)
@@ -134,6 +140,7 @@ class LibraryUpdateWorkerTest {
             workerParams,
             getLibraryManga,
             updateLibraryManga,
+            libraryPreferences,
             downloadPreferences,
             generalPreferences,
             downloadManager,
