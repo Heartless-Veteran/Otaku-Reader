@@ -64,6 +64,10 @@ import androidx.compose.ui.text.style.TextAlign
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import coil3.request.diskCacheKey
+import coil3.request.error
+import coil3.request.memoryCacheKey
+import coil3.request.placeholder
 import app.otakureader.app.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext

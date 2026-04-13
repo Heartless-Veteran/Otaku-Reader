@@ -235,10 +235,6 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-            }
-            .launchIn(viewModelScope)
-    }
-
     private fun loadNextUnreadChapter() {
         viewModelScope.launch {
             val nextChapter = chapterRepository.getNextUnreadChapter(mangaId)
