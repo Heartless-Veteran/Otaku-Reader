@@ -62,11 +62,6 @@ jobs:
           ./gradlew :app:assembleFullDebug --no-daemon
           END=$(date +%s)
           echo "| Full Debug Build | $((END-START))s |" >> benchmark.md
-          
-          START=$(date +%s)
-          ./gradlew testFullDebugUnitTest --no-daemon
-          END=$(date +%s)
-          echo "| Unit Tests | $((END-START))s |" >> benchmark.md
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
