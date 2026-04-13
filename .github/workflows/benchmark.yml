@@ -31,21 +31,24 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run Unit Tests with Coverage
+      - name: Compile Kotlin
+        run: ./gradlew compileFullDebugKotlin --no-daemon
+        env:
+          CI: true
+
+      - name: Run Unit Tests
+        id: tests
         run: ./gradlew testFullDebugUnitTest --no-daemon
         env:
           CI: true
+        continue-on-error: true
 
-      - name: Generate Coverage Report
-        run: ./gradlew jacocoFullDebugReport --no-daemon || true
-        env:
-          CI: true
-
-      - name: Upload Coverage Report
+      - name: Upload Test Results
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        if: always()
         with:
-          name: coverage-report
-          path: '**/build/reports/jacoco/**/*.xml'
+          name: test-results
+          path: '**/build/test-results/**/*.xml'
           retention-days: 30
 
       - name: Run Build Time Benchmark
@@ -66,8 +69,12 @@ jobs:
           echo "| Unit Tests | $((END-START))s |" >> benchmark.md
 
       - name: Upload Benchmark Results
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e76fdaad77386f024f # v7
         with:
           name: benchmark-results
           path: benchmark.md
           retention-days: 30
+
+      - name: Fail if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1

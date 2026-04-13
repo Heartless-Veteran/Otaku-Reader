@@ -243,6 +243,8 @@ class DetailsViewModel @Inject constructor(
         viewModelScope.launch {
             val nextChapter = chapterRepository.getNextUnreadChapter(mangaId)
             _state.update { it.copy(nextUnreadChapter = nextChapter) }
+        }
+    }
 
     private fun observeStaticSettings() {
         mangaRepository.isFavorite(mangaId)
