@@ -236,7 +236,7 @@ fun MigrationScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
+                            contentDescription = "Source icon",
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -500,7 +500,7 @@ private fun MigrationSummaryDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = null,
+                        contentDescription = "Migration status",
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(18.dp)
                     )
@@ -517,7 +517,7 @@ private fun MigrationSummaryDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = null,
+                            contentDescription = "Error",
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp)
                         )
@@ -535,7 +535,7 @@ private fun MigrationSummaryDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Warning,
-                            contentDescription = null,
+                            contentDescription = "Error",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )

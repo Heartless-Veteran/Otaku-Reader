@@ -140,7 +140,7 @@ fun ExtensionInstallScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.Download, contentDescription = null)
+                    Icon(Icons.Default.Download, contentDescription = "Download")
                     Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                     Text(stringResource(R.string.extensions_install_from_url))
                 }
@@ -190,7 +190,7 @@ fun ExtensionInstallScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.FileOpen, contentDescription = null)
+                    Icon(Icons.Default.FileOpen, contentDescription = "Open file")
                     Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                     Text(stringResource(R.string.extensions_install_from_file))
                 }

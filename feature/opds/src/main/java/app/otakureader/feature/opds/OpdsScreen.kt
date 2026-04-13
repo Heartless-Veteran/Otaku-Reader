@@ -205,7 +205,7 @@ private fun ServerListItem(
         leadingContent = {
             Icon(
                 Icons.Default.Storage,
-                contentDescription = null,
+                contentDescription = "Catalog icon",
                 tint = MaterialTheme.colorScheme.primary
             )
         },
@@ -322,7 +322,7 @@ private fun CatalogBrowserScreen(
                             trailingIcon = {
                                 if (state.searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { onEvent(OpdsEvent.OnSearchQueryChange("")) }) {
-                                        Icon(Icons.Default.Clear, contentDescription = null)
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
                                     }
                                 }
                             }

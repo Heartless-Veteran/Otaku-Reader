@@ -88,7 +88,7 @@ fun EnhancedEmptyState(
             // Icon with background
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = "No items",
                 modifier = Modifier
                     .size(80.dp)
                     .alpha(0.6f),

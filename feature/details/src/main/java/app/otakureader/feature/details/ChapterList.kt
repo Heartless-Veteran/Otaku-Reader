@@ -243,7 +243,7 @@ private fun ChapterListHeader(
                                     DetailsContract.ChapterSortOrder.ASCENDING -> Icons.Default.KeyboardArrowUp
                                     DetailsContract.ChapterSortOrder.DESCENDING -> Icons.Default.KeyboardArrowDown
                                 },
-                                contentDescription = null
+                                contentDescription = "Chapter options"
                             )
                         }
                     }

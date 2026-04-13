@@ -142,7 +142,7 @@ fun BrightnessIndicator(
                 } else {
                     Icons.Default.BrightnessLow
                 },
-                contentDescription = null,
+                contentDescription = "Brightness",
                 tint = Color.White,
                 modifier = Modifier.padding(end = 8.dp)
             )

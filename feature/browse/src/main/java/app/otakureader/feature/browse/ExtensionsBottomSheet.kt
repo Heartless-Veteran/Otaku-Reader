@@ -146,7 +146,7 @@ private fun ExtensionsContent(
                 value = state.searchQuery,
                 onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
                 placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -426,7 +426,7 @@ private fun FilterAndSortRow(
         ) {
             Icon(
                 imageVector = Icons.Default.Warning,
-                contentDescription = null,
+                contentDescription = "Extension icon",
                 tint = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -450,7 +450,7 @@ private fun FilterAndSortRow(
             TextButton(onClick = { showSortMenu = true }) {
                 Icon(
                     imageVector = Icons.Default.Sort,
-                    contentDescription = null,
+                    contentDescription = "Language",
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -475,7 +475,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.NAME) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(Icons.Default.Check, contentDescription = "Installed")
                         }
                     }
                 )
@@ -487,7 +487,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.RECENTLY_ADDED) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(Icons.Default.Check, contentDescription = "Installed")
                         }
                     }
                 )
@@ -499,7 +499,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.LANGUAGE) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(Icons.Default.Check, contentDescription = "Installed")
                         }
                     }
                 )
@@ -536,7 +536,7 @@ private fun UpdateAllButton(
                 } else {
                     Icon(
                         imageVector = Icons.Default.Update,
-                        contentDescription = null,
+                        contentDescription = "Extension language",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }

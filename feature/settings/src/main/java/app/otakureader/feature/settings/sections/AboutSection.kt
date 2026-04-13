@@ -31,7 +31,7 @@ fun AboutSection(onEvent: (SettingsEvent) -> Unit) {
         headlineContent = { Text("About Otaku Reader") },
         supportingContent = { Text("App info, FAQ, licenses") },
         leadingContent = {
-            Icon(Icons.Default.Info, contentDescription = null)
+            Icon(Icons.Default.Info, contentDescription = "Information")
         },
         modifier = androidx.compose.ui.Modifier.clickable {
             onEvent(SettingsEvent.NavigateToAbout)
