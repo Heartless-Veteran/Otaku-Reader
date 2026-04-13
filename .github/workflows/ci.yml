@@ -27,7 +27,16 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-        cache: gradle
+
+    - name: 🐘 Cache Gradle
+      uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: 🔑 Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -58,7 +67,7 @@ jobs:
         retention-days: 14
 
     - name: 📈 Upload JUnit to CI Insights
-      if: always() && secrets.MERGIFY_TOKEN != ''
+      if: always()
       uses: mergifyio/gha-mergify-ci@62b45952da6270cad56cce30b8d63276f9d99c88 # v16
       continue-on-error: true
       with:
