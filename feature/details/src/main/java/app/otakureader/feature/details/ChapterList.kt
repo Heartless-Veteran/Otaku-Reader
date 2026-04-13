@@ -62,7 +62,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import app.otakureader.app.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -333,7 +337,14 @@ fun ChapterListItem(
             ) {
                 if (chapter.thumbnailUrl != null) {
                     AsyncImage(
-                        model = chapter.thumbnailUrl,
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(chapter.thumbnailUrl)
+                            .placeholder(R.drawable.ic_chapter_placeholder)
+                            .error(R.drawable.ic_chapter_placeholder)
+                            .memoryCacheKey(chapter.thumbnailUrl)
+                            .diskCacheKey(chapter.thumbnailUrl)
+                            .crossfade(true)
+                            .build(),
                         contentDescription = "Chapter thumbnail",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
