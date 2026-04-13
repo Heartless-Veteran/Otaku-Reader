@@ -354,7 +354,7 @@ private fun NotEnoughMangaCard(modifier: Modifier = Modifier) {
         ) {
             Icon(
                 imageVector = Icons.Default.Search,
-                contentDescription = null,
+                contentDescription = "Filter active",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(

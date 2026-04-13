@@ -34,22 +34,24 @@ allprojects {
         resolutionStrategy {
             // Netty - fixes HTTP/2 Rapid Reset (CVE-2023-44487), MadeYouReset DDoS,
             // SSL crash (CVE-2024-29025), CRLF injection, SniHandler 16MB allocation,
-            // HttpPostRequestDecoder OOM, Zip Bomb DoS, Request Smuggling (CVSS 7.5)
-            force("io.netty:netty-common:4.2.10.Final")
-            force("io.netty:netty-buffer:4.2.10.Final")
-            force("io.netty:netty-transport:4.2.10.Final")
-            force("io.netty:netty-transport-native-unix-common:4.2.10.Final")
-            force("io.netty:netty-transport-native-epoll:4.2.10.Final")
-            force("io.netty:netty-transport-native-kqueue:4.2.10.Final")
-            force("io.netty:netty-transport-classes-epoll:4.2.10.Final")
-            force("io.netty:netty-transport-classes-kqueue:4.2.10.Final")
-            force("io.netty:netty-codec:4.2.10.Final")
-            force("io.netty:netty-codec-base:4.2.10.Final")
-            force("io.netty:netty-codec-compression:4.2.10.Final")
-            force("io.netty:netty-codec-http:4.2.10.Final")
-            force("io.netty:netty-codec-http2:4.2.10.Final")
-            force("io.netty:netty-handler:4.2.10.Final")
-            force("io.netty:netty-resolver:4.2.10.Final")
+            // HttpPostRequestDecoder OOM, Zip Bomb DoS, Request Smuggling (CVSS 7.5),
+            // CVE-2025-59419 (HTTP/2 CONTINUATION flood), CVE-2025-67735 (buffer handling)
+            val nettyVersion = libs.versions.netty.get()
+            force("io.netty:netty-common:$nettyVersion")
+            force("io.netty:netty-buffer:$nettyVersion")
+            force("io.netty:netty-transport:$nettyVersion")
+            force("io.netty:netty-transport-native-unix-common:$nettyVersion")
+            force("io.netty:netty-transport-native-epoll:$nettyVersion")
+            force("io.netty:netty-transport-native-kqueue:$nettyVersion")
+            force("io.netty:netty-transport-classes-epoll:$nettyVersion")
+            force("io.netty:netty-transport-classes-kqueue:$nettyVersion")
+            force("io.netty:netty-codec:$nettyVersion")
+            force("io.netty:netty-codec-base:$nettyVersion")
+            force("io.netty:netty-codec-compression:$nettyVersion")
+            force("io.netty:netty-codec-http:$nettyVersion")
+            force("io.netty:netty-codec-http2:$nettyVersion")
+            force("io.netty:netty-handler:$nettyVersion")
+            force("io.netty:netty-resolver:$nettyVersion")
 
             // JDOM2 - fixes XXE injection (CVSS 7.5)
             force("org.jdom:jdom2:2.0.6.1")
@@ -62,6 +64,12 @@ allprojects {
 
             // Apache HttpClient - fixes XSS
             force("org.apache.httpcomponents:httpclient:4.5.14")
+
+            // Log4j Core - fixes XMLLayout sanitization (CVE-2021-44228 related)
+            force("org.apache.logging.log4j:log4j-core:2.24.3")
+
+            // Plexus Utils - fixes directory traversal (CVSS 7.5)
+            force("org.codehaus.plexus:plexus-utils:4.0.3")
         }
     }
 }

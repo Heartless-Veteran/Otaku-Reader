@@ -185,7 +185,7 @@ private fun SelectFilter(filter: Filter.Select<*>, onUpdate: (Filter<*>) -> Unit
                 text = options.getOrElse(currentIndex) { "" },
                 style = MaterialTheme.typography.bodyMedium
             )
-            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            Icon(Icons.Default.ArrowDropDown, contentDescription = "Expand")
         }
 
         DropdownMenu(

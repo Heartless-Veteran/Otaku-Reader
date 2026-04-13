@@ -284,7 +284,7 @@ private fun DownloadListItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.DownloadDone,
-                        contentDescription = null,
+                        contentDescription = "Download status",
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )

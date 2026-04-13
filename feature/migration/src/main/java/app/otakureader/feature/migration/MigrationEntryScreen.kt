@@ -164,10 +164,11 @@ fun MigrationEntryScreen(
                     }
                 }
                 state.error != null -> {
+                    val errorMessage = state.error ?: ""
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = state.error!!,
+                                text = errorMessage,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.error
                             )

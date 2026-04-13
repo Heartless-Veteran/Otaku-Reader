@@ -64,9 +64,12 @@ class RecommendationRepositoryImpl @Inject constructor(
             // Analyze reading patterns
             val patternResult = analyzeReadingPatterns()
             if (patternResult.isFailure) {
-                return Result.failure(patternResult.exceptionOrNull()!!)
+                return Result.failure(
+                    patternResult.exceptionOrNull()
+                        ?: IllegalStateException("Unknown error analyzing reading patterns")
+                )
             }
-            val pattern = patternResult.getOrNull()!!
+            val pattern = patternResult.getOrThrow()
 
             // Build recommendation input
             val input = buildRecommendationInput(pattern)
@@ -176,10 +179,13 @@ class RecommendationRepositoryImpl @Inject constructor(
             // Call AI
             val aiResult = aiRepository.generateContent(prompt)
             if (aiResult.isFailure) {
-                return Result.failure(aiResult.exceptionOrNull()!!)
+                return Result.failure(
+                    aiResult.exceptionOrNull()
+                        ?: IllegalStateException("Unknown error generating recommendations")
+                )
             }
 
-            val aiResponse = aiResult.getOrNull()!!
+            val aiResponse = aiResult.getOrThrow()
 
             // Parse AI response into recommendations
             val recommendations = parseAiRecommendations(aiResponse, input)
@@ -262,10 +268,14 @@ class RecommendationRepositoryImpl @Inject constructor(
         return try {
             val aiResult = aiRepository.generateContent(prompt)
             if (aiResult.isFailure) {
-                return Result.failure(aiResult.exceptionOrNull()!!)
+                return Result.failure(
+                    aiResult.exceptionOrNull()
+                        ?: IllegalStateException("Unknown error getting similar manga")
+                )
             }
 
-            val recommendations = parseAiRecommendations(aiResult.getOrNull()!!, null)
+            val aiResponse = aiResult.getOrThrow()
+            val recommendations = parseAiRecommendations(aiResponse, null)
                 .take(limit)
 
             Result.success(recommendations)

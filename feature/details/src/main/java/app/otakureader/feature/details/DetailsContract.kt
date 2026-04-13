@@ -72,6 +72,7 @@ object DetailsContract {
     data class ChapterItem(
         val id: Long,
         val mangaId: Long,
+        val url: String,
         val name: String,
         val chapterNumber: Float,
         val volume: String?,
@@ -134,6 +135,7 @@ object DetailsContract {
         data object MarkSelectedAsUnread : Event
         data object BookmarkSelectedChapters : Event
         data object ToggleNotifications : Event
+        data object OpenTracking : Event
 
         // Per-manga reader settings (#260)
         data class SetReaderDirection(val direction: Int?) : Event
@@ -163,6 +165,7 @@ object DetailsContract {
         data class ShowSnackbar(val message: String) : Effect
         data class ShowError(val message: String) : Effect
         data class ShareManga(val title: String, val url: String) : Effect
+        data class NavigateToTracking(val mangaId: Long, val mangaTitle: String) : Effect
         data class OpenInBrowser(val url: String) : Effect
     }
 }
@@ -178,6 +181,7 @@ fun Chapter.toChapterItem(thumbnailUrl: String? = null, totalPages: Int = 0): De
     return DetailsContract.ChapterItem(
         id = id,
         mangaId = mangaId,
+        url = url,
         name = name,
         chapterNumber = chapterNumber,
         volume = volume,

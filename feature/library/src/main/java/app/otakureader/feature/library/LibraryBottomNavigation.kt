@@ -33,7 +33,7 @@ fun LibraryBottomNavigation(
         modifier = modifier
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.CollectionsBookmark, contentDescription = null) },
+            icon = { Icon(Icons.Default.CollectionsBookmark, contentDescription = "Library") },
             label = { Text(stringResource(R.string.library_nav_library)) },
             selected = selectedRoute == "library",
             onClick = onNavigateToLibrary
@@ -51,7 +51,7 @@ fun LibraryBottomNavigation(
                         }
                     }
                 ) {
-                    Icon(Icons.Default.NewReleases, contentDescription = null)
+                    Icon(Icons.Default.NewReleases, contentDescription = "Updates")
                 }
             },
             label = { Text(stringResource(R.string.library_nav_updates)) },
@@ -59,25 +59,25 @@ fun LibraryBottomNavigation(
             onClick = onNavigateToUpdates
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Explore, contentDescription = null) },
+            icon = { Icon(Icons.Default.Explore, contentDescription = "Browse") },
             label = { Text(stringResource(R.string.library_nav_browse)) },
             selected = selectedRoute == "browse",
             onClick = onNavigateToBrowse
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.History, contentDescription = null) },
+            icon = { Icon(Icons.Default.History, contentDescription = "History") },
             label = { Text(stringResource(R.string.library_nav_history)) },
             selected = selectedRoute == "history",
             onClick = onNavigateToHistory
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.QueryStats, contentDescription = null) },
+            icon = { Icon(Icons.Default.QueryStats, contentDescription = "Stats") },
             label = { Text(stringResource(R.string.library_nav_stats)) },
             selected = selectedRoute == "statistics",
             onClick = onNavigateToStatistics
         )
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
             label = { Text(stringResource(R.string.library_nav_settings)) },
             selected = selectedRoute == "settings",
             onClick = onNavigateToSettings

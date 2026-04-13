@@ -23,15 +23,14 @@ class AiKeyValidationTest {
     }
 
     @Test
-    fun `key exactly 20 chars starting with AIza returns true`() {
-        // Minimum boundary: exactly 20 characters
-        assertTrue(isGeminiApiKeyFormatValid("AIzaXXXXXXXXXXXXXXXX"))
+    fun `key exactly 39 chars starting with AIza and valid charset returns true`() {
+        // Exactly 39 characters matching [A-Za-z0-9_-]
+        assertTrue(isGeminiApiKeyFormatValid("AIzaSyD-9tSrke72I6e49xbc7ABCDEFGHIJKLMN"))
     }
 
     @Test
-    fun `key longer than 39 chars starting with AIza returns true`() {
-        // Keys longer than typical length should still pass format check
-        assertTrue(isGeminiApiKeyFormatValid("AIzaSyD-9tSrke72I6e49xbc7ABCDEFGHIJKLMNO_extra"))
+    fun `key longer than 39 chars starting with AIza returns false`() {
+        assertFalse(isGeminiApiKeyFormatValid("AIzaSyD-9tSrke72I6e49xbc7ABCDEFGHIJKLMNO_extra"))
     }
 
     // ── Invalid keys ──────────────────────────────────────────────────────────

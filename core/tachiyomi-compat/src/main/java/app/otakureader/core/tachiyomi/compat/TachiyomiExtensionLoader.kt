@@ -149,10 +149,13 @@ class TachiyomiExtensionLoader(
         // Build the class loader using ChildFirstPathClassLoader (matches Komikku's strategy)
         val nativeLibDir = appInfo.nativeLibraryDir
 
+        val parentClassLoader = TachiyomiExtensionLoader::class.java.classLoader
+            ?: return null
+
         val classLoader = ChildFirstPathClassLoader(
             apkPath,
             nativeLibDir,
-            TachiyomiExtensionLoader::class.java.classLoader!!,
+            parentClassLoader,
         )
 
         // Resolve source instances

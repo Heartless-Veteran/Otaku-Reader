@@ -302,7 +302,7 @@ private fun AboutListItem(
         leadingContent = {
             Icon(
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = "App logo",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },

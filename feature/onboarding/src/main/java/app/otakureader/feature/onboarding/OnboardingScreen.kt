@@ -228,7 +228,7 @@ private fun OnboardingBottomBar(
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = null,
+                    contentDescription = "Onboarding illustration",
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -253,14 +253,14 @@ private fun OnboardingBottomBar(
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
+                        contentDescription = "Theme preview",
                         modifier = Modifier.size(20.dp)
                     )
                 } else {
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = null,
+                        contentDescription = "Theme preview",
                         modifier = Modifier.size(20.dp)
                     )
                 }

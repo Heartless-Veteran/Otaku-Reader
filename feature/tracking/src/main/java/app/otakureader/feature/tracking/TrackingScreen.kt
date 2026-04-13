@@ -312,7 +312,7 @@ private fun TrackerCard(
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.tracking_sync)) },
-                                    leadingIcon = { Icon(Icons.Default.Sync, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Default.Sync, contentDescription = "Sync") },
                                     onClick = {
                                         showSyncMenu = false
                                         onSync()
@@ -320,7 +320,7 @@ private fun TrackerCard(
                                 )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.tracking_push)) },
-                                    leadingIcon = { Icon(Icons.Default.CloudUpload, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Default.CloudUpload, contentDescription = "Upload") },
                                     onClick = {
                                         showSyncMenu = false
                                         onPush()
@@ -328,7 +328,7 @@ private fun TrackerCard(
                                 )
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.tracking_pull)) },
-                                    leadingIcon = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Default.CloudDownload, contentDescription = "Download") },
                                     onClick = {
                                         showSyncMenu = false
                                         onPull()
@@ -544,7 +544,7 @@ private fun ConflictResolutionDialog(
         icon = {
             Icon(
                 imageVector = Icons.Default.Warning,
-                contentDescription = null,
+                contentDescription = "Tracking service",
                 tint = MaterialTheme.colorScheme.error
             )
         },

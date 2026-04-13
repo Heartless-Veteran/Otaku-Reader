@@ -94,7 +94,7 @@ fun FullPageGallery(
                     actions = {
                         Icon(
                             imageVector = Icons.Default.GridView,
-                            contentDescription = null,
+                            contentDescription = "Page image",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(end = 4.dp)
                         )

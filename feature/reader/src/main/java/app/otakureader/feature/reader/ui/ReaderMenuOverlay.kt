@@ -411,7 +411,7 @@ fun BrightnessControl(
     ) {
         Icon(
             imageVector = Icons.Default.Brightness6,
-            contentDescription = null,
+            contentDescription = "Menu",
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
