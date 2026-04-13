@@ -8,8 +8,12 @@ import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.source.DownloadManager
+import app.otakureader.domain.usecase.TranslateSfxUseCase
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.feature.reader.model.ColorFilterMode
 import app.otakureader.feature.reader.model.ImageQuality
 import app.otakureader.feature.reader.model.ReaderMode
@@ -60,12 +64,16 @@ class UltimateReaderViewModelTest {
     private lateinit var settingsRepository: ReaderSettingsRepository
     private lateinit var pageLoader: PageLoader
     private lateinit var imageLoader: ImageLoader
+    private lateinit var downloadManager: DownloadManager
+    private lateinit var downloadPreferences: DownloadPreferences
     private lateinit var discordRpcService: DiscordRpcService
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var behaviorTracker: ReadingBehaviorTracker
     private lateinit var smartPrefetchManager: SmartPrefetchManager
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
     private lateinit var panelDetectionService: PanelDetectionService
+    private lateinit var aiPreferences: AiPreferences
+    private lateinit var translateSfx: TranslateSfxUseCase
 
     @Before
     fun setUp() {
@@ -79,12 +87,16 @@ class UltimateReaderViewModelTest {
         settingsRepository = mockk()
         pageLoader = mockk()
         imageLoader = mockk(relaxed = true)
+        downloadManager = mockk()
+        downloadPreferences = mockk()
         discordRpcService = mockk(relaxed = true)
         generalPreferences = mockk()
         behaviorTracker = mockk(relaxed = true)
         smartPrefetchManager = mockk(relaxed = true)
         chapterPrefetcher = mockk(relaxed = true)
         panelDetectionService = mockk()
+        aiPreferences = mockk()
+        translateSfx = mockk()
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
 
@@ -136,12 +148,16 @@ class UltimateReaderViewModelTest {
             settingsRepository = settingsRepository,
             pageLoader = pageLoader,
             imageLoader = imageLoader,
+            downloadManager = downloadManager,
+            downloadPreferences = downloadPreferences,
             discordRpcService = discordRpcService,
             generalPreferences = generalPreferences,
             behaviorTracker = behaviorTracker,
             smartPrefetchManager = smartPrefetchManager,
             chapterPrefetcher = chapterPrefetcher,
             panelDetectionService = panelDetectionService,
+            aiPreferences = aiPreferences,
+            translateSfx = translateSfx,
             savedStateHandle = SavedStateHandle(
                 mapOf("mangaId" to mangaId, "chapterId" to chapterId)
             )

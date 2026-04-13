@@ -8,6 +8,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
@@ -47,6 +48,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var updateLibraryManga: UpdateLibraryMangaUseCase
     private lateinit var downloadPreferences: DownloadPreferences
     private lateinit var generalPreferences: GeneralPreferences
+    private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadManager: DownloadManager
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var worker: LibraryUpdateWorker
@@ -110,6 +112,7 @@ class LibraryUpdateWorkerTest {
         updateLibraryManga = mockk()
         downloadPreferences = mockk()
         generalPreferences = mockk()
+        libraryPreferences = mockk()
         downloadManager = mockk(relaxed = true)
         chapterRepository = mockk()
 
@@ -134,6 +137,7 @@ class LibraryUpdateWorkerTest {
             workerParams,
             getLibraryManga,
             updateLibraryManga,
+            libraryPreferences,
             downloadPreferences,
             generalPreferences,
             downloadManager,
