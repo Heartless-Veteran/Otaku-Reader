@@ -62,15 +62,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
-import coil3.request.diskCacheKey
-import coil3.request.error
-import coil3.request.memoryCacheKey
-import coil3.request.placeholder
-import app.otakureader.app.R
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -247,7 +238,7 @@ private fun ChapterListHeader(
                                     DetailsContract.ChapterSortOrder.ASCENDING -> Icons.Default.KeyboardArrowUp
                                     DetailsContract.ChapterSortOrder.DESCENDING -> Icons.Default.KeyboardArrowDown
                                 },
-                                contentDescription = "Chapter options"
+                                contentDescription = null
                             )
                         }
                     }
@@ -341,14 +332,7 @@ fun ChapterListItem(
             ) {
                 if (chapter.thumbnailUrl != null) {
                     AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(chapter.thumbnailUrl)
-                            .placeholder(R.drawable.ic_chapter_placeholder)
-                            .error(R.drawable.ic_chapter_placeholder)
-                            .memoryCacheKey(chapter.thumbnailUrl)
-                            .diskCacheKey(chapter.thumbnailUrl)
-                            .crossfade(true)
-                            .build(),
+                        model = chapter.thumbnailUrl,
                         contentDescription = "Chapter thumbnail",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()

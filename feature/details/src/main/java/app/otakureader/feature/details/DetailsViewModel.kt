@@ -72,6 +72,7 @@ class DetailsViewModel @Inject constructor(
             return size > 50
         }
     }
+
     init {
         loadMangaDetails()
         loadChapters()
@@ -294,10 +295,6 @@ class DetailsViewModel @Inject constructor(
             _state.update { it.copy(aiSummaryEnabled = enabled) }
         }.launchIn(viewModelScope)
     }
-        }
-    }
-
-
 
     private fun refreshData() {
         _state.update { it.copy(isRefreshing = true) }
@@ -454,7 +451,7 @@ class DetailsViewModel @Inject constructor(
     private fun markSelectedAsRead() {
         viewModelScope.launch {
             try {
-                val selectedIds = _state.value.selectedChapters
+                val selectedIds = _state.value.selectedChapters.toList()
                 if (selectedIds.isNotEmpty()) {
                     chapterRepository.updateChapterProgress(
                         chapterIds = selectedIds,
@@ -473,7 +470,7 @@ class DetailsViewModel @Inject constructor(
     private fun markSelectedAsUnread() {
         viewModelScope.launch {
             try {
-                val selectedIds = _state.value.selectedChapters
+                val selectedIds = _state.value.selectedChapters.toList()
                 if (selectedIds.isNotEmpty()) {
                     chapterRepository.updateChapterProgress(
                         chapterIds = selectedIds,
