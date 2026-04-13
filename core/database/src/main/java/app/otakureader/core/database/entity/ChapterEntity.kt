@@ -20,7 +20,9 @@ import androidx.room.PrimaryKey
         Index(value = ["mangaId", "url"], unique = true),
         Index(value = ["read"]),
         Index(value = ["bookmark"]),
-        Index(value = ["dateFetch"])
+        Index(value = ["dateFetch"]),
+        // Composite index for getRecentUpdates() N+1 query optimization
+        Index(value = ["mangaId", "dateFetch"])
     ]
 )
 data class ChapterEntity(
