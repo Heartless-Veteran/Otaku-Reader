@@ -77,7 +77,7 @@ class DetailsViewModelTest {
         mangaRepository = mockk()
         chapterRepository = mockk()
         downloadRepository = mockk()
-        sourceRepository = mockk()
+        sourceRepository = mockk(relaxed = true)
         downloadPreferences = mockk()
         updateMangaNote = mockk()
         setMangaNotifications = mockk()
