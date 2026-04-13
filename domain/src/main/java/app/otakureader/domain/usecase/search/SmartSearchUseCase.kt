@@ -176,7 +176,8 @@ class SmartSearchUseCase @Inject constructor(
         return try {
             when (type) {
                 "title" -> SearchIntent.TitleSearch(
-                    title = obj["title"]!!.jsonPrimitive.content,
+                    title = obj["title"]?.jsonPrimitive?.content
+                        ?: throw SmartSearchException.ParsingError("title intent missing 'title' field"),
                     fuzzyMatch = obj["fuzzyMatch"]?.jsonPrimitive?.boolean ?: true
                 )
                 "genre" -> {
@@ -193,7 +194,8 @@ class SmartSearchUseCase @Inject constructor(
                     }
                 }
                 "author" -> SearchIntent.AuthorSearch(
-                    author = obj["author"]!!.jsonPrimitive.content,
+                    author = obj["author"]?.jsonPrimitive?.content
+                        ?: throw SmartSearchException.ParsingError("author intent missing 'author' field"),
                     includeArtist = obj["includeArtist"]?.jsonPrimitive?.boolean ?: true
                 )
                 "description" -> {
@@ -209,16 +211,20 @@ class SmartSearchUseCase @Inject constructor(
                         SearchIntent.DescriptionSearch(keywords = keywords, matchMode = matchMode)
                     }
                 }
-                "mood" -> SearchIntent.MoodSearch(
-                    mood = SearchIntent.MoodSearch.Mood.valueOf(
-                        obj["mood"]!!.jsonPrimitive.content.uppercase()
+                "mood" -> {
+                    val moodValue = obj["mood"]?.jsonPrimitive?.content?.uppercase()
+                        ?: throw SmartSearchException.ParsingError("mood intent missing 'mood' field")
+                    SearchIntent.MoodSearch(
+                        mood = SearchIntent.MoodSearch.Mood.valueOf(moodValue)
                     )
-                )
-                "status" -> SearchIntent.StatusSearch(
-                    status = MangaStatus.valueOf(
-                        obj["status"]!!.jsonPrimitive.content.uppercase()
+                }
+                "status" -> {
+                    val statusValue = obj["status"]?.jsonPrimitive?.content?.uppercase()
+                        ?: throw SmartSearchException.ParsingError("status intent missing 'status' field")
+                    SearchIntent.StatusSearch(
+                        status = MangaStatus.valueOf(statusValue)
                     )
-                )
+                }
                 "popularity" -> {
                     val minRating = obj["minRating"]?.jsonPrimitive
                         ?.double?.takeIf { it >= 0 }?.toFloat()
