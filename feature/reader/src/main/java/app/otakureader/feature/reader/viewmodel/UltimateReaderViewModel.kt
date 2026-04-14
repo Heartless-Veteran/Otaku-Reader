@@ -1067,6 +1067,14 @@ class UltimateReaderViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Returns the best downloadable URL for a source page.
+     *
+     * Preference order:
+     * 1) [Page.imageUrl] when the source provides a direct image URL.
+     * 2) [Page.url] as a fallback for sources that populate only the generic page URL field.
+     * 3) `null` when neither field contains a usable value.
+     */
     private fun Page.effectiveUrl(): String? {
         return when {
             !imageUrl.isNullOrBlank() -> imageUrl
