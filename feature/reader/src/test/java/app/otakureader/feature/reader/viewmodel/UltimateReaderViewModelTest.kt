@@ -9,6 +9,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.data.download.DownloadManager
+import app.otakureader.data.download.DownloadProvider
 import app.otakureader.domain.usecase.ai.TranslateSfxUseCase
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.preferences.GeneralPreferences
@@ -33,8 +34,10 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.mockkObject
 import io.mockk.runs
 import io.mockk.slot
+import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -81,7 +84,16 @@ class UltimateReaderViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockkStatic(SystemClock::class)
+        mockkObject(DownloadProvider)
         every { SystemClock.elapsedRealtime() } returns 0L
+        every {
+            DownloadProvider.isChapterDownloaded(
+                any<Context>(),
+                any<String>(),
+                any<String>(),
+                any<String>()
+            )
+        } returns false
         context = mockk(relaxed = true)
         mangaRepository = mockk()
         chapterRepository = mockk()
@@ -99,6 +111,7 @@ class UltimateReaderViewModelTest {
         panelDetectionService = mockk()
         aiPreferences = mockk(relaxed = true)
         translateSfx = mockk<TranslateSfxUseCase>()
+        coEvery { translateSfx(any(), any(), any(), any()) } returns Result.success(emptyList())
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
 
@@ -166,6 +179,7 @@ class UltimateReaderViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkObject(DownloadProvider)
         unmockkStatic(SystemClock::class)
     }
 
@@ -685,7 +699,7 @@ class UltimateReaderViewModelTest {
             name = "Chapter 11",
             chapterNumber = 11f
         )
-        val manga = Manga(id = mangaId, sourceId = 99L, title = "Test Manga")
+        val manga = Manga(id = mangaId, sourceId = 99L, url = "https://example.com/manga", title = "Test Manga")
 
         coEvery { chapterRepository.getChapterById(chapterId) } returns currentChapter
         coEvery { mangaRepository.getMangaById(mangaId) } returns manga
@@ -741,7 +755,7 @@ class UltimateReaderViewModelTest {
             name = "Chapter 11",
             chapterNumber = 11f
         )
-        val manga = Manga(id = mangaId, sourceId = 99L, title = "Test Manga")
+        val manga = Manga(id = mangaId, sourceId = 99L, url = "https://example.com/manga", title = "Test Manga")
 
         coEvery { chapterRepository.getChapterById(chapterId) } returns currentChapter
         coEvery { mangaRepository.getMangaById(mangaId) } returns manga
