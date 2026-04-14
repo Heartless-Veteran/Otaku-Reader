@@ -6,6 +6,8 @@
 build:
   maxIssues: 0
   excludeCorrectable: false
+  excludes:
+    - '**/build/**'
   weights:
     complexity: 2
     LongParameterList: 1

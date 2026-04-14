@@ -98,6 +98,9 @@ object ExtensionLoadingUtils {
         } catch (e: SecurityException) {
             // Security manager denies access - rare but expected
             null
+        } catch (e: RuntimeException) {
+            // Some class loaders (or test stubs) may throw RuntimeException instead of ClassNotFoundException.
+            null
         } catch (e: java.lang.reflect.InvocationTargetException) {
             // Constructor threw an exception - expected for extension code with initialization errors
             null
