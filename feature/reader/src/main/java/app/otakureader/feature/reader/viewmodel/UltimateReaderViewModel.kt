@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
+import app.otakureader.sourceapi.Page
 import app.otakureader.sourceapi.SourceChapter
 
 /**
@@ -1049,13 +1050,7 @@ class UltimateReaderViewModel @Inject constructor(
             )
             val pageUrls = sourceRepository.getPageList(sourceName, sourceChapter)
                 .getOrNull()
-                ?.mapNotNull { page ->
-                    when {
-                        !page.imageUrl.isNullOrBlank() -> page.imageUrl
-                        page.url.isNotBlank() -> page.url
-                        else -> null
-                    }
-                }
+                ?.mapNotNull { page -> page.effectiveUrl() }
                 .orEmpty()
             if (pageUrls.isEmpty()) return@launch
 
@@ -1069,6 +1064,14 @@ class UltimateReaderViewModel @Inject constructor(
                     pageUrls = pageUrls
                 )
             )
+        }
+    }
+
+    private fun Page.effectiveUrl(): String? {
+        return when {
+            !imageUrl.isNullOrBlank() -> imageUrl
+            url.isNotBlank() -> url
+            else -> null
         }
     }
 

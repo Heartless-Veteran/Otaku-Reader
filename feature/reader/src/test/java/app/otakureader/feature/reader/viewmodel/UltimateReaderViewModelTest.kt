@@ -61,6 +61,8 @@ class UltimateReaderViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val mangaId = 1L
     private val chapterId = 10L
+    private val testSourceId = 99L
+    private val testSourceIdString = testSourceId.toString()
 
     private lateinit var context: Context
     private lateinit var mangaRepository: MangaRepository
@@ -699,7 +701,12 @@ class UltimateReaderViewModelTest {
             name = "Chapter 11",
             chapterNumber = 11f
         )
-        val manga = Manga(id = mangaId, sourceId = 99L, url = "https://example.com/manga", title = "Test Manga")
+        val manga = Manga(
+            id = mangaId,
+            sourceId = testSourceId,
+            url = "https://example.com/manga",
+            title = "Test Manga"
+        )
 
         coEvery { chapterRepository.getChapterById(chapterId) } returns currentChapter
         coEvery { mangaRepository.getMangaById(mangaId) } returns manga
@@ -711,7 +718,7 @@ class UltimateReaderViewModelTest {
         )
         coEvery {
             sourceRepository.getPageList(
-                "99",
+                testSourceIdString,
                 match { it.url == nextChapter.url && it.name == nextChapter.name }
             )
         } returns Result.success(
@@ -735,7 +742,7 @@ class UltimateReaderViewModelTest {
 
         coVerify(exactly = 1) { downloadManager.enqueue(any()) }
         assertEquals(nextChapter.id, requestSlot.captured.chapterId)
-        assertEquals("99", requestSlot.captured.sourceName)
+        assertEquals(testSourceIdString, requestSlot.captured.sourceName)
         assertEquals(2, requestSlot.captured.pageUrls.size)
     }
 
@@ -755,7 +762,12 @@ class UltimateReaderViewModelTest {
             name = "Chapter 11",
             chapterNumber = 11f
         )
-        val manga = Manga(id = mangaId, sourceId = 99L, url = "https://example.com/manga", title = "Test Manga")
+        val manga = Manga(
+            id = mangaId,
+            sourceId = testSourceId,
+            url = "https://example.com/manga",
+            title = "Test Manga"
+        )
 
         coEvery { chapterRepository.getChapterById(chapterId) } returns currentChapter
         coEvery { mangaRepository.getMangaById(mangaId) } returns manga
@@ -767,7 +779,7 @@ class UltimateReaderViewModelTest {
         )
         coEvery {
             sourceRepository.getPageList(
-                "99",
+                testSourceIdString,
                 match { it.url == nextChapter.url && it.name == nextChapter.name }
             )
         } returns Result.failure(IllegalStateException("Network failed"))
