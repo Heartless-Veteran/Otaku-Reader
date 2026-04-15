@@ -10,7 +10,6 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
-  reactions: write
 
 concurrency:
   group: review-mention-${{ github.event.comment.id }}
