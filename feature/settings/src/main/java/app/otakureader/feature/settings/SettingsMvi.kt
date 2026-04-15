@@ -167,7 +167,11 @@ data class SettingsState(
     val autoSyncEnabled: Boolean = false,
     val syncIntervalHours: Int = 24,
     val syncOnlyOnWifi: Boolean = true,
-    val conflictResolutionStrategy: String = "PREFER_NEWER"
+    val conflictResolutionStrategy: String = "PREFER_NEWER",
+
+    // App Update Checker
+    val appUpdateCheckEnabled: Boolean = true,
+    val lastAppUpdateCheck: Long = 0L
 ) : UiState
 
 sealed interface SettingsEvent : UiEvent {
@@ -317,6 +321,10 @@ sealed interface SettingsEvent : UiEvent {
     data class SetSyncIntervalHours(val hours: Int) : SettingsEvent
     data class SetSyncOnlyOnWifi(val onlyWifi: Boolean) : SettingsEvent
     data class SetConflictResolutionStrategy(val strategy: String) : SettingsEvent
+
+    // App Update Checker
+    data class SetAppUpdateCheckEnabled(val enabled: Boolean) : SettingsEvent
+    data object CheckForAppUpdate : SettingsEvent
 
     // Navigation
     data object NavigateToAbout : SettingsEvent

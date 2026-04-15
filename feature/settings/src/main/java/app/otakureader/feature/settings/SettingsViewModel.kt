@@ -55,7 +55,8 @@ class SettingsViewModel @Inject constructor(
     private val readingReminderScheduler: ReadingReminderScheduler,
     private val discordRpcService: DiscordRpcService,
     private val syncPreferences: SyncPreferences,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val appUpdateChecker: app.otakureader.data.updater.AppUpdateChecker
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -76,6 +77,7 @@ class SettingsViewModel @Inject constructor(
         observeAiPreferences()
         observeReadingGoalPreferences()
         observeSyncPreferences()
+        observeAppUpdatePreferences()
         refreshTrackers()
     }
 
@@ -509,6 +511,10 @@ class SettingsViewModel @Inject constructor(
                 is SettingsEvent.SetSyncOnlyOnWifi -> syncPreferences.setSyncOnlyOnWifi(event.onlyWifi)
                 is SettingsEvent.SetConflictResolutionStrategy -> syncPreferences.setConflictResolutionStrategy(event.strategy)
 
+                // App Update Checker
+                is SettingsEvent.SetAppUpdateCheckEnabled -> generalPreferences.setAppUpdateCheckEnabled(event.enabled)
+                SettingsEvent.CheckForAppUpdate -> handleCheckForAppUpdate()
+
                 SettingsEvent.NavigateToAbout -> _effect.send(SettingsEffect.NavigateToAbout)
             }
         }
@@ -815,6 +821,22 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    private fun observeAppUpdatePreferences() {
+        viewModelScope.launch {
+            combine(
+                generalPreferences.appUpdateCheckEnabled,
+                generalPreferences.lastAppUpdateCheck
+            ) { enabled, lastCheck ->
+                _state.update { current ->
+                    current.copy(
+                        appUpdateCheckEnabled = enabled,
+                        lastAppUpdateCheck = lastCheck
+                    )
+                }
+            }.collect { }
+        }
+    }
+
     private fun handleSetSyncEnabled(enabled: Boolean, providerId: String?) {
         viewModelScope.launch {
             if (enabled && providerId != null) {
@@ -839,4 +861,15 @@ class SettingsViewModel @Inject constructor(
         val interval: Int,
         val wifiOnly: Boolean,
     )
+
+    private fun handleCheckForAppUpdate() {
+        viewModelScope.launch {
+            val versionInfo = appUpdateChecker.checkForUpdate()
+            if (versionInfo != null) {
+                _effect.send(SettingsEffect.ShowSnackbar("Update available: ${versionInfo.versionName}"))
+            } else {
+                _effect.send(SettingsEffect.ShowSnackbar("App is up to date"))
+            }
+        }
+    }
 }

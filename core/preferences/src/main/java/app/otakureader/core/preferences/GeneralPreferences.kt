@@ -126,6 +126,30 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.SAVED_SEARCHES] = current.joinToString("\n")
     }
 
+    // --- App Update Checker ---
+
+    /** Whether automatic app update checking is enabled. */
+    val appUpdateCheckEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.APP_UPDATE_CHECK_ENABLED] ?: true }
+    suspend fun setAppUpdateCheckEnabled(value: Boolean) = dataStore.edit { it[Keys.APP_UPDATE_CHECK_ENABLED] = value }
+
+    /** Last time app update was checked (epoch millis). */
+    val lastAppUpdateCheck: Flow<Long> = dataStore.data.map { it[Keys.LAST_APP_UPDATE_CHECK] ?: 0L }
+    suspend fun setLastAppUpdateCheck(value: Long) = dataStore.edit { it[Keys.LAST_APP_UPDATE_CHECK] = value }
+
+    /** Currently installed app version code. */
+    val currentVersionCode: Flow<Int> = dataStore.data.map { it[Keys.CURRENT_VERSION_CODE] ?: 0 }
+    suspend fun setCurrentVersionCode(value: Int) = dataStore.edit { it[Keys.CURRENT_VERSION_CODE] = value }
+
+    /** Latest available version info (stored as JSON string). */
+    val latestVersionInfo: Flow<String?> = dataStore.data.map { it[Keys.LATEST_VERSION_INFO] }
+    suspend fun setLatestVersionInfo(value: String?) = dataStore.edit { 
+        if (value != null) {
+            it[Keys.LATEST_VERSION_INFO] = value
+        } else {
+            it.remove(Keys.LATEST_VERSION_INFO)
+        }
+    }
+
     private object Keys {
         val THEME_MODE = intPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
@@ -142,5 +166,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_THEME_COLOR = booleanPreferencesKey("auto_theme_color")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches")
+        val APP_UPDATE_CHECK_ENABLED = booleanPreferencesKey("app_update_check_enabled")
+        val LAST_APP_UPDATE_CHECK = longPreferencesKey("last_app_update_check")
+        val CURRENT_VERSION_CODE = intPreferencesKey("current_version_code")
+        val LATEST_VERSION_INFO = stringPreferencesKey("latest_version_info")
     }
 }
