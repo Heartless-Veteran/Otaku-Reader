@@ -41,9 +41,12 @@ import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -514,6 +517,31 @@ class UltimateReaderViewModelTest {
 
         coVerify(exactly = 0) { chapterRepository.recordHistory(any(), any(), any()) }
         coVerify(exactly = 0) { chapterRepository.updateChapterProgress(any<Long>(), any<Boolean>(), any<Int>()) }
+    }
+
+    // ---- Settings write failure ----
+
+    @Test
+    fun `write failure emits ShowSnackbar effect`() = runTest {
+        val writeFailureFlow = MutableSharedFlow<Unit>()
+        every { settingsRepository.writeFailureEvents } returns writeFailureFlow
+
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Collect effects in the background
+        val effects = mutableListOf<ReaderEffect>()
+        val collectJob = launch {
+            vm.effect.toList(effects)
+        }
+
+        // Emit a write failure
+        writeFailureFlow.emit(Unit)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        collectJob.cancel()
+
+        assertTrue(effects.any { it is ReaderEffect.ShowSnackbar })
     }
 
     // ---- Overlay settings ----

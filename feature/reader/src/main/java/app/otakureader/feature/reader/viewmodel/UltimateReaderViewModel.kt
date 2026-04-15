@@ -1241,7 +1241,7 @@ class UltimateReaderViewModel @Inject constructor(
             .onEach {
                 _effect.send(
                     ReaderEffect.ShowSnackbar(
-                        "Failed to save reader settings. Please try again."
+                        messageResId = app.otakureader.feature.reader.R.string.reader_settings_save_failed
                     )
                 )
             }
@@ -1297,6 +1297,9 @@ class UltimateReaderViewModel @Inject constructor(
  */
 sealed interface ReaderEffect {
     data object NavigateBack : ReaderEffect
-    data class ShowSnackbar(val message: String) : ReaderEffect
+    data class ShowSnackbar(
+        val message: String? = null,
+        @androidx.annotation.StringRes val messageResId: Int? = null
+    ) : ReaderEffect
     data class NavigateToChapter(val chapterId: Long) : ReaderEffect
 }

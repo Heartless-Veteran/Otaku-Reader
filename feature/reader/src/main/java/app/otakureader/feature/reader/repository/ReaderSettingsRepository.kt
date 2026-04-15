@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.feature.reader.model.ColorFilterMode
 import app.otakureader.feature.reader.model.ImageQuality
 import app.otakureader.feature.reader.model.ReaderMode
@@ -31,7 +30,6 @@ import javax.inject.Singleton
  */
 @Singleton
 class ReaderSettingsRepository @Inject constructor(
-    private val preferences: AppPreferences,
     private val dataStore: DataStore<Preferences>
 ) {
     /**
@@ -535,16 +533,15 @@ class ReaderSettingsRepository @Inject constructor(
      * transient disk write failure does not propagate as an unhandled exception and
      * crash the app (audit finding H-6).
      *
-     * On failure the error is silently swallowed — the in-memory preference value
-     * remains correct for the current session even though the change was not persisted.
-     * A more robust implementation could expose a [Result] or emit a side-effect to
-     * the UI layer, but that requires a larger refactor tracked by TODO(H-6).
+     * On failure the error is emitted via [writeFailureEvents] so the UI layer can
+     * surface a user-visible warning. The in-memory preference value remains correct
+     * for the current session even though the change was not persisted to disk.
      */
     private suspend inline fun safeEdit(crossinline block: (MutablePreferences) -> Unit) {
         try {
             dataStore.edit { block(it) }
         } catch (_: java.io.IOException) {
-            // Disk write failure — preference change is lost for this session.
+            // Disk write failure — emit event so UI can show warning.
             _writeFailureEvents.tryEmit(Unit)
         }
     }
