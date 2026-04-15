@@ -104,6 +104,28 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val autoThemeColor: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_THEME_COLOR] ?: false }
     suspend fun setAutoThemeColor(value: Boolean) = dataStore.edit { it[Keys.AUTO_THEME_COLOR] = value }
 
+    // --- Saved Searches ---
+
+    /**
+     * Saved search queries for quick access in Browse screen.
+     * Stored as comma-separated list.
+     */
+    val savedSearches: Flow<Set<String>> = dataStore.data.map { prefs ->
+        prefs[Keys.SAVED_SEARCHES]?.split("\n")?.toSet() ?: emptySet()
+    }
+    
+    suspend fun addSavedSearch(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.SAVED_SEARCHES]?.split("\n")?.toMutableSet() ?: mutableSetOf()
+        current.add(query)
+        prefs[Keys.SAVED_SEARCHES] = current.joinToString("\n")
+    }
+    
+    suspend fun removeSavedSearch(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.SAVED_SEARCHES]?.split("\n")?.toMutableSet() ?: mutableSetOf()
+        current.remove(query)
+        prefs[Keys.SAVED_SEARCHES] = current.joinToString("\n")
+    }
+
     private object Keys {
         val THEME_MODE = intPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
@@ -119,5 +141,6 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DISCORD_RPC_ENABLED = booleanPreferencesKey("discord_rpc_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_THEME_COLOR = booleanPreferencesKey("auto_theme_color")
+        val SAVED_SEARCHES = stringPreferencesKey("saved_searches")
     }
 }
