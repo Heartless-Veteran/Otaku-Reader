@@ -16,6 +16,7 @@ import app.otakureader.core.preferences.SyncPreferences
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.tracking.TrackManager
+import app.otakureader.data.worker.LibraryUpdateScheduler
 import app.otakureader.data.worker.ReadingReminderScheduler
 import app.otakureader.domain.repository.AiRepository
 import app.otakureader.domain.sync.SyncManager
@@ -46,6 +47,7 @@ class SettingsViewModel @Inject constructor(
     private val readerSettingsRepository: app.otakureader.feature.reader.repository.ReaderSettingsRepository,
     private val trackManager: TrackManager,
     private val appPreferences: AppPreferences,
+    private val libraryUpdateScheduler: LibraryUpdateScheduler,
     private val aiPreferences: AiPreferences,
     private val aiRepository: AiRepository,
     private val readingGoalPreferences: ReadingGoalPreferences,
@@ -418,7 +420,7 @@ class SettingsViewModel @Inject constructor(
                 // Library
                 is SettingsEvent.SetLibraryGridSize -> libraryPreferences.setGridSize(event.size)
                 is SettingsEvent.SetShowBadges -> libraryPreferences.setShowBadges(event.enabled)
-                is SettingsEvent.SetUpdateOnlyOnWifi -> libraryPreferences.setUpdateOnlyOnWifi(event.enabled)
+                is SettingsEvent.SetUpdateOnlyOnWifi -> handleSetUpdateOnlyOnWifi(event.enabled)
                 is SettingsEvent.SetUpdateOnlyPinnedCategories -> libraryPreferences.setUpdateOnlyPinnedCategories(event.enabled)
                 is SettingsEvent.SetAutoRefreshOnStart -> libraryPreferences.setAutoRefreshOnStart(event.enabled)
                 is SettingsEvent.SetShowUpdateProgress -> libraryPreferences.setShowUpdateProgress(event.enabled)
@@ -439,7 +441,7 @@ class SettingsViewModel @Inject constructor(
 
                 // Notifications
                 is SettingsEvent.SetNotificationsEnabled -> generalPreferences.setNotificationsEnabled(event.enabled)
-                is SettingsEvent.SetUpdateInterval -> generalPreferences.setUpdateCheckInterval(event.hours)
+                is SettingsEvent.SetUpdateInterval -> handleSetUpdateInterval(event.hours)
 
                 // Backup
                 SettingsEvent.OnCreateBackup -> _effect.send(SettingsEffect.ShowBackupPicker)
@@ -596,6 +598,22 @@ class SettingsViewModel @Inject constructor(
             } else {
                 backupScheduler.cancel()
             }
+        }
+    }
+
+    private fun handleSetUpdateOnlyOnWifi(enabled: Boolean) {
+        viewModelScope.launch {
+            libraryPreferences.setUpdateOnlyOnWifi(enabled)
+            val intervalHours = generalPreferences.updateCheckInterval.first()
+            libraryUpdateScheduler.schedule(intervalHours = intervalHours, wifiOnly = enabled)
+        }
+    }
+
+    private fun handleSetUpdateInterval(hours: Int) {
+        viewModelScope.launch {
+            generalPreferences.setUpdateCheckInterval(hours)
+            val wifiOnly = libraryPreferences.updateOnlyOnWifi.first()
+            libraryUpdateScheduler.schedule(intervalHours = hours, wifiOnly = wifiOnly)
         }
     }
 

@@ -61,6 +61,14 @@ class MainActivity : ComponentActivity() {
         // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation)
         if (savedInstanceState == null) {
             lifecycleScope.launch {
+                val updateIntervalHours = generalPreferences.updateCheckInterval.first()
+                val updateOnlyOnWifi = libraryPreferences.updateOnlyOnWifi.first()
+                LibraryUpdateWorker.schedule(
+                    context = applicationContext,
+                    intervalHours = updateIntervalHours,
+                    wifiOnly = updateOnlyOnWifi
+                )
+
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {
                     LibraryUpdateWorker.enqueue(applicationContext)
