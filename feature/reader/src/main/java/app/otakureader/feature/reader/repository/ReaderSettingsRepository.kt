@@ -18,6 +18,8 @@ import app.otakureader.feature.reader.model.TapZoneConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +34,13 @@ class ReaderSettingsRepository @Inject constructor(
     private val preferences: AppPreferences,
     private val dataStore: DataStore<Preferences>
 ) {
+    /**
+     * Emits an event whenever a DataStore write fails due to disk I/O.
+     * Consumers can observe this to surface a user-facing warning.
+     */
+    private val _writeFailureEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val writeFailureEvents: Flow<Unit> = _writeFailureEvents.asSharedFlow()
+
     // ==================== Reader Mode ====================
     
     val readerMode: Flow<ReaderMode> = dataStore.data.map { prefs ->
@@ -536,7 +545,7 @@ class ReaderSettingsRepository @Inject constructor(
             dataStore.edit { block(it) }
         } catch (_: java.io.IOException) {
             // Disk write failure — preference change is lost for this session.
-            // TODO(H-6): Surface this failure to the UI layer.
+            _writeFailureEvents.tryEmit(Unit)
         }
     }
 

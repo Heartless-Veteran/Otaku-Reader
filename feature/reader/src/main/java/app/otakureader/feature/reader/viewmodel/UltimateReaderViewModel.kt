@@ -140,6 +140,7 @@ class UltimateReaderViewModel @Inject constructor(
         loadChapter()
         cacheDiscordPreference()
         observeSfxSettings()
+        observeSettingsWriteFailures()
     }
 
     private fun recordHistoryOpen() {
@@ -1233,6 +1234,18 @@ class UltimateReaderViewModel @Inject constructor(
         }.onEach { enabled ->
             _state.update { it.copy(sfxTranslationEnabled = enabled) }
         }.launchIn(viewModelScope)
+    }
+
+    private fun observeSettingsWriteFailures() {
+        settingsRepository.writeFailureEvents
+            .onEach {
+                _effect.send(
+                    ReaderEffect.ShowSnackbar(
+                        "Failed to save reader settings. Please try again."
+                    )
+                )
+            }
+            .launchIn(viewModelScope)
     }
 
     /**
