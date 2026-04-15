@@ -1,5 +1,6 @@
 package app.otakureader.feature.settings
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.AppPreferences
@@ -605,11 +606,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             libraryPreferences.setUpdateOnlyOnWifi(enabled)
             val intervalHours = state.value.updateCheckInterval
-            try {
-                libraryUpdateScheduler.schedule(intervalHours = intervalHours, wifiOnly = enabled)
-            } catch (_: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Failed to update library scheduler settings"))
-            }
+            scheduleLibraryUpdateOrShowError(intervalHours, enabled)
         }
     }
 
@@ -617,11 +614,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             generalPreferences.setUpdateCheckInterval(hours)
             val wifiOnly = state.value.updateOnlyOnWifi
-            try {
-                libraryUpdateScheduler.schedule(intervalHours = hours, wifiOnly = wifiOnly)
-            } catch (_: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Failed to update library scheduler settings"))
-            }
+            scheduleLibraryUpdateOrShowError(hours, wifiOnly)
+        }
+    }
+
+    private suspend fun scheduleLibraryUpdateOrShowError(intervalHours: Int, wifiOnly: Boolean) {
+        try {
+            libraryUpdateScheduler.schedule(intervalHours = intervalHours, wifiOnly = wifiOnly)
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Failed to schedule library update (intervalHours=$intervalHours, wifiOnly=$wifiOnly)", e)
+            _effect.send(SettingsEffect.ShowSnackbar("Failed to update library scheduler settings"))
         }
     }
 
