@@ -86,6 +86,10 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val showUpdateProgress: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_UPDATE_PROGRESS] ?: true }
     suspend fun setShowUpdateProgress(value: Boolean) = dataStore.edit { it[Keys.SHOW_UPDATE_PROGRESS] = value }
 
+    /** Number of new updates available (for badge) */
+    val newUpdatesCount: Flow<Int> = dataStore.data.map { it[Keys.NEW_UPDATES_COUNT] ?: 0 }
+    suspend fun setNewUpdatesCount(value: Int) = dataStore.edit { it[Keys.NEW_UPDATES_COUNT] = value }
+
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
@@ -101,5 +105,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val JUMP_TO_CATEGORY_ON_OPEN = intPreferencesKey("library_jump_to_category_on_open")
         val AUTO_REFRESH_ON_START = booleanPreferencesKey("library_auto_refresh_on_start")
         val SHOW_UPDATE_PROGRESS = booleanPreferencesKey("library_show_update_progress")
+        val NEW_UPDATES_COUNT = intPreferencesKey("library_new_updates_count")
     }
 }

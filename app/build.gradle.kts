@@ -106,6 +106,7 @@ dependencies {
     implementation(projects.feature.feed)
     implementation(projects.feature.about)
     implementation(projects.feature.onboarding)
+    implementation(projects.feature.more)
 
     // AI: full flavor uses the real Gemini SDK; foss flavor uses a no-op stub.
     "fullImplementation"(projects.core.ai)

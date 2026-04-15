@@ -62,6 +62,7 @@ include(":feature:onboarding")
 include(":feature:about")
 include(":feature:opds")
 include(":feature:feed")
+include(":feature:more")
 
 // Self-hosted sync server
 include(":server")
