@@ -13,6 +13,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.AboutRoute
 import app.otakureader.core.navigation.BrowseRoute
+import app.otakureader.core.navigation.CategoryManagementRoute
 import app.otakureader.core.navigation.DownloadsRoute
 import app.otakureader.core.navigation.ExtensionInstallRoute
 import app.otakureader.core.navigation.ExtensionsRoute
@@ -23,6 +24,7 @@ import app.otakureader.core.navigation.LibraryRoute
 import app.otakureader.core.navigation.MangaDetailRoute
 import app.otakureader.core.navigation.MigrationEntryRoute
 import app.otakureader.core.navigation.MigrationRoute
+import app.otakureader.core.navigation.MoreRoute
 import app.otakureader.core.navigation.OnboardingRoute
 import app.otakureader.core.navigation.ReaderRoute
 import app.otakureader.core.navigation.SettingsRoute
@@ -42,9 +44,11 @@ import app.otakureader.feature.browse.navigation.sourceDetailScreen
 import app.otakureader.feature.details.navigation.detailsScreen
 import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
+import app.otakureader.feature.library.category.navigation.categoryManagementScreen
 import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
+import app.otakureader.feature.more.navigation.moreScreen
 import app.otakureader.feature.onboarding.navigation.onboardingScreen
 import app.otakureader.feature.opds.navigation.opdsScreen
 import app.otakureader.feature.reader.navigation.readerScreen
@@ -353,6 +357,22 @@ fun OtakuReaderNavHost(
         aboutScreen(
             onNavigateBack = {
                 navController.popBackStack()
+            }
+        )
+
+        // More screen - access to settings, downloads, statistics, about
+        moreScreen(
+            onNavigateToSettings = {
+                navController.navigate(SettingsRoute)
+            },
+            onNavigateToDownloads = {
+                navController.navigate(DownloadsRoute)
+            },
+            onNavigateToStatistics = {
+                navController.navigate(StatisticsRoute)
+            },
+            onNavigateToAbout = {
+                navController.navigate(AboutRoute)
             }
         )
 

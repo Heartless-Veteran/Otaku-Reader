@@ -123,6 +123,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     OtakuReaderApp(
                         generalPreferences = generalPreferences,
+                        libraryPreferences = libraryPreferences,
                         onboardingCompleted = onboardingCompleted,
                         deepLinkResult = pendingDeepLinkResult,
                         onDeepLinkConsumed = { pendingDeepLinkResult = null }
@@ -169,14 +170,27 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun OtakuReaderApp(
     generalPreferences: GeneralPreferences,
+    libraryPreferences: LibraryPreferences,
     onboardingCompleted: Boolean,
     deepLinkResult: DeepLinkResult? = null,
     onDeepLinkConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
+    
+    // Observe new updates count for badge
+    val newUpdatesCount by libraryPreferences.newUpdatesCount
+        .collectAsStateWithLifecycle(initialValue = 0)
 
-    Scaffold { padding ->
+    Scaffold(
+        bottomBar = {
+            OtakuReaderBottomBar(
+                navController = navController,
+                generalPreferences = generalPreferences,
+                newUpdatesCount = newUpdatesCount
+            )
+        }
+    ) { padding ->
         OtakuReaderNavHost(
             navController = navController,
             onboardingCompleted = onboardingCompleted,

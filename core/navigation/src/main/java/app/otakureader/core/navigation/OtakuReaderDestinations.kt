@@ -93,3 +93,7 @@ object CategoryManagementRoute : OtakuReaderDestination
 /** Feed screen – latest updates across all configured sources. */
 @Serializable
 object FeedRoute : OtakuReaderDestination
+
+/** More screen – access to settings, downloads, statistics, about. */
+@Serializable
+object MoreRoute : OtakuReaderDestination
