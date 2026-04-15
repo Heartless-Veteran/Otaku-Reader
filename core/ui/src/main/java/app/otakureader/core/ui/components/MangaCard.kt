@@ -130,31 +130,6 @@ fun MangaCard(
 }
 
 /**
- * Placeholder shown while the manga cover is loading.
- */
-@Composable
-private fun MangaCardPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(2f / 3f)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        // Shimmer effect could be added here
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .height(80.dp)
-                .background(
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
-                    shape = MaterialTheme.shapes.small
-                )
-        )
-    }
-}
-
-/**
  * Error state shown when the manga cover fails to load.
  */
 @Composable

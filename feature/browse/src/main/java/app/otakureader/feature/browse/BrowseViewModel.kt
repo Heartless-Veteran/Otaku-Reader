@@ -262,11 +262,6 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
-    private fun getCurrentSource(): MangaSource? {
-        val sourceId = _state.value.currentSourceId ?: return null
-        return _sources.value.find { it.id == sourceId }
-    }
-
     // --- Source Intelligence ---
 
     /**

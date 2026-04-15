@@ -253,12 +253,6 @@ class TachiyomiSourceAdapter(
         return map
     }
 
-    /**
-     * Generate a unique chapter ID based on URL and manga URL
-     */
-    private fun generateChapterId(chapterUrl: String, mangaUrl: String): Long {
-        return (mangaUrl + chapterUrl).hashCode().toLong()
-    }
 }
 
 /**
