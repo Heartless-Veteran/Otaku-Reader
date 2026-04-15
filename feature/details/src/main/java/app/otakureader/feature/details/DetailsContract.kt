@@ -40,7 +40,13 @@ object DetailsContract {
         /** True while the AI summary is being generated. */
         val isGeneratingSummary: Boolean = false,
         /** Whether the AI summary translation feature is enabled in settings. */
-        val aiSummaryEnabled: Boolean = false
+        val aiSummaryEnabled: Boolean = false,
+        /** Source suggestions (related titles from the source website). */
+        val sourceSuggestions: List<SourceSuggestion> = emptyList(),
+        /** True while loading source suggestions. */
+        val isLoadingSourceSuggestions: Boolean = false,
+        /** Error message for source suggestions loading failure. */
+        val sourceSuggestionsError: String? = null
     ) : UiState {
         
         val canStartReading: Boolean
@@ -155,7 +161,9 @@ object DetailsContract {
         data class RequestChapterSummary(val chapterId: Long) : Event
         // AI Summary Translation
         data object GenerateAiSummary : Event
-    }
+        // Source suggestions
+        data object LoadSourceSuggestions : Event
+        data class OnSourceSuggestionClick(val suggestion: SourceSuggestion) : Event
 
     /**
      * UI Effects (one-shot side effects)
@@ -167,6 +175,7 @@ object DetailsContract {
         data class ShareManga(val title: String, val url: String) : Effect
         data class NavigateToTracking(val mangaId: Long, val mangaTitle: String) : Effect
         data class OpenInBrowser(val url: String) : Effect
+        data class NavigateToGlobalSearch(val query: String) : Effect
     }
 }
 

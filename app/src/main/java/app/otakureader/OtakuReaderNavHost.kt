@@ -13,7 +13,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.AboutRoute
 import app.otakureader.core.navigation.BrowseRoute
-import app.otakureader.core.navigation.CategoryManagementRoute
 import app.otakureader.core.navigation.DownloadsRoute
 import app.otakureader.core.navigation.ExtensionInstallRoute
 import app.otakureader.core.navigation.ExtensionsRoute
@@ -43,7 +42,6 @@ import app.otakureader.feature.browse.navigation.sourceDetailScreen
 import app.otakureader.feature.details.navigation.detailsScreen
 import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
-import app.otakureader.feature.library.category.navigation.categoryManagementScreen
 import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
@@ -165,9 +163,6 @@ fun OtakuReaderNavHost(
             onNavigateToMigration = {
                 navController.navigate(MigrationEntryRoute)
             },
-            onNavigateToCategoryManagement = {
-                navController.navigate(CategoryManagementRoute)
-            },
         )
 
         // Updates screen - new chapters
@@ -194,14 +189,11 @@ fun OtakuReaderNavHost(
             onNavigateToExtensions = {
                 navController.navigate(ExtensionsRoute)
             },
-            onNavigateToGlobalSearch = { initialQuery ->
-                navController.navigate(GlobalSearchRoute(query = initialQuery))
+            onNavigateToGlobalSearch = {
+                navController.navigate(GlobalSearchRoute(query = ""))
             },
             onNavigateToOpds = {
                 navController.navigate(OpdsRoute)
-            },
-            onNavigateBack = {
-                navController.popBackStack()
             },
         )
 
@@ -254,13 +246,6 @@ fun OtakuReaderNavHost(
             }
         )
 
-        // Category management screen
-        categoryManagementScreen(
-            onNavigateBack = {
-                navController.popBackStack()
-            }
-        )
-
         // Extension install screen
         extensionInstallScreen(
             onNavigateBack = {
@@ -288,6 +273,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToTracking = { mangaId, mangaTitle ->
                 navController.navigate(TrackingRoute(mangaId, mangaTitle))
+            },
+            onNavigateToGlobalSearch = { query ->
+                navController.navigate(GlobalSearchRoute(query = query))
             }
         )
 

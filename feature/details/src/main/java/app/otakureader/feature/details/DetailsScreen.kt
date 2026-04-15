@@ -100,6 +100,7 @@ fun DetailsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit,
     onNavigateToTracking: (mangaId: Long, mangaTitle: String) -> Unit = { _, _ -> },
+    onNavigateToGlobalSearch: (query: String) -> Unit = {},
     viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -132,6 +133,9 @@ fun DetailsScreen(
                 }
                 is DetailsContract.Effect.NavigateToTracking -> {
                     onNavigateToTracking(effect.mangaId, effect.mangaTitle)
+                }
+                is DetailsContract.Effect.NavigateToGlobalSearch -> {
+                    onNavigateToGlobalSearch(effect.query)
                 }
                 else -> { /* no-op */ }
             }
@@ -235,6 +239,18 @@ private fun DetailsContent(
             MangaNotes(
                 notes = manga.notes,
                 onEditClick = { onEvent(DetailsContract.Event.ShowNoteEditor) }
+            )
+        }
+
+        item {
+            SourceSuggestionsSection(
+                suggestions = state.sourceSuggestions,
+                isLoading = state.isLoadingSourceSuggestions,
+                error = state.sourceSuggestionsError,
+                onSuggestionClick = { suggestion ->
+                    onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
+                },
+                onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) }
             )
         }
 
@@ -1044,5 +1060,124 @@ private fun EmptyScreen(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Text(stringResource(R.string.details_no_manga))
+    }
+}
+
+private const val DISMISS_BUTTON_BACKGROUND_ALPHA = 0.72f
+
+@Composable
+private fun SourceSuggestionsSection(
+    suggestions: List<SourceSuggestion>,
+    isLoading: Boolean,
+    error: String?,
+    onSuggestionClick: (SourceSuggestion) -> Unit,
+    onLoadClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (suggestions.isEmpty() && !isLoading && error == null) {
+        // Show load button when no suggestions loaded yet
+        OutlinedButton(
+            onClick = onLoadClick,
+            modifier = modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.details_load_suggestions))
+        }
+        return
+    }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.details_source_suggestions_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            if (!isLoading && suggestions.isNotEmpty()) {
+                TextButton(onClick = onLoadClick) {
+                    Text(stringResource(R.string.details_refresh))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            error != null -> {
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+            suggestions.isNotEmpty() -> {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp),
+                    modifier = Modifier.height(160.dp)
+                ) {
+                    items(suggestions, key = { it.mangaUrl }) { suggestion ->
+                        SuggestionItem(
+                            suggestion = suggestion,
+                            onClick = { onSuggestionClick(suggestion) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionItem(
+    suggestion: SourceSuggestion,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .width(100.dp)
+            .clickable(onClick = onClick)
+    ) {
+        AsyncImage(
+            model = suggestion.thumbnailUrl,
+            contentDescription = suggestion.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.7f)
+        )
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        Text(
+            text = suggestion.title,
+            style = MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        
+        suggestion.reason?.let { reason ->
+            Text(
+                text = reason,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }

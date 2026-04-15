@@ -128,6 +128,10 @@ class DetailsViewModel @Inject constructor(
 
             // AI Summary Translation
             is DetailsContract.Event.GenerateAiSummary -> generateAiSummary()
+            
+            // Source suggestions
+            is DetailsContract.Event.LoadSourceSuggestions -> loadSourceSuggestions()
+            is DetailsContract.Event.OnSourceSuggestionClick -> onSourceSuggestionClick(event.suggestion)
 
             is DetailsContract.Event.OpenTracking -> openTracking()
         }
@@ -912,6 +916,76 @@ class DetailsViewModel @Inject constructor(
                         )
                     )
                 }
+        }
+    }
+
+    // --- Source Suggestions ---
+
+    private fun loadSourceSuggestions() {
+        viewModelScope.launch {
+            val manga = _state.value.manga ?: return@launch
+            
+            _state.update { it.copy(isLoadingSourceSuggestions = true, sourceSuggestionsError = null) }
+            
+            try {
+                // Fetch related manga from the source
+                val source = sourceRepository.getSource(manga.sourceId.toString())
+                if (source == null) {
+                    _state.update { 
+                        it.copy(
+                            isLoadingSourceSuggestions = false,
+                            sourceSuggestionsError = "Source not available"
+                        )
+                    }
+                    return@launch
+                }
+                
+                // Try to fetch related manga - this requires the source to support it
+                // For now, we'll simulate with popular manga from the same source
+                // In a real implementation, the source API would have a getRelatedManga() method
+                val result = sourceRepository.getPopularManga(source.id, page = 1)
+                
+                result.onSuccess { mangaPage ->
+                    val suggestions = mangaPage.mangas.take(6).map { sourceManga ->
+                        SourceSuggestion(
+                            title = sourceManga.title,
+                            thumbnailUrl = sourceManga.thumbnailUrl,
+                            mangaUrl = sourceManga.url,
+                            sourceId = source.id,
+                            sourceName = source.name,
+                            reason = "From ${source.name}"
+                        )
+                    }
+                    
+                    _state.update {
+                        it.copy(
+                            sourceSuggestions = suggestions,
+                            isLoadingSourceSuggestions = false
+                        )
+                    }
+                }.onFailure { error ->
+                    _state.update {
+                        it.copy(
+                            isLoadingSourceSuggestions = false,
+                            sourceSuggestionsError = error.message ?: "Failed to load suggestions"
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(
+                        isLoadingSourceSuggestions = false,
+                        sourceSuggestionsError = e.message ?: "Failed to load suggestions"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun onSourceSuggestionClick(suggestion: SourceSuggestion) {
+        viewModelScope.launch {
+            // Navigate to global search with the suggestion title
+            _effect.send(DetailsContract.Effect.NavigateToGlobalSearch(suggestion.title))
         }
     }
 }

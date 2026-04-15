@@ -124,4 +124,8 @@
     <string name="details_ai_summary_label">✨ AI Summary</string>
     <string name="details_ai_summary_generate">✨ Generate AI Summary</string>
     <string name="details_ai_summary_generating">Generating summary…</string>
+
+    <!-- Source suggestions -->
+    <string name="details_source_suggestions_title">More from Source</string>
+    <string name="details_load_suggestions">Load suggestions</string>
 </resources>
