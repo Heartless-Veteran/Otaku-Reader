@@ -163,6 +163,9 @@ fun OtakuReaderNavHost(
             onNavigateToMigration = {
                 navController.navigate(MigrationEntryRoute)
             },
+            onNavigateToCategoryManagement = {
+                navController.navigate(CategoryManagementRoute)
+            }
         )
 
         // Updates screen - new chapters

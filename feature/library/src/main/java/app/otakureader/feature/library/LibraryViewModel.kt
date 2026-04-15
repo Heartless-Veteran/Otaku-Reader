@@ -46,6 +46,7 @@ class LibraryViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
     private val trackRepository: TrackRepository,
+    private val categoryDao: app.otakureader.core.database.dao.CategoryDao,
     private val getForYouRecommendations: GetForYouRecommendationsUseCase,
     private val refreshRecommendations: RefreshRecommendationsUseCase,
     private val dismissRecommendation: DismissRecommendationUseCase
@@ -62,6 +63,7 @@ class LibraryViewModel @Inject constructor(
 
     init {
         loadLibrary()
+        loadCategories()
         observeLibraryPreferences()
         observeFilteredItems()
         observeNewUpdatesCount()
@@ -184,6 +186,24 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private fun loadCategories() {
+        viewModelScope.launch {
+            categoryDao.getCategories()
+                .collect { entities ->
+                    val items = entities.map { entity ->
+                        // Count manga in this category
+                        val mangaIds = categoryDao.getMangaIdsByCategoryId(entity.id).first()
+                        CategoryItem(
+                            id = entity.id,
+                            name = entity.name,
+                            count = mangaIds.size
+                        )
+                    }
+                    _state.update { it.copy(categories = items) }
+                }
+        }
+    }
+
     /** Encapsulates all filter/sort parameters derived from state for use in the filtered-items combine. */
     private data class FilterSortParams(
         val query: String,
@@ -191,14 +211,15 @@ class LibraryViewModel @Inject constructor(
         val sortMode: LibrarySortMode,
         val filterMode: LibraryFilterMode,
         val filterSourceId: Long?,
-        val showNsfw: Boolean
+        val showNsfw: Boolean,
+        val selectedCategory: Long?
     )
 
     private fun observeFilteredItems() {
         // Map state to filter/sort params with distinctUntilChanged to avoid recomputing
         // when only mangaList (a derived field) changes, which would cause an infinite loop.
         val filterParamsFlow = _state.map {
-            FilterSortParams(it.searchQuery, it.filterHasNotes, it.sortMode, it.filterMode, it.filterSourceId, it.showNsfw)
+            FilterSortParams(it.searchQuery, it.filterHasNotes, it.sortMode, it.filterMode, it.filterSourceId, it.showNsfw, it.selectedCategory)
         }.distinctUntilChanged()
 
         combine(_allItems, filterParamsFlow) { items, params ->
@@ -212,6 +233,17 @@ class LibraryViewModel @Inject constructor(
 
     private fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
         var filtered = items
+
+        // Category filter
+        if (params.selectedCategory != null) {
+            // Filter by category - would need to check manga-category relationships
+            // For now, this is a placeholder - actual implementation requires CategoryDao
+            filtered = filtered.filter { mangaItem ->
+                // TODO: Check if manga is in selected category
+                // This requires loading category-manga relationships
+                true // Placeholder - show all until properly implemented
+            }
+        }
 
         // NSFW filter
         if (!params.showNsfw) {
