@@ -128,4 +128,7 @@
     <!-- Source suggestions -->
     <string name="details_source_suggestions_title">More from Source</string>
     <string name="details_load_suggestions">Load suggestions</string>
+    
+    <!-- Panorama cover -->
+    <string name="details_toggle_panorama">Toggle panorama cover</string>
 </resources>

@@ -46,7 +46,9 @@ object DetailsContract {
         /** True while loading source suggestions. */
         val isLoadingSourceSuggestions: Boolean = false,
         /** Error message for source suggestions loading failure. */
-        val sourceSuggestionsError: String? = null
+        val sourceSuggestionsError: String? = null,
+        /** Whether to show panorama cover (wide banner) instead of square thumbnail. */
+        val showPanoramaCover: Boolean = false
     ) : UiState {
         
         val canStartReading: Boolean
@@ -164,6 +166,10 @@ object DetailsContract {
         // Source suggestions
         data object LoadSourceSuggestions : Event
         data class OnSourceSuggestionClick(val suggestion: SourceSuggestion) : Event
+        
+        // Panorama cover
+        data object TogglePanoramaCover : Event
+    }
 
     /**
      * UI Effects (one-shot side effects)

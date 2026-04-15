@@ -22,6 +22,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -219,7 +220,9 @@ private fun DetailsContent(
             MangaHeader(
                 manga = manga,
                 isFavorite = state.isFavorite,
-                onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) }
+                showPanoramaCover = state.showPanoramaCover,
+                onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
+                onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) }
             )
         }
 
@@ -313,62 +316,173 @@ private fun DetailsContent(
 private fun MangaHeader(
     manga: app.otakureader.domain.model.Manga,
     isFavorite: Boolean,
+    showPanoramaCover: Boolean,
     onToggleFavorite: () -> Unit,
+    onTogglePanoramaCover: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier.fillMaxWidth()) {
-        AsyncImage(
-            model = manga.thumbnailUrl,
-            contentDescription = manga.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(width = 120.dp, height = 180.dp)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = manga.title,
-                style = MaterialTheme.typography.headlineSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            manga.author?.let { author ->
-                Text(
-                    text = stringResource(R.string.details_author, author),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Cover image - either panorama (wide) or standard (square)
+        if (showPanoramaCover) {
+            // Panorama mode - wide banner cover
+            Box(modifier = Modifier.fillMaxWidth()) {
+                AsyncImage(
+                    model = manga.thumbnailUrl,
+                    contentDescription = manga.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
                 )
+                
+                // Toggle button overlay
+                IconButton(
+                    onClick = onTogglePanoramaCover,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AspectRatio,
+                        contentDescription = stringResource(R.string.details_toggle_panorama)
+                    )
+                }
             }
+        } else {
+            // Standard mode - thumbnail + info side by side
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Box {
+                    AsyncImage(
+                        model = manga.thumbnailUrl,
+                        contentDescription = manga.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(width = 120.dp, height = 180.dp)
+                    )
+                    
+                    // Toggle button overlay
+                    IconButton(
+                        onClick = onTogglePanoramaCover,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(32.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                shape = CircleShape
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AspectRatio,
+                            contentDescription = stringResource(R.string.details_toggle_panorama),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
 
-            manga.artist?.let { artist ->
-                Text(
-                    text = stringResource(R.string.details_artist, artist),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = manga.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    manga.author?.let { author ->
+                        Text(
+                            text = stringResource(R.string.details_author, author),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    manga.artist?.let { artist ->
+                        Text(
+                            text = stringResource(R.string.details_artist, artist),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = manga.status.colorValue()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    FilledIconToggleButton(
+                        checked = isFavorite,
+                        onCheckedChange = { onToggleFavorite() }
+                    ) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                        )
+                    }
+                }
             }
-
-            Text(
-                text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
-                style = MaterialTheme.typography.bodyMedium,
-                color = manga.status.colorValue()
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FilledIconToggleButton(
-                checked = isFavorite,
-                onCheckedChange = { onToggleFavorite() }
+        }
+        
+        // When in panorama mode, show title/info below the banner
+        if (showPanoramaCover) {
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = manga.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    manga.author?.let { author ->
+                        Text(
+                            text = stringResource(R.string.details_author, author),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    manga.artist?.let { artist ->
+                        Text(
+                            text = stringResource(R.string.details_artist, artist),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = manga.status.colorValue()
+                    )
+                }
+                
+                FilledIconToggleButton(
+                    checked = isFavorite,
+                    onCheckedChange = { onToggleFavorite() }
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                    )
+                }
             }
         }
     }

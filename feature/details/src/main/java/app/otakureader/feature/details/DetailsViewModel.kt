@@ -132,6 +132,9 @@ class DetailsViewModel @Inject constructor(
             // Source suggestions
             is DetailsContract.Event.LoadSourceSuggestions -> loadSourceSuggestions()
             is DetailsContract.Event.OnSourceSuggestionClick -> onSourceSuggestionClick(event.suggestion)
+            
+            // Panorama cover
+            is DetailsContract.Event.TogglePanoramaCover -> togglePanoramaCover()
 
             is DetailsContract.Event.OpenTracking -> openTracking()
         }
@@ -987,5 +990,9 @@ class DetailsViewModel @Inject constructor(
             // Navigate to global search with the suggestion title
             _effect.send(DetailsContract.Effect.NavigateToGlobalSearch(suggestion.title))
         }
+    }
+
+    private fun togglePanoramaCover() {
+        _state.update { it.copy(showPanoramaCover = !it.showPanoramaCover) }
     }
 }
