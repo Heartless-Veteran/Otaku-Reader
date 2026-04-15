@@ -12,6 +12,7 @@ import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
 import app.otakureader.domain.usecase.source.GlobalSearchUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
+import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -93,5 +94,12 @@ object TachiyomiModule {
         sourceRepository: SourceRepository
     ): GetSourceFiltersUseCase {
         return GetSourceFiltersUseCase(sourceRepository)
+    }
+    
+    @Provides
+    fun provideAddMangaToLibraryUseCase(
+        mangaRepository: app.otakureader.domain.repository.MangaRepository
+    ): AddMangaToLibraryUseCase {
+        return AddMangaToLibraryUseCase(mangaRepository)
     }
 }

@@ -29,6 +29,10 @@ data class BrowseState(
     val sourceIntelligenceEnabled: Boolean = false,
     /** AI-generated intelligence text keyed by sourceId. */
     val sourceIntelligence: Map<String, String> = emptyMap(),
+    /** Currently selected manga for bulk favorite (IDs mapped to manga). */
+    val selectedManga: Map<String, SourceManga> = emptyMap(),
+    /** True when bulk selection mode is active. */
+    val isBulkSelectionMode: Boolean = false
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -45,9 +49,18 @@ sealed interface BrowseEvent : UiEvent {
     data object ApplyFilters : BrowseEvent
     /** Request AI source scoring for a specific manga (identified by title). */
     data class RequestSourceScores(val mangaId: Long, val mangaTitle: String) : BrowseEvent
+    
+    // Bulk favorite events
+    data class OnMangaLongClick(val manga: SourceManga) : BrowseEvent
+    data class ToggleMangaSelection(val manga: SourceManga) : BrowseEvent
+    data object ClearSelection : BrowseEvent
+    data object AddSelectedToLibrary : BrowseEvent
+    data object ExitBulkSelectionMode : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {
     data class NavigateToMangaDetail(val sourceId: String, val mangaUrl: String) : BrowseEffect
     data class ShowSnackbar(val message: String) : BrowseEffect
+    /** Navigate to library after bulk add to show newly added manga. */
+    data object NavigateToLibrary : BrowseEffect
 }

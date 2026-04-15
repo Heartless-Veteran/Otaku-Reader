@@ -84,4 +84,9 @@
     <!-- Source Intelligence -->
     <string name="browse_source_intel_label">✨ Source Intelligence</string>
     <string name="browse_source_intel_analyzing">Analyzing source…</string>
+    
+    <!-- Bulk favorite -->
+    <string name="browse_add_to_library">Add to Library</string>
+    <string name="browse_exit_selection">Exit selection</string>
+    <string name="browse_clear_selection">Clear selection</string>
 </resources>

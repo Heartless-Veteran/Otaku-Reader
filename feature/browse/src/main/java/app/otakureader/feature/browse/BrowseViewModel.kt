@@ -6,6 +6,7 @@ import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.SourceInfo
 import app.otakureader.domain.usecase.ai.ScoreSourcesForMangaUseCase
+import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
@@ -34,6 +35,7 @@ class BrowseViewModel @Inject constructor(
     private val getLatestUpdatesUseCase: GetLatestUpdatesUseCase,
     private val searchMangaUseCase: SearchMangaUseCase,
     private val getSourceFiltersUseCase: GetSourceFiltersUseCase,
+    private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase,
     private val generalPreferences: GeneralPreferences,
     private val aiPreferences: AiPreferences,
     private val scoreSourcesForManga: ScoreSourcesForMangaUseCase,
@@ -116,6 +118,23 @@ class BrowseViewModel @Inject constructor(
             }
             is BrowseEvent.RequestSourceScores -> {
                 requestSourceScores(event.mangaId, event.mangaTitle)
+            }
+            
+            // Bulk favorite events
+            is BrowseEvent.OnMangaLongClick -> {
+                toggleMangaSelection(event.manga)
+            }
+            is BrowseEvent.ToggleMangaSelection -> {
+                toggleMangaSelection(event.manga)
+            }
+            is BrowseEvent.ClearSelection -> {
+                _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
+            }
+            is BrowseEvent.AddSelectedToLibrary -> {
+                addSelectedToLibrary()
+            }
+            is BrowseEvent.ExitBulkSelectionMode -> {
+                _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
             }
         }
     }
@@ -270,6 +289,52 @@ class BrowseViewModel @Inject constructor(
     private fun getCurrentSource(): MangaSource? {
         val sourceId = _state.value.currentSourceId ?: return null
         return _sources.value.find { it.id == sourceId }
+    }
+
+    /**
+     * Toggles selection of a manga for bulk favorite.
+     * Enables bulk selection mode when first manga is selected.
+     */
+    private fun toggleMangaSelection(manga: SourceManga) {
+        _state.update { state ->
+            val currentSelection = state.selectedManga.toMutableMap()
+            val key = manga.url // Use URL as unique key
+            
+            if (currentSelection.containsKey(key)) {
+                currentSelection.remove(key)
+            } else {
+                currentSelection[key] = manga
+            }
+            
+            val newMode = currentSelection.isNotEmpty()
+            state.copy(
+                selectedManga = currentSelection,
+                isBulkSelectionMode = newMode
+            )
+        }
+    }
+    
+    /**
+     * Adds all selected manga to the library.
+     * Shows success/failure message and optionally navigates to library.
+     */
+    private fun addSelectedToLibrary() {
+        viewModelScope.launch {
+            val sourceId = _state.value.currentSourceId ?: return@launch
+            val selected = _state.value.selectedManga.values.toList()
+            
+            if (selected.isEmpty()) return@launch
+            
+            addMangaToLibraryUseCase(selected, sourceId)
+                .onSuccess { addedCount ->
+                    _effect.send(BrowseEffect.ShowSnackbar("$addedCount manga added to library"))
+                    _effect.send(BrowseEffect.NavigateToLibrary)
+                    _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
+                }
+                .onFailure { error ->
+                    _effect.send(BrowseEffect.ShowSnackbar("Failed to add manga: ${error.message}"))
+                }
+        }
     }
 
     // --- Source Intelligence ---

@@ -22,6 +22,9 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ClearAll
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Badge
@@ -68,6 +71,7 @@ fun BrowseScreen(
     onInstallExtensionClick: () -> Unit,
     onGlobalSearchClick: () -> Unit = {},
     onOpdsClick: () -> Unit = {},
+    onNavigateToLibrary: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,6 +87,10 @@ fun BrowseScreen(
                 is BrowseEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
                 }
+                is BrowseEffect.NavigateToLibrary -> {
+                    // Navigate to library after bulk add
+                    onNavigateToLibrary?.invoke()
+                }
             }
         }
     }
@@ -90,22 +98,46 @@ fun BrowseScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.browse_title)) },
-                actions = {
-                    IconButton(onClick = onOpdsClick) {
-                        Icon(Icons.Default.Storage, contentDescription = stringResource(R.string.browse_opds_catalogs))
+            if (state.isBulkSelectionMode) {
+                TopAppBar(
+                    title = { Text("${state.selectedManga.size} selected") },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.onEvent(BrowseEvent.ExitBulkSelectionMode) }) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.browse_exit_selection))
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.onEvent(BrowseEvent.ClearSelection) }) {
+                            Icon(Icons.Default.ClearAll, contentDescription = stringResource(R.string.browse_clear_selection))
+                        }
                     }
-                    IconButton(onClick = onGlobalSearchClick) {
-                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.browse_title)) },
+                    actions = {
+                        IconButton(onClick = onOpdsClick) {
+                            Icon(Icons.Default.Storage, contentDescription = stringResource(R.string.browse_opds_catalogs))
+                        }
+                        IconButton(onClick = onGlobalSearchClick) {
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onInstallExtensionClick) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.browse_install_extension))
+            if (state.isBulkSelectionMode) {
+                FloatingActionButton(
+                    onClick = { viewModel.onEvent(BrowseEvent.AddSelectedToLibrary) }
+                ) {
+                    Icon(Icons.Default.LibraryAdd, contentDescription = stringResource(R.string.browse_add_to_library))
+                }
+            } else {
+                FloatingActionButton(onClick = onInstallExtensionClick) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.browse_install_extension))
+                }
             }
         }
     ) { paddingValues ->
@@ -317,7 +349,10 @@ private fun SourcesContent(
             // Show manga grid
             MangaGrid(
                 manga = popularManga,
+                selectedManga = emptyMap(), // Will be passed from state
+                isBulkMode = false,
                 onMangaClick = onMangaClick,
+                onMangaLongClick = {},
                 onLoadMore = onLoadMore,
                 hasNextPage = hasNextPage,
                 isLoading = isLoading
