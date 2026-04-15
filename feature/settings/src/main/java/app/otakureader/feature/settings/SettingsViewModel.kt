@@ -604,7 +604,7 @@ class SettingsViewModel @Inject constructor(
     private fun handleSetUpdateOnlyOnWifi(enabled: Boolean) {
         viewModelScope.launch {
             libraryPreferences.setUpdateOnlyOnWifi(enabled)
-            val intervalHours = generalPreferences.updateCheckInterval.first()
+            val intervalHours = state.value.updateCheckInterval
             libraryUpdateScheduler.schedule(intervalHours = intervalHours, wifiOnly = enabled)
         }
     }
@@ -612,7 +612,7 @@ class SettingsViewModel @Inject constructor(
     private fun handleSetUpdateInterval(hours: Int) {
         viewModelScope.launch {
             generalPreferences.setUpdateCheckInterval(hours)
-            val wifiOnly = libraryPreferences.updateOnlyOnWifi.first()
+            val wifiOnly = state.value.updateOnlyOnWifi
             libraryUpdateScheduler.schedule(intervalHours = hours, wifiOnly = wifiOnly)
         }
     }
