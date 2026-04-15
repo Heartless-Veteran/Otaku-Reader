@@ -160,7 +160,7 @@ fun SettingsScreen(
             HorizontalDivider()
             BrowseSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
-            DownloadsSettingsSection(state = state, onEvent = viewModel::onEvent)
+            DownloadSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
             ReaderSection(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
@@ -488,38 +488,6 @@ private fun BrowseSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit
             )
         }
     )
-}
-
-@Composable
-private fun DownloadsSettingsSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
-    // ── Downloads ─────────────────────────────────────────────────────
-    SectionHeader(title = stringResource(R.string.settings_downloads))
-
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_remove_after_reading)) },
-                supportingContent = { Text(stringResource(R.string.settings_remove_after_reading_description)) },
-                trailingContent = {
-                    Switch(
-                        checked = state.deleteAfterReading,
-                        onCheckedChange = {
-                            onEvent(SettingsEvent.SetDeleteAfterReading(it))
-                        }
-                    )
-                }
-            )
-
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_save_as_cbz)) },
-                supportingContent = { Text(stringResource(R.string.settings_save_as_cbz_description)) },
-                trailingContent = {
-                    Switch(
-                        checked = state.saveAsCbz,
-                        onCheckedChange = {
-                            onEvent(SettingsEvent.SetSaveAsCbz(it))
-                        }
-                    )
-                }
-            )
 }
 
 @Composable
@@ -1150,6 +1118,167 @@ private fun ReaderSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit
                     Switch(
                         checked = state.alwaysShowChapterTransition,
                         onCheckedChange = { onEvent(SettingsEvent.SetAlwaysShowChapterTransition(it)) }
+                    )
+                }
+            )
+}
+
+@Composable
+private fun DownloadSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
+    // ── Downloads ─────────────────────────────────────────────────────
+            SectionHeader(title = stringResource(R.string.settings_downloads))
+
+            // Auto-download new chapters
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_auto_download_new_chapters)) },
+                supportingContent = { Text(stringResource(R.string.settings_auto_download_new_chapters_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.autoDownloadEnabled,
+                        onCheckedChange = {
+                            onEvent(SettingsEvent.SetAutoDownloadEnabled(it))
+                        }
+                    )
+                }
+            )
+
+            // Download only on Wi-Fi
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_download_only_wifi)) },
+                supportingContent = { Text(stringResource(R.string.settings_download_only_wifi_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.downloadOnlyOnWifi,
+                        onCheckedChange = {
+                            onEvent(SettingsEvent.SetDownloadOnlyOnWifi(it))
+                        }
+                    )
+                }
+            )
+
+            // Auto-download limit
+            var sliderPosition by remember(state.autoDownloadLimit) {
+                mutableFloatStateOf(state.autoDownloadLimit.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_auto_download_limit, sliderPosition.roundToInt())) },
+                supportingContent = {
+                    Slider(
+                        value = sliderPosition,
+                        onValueChange = { sliderPosition = it },
+                        onValueChangeFinished = {
+                            onEvent(
+                                SettingsEvent.SetAutoDownloadLimit(sliderPosition.roundToInt())
+                            )
+                        },
+                        valueRange = 1f..10f,
+                        steps = 8,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = stringResource(R.string.settings_download_location))
+
+            // Download location
+            val locationText = state.downloadLocation?.let { 
+                it.substringAfterLast("/") 
+            } ?: stringResource(R.string.settings_download_location_default)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_download_location)) },
+                supportingContent = { Text(locationText) },
+                trailingContent = {
+                    OutlinedButton(onClick = { onEvent(SettingsEvent.SetDownloadLocation(null)) }) {
+                        Text(stringResource(R.string.settings_change))
+                    }
+                },
+                modifier = Modifier.clickable {
+                    onEvent(SettingsEvent.SetDownloadLocation(null))
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = stringResource(R.string.settings_download_performance))
+
+            // Concurrent downloads
+            var concurrentSlider by remember(state.concurrentDownloads) {
+                mutableFloatStateOf(state.concurrentDownloads.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_concurrent_downloads, concurrentSlider.roundToInt())) },
+                supportingContent = {
+                    Slider(
+                        value = concurrentSlider,
+                        onValueChange = { concurrentSlider = it },
+                        onValueChangeFinished = {
+                            onEvent(SettingsEvent.SetConcurrentDownloads(concurrentSlider.roundToInt()))
+                        },
+                        valueRange = 1f..5f,
+                        steps = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            SectionHeader(title = stringResource(R.string.settings_download_ahead))
+
+            // Download ahead while reading
+            var aheadSlider by remember(state.downloadAheadWhileReading) {
+                mutableFloatStateOf(state.downloadAheadWhileReading.toFloat())
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_download_ahead_count, aheadSlider.roundToInt())) },
+                supportingContent = {
+                    Column {
+                        Text(stringResource(R.string.settings_download_ahead_description))
+                        Slider(
+                            value = aheadSlider,
+                            onValueChange = { aheadSlider = it },
+                            onValueChangeFinished = {
+                                onEvent(SettingsEvent.SetDownloadAheadWhileReading(aheadSlider.roundToInt()))
+                            },
+                            valueRange = 0f..5f,
+                            steps = 4,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            )
+
+            // Download ahead only on Wi-Fi
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_download_ahead_wifi_only)) },
+                supportingContent = { Text(stringResource(R.string.settings_download_ahead_wifi_only_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.downloadAheadOnlyOnWifi,
+                        onCheckedChange = { onEvent(SettingsEvent.SetDownloadAheadOnlyOnWifi(it)) }
+                    )
+                }
+            )
+
+            // Delete after reading
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_delete_after_reading)) },
+                supportingContent = { Text(stringResource(R.string.settings_delete_after_reading_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.deleteAfterReading,
+                        onCheckedChange = { onEvent(SettingsEvent.SetDeleteAfterReading(it)) }
+                    )
+                }
+            )
+
+            // Save as CBZ
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_save_as_cbz)) },
+                supportingContent = { Text(stringResource(R.string.settings_save_as_cbz_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.saveAsCbz,
+                        onCheckedChange = { onEvent(SettingsEvent.SetSaveAsCbz(it)) }
                     )
                 }
             )
