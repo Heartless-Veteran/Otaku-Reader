@@ -42,6 +42,7 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -169,6 +170,7 @@ class UltimateReaderViewModelTest {
         every { settingsRepository.alwaysShowChapterTransition } returns flowOf(false)
         every { settingsRepository.savePagesToSeparateFolders } returns flowOf(false)
         every { settingsRepository.showActionsOnLongTap } returns flowOf(true)
+        every { settingsRepository.writeFailureEvents } returns emptyFlow()
 
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
         coEvery { chapterRepository.getChapterById(chapterId) } returns null
