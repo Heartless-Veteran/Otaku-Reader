@@ -43,15 +43,11 @@ class AddMangaToLibraryUseCase(
                 artist = sourceManga.artist,
                 author = sourceManga.author,
                 description = sourceManga.description,
-                genre = sourceManga.genres.joinToString(", "),
+                genre = sourceManga.genre?.split(", ")?.filter { it.isNotEmpty() } ?: emptyList(),
                 status = MangaStatus.UNKNOWN, // Will be updated when details fetched
                 thumbnailUrl = sourceManga.thumbnailUrl,
                 favorite = true, // Add to favorites immediately
-                lastUpdate = System.currentTimeMillis(),
                 dateAdded = System.currentTimeMillis(),
-                viewerFlags = 0,
-                chapterFlags = 0,
-                coverLastModified = System.currentTimeMillis(),
                 notifyNewChapters = false,
                 notes = null,
                 readerDirection = null,

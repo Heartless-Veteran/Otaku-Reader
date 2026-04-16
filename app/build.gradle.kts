@@ -59,7 +59,10 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.navigation)
     implementation(projects.core.preferences)
+    implementation(projects.core.database)
     implementation(projects.core.discord)
+    implementation(projects.domain)
+    implementation(projects.sourceApi)
 
     // Data layer (contains workers, repositories, etc.)
     implementation(projects.data)
