@@ -212,17 +212,41 @@ class LibraryViewModel @Inject constructor(
         val filterMode: LibraryFilterMode,
         val filterSourceId: Long?,
         val showNsfw: Boolean,
-        val selectedCategory: Long?
+        val selectedCategory: Long?,
+        val categoryMangaIds: Set<Long> = emptySet() // Manga IDs in the selected category
     )
 
     private fun observeFilteredItems() {
-        // Map state to filter/sort params with distinctUntilChanged to avoid recomputing
-        // when only mangaList (a derived field) changes, which would cause an infinite loop.
-        val filterParamsFlow = _state.map {
-            FilterSortParams(it.searchQuery, it.filterHasNotes, it.sortMode, it.filterMode, it.filterSourceId, it.showNsfw, it.selectedCategory)
-        }.distinctUntilChanged()
+        // When category selection changes, fetch the manga IDs in that category
+        viewModelScope.launch {
+            _state.map { it.selectedCategory }
+                .distinctUntilChanged()
+                .collect { categoryId ->
+                    if (categoryId != null) {
+                        val mangaIds = categoryDao.getMangaIdsByCategoryId(categoryId).first()
+                        _state.update { it.copy(categoryFilterMangaIds = mangaIds.toSet()) }
+                    } else {
+                        _state.update { it.copy(categoryFilterMangaIds = emptySet()) }
+                    }
+                }
+        }
 
-        combine(_allItems, filterParamsFlow) { items, params ->
+        // Combine all items with filter params (now including category manga IDs from state)
+        combine(
+            _allItems,
+            _state.map { 
+                FilterSortParams(
+                    query = it.searchQuery,
+                    filterHasNotes = it.filterHasNotes,
+                    sortMode = it.sortMode,
+                    filterMode = it.filterMode,
+                    filterSourceId = it.filterSourceId,
+                    showNsfw = it.showNsfw,
+                    selectedCategory = it.selectedCategory,
+                    categoryMangaIds = it.categoryFilterMangaIds
+                )
+            }.distinctUntilChanged()
+        ) { items, params ->
             applyFiltersAndSort(items, params)
         }
             .onEach { filtered ->
@@ -236,12 +260,8 @@ class LibraryViewModel @Inject constructor(
 
         // Category filter
         if (params.selectedCategory != null) {
-            // Filter by category - would need to check manga-category relationships
-            // For now, this is a placeholder - actual implementation requires CategoryDao
             filtered = filtered.filter { mangaItem ->
-                // TODO: Check if manga is in selected category
-                // This requires loading category-manga relationships
-                true // Placeholder - show all until properly implemented
+                mangaItem.id in params.categoryMangaIds
             }
         }
 

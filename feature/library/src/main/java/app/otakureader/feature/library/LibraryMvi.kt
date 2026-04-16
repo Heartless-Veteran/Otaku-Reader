@@ -36,6 +36,7 @@ data class LibraryState(
     val filterSourceId: Long? = null,
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
+    val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
     // Recommendations
     val recommendations: List<MangaRecommendation> = emptyList(),
     val isLoadingRecommendations: Boolean = false,
