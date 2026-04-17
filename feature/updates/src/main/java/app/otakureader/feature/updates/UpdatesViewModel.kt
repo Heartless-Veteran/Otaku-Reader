@@ -107,7 +107,14 @@ class UpdatesViewModel @Inject constructor(
                     mangaTitle = update.manga.title,
                     chapterTitle = update.chapter.name
                 )
-                _effect.send(UpdatesEffect.ShowSnackbar("Download queued: ${update.chapter.name}"))
+            }.onSuccess {
+                _effect.send(UpdatesEffect.ShowSnackbar(
+                    context.getString(R.string.updates_download_queued, update.chapter.name)
+                ))
+            }.onFailure { e ->
+                _effect.send(UpdatesEffect.ShowSnackbar(
+                    context.getString(R.string.updates_download_failed, update.chapter.name)
+                ))
             }
         }
     }
@@ -117,6 +124,8 @@ class UpdatesViewModel @Inject constructor(
         if (selected.isEmpty()) return
         viewModelScope.launch {
             val updates = _state.value.updates.filter { it.chapter.id in selected }
+            var successCount = 0
+            var failCount = 0
             updates.forEach { update ->
                 runCatching {
                     downloadRepository.enqueueChapter(
@@ -125,10 +134,15 @@ class UpdatesViewModel @Inject constructor(
                         mangaTitle = update.manga.title,
                         chapterTitle = update.chapter.name
                     )
-                }
+                }.onSuccess { successCount++ }.onFailure { failCount++ }
             }
             _state.update { it.copy(selectedItems = emptySet()) }
-            _effect.send(UpdatesEffect.ShowSnackbar("${updates.size} chapter(s) queued for download"))
+            val message = if (failCount == 0) {
+                context.getString(R.string.updates_bulk_download_queued, successCount)
+            } else {
+                context.getString(R.string.updates_bulk_download_partial, successCount, failCount)
+            }
+            _effect.send(UpdatesEffect.ShowSnackbar(message))
         }
     }
 
@@ -177,7 +191,7 @@ class UpdatesViewModel @Inject constructor(
         viewModelScope.launch {
             LibraryUpdateWorker.enqueue(context)
             _state.update { it.copy(showPendingUpdates = false) }
-            _effect.send(UpdatesEffect.ShowSnackbar("Library update started"))
+            _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
         }
     }
 }

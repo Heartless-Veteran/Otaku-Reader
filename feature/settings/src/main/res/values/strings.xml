@@ -139,6 +139,10 @@
     <string name="settings_clear_history">Clear reading history</string>
     <string name="settings_clear_history_desc">Remove all reading history and progress from the database</string>
     <string name="settings_clear_button">Clear</string>
+    <string name="settings_clear_cache_success">Image cache cleared</string>
+    <string name="settings_clear_cache_failed">Failed to clear image cache</string>
+    <string name="settings_clear_history_success">Reading history cleared</string>
+    <string name="settings_clear_history_failed">Failed to clear reading history</string>
 
     <!-- Local Source -->
     <string name="settings_local_source">Local Source</string>

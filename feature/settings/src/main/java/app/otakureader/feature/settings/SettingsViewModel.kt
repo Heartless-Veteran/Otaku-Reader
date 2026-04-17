@@ -886,9 +886,9 @@ class SettingsViewModel @Inject constructor(
             try {
                 val cacheDir = context.cacheDir.resolve("image_cache")
                 cacheDir.deleteRecursively()
-                _effect.send(SettingsEffect.ShowSnackbar("Image cache cleared"))
+                _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_cache_success)))
             } catch (e: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Failed to clear cache: ${e.message}"))
+                _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_cache_failed)))
             }
         }
     }
@@ -898,9 +898,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.clearAllHistory()
-                _effect.send(SettingsEffect.ShowSnackbar("Reading history cleared"))
+                _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_history_success)))
             } catch (e: Exception) {
-                _effect.send(SettingsEffect.ShowSnackbar("Failed to clear history: ${e.message}"))
+                _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_history_failed)))
             }
         }
     }

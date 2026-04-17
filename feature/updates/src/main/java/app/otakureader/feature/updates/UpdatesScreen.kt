@@ -238,22 +238,33 @@ fun UpdatesScreen(
 // Grouped list
 // ─────────────────────────────────────────────────────────────────────────────
 
-private fun updateRelativeLabel(epochMs: Long): String {
-    if (epochMs <= 0L) return "Older"
+private enum class UpdateDateBucket { TODAY, YESTERDAY, THIS_WEEK, THIS_MONTH, OLDER }
+
+private fun updateDateBucket(epochMs: Long): UpdateDateBucket {
+    if (epochMs <= 0L) return UpdateDateBucket.OLDER
     val today = LocalDate.now()
     val day = Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()).toLocalDate()
     return when {
-        day == today -> "Today"
-        day == today.minusDays(1) -> "Yesterday"
-        day >= today.minusDays(6) -> "This week"
-        day >= today.minusDays(29) -> "This month"
-        else -> "Older"
+        day == today -> UpdateDateBucket.TODAY
+        day == today.minusDays(1) -> UpdateDateBucket.YESTERDAY
+        day >= today.minusDays(6) -> UpdateDateBucket.THIS_WEEK
+        day >= today.minusDays(29) -> UpdateDateBucket.THIS_MONTH
+        else -> UpdateDateBucket.OLDER
     }
 }
 
 private sealed interface UpdateListItem {
-    data class Header(val label: String) : UpdateListItem
+    data class Header(val bucket: UpdateDateBucket) : UpdateListItem
     data class Entry(val update: MangaUpdate) : UpdateListItem
+}
+
+@Composable
+private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
+    UpdateDateBucket.TODAY -> stringResource(R.string.updates_date_today)
+    UpdateDateBucket.YESTERDAY -> stringResource(R.string.updates_date_yesterday)
+    UpdateDateBucket.THIS_WEEK -> stringResource(R.string.updates_date_this_week)
+    UpdateDateBucket.THIS_MONTH -> stringResource(R.string.updates_date_this_month)
+    UpdateDateBucket.OLDER -> stringResource(R.string.updates_date_older)
 }
 
 @Composable
@@ -267,12 +278,12 @@ private fun UpdatesList(
 ) {
     val listItems = remember(updates) {
         buildList {
-            var lastLabel: String? = null
+            var lastBucket: UpdateDateBucket? = null
             updates.forEach { update ->
-                val label = updateRelativeLabel(update.chapter.dateFetch)
-                if (label != lastLabel) {
-                    add(UpdateListItem.Header(label))
-                    lastLabel = label
+                val bucket = updateDateBucket(update.chapter.dateFetch)
+                if (bucket != lastBucket) {
+                    add(UpdateListItem.Header(bucket))
+                    lastBucket = bucket
                 }
                 add(UpdateListItem.Entry(update))
             }
@@ -282,12 +293,12 @@ private fun UpdatesList(
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(listItems, key = { item ->
             when (item) {
-                is UpdateListItem.Header -> "header_${item.label}"
+                is UpdateListItem.Header -> "header_${item.bucket}"
                 is UpdateListItem.Entry -> item.update.chapter.id
             }
         }) { item ->
             when (item) {
-                is UpdateListItem.Header -> UpdatesDateHeader(label = item.label)
+                is UpdateListItem.Header -> UpdatesDateHeader(label = bucketLabel(item.bucket))
                 is UpdateListItem.Entry -> {
                     UpdateItem(
                         update = item.update,

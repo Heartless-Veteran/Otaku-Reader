@@ -194,23 +194,34 @@ fun HistoryScreen(
 // Grouped list
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Categorises a [ChapterWithHistory] into a relative-date bucket label. */
-private fun relativeGroupLabel(readAt: Long): String {
-    if (readAt <= 0L) return "Older"
+private enum class HistoryDateBucket { TODAY, YESTERDAY, THIS_WEEK, THIS_MONTH, OLDER }
+
+/** Categorises a [ChapterWithHistory] into a relative-date bucket. */
+private fun historyDateBucket(readAt: Long): HistoryDateBucket {
+    if (readAt <= 0L) return HistoryDateBucket.OLDER
     val today = LocalDate.now()
     val readDay = Instant.ofEpochMilli(readAt).atZone(ZoneId.systemDefault()).toLocalDate()
     return when {
-        readDay == today -> "Today"
-        readDay == today.minusDays(1) -> "Yesterday"
-        readDay >= today.minusDays(6) -> "This week"
-        readDay >= today.minusDays(29) -> "This month"
-        else -> "Older"
+        readDay == today -> HistoryDateBucket.TODAY
+        readDay == today.minusDays(1) -> HistoryDateBucket.YESTERDAY
+        readDay >= today.minusDays(6) -> HistoryDateBucket.THIS_WEEK
+        readDay >= today.minusDays(29) -> HistoryDateBucket.THIS_MONTH
+        else -> HistoryDateBucket.OLDER
     }
+}
+
+@Composable
+private fun historyBucketLabel(bucket: HistoryDateBucket): String = when (bucket) {
+    HistoryDateBucket.TODAY -> stringResource(R.string.history_date_today)
+    HistoryDateBucket.YESTERDAY -> stringResource(R.string.history_date_yesterday)
+    HistoryDateBucket.THIS_WEEK -> stringResource(R.string.history_date_this_week)
+    HistoryDateBucket.THIS_MONTH -> stringResource(R.string.history_date_this_month)
+    HistoryDateBucket.OLDER -> stringResource(R.string.history_date_older)
 }
 
 /** Sealed wrapper so [LazyColumn] items can be either a header or a data row. */
 private sealed interface HistoryListItem {
-    data class Header(val label: String) : HistoryListItem
+    data class Header(val bucket: HistoryDateBucket) : HistoryListItem
     data class Entry(val entry: ChapterWithHistory) : HistoryListItem
 }
 
@@ -226,12 +237,12 @@ private fun HistoryList(
     // Build the flat list with injected date-group headers
     val listItems = remember(history) {
         buildList {
-            var lastLabel: String? = null
+            var lastBucket: HistoryDateBucket? = null
             history.forEach { entry ->
-                val label = relativeGroupLabel(entry.readAt)
-                if (label != lastLabel) {
-                    add(HistoryListItem.Header(label))
-                    lastLabel = label
+                val bucket = historyDateBucket(entry.readAt)
+                if (bucket != lastBucket) {
+                    add(HistoryListItem.Header(bucket))
+                    lastBucket = bucket
                 }
                 add(HistoryListItem.Entry(entry))
             }
@@ -241,12 +252,12 @@ private fun HistoryList(
     LazyColumn(modifier = modifier.fillMaxSize()) {
         items(listItems, key = { item ->
             when (item) {
-                is HistoryListItem.Header -> "header_${item.label}"
+                is HistoryListItem.Header -> "header_${item.bucket}"
                 is HistoryListItem.Entry -> item.entry.chapter.id
             }
         }) { item ->
             when (item) {
-                is HistoryListItem.Header -> HistoryDateHeader(label = item.label)
+                is HistoryListItem.Header -> HistoryDateHeader(label = historyBucketLabel(item.bucket))
                 is HistoryListItem.Entry -> {
                     HistoryItem(
                         entry = item.entry,
