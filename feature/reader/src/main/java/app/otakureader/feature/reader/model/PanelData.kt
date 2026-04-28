@@ -196,7 +196,14 @@ sealed class PanelAnalysisResultWrapper {
  */
 sealed class PanelAnalysisException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class NotInitialized(message: String = "Panel analyzer not initialized") : PanelAnalysisException(message)
-    class NotAvailableInFoss(message: String = "Panel-aware reading is not available in FOSS builds") : PanelAnalysisException(message)
+
+    /**
+     * Thrown when panel-aware reading is requested but no real implementation is bound.
+     *
+     * The Gemini-backed PanelAnalyzer was extracted to a separate companion repo (see #708);
+     * the in-app stub returns this exception for every analysis request.
+     */
+    class NotAvailable(message: String = "Panel-aware reading is not currently available") : PanelAnalysisException(message)
     class ApiError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)
     class InvalidResponse(message: String) : PanelAnalysisException(message)
     class ImageLoadError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)

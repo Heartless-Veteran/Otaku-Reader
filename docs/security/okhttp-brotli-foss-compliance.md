@@ -37,16 +37,15 @@ non-free blobs by examining embedded strings and ELF metadata.
 `libbrotli.so` passes this check because it is compiled from fully
 open-source code with no proprietary components.
 
-## FOSS flavor
+## Build configuration
 
-The FOSS build flavor does **not** disable `okhttp-brotli`. Brotli support
-is a network-layer optimisation with no privacy or tracking implications,
-and using it does not introduce any non-free dependencies.
+The app does **not** disable `okhttp-brotli`. Brotli support is a network-layer
+optimisation with no privacy or tracking implications, and using it does not
+introduce any non-free dependencies.
 
 If F-Droid's binary scanner raises a concern in the future, the mitigation
-is to replace `BrotliInterceptor` in the FOSS flavor with a no-op interceptor
-and accept the minor bandwidth increase. A placeholder is kept in
-`core/network/src/foss/` for that purpose.
+is to replace `BrotliInterceptor` with a no-op interceptor and accept the
+minor bandwidth increase.
 
 ## Review date
 

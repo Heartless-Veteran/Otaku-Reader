@@ -8,14 +8,6 @@ plugins {
 android {
     namespace = "app.otakureader.data"
 
-    // Mirror the flavor dimension from :app so that flavor-specific source sets
-    // (full/foss) compile correctly and the Gemini SDK is excluded in foss builds.
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") { dimension = "distribution" }
-        create("foss") { dimension = "distribution" }
-    }
-
     buildFeatures {
         // Needed to expose tracker OAuth credentials via BuildConfig (C-5).
         buildConfig = true
@@ -68,8 +60,6 @@ dependencies {
     implementation(projects.domain)
     implementation(projects.sourceApi)
 
-    "fullImplementation"(libs.play.services.auth)
-    "fullImplementation"(libs.kotlinx.coroutines.play.services)
     implementation(libs.paging.runtime)
     implementation(libs.workmanager.ktx)
     implementation(libs.hilt.work)

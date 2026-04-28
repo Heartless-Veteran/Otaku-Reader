@@ -8,13 +8,12 @@ How to use the CI tooling introduced in sprint milestones S3–S15.
 
 | Task | Command | Output |
 |---|---|---|
-| Run all unit tests (full) | `./gradlew testFullDebugUnitTest` | `**/build/test-results/**/*.xml` |
-| Run all unit tests (FOSS) | `./gradlew testFossDebugUnitTest` | same |
+| Run all unit tests | `./gradlew testDebugUnitTest` | `**/build/test-results/**/*.xml` |
 | Run Detekt | `./gradlew detekt` | `build/reports/detekt/detekt.html` |
 | Generate license report | `./gradlew :app:generateLicenseReport` | `docs/DEPENDENCY_LICENSES.md` |
 | Generate SBOM | `./gradlew :app:cyclonedxBom` | `docs/sbom.json` |
 | Security scan (BuildConfig) | `bash scripts/check-buildconfig-security.sh` | stdout |
-| Assemble debug APK | `./gradlew assembleFullDebug` | `app/build/outputs/apk/full/debug/` |
+| Assemble debug APK | `./gradlew assembleDebug` | `app/build/outputs/apk/debug/` |
 
 ---
 
@@ -26,7 +25,7 @@ The license report uses `com.github.jk1.dependency-license-report` (v2.9).
 ./gradlew :app:generateLicenseReport
 ```
 
-- Reads the `fullReleaseRuntimeClasspath configuration
+- Reads the `releaseRuntimeClasspath` configuration
 - Writes `docs/DEPENDENCY_LICENSES.md`
 - CI runs this on every push via the `license-report` job and uploads the artifact
 
@@ -87,8 +86,8 @@ Four checks **must** pass before any PR merges to `main`:
 
 1. **Security Check** — scans `BuildConfig` for hardcoded credentials
 2. **Detekt** — zero-tolerance static analysis
-3. **Unit Tests** — both `full` and `foss` flavors
-4. **Assemble** — must compile for both flavors
+3. **Unit Tests** — `./gradlew testDebugUnitTest`
+4. **Assemble** — `./gradlew assembleDebug` must succeed
 
 See `branch-protection.md` for how to add a new required check to the branch protection settings.
 
@@ -107,8 +106,7 @@ See `branch-protection.md` for how to add a new required check to the branch pro
 
 On every release, the following are attached automatically:
 
-- Full debug APK
-- FOSS debug APK
+- Debug APK
 - `docs/DEPENDENCY_LICENSES.md`
 - `docs/sbom.json`
 

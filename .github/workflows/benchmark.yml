@@ -39,7 +39,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Compile Kotlin
-        run: ./gradlew compileFullDebugKotlin --no-daemon
+        run: ./gradlew compileDebugKotlin --no-daemon
         env:
           CI: true
 
@@ -51,9 +51,9 @@ jobs:
           echo "|------|------|" >> benchmark.md
 
           START=$(date +%s)
-          ./gradlew :app:assembleFullDebug --no-daemon
+          ./gradlew :app:assembleDebug --no-daemon
           END=$(date +%s)
-          echo "| Full Debug Build | $((END-START))s |" >> benchmark.md
+          echo "| Debug Build | $((END-START))s |" >> benchmark.md
 
       - name: Upload Benchmark Results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4

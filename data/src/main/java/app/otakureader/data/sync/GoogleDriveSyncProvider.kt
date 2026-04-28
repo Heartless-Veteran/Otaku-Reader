@@ -11,9 +11,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * FOSS stub — Google Drive sync is not available in FOSS builds because it requires
- * Google Play Services. All operations return a failure result so the sync manager
- * can skip this provider gracefully.
+ * Stub implementation — Google Drive sync is not currently shipped.
+ *
+ * Cloud-sync providers (Google Drive, Dropbox, WebDAV) are slated for extraction
+ * to a sibling repository; see #710. All operations return a failure result so
+ * the sync manager can skip this provider gracefully until then.
  */
 @Singleton
 class GoogleDriveSyncProvider @Inject constructor(
@@ -43,5 +45,5 @@ class GoogleDriveSyncProvider @Inject constructor(
     override suspend fun getAvailableSpace(): Long? = null
 
     private fun <T> unavailable(): Result<T> =
-        Result.failure(UnsupportedOperationException("Google Drive sync is not available in FOSS builds"))
+        Result.failure(UnsupportedOperationException("Google Drive sync is not currently available"))
 }

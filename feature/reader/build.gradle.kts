@@ -6,13 +6,6 @@ plugins {
 android {
     namespace = "app.otakureader.feature.reader"
 
-    // Mirror the flavor dimension from :app and :data so Gradle can match variants
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") { dimension = "distribution" }
-        create("foss") { dimension = "distribution" }
-    }
-
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
