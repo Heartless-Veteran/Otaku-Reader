@@ -16,7 +16,6 @@ import androidx.navigation.compose.rememberNavController
  * Tracks current route, whether bottom bar should be shown,
  * and provides navigation actions for each top-level destination.
  */
-@Stable
 class OtakuReaderNavigator(
     val navController: NavHostController,
 ) {
@@ -91,6 +90,8 @@ class OtakuReaderNavigator(
 @Composable
 fun rememberOtakuReaderNavigator(
     navController: NavHostController = rememberNavController(),
-): OtakuReaderNavigator = remember(navController) {
-    OtakuReaderNavigator(navController)
+): OtakuReaderNavigator {
+    return remember(navController) {
+        OtakuReaderNavigator(navController)
+    }
 }
