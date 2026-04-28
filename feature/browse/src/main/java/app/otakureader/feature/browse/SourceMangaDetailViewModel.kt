@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import app.otakureader.core.navigation.SourceMangaDetailRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +21,7 @@ sealed interface SourceMangaDetailEffect {
 /**
  * Resolves a source manga (identified by [sourceId] + [mangaUrl]) to a database
  * entry and emits [SourceMangaDetailEffect.NavigateToMangaDetail] so the UI can
- * forward to the full [MangaDetailRoute] screen.
+ * forward to the full [Route.MangaDetails] screen.
  *
  * If the manga is already in the database (previously browsed or in library) its
  * existing ID is reused. Otherwise a stub entry is inserted so the details screen
@@ -37,7 +37,7 @@ class SourceMangaDetailViewModel @Inject constructor(
     val effect: Flow<SourceMangaDetailEffect> = _effect.receiveAsFlow()
 
     init {
-        val route = savedStateHandle.toRoute<SourceMangaDetailRoute>()
+        val route = savedStateHandle.toRoute<Route.SourceMangaDetail>()
         resolveAndNavigate(route.sourceId, route.mangaUrl, route.mangaTitle)
     }
 
