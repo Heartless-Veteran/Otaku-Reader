@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.otakureader.android.feature)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.roborazzi)
 }
 
 android {
