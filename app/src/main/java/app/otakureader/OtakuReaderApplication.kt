@@ -7,8 +7,6 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.crash.CrashHandler
-import app.otakureader.feature.reader.panel.PanelCacheService
-import dagger.Lazy
 import app.otakureader.shortcut.AppShortcutManager
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -47,9 +45,6 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
     lateinit var okHttpClient: OkHttpClient
 
     @Inject
-    lateinit var panelCacheService: Lazy<PanelCacheService>
-
-    @Inject
     lateinit var generalPreferences: GeneralPreferences
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -72,7 +67,6 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
 
     // Trim Coil's memory cache when the OS signals memory pressure, preventing the
     // app from holding onto image memory that the system urgently needs elsewhere.
-    // Also evicts stale panel-analysis cache entries on critical pressure.
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         val cache = SingletonImageLoader.get(this).memoryCache
@@ -83,7 +77,6 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
             ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
                 cache?.trimToSize(0)
-                applicationScope.launch { panelCacheService.get().cleanupStaleEntries() }
             }
         }
     }
