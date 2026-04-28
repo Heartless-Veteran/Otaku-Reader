@@ -3,7 +3,7 @@ package app.otakureader.feature.details.navigation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import app.otakureader.core.navigation.MangaDetailRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.feature.details.DetailsScreen
 
 fun NavGraphBuilder.detailsScreen(
@@ -12,8 +12,8 @@ fun NavGraphBuilder.detailsScreen(
     onNavigateToTracking: (mangaId: Long, mangaTitle: String) -> Unit = { _, _ -> },
     onNavigateToGlobalSearch: (query: String) -> Unit = {},
 ) {
-    composable<MangaDetailRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<MangaDetailRoute>()
+    composable<Route.MangaDetails> { backStackEntry ->
+        val route = backStackEntry.toRoute<Route.MangaDetails>()
         DetailsScreen(
             mangaId = route.mangaId,
             onNavigateBack = onNavigateBack,
