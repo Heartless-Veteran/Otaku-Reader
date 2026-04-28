@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 @Preview(name = "Light - Default")
 @Composable
 private fun PreviewLightDefault() {
-    MaterialTheme(colorScheme = lightColorScheme()) {
+    OtakuReaderTheme(darkTheme = false) {
         ThemePalettePreview()
     }
 }
@@ -44,7 +44,7 @@ private fun PreviewLightDefault() {
 @Preview(name = "Dark - Default")
 @Composable
 private fun PreviewDarkDefault() {
-    MaterialTheme(colorScheme = darkColorScheme()) {
+    OtakuReaderTheme(darkTheme = true) {
         ThemePalettePreview()
     }
 }
