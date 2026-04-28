@@ -62,6 +62,3 @@ include(":feature:opds")
 include(":feature:feed")
 include(":feature:more")
 include(":feature:recommendations")
-
-// Self-hosted sync server
-include(":server")

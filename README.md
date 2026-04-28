@@ -49,7 +49,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - 📊 **Tracking** — MAL, AniList, Kitsu (opt-in, no account required for core features)
 - 🔌 **Extension System** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
 - 🔔 **Notifications** — New chapter alerts, grouped by manga
-- ☁️ **Sync (Optional)** — Self-hosted server or local Wi-Fi sync; no cloud lock-in
+- 💾 **Local Backup & Restore** — Mihon/Komikku-compatible JSON backups; everything stays on-device
 - 🌐 **OPDS** — Client + server interop with Komga, Kavita, Calibre-Web
 
 ### 📖 Reader — The Part That Actually Matters
@@ -104,7 +104,8 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 
 ### Phase 0: Clean Slate (Now)
 - [ ] Pin stable Kotlin / KSP / Compose / AGP versions
-- [ ] Remove AI, cloud sync, and server modules from core repo → [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI)
+- [ ] Remove AI module from core repo → [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI)
+- [x] Remove cloud sync and self-hosted server modules from core repo → [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)
 - [ ] Flat single-product build (no `full`/`foss` flavors)
 - [ ] Green CI: detekt, ktlint, unit tests, signed APK on every tag
 

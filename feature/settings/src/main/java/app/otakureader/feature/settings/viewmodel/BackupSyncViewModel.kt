@@ -25,9 +25,8 @@ import javax.inject.Inject
  * Owns only the [BackupSettingsDelegate] so the backup preferences screen can be unit-tested
  * and navigated to independently of the rest of the settings surface.
  *
- * Note: cloud sync (Google Drive sign-in, sync interval, conflict resolution) currently lives
- * in [app.otakureader.feature.settings.delegate.TrackerSyncSettingsDelegate] and is exposed
- * via [TrackerSettingsViewModel]; that grouping is preserved here for backwards compatibility.
+ * Note: cloud sync (Google Drive / Dropbox / WebDAV / self-hosted) was extracted to a sibling
+ * repository. Only local backup/restore lives here.
  *
  * Part of the work to split the previously monolithic `SettingsViewModel` into per-section
  * ViewModels aligned with the settings sections.

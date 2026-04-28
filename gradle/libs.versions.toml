@@ -62,22 +62,12 @@ glance = "1.1.1"
 # Discord
 # Discord RPC is implemented natively in core/discord; no external library needed.
 
-# Google
-play-services-auth = "21.5.1"
-
 # RxJava (Tachiyomi extension API)
 rxjava = "1.3.8"
 rxandroid = "1.2.1"
 
 # Desugaring
 desugar-jdk-libs = "2.1.5"
-
-# Shadow (fat-jar for server module)
-shadow = "9.4.1"
-
-# Server (D-4: moved from hardcoded strings in server/build.gradle.kts)
-ktor = "3.4.3"
-logback = "1.5.32"
 
 # License reporting
 license-report = "2.8"
@@ -107,7 +97,6 @@ kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", versio
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
-kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
@@ -200,22 +189,6 @@ coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", versi
 # Alias matching libs.coil.okhttp
 coil-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 
-# Ktor Server
-ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
-ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
-ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation-jvm", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
-ktor-server-auth = { group = "io.ktor", name = "ktor-server-auth-jvm", version.ref = "ktor" }
-ktor-server-status-pages = { group = "io.ktor", name = "ktor-server-status-pages-jvm", version.ref = "ktor" }
-ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors-jvm", version.ref = "ktor" }
-ktor-server-rate-limit = { group = "io.ktor", name = "ktor-server-rate-limit-jvm", version.ref = "ktor" }
-ktor-server-call-logging = { group = "io.ktor", name = "ktor-server-call-logging-jvm", version.ref = "ktor" }
-ktor-server-test-host = { group = "io.ktor", name = "ktor-server-test-host-jvm", version.ref = "ktor" }
-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
-
-# Google
-play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "play-services-auth" }
-
 # RxJava (Tachiyomi extension API)
 rxjava = { group = "io.reactivex", name = "rxjava", version.ref = "rxjava" }
 rxandroid = { group = "io.reactivex", name = "rxandroid", version.ref = "rxandroid" }
@@ -285,8 +258,6 @@ otakureader-android-feature = { id = "otakureader.android.feature", version = "u
 otakureader-android-hilt = { id = "otakureader.android.hilt", version = "unspecified" }
 otakureader-android-room = { id = "otakureader.android.room", version = "unspecified" }
 otakureader-kotlin-library = { id = "otakureader.kotlin.library", version = "unspecified" }
-# Shadow plugin (fat-jar for the Ktor sync server)
-shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "license-report" }
 cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
 
