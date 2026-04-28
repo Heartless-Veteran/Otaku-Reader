@@ -138,9 +138,11 @@ private fun StatisticsContent(
         item {
             HorizontalDivider()
             Spacer(modifier = Modifier.height(4.dp))
-            SectionTitle(stringResource(R.string.statistics_reading_streak))
-            Spacer(modifier = Modifier.height(8.dp))
-            StreakRow(currentStreak = stats.currentStreak, bestStreak = stats.bestStreak)
+            StreakCard(
+                currentStreak = stats.currentStreak,
+                bestStreak = stats.bestStreak,
+                readingActivityByDay = stats.readingActivityByDay
+            )
         }
 
         // Reading activity heatmap

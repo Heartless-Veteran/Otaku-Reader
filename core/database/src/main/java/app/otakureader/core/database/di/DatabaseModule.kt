@@ -64,4 +64,7 @@ object DatabaseModule {
 
     @Provides
     fun provideTrackerSyncDao(database: OtakuReaderDatabase) = database.trackerSyncDao()
+
+    @Provides
+    fun provideReadingStreakDao(database: OtakuReaderDatabase) = database.readingStreakDao()
 }
