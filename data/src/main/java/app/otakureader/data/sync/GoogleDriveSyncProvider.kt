@@ -45,5 +45,5 @@ class GoogleDriveSyncProvider @Inject constructor(
     override suspend fun getAvailableSpace(): Long? = null
 
     private fun <T> unavailable(): Result<T> =
-        Result.failure(UnsupportedOperationException("Google Drive sync is not currently available (see #710)"))
+        Result.failure(UnsupportedOperationException("Google Drive sync is not currently available"))
 }
