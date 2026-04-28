@@ -58,7 +58,7 @@ sealed interface Route {
     @Serializable
     data class Reader(
         val mangaId: Long,
-        val chapterId: Long? = null,
+        val chapterId: Long,
     ) : Route
 
     // ─── Browse sub-flows ───
