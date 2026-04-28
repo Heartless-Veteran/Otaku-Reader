@@ -267,10 +267,10 @@ interface CategorizationRepository {
 **Recommendation:** Use Android Keystore for API key encryption
 
 ### 2. Flavor Dependencies
-- `full` flavor: Has AI features (Gemini)
-- `foss` flavor: No AI (privacy-friendly)
+- No product flavors. The build is a single flat artifact.
+- AI features (Gemini, etc.) live in the separate [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) companion APK rather than behind a `full` flavor.
 
-**Status:** ✅ Properly configured
+**Status:** ✅ `full` / `foss` flavors and the `distribution` flavor dimension removed in Phase 0.
 
 ### 3. Missing Baseline Profile
 **File:** `/baselineprofile/src/.../BaselineProfileGenerator.kt`  
