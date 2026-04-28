@@ -10,10 +10,10 @@ import kotlinx.serialization.Serializable
  *
  * Usage in NavHost:
  * ```kotlin
- * composable<Route.Library> { LibraryScreen(...) }
- * composable<Route.MangaDetails> { backStack ->
- *     val args = backStack.toRoute<Route.MangaDetails>()
- *     MangaDetailsScreen(mangaId = args.mangaId)
+ * composable { LibraryScreen(...) }
+ * composable { backStackEntry ->
+ *   val args = backStackEntry.toRoute()
+ *   MangaDetailsScreen(mangaId = args.mangaId)
  * }
  * ```
  *
@@ -53,7 +53,7 @@ sealed interface Route {
     /**
      * Reader screen.
      * @param mangaId Local manga ID.
-     * @param chapterId Chapter to open (optional — defaults to first unread).
+     * @param chapterId Chapter to open.
      */
     @Serializable
     data class Reader(
@@ -65,16 +65,35 @@ sealed interface Route {
 
     /**
      * Source listing screen — shows manga from a single source with filters.
-     * @param sourceId Installed extension source ID.
+     * @param sourceId Installed extension source ID (string identifier).
      */
     @Serializable
-    data class SourceListing(val sourceId: Long) : Route
+    data class SourceListing(val sourceId: String) : Route
 
     /**
      * Extension catalog — browse/install available extensions.
      */
     @Serializable
     data object ExtensionCatalog : Route
+
+    /**
+     * Extension APK install screen.
+     */
+    @Serializable
+    data object ExtensionInstall : Route
+
+    /**
+     * Source manga detail — browse a manga from a source before adding to library.
+     * @param sourceId Source extension ID.
+     * @param mangaUrl URL slug from the source.
+     * @param mangaTitle Title for display.
+     */
+    @Serializable
+    data class SourceMangaDetail(
+        val sourceId: String,
+        val mangaUrl: String,
+        val mangaTitle: String = "",
+    ) : Route
 
     /**
      * Global search results across all enabled sources.
@@ -102,6 +121,49 @@ sealed interface Route {
 
     @Serializable
     data object SettingsLibrary : Route
+
+    // ─── Downloads ───
+
+    @Serializable
+    data object Downloads : Route
+
+    // ─── Statistics ───
+
+    @Serializable
+    data object Statistics : Route
+
+    // ─── Migration ───
+
+    @Serializable
+    data object MigrationEntry : Route
+
+    @Serializable
+    data class Migration(val selectedMangaIds: List<Long> = emptyList()) : Route
+
+    // ─── Tracking ───
+
+    @Serializable
+    data class Tracking(val mangaId: Long, val mangaTitle: String) : Route
+
+    // ─── Onboarding ───
+
+    @Serializable
+    data object Onboarding : Route
+
+    // ─── About ───
+
+    @Serializable
+    data object About : Route
+
+    // ─── Feed ───
+
+    @Serializable
+    data object Feed : Route
+
+    // ─── Category Management ───
+
+    @Serializable
+    data object CategoryManagement : Route
 
     // ─── OPDS (Phase 3) ───
 

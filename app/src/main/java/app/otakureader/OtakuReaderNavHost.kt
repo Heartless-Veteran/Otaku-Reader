@@ -8,33 +8,9 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import app.otakureader.core.navigation.AboutRoute
-import app.otakureader.core.navigation.BrowseRoute
-import app.otakureader.core.navigation.CategoryManagementRoute
-import app.otakureader.core.navigation.DownloadsRoute
-import app.otakureader.core.navigation.ExtensionInstallRoute
-import app.otakureader.core.navigation.ExtensionsRoute
-import app.otakureader.core.navigation.FeedRoute
-import app.otakureader.core.navigation.GlobalSearchRoute
-import app.otakureader.core.navigation.HistoryRoute
-import app.otakureader.core.navigation.LibraryRoute
-import app.otakureader.core.navigation.MangaDetailRoute
-import app.otakureader.core.navigation.MigrationEntryRoute
-import app.otakureader.core.navigation.MigrationRoute
-import app.otakureader.core.navigation.MoreRoute
-import app.otakureader.core.navigation.OnboardingRoute
-import app.otakureader.core.navigation.ReaderRoute
-import app.otakureader.core.navigation.SettingsRoute
-import app.otakureader.core.navigation.SourceDetailRoute
-import app.otakureader.core.navigation.SourceMangaDetailRoute
-import app.otakureader.core.navigation.RecommendationsRoute
-import app.otakureader.core.navigation.StatisticsRoute
-import app.otakureader.core.navigation.TrackingRoute
-import app.otakureader.core.navigation.OpdsRoute
-import app.otakureader.core.navigation.UpdatesRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.feature.about.navigation.aboutScreen
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.extensionInstallScreen
@@ -50,7 +26,6 @@ import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
 import app.otakureader.feature.more.navigation.moreScreen
-import app.otakureader.feature.recommendations.navigation.recommendationsScreen
 import app.otakureader.feature.onboarding.navigation.onboardingScreen
 import app.otakureader.feature.opds.navigation.opdsScreen
 import app.otakureader.feature.reader.navigation.readerScreen
@@ -71,38 +46,35 @@ fun OtakuReaderNavHost(
     onOnboardingComplete: () -> Unit = {},
 ) {
     // Determine start destination based on onboarding status
-    val startDestination: Any = if (onboardingCompleted) LibraryRoute else OnboardingRoute
+    val startDestination: Route = if (onboardingCompleted) Route.Library else Route.Onboarding
 
     // Handle deep link navigation - only trigger once when deepLinkResult changes
     LaunchedEffect(deepLinkResult) {
         when (deepLinkResult) {
             is DeepLinkResult.MangaUrl -> {
-                // Use the manga URL from the deep link as a search query to locate the specific manga
-                navController.navigate(GlobalSearchRoute(query = deepLinkResult.mangaUrl))
+                navController.navigate(Route.Search(query = deepLinkResult.mangaUrl))
                 onDeepLinkConsumed()
             }
             is DeepLinkResult.SearchQuery -> {
-                navController.navigate(GlobalSearchRoute(query = deepLinkResult.query))
+                navController.navigate(Route.Search(query = deepLinkResult.query))
                 onDeepLinkConsumed()
             }
             is DeepLinkResult.NavigateToLibrary -> {
-                // Library is the start destination – clear the back stack so the user
-                // lands on a fresh library screen regardless of current navigation state.
-                navController.navigate(LibraryRoute) {
+                navController.navigate(Route.Library) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     launchSingleTop = true
                 }
                 onDeepLinkConsumed()
             }
             is DeepLinkResult.NavigateToUpdates -> {
-                navController.navigate(UpdatesRoute) {
+                navController.navigate(Route.Updates) {
                     launchSingleTop = true
                 }
                 onDeepLinkConsumed()
             }
             is DeepLinkResult.ContinueReading -> {
                 navController.navigate(
-                    ReaderRoute(deepLinkResult.mangaId, deepLinkResult.chapterId)
+                    Route.Reader(deepLinkResult.mangaId, deepLinkResult.chapterId)
                 ) {
                     launchSingleTop = true
                 }
@@ -146,54 +118,54 @@ fun OtakuReaderNavHost(
         // Library screen - main entry point
         libraryScreen(
             onMangaClick = { mangaId ->
-                navController.navigate(MangaDetailRoute(mangaId))
+                navController.navigate(Route.MangaDetails(mangaId))
             },
             onNavigateToSettings = {
-                navController.navigate(SettingsRoute)
+                navController.navigate(Route.Settings)
             },
             onNavigateToDownloads = {
-                navController.navigate(DownloadsRoute)
+                navController.navigate(Route.Downloads)
             },
             onNavigateToMigration = {
-                navController.navigate(MigrationEntryRoute)
+                navController.navigate(Route.MigrationEntry)
             },
             onNavigateToCategoryManagement = {
-                navController.navigate(CategoryManagementRoute)
+                navController.navigate(Route.CategoryManagement)
             },
             onNavigateToReader = { mangaId, chapterId ->
-                navController.navigate(ReaderRoute(mangaId, chapterId))
+                navController.navigate(Route.Reader(mangaId, chapterId))
             }
         )
 
         // Updates screen - new chapters
         updatesScreen(
             onMangaClick = { mangaId ->
-                navController.navigate(MangaDetailRoute(mangaId))
+                navController.navigate(Route.MangaDetails(mangaId))
             },
             onNavigateBack = {
                 navController.popBackStack()
             },
             onNavigateToDownloads = {
-                navController.navigate(DownloadsRoute)
+                navController.navigate(Route.Downloads)
             },
         )
 
         // Browse - sources catalog
         browseScreen(
             onMangaClick = { sourceId, mangaUrl, mangaTitle ->
-                navController.navigate(SourceMangaDetailRoute(sourceId, mangaUrl, mangaTitle))
+                navController.navigate(Route.SourceMangaDetail(sourceId, mangaUrl, mangaTitle))
             },
             onNavigateToSource = { sourceId ->
-                navController.navigate(SourceDetailRoute(sourceId))
+                navController.navigate(Route.SourceListing(sourceId))
             },
             onNavigateToExtensions = {
-                navController.navigate(ExtensionsRoute)
+                navController.navigate(Route.ExtensionCatalog)
             },
             onNavigateToGlobalSearch = {
-                navController.navigate(GlobalSearchRoute(query = ""))
+                navController.navigate(Route.Search(query = ""))
             },
             onNavigateToOpds = {
-                navController.navigate(OpdsRoute)
+                navController.navigate(Route.OpdsCatalog())
             },
         )
 
@@ -203,16 +175,14 @@ fun OtakuReaderNavHost(
                 navController.popBackStack()
             },
             onNavigateToMangaDetail = { mangaUrl, mangaTitle ->
-                // Navigate to global search with the manga URL as query
-                // This will search across all sources for the manga
-                navController.navigate(GlobalSearchRoute(query = mangaUrl))
+                navController.navigate(Route.Search(query = mangaUrl))
             }
         )
 
         // Global search across all sources
         globalSearchScreen(
             onMangaClick = { sourceId, mangaUrl ->
-                navController.navigate(SourceMangaDetailRoute(sourceId, mangaUrl))
+                navController.navigate(Route.SourceMangaDetail(sourceId, mangaUrl))
             },
             onNavigateBack = {
                 navController.popBackStack()
@@ -222,19 +192,18 @@ fun OtakuReaderNavHost(
         // Source detail — manga listing from a specific source
         sourceDetailScreen(
             onMangaClick = { sourceId, mangaUrl, mangaTitle ->
-                navController.navigate(SourceMangaDetailRoute(sourceId, mangaUrl, mangaTitle))
+                navController.navigate(Route.SourceMangaDetail(sourceId, mangaUrl, mangaTitle))
             },
             onNavigateBack = {
                 navController.popBackStack()
             }
         )
 
-        // Source manga detail — resolves URL to DB id then forwards to MangaDetailRoute
+        // Source manga detail — resolves URL to DB id then forwards to MangaDetails
         sourceMangaDetailScreen(
             onNavigateToMangaDetail = { mangaId ->
-                navController.navigate(MangaDetailRoute(mangaId)) {
-                    // Replace the redirect screen so back-press skips it
-                    popUpTo<SourceMangaDetailRoute> { inclusive = true }
+                navController.navigate(Route.MangaDetails(mangaId)) {
+                    popUpTo { inclusive = true }
                 }
             }
         )
@@ -256,7 +225,7 @@ fun OtakuReaderNavHost(
         // History screen
         historyScreen(
             onChapterClick = { mangaId, chapterId ->
-                navController.navigate(ReaderRoute(mangaId, chapterId))
+                navController.navigate(Route.Reader(mangaId, chapterId))
             },
             onNavigateBack = {
                 navController.popBackStack()
@@ -269,13 +238,13 @@ fun OtakuReaderNavHost(
                 navController.popBackStack()
             },
             onNavigateToReader = { mangaId, chapterId ->
-                navController.navigate(ReaderRoute(mangaId, chapterId))
+                navController.navigate(Route.Reader(mangaId, chapterId))
             },
             onNavigateToTracking = { mangaId, mangaTitle ->
-                navController.navigate(TrackingRoute(mangaId, mangaTitle))
+                navController.navigate(Route.Tracking(mangaId, mangaTitle))
             },
             onNavigateToGlobalSearch = { query ->
-                navController.navigate(GlobalSearchRoute(query = query))
+                navController.navigate(Route.Search(query = query))
             }
         )
 
@@ -292,10 +261,10 @@ fun OtakuReaderNavHost(
                 navController.popBackStack()
             },
             onNavigateToMigrationEntry = {
-                navController.navigate(MigrationEntryRoute)
+                navController.navigate(Route.MigrationEntry)
             },
             onNavigateToAbout = {
-                navController.navigate(AboutRoute)
+                navController.navigate(Route.About)
             }
         )
 
@@ -325,7 +294,7 @@ fun OtakuReaderNavHost(
                 navController.popBackStack()
             },
             onNavigateToMigration = { selectedMangaIds ->
-                navController.navigate(MigrationRoute(selectedMangaIds))
+                navController.navigate(Route.Migration(selectedMangaIds))
             }
         )
 
@@ -342,7 +311,7 @@ fun OtakuReaderNavHost(
                 navController.popBackStack()
             },
             onNavigateToReader = { mangaId, chapterId ->
-                navController.navigate(ReaderRoute(mangaId, chapterId))
+                navController.navigate(Route.Reader(mangaId, chapterId))
             }
         )
 
@@ -356,35 +325,26 @@ fun OtakuReaderNavHost(
         // More screen - access to settings, downloads, statistics, about, extensions, feed
         moreScreen(
             onNavigateToSettings = {
-                navController.navigate(SettingsRoute)
+                navController.navigate(Route.Settings)
             },
             onNavigateToDownloads = {
-                navController.navigate(DownloadsRoute)
+                navController.navigate(Route.Downloads)
             },
             onNavigateToStatistics = {
-                navController.navigate(StatisticsRoute)
+                navController.navigate(Route.Statistics)
             },
             onNavigateToAbout = {
-                navController.navigate(AboutRoute)
+                navController.navigate(Route.About)
             },
             onNavigateToExtensions = {
-                navController.navigate(ExtensionsRoute)
+                navController.navigate(Route.ExtensionCatalog)
             },
             onNavigateToFeed = {
-                navController.navigate(FeedRoute)
+                navController.navigate(Route.Feed)
             },
             onNavigateToRecommendations = {
-                navController.navigate(RecommendationsRoute)
-            },
-        )
-
-        // AI Recommendations screen
-        recommendationsScreen(
-            onNavigateBack = {
-                navController.popBackStack()
-            },
-            onNavigateToSearch = { query ->
-                navController.navigate(GlobalSearchRoute(query = query))
+                // AI recommendations — navigates to search as placeholder
+                navController.navigate(Route.Search(query = ""))
             },
         )
 
@@ -399,13 +359,12 @@ fun OtakuReaderNavHost(
         onboardingScreen(
             onComplete = {
                 onOnboardingComplete()
-                navController.navigate(LibraryRoute) {
-                    popUpTo<OnboardingRoute> { inclusive = true }
+                navController.navigate(Route.Library) {
+                    popUpTo { inclusive = true }
                 }
             },
             onNavigateToExtensions = {
-                // Navigate to extensions bottom sheet from onboarding
-                navController.navigate(ExtensionsRoute)
+                navController.navigate(Route.ExtensionCatalog)
             }
         )
     }
