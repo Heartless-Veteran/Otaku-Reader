@@ -24,8 +24,7 @@
 
 | Build | Description | Download |
 |-------|-------------|----------|
-| **Full** | All features | [Latest Release](https://github.com/HeartlessVeteran2/Otaku-Reader/releases/latest) |
-| **FOSS** | Open-source only, no proprietary SDKs | [Latest Release](https://github.com/HeartlessVeteran2/Otaku-Reader/releases/latest) |
+| **Otaku Reader** | Single flat build — open-source core, no proprietary SDKs. Optional AI features ship as a separate companion APK from [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI). | [Latest Release](https://github.com/HeartlessVeteran2/Otaku-Reader/releases/latest) |
 
 **Minimum Requirements:** Android 8.0 (API 26) · target APK < 10 MB
 
@@ -107,7 +106,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - [ ] Pin stable Kotlin / KSP / Compose / AGP versions
 - [ ] Remove AI module from core repo → [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI)
 - [x] Remove cloud sync and self-hosted server modules from core repo → [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)
-- [ ] Flat single-product build (no `full`/`foss` flavors)
+- [x] Flat single-product build (no `full`/`foss` flavors)
 - [ ] Green CI: detekt, ktlint, unit tests, signed APK on every tag
 
 ### Phase 1: Core App Wiring
