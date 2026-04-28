@@ -2,7 +2,7 @@ package app.otakureader.feature.more.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import app.otakureader.core.navigation.MoreRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.feature.more.MoreScreen
 
 fun NavGraphBuilder.moreScreen(
@@ -14,7 +14,7 @@ fun NavGraphBuilder.moreScreen(
     onNavigateToFeed: () -> Unit = {},
     onNavigateToRecommendations: () -> Unit = {},
 ) {
-    composable<MoreRoute> {
+    composable<Route.More> {
         MoreScreen(
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToDownloads = onNavigateToDownloads,
