@@ -25,11 +25,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import app.otakureader.core.navigation.BrowseRoute
-import app.otakureader.core.navigation.HistoryRoute
-import app.otakureader.core.navigation.LibraryRoute
-import app.otakureader.core.navigation.MoreRoute
-import app.otakureader.core.navigation.UpdatesRoute
+import app.otakureader.core.navigation.Route
 
 /**
  * Bottom navigation bar for the main app navigation.
@@ -45,18 +41,18 @@ fun OtakuReaderBottomBar(
     val currentDestination = navBackStackEntry?.destination
 
     val isTopLevelDestination = currentDestination?.hierarchy?.any { destination ->
-        destination.hasRoute(LibraryRoute::class) ||
-        destination.hasRoute(UpdatesRoute::class) ||
-        destination.hasRoute(BrowseRoute::class) ||
-        destination.hasRoute(HistoryRoute::class) ||
-        destination.hasRoute(MoreRoute::class)
+        destination.hasRoute(Route.Library::class) ||
+        destination.hasRoute(Route.Updates::class) ||
+        destination.hasRoute(Route.Browse::class) ||
+        destination.hasRoute(Route.History::class) ||
+        destination.hasRoute(Route.More::class)
     } == true
 
     if (!isTopLevelDestination) return
 
     NavigationBar(modifier = modifier) {
         // Library
-        val librarySelected = currentDestination?.hasRoute(LibraryRoute::class) == true
+        val librarySelected = currentDestination?.hasRoute(Route.Library::class) == true
         val libraryScale by animateFloatAsState(
             targetValue = if (librarySelected) 1.18f else 1f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -73,7 +69,7 @@ fun OtakuReaderBottomBar(
             label = { Text(stringResource(R.string.nav_library)) },
             selected = librarySelected,
             onClick = {
-                navController.navigate(LibraryRoute) {
+                navController.navigate(Route.Library) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
@@ -82,7 +78,7 @@ fun OtakuReaderBottomBar(
         )
 
         // Updates
-        val updatesSelected = currentDestination?.hasRoute(UpdatesRoute::class) == true
+        val updatesSelected = currentDestination?.hasRoute(Route.Updates::class) == true
         val updatesScale by animateFloatAsState(
             targetValue = if (updatesSelected) 1.18f else 1f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -109,7 +105,7 @@ fun OtakuReaderBottomBar(
             label = { Text(stringResource(R.string.nav_updates)) },
             selected = updatesSelected,
             onClick = {
-                navController.navigate(UpdatesRoute) {
+                navController.navigate(Route.Updates) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
@@ -118,7 +114,7 @@ fun OtakuReaderBottomBar(
         )
 
         // Browse
-        val browseSelected = currentDestination?.hasRoute(BrowseRoute::class) == true
+        val browseSelected = currentDestination?.hasRoute(Route.Browse::class) == true
         val browseScale by animateFloatAsState(
             targetValue = if (browseSelected) 1.18f else 1f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -135,7 +131,7 @@ fun OtakuReaderBottomBar(
             label = { Text(stringResource(R.string.nav_browse)) },
             selected = browseSelected,
             onClick = {
-                navController.navigate(BrowseRoute) {
+                navController.navigate(Route.Browse) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
@@ -144,7 +140,7 @@ fun OtakuReaderBottomBar(
         )
 
         // History
-        val historySelected = currentDestination?.hasRoute(HistoryRoute::class) == true
+        val historySelected = currentDestination?.hasRoute(Route.History::class) == true
         val historyScale by animateFloatAsState(
             targetValue = if (historySelected) 1.18f else 1f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -161,7 +157,7 @@ fun OtakuReaderBottomBar(
             label = { Text(stringResource(R.string.nav_history)) },
             selected = historySelected,
             onClick = {
-                navController.navigate(HistoryRoute) {
+                navController.navigate(Route.History) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
@@ -170,7 +166,7 @@ fun OtakuReaderBottomBar(
         )
 
         // More
-        val moreSelected = currentDestination?.hasRoute(MoreRoute::class) == true
+        val moreSelected = currentDestination?.hasRoute(Route.More::class) == true
         val moreScale by animateFloatAsState(
             targetValue = if (moreSelected) 1.18f else 1f,
             animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
@@ -187,7 +183,7 @@ fun OtakuReaderBottomBar(
             label = { Text(stringResource(R.string.nav_more)) },
             selected = moreSelected,
             onClick = {
-                navController.navigate(MoreRoute) {
+                navController.navigate(Route.More) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true
                     restoreState = true
