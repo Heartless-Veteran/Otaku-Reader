@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -150,6 +151,26 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // --- Smart Download ---
+
+    val smartDownloadEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_ENABLED] ?: false }
+    suspend fun setSmartDownloadEnabled(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_ENABLED] = value }
+
+    val smartDownloadChaptersAhead: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_CHAPTERS_AHEAD] ?: 3 }
+    suspend fun setSmartDownloadChaptersAhead(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_CHAPTERS_AHEAD] = value }
+
+    val smartDownloadThreshold: Flow<Float> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_THRESHOLD] ?: 0.8f }
+    suspend fun setSmartDownloadThreshold(value: Float) = dataStore.edit { it[Keys.SMART_DOWNLOAD_THRESHOLD] = value }
+
+    val smartDownloadWifiOnly: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_WIFI_ONLY] ?: true }
+    suspend fun setSmartDownloadWifiOnly(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_WIFI_ONLY] = value }
+
+    val smartDownloadFavoritesOnly: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_FAVORITES_ONLY] ?: true }
+    suspend fun setSmartDownloadFavoritesOnly(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_FAVORITES_ONLY] = value }
+
+    val smartDownloadMinStorageMb: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] ?: 500 }
+    suspend fun setSmartDownloadMinStorageMb(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] = value }
+
     // --- Image Cache ---
 
     /**
@@ -182,6 +203,12 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val CURRENT_VERSION_CODE = intPreferencesKey("current_version_code")
         val LATEST_VERSION_INFO = stringPreferencesKey("latest_version_info")
         val COIL_DISK_CACHE_SIZE_MB = intPreferencesKey("coil_disk_cache_size_mb")
+        val SMART_DOWNLOAD_ENABLED = booleanPreferencesKey("smart_download_enabled")
+        val SMART_DOWNLOAD_CHAPTERS_AHEAD = intPreferencesKey("smart_download_chapters_ahead")
+        val SMART_DOWNLOAD_THRESHOLD = floatPreferencesKey("smart_download_threshold")
+        val SMART_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("smart_download_wifi_only")
+        val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
+        val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
     }
 
     companion object {
