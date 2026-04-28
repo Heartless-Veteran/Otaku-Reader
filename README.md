@@ -3,7 +3,7 @@
 <div align="center">
   <img src="./.github/logo.jpg" alt="Otaku Reader" width="200"/>
 
-  <p><em>A modern, manga-only Android reader — built to be better than every Tachiyomi fork.</em></p>
+  <p><em>A modern, manga-only Android reader — no AI, no cloud, no ads, no tracking.</em></p>
 
   [![Build](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
@@ -15,8 +15,8 @@
 
 ---
 
-> **Privacy First:** All data stays on your device. No accounts, no tracking, no cloud required.
-> <br>**Local-first, sync-optional, never lock-in.**
+> **Privacy First:** All data stays on your device. No accounts, no tracking, no cloud, no AI. Ever.
+> <br>**Local-first, never lock-in.**
 
 ---
 
@@ -38,6 +38,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - **One app, one job:** Read manga. Nothing else.
 - **AI is an extension, not bloat:** AI-powered features (OCR translation, recommendations, auto-tagging) live in a [separate companion repo](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) and ship as an optional add-on APK.
 - **Zero accounts required:** No Google, no Firebase, no sign-up. Ever.
+- **No AI:** No ML models, no data mining, no "smart" recommendations. Just manga.
 - **Restores in 60 seconds:** First launch → restore from Mihon/Komikku backup → reading. No empty library anxiety.
 
 ### Features
