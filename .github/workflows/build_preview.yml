@@ -43,13 +43,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Full Debug APK
-        run: ./gradlew :app:assembleFullDebug --no-daemon
-        env:
-          CI: true
-
-      - name: Build FOSS Debug APK
-        run: ./gradlew :app:assembleFossDebug --no-daemon
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
         env:
           CI: true
 
@@ -62,18 +57,11 @@ jobs:
           echo "commit=$COMMIT" >> $GITHUB_OUTPUT
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Upload Full Debug APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: otaku-reader-full-debug-${{ steps.version.outputs.commit }}
-          path: app/build/outputs/apk/full/debug/*.apk
-          retention-days: 7
-
-      - name: Upload FOSS Debug APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
-        with:
-          name: otaku-reader-foss-debug-${{ steps.version.outputs.commit }}
-          path: app/build/outputs/apk/foss/debug/*.apk
+          name: otaku-reader-debug-${{ steps.version.outputs.commit }}
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
 
       - name: Comment on PR
@@ -90,9 +78,8 @@ jobs:
             
             Commit: \`${commit}\`
             
-            **Download APKs:**
-            - [Full Debug APK](${artifactsUrl}) (with AI features)
-            - [FOSS Debug APK](${artifactsUrl}) (open source only)
+            **Download APK:**
+            - [Debug APK](${artifactsUrl})
             
             Artifacts are available for 7 days.
             `;

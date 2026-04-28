@@ -86,16 +86,9 @@ jobs:
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 🧪 Run Unit Tests (Full flavor)
-        id: tests-full
-        run: ./gradlew testFullDebugUnitTest --no-daemon
-        env:
-          CI: true
-        continue-on-error: true
-
-      - name: 🧪 Run Unit Tests (FOSS flavor)
-        id: tests-foss
-        run: ./gradlew testFossDebugUnitTest --no-daemon
+      - name: 🧪 Run Unit Tests
+        id: tests
+        run: ./gradlew testDebugUnitTest --no-daemon
         env:
           CI: true
         continue-on-error: true
@@ -118,7 +111,7 @@ jobs:
           job_name: unit-tests
 
       - name: 🚨 Fail if any tests failed
-        if: steps.tests-full.outcome == 'failure' || steps.tests-foss.outcome == 'failure'
+        if: steps.tests.outcome == 'failure'
         run: exit 1
 
   # ── Assemble ─────────────────────────────────────────────────────────────────
@@ -148,13 +141,8 @@ jobs:
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 🔨 Build Full Debug
-        run: ./gradlew assembleFullDebug --no-daemon
-        env:
-          CI: true
-
-      - name: 🔨 Build FOSS Debug
-        run: ./gradlew assembleFossDebug --no-daemon
+      - name: 🔨 Build Debug
+        run: ./gradlew assembleDebug --no-daemon
         env:
           CI: true
 
@@ -163,8 +151,7 @@ jobs:
         with:
           name: app-debug-${{ github.run_number }}
           path: |
-            app/build/outputs/apk/full/debug/*.apk
-            app/build/outputs/apk/foss/debug/*.apk
+            app/build/outputs/apk/debug/*.apk
           retention-days: 7
 
   # ── Dependency License Report ─────────────────────────────────────────────────

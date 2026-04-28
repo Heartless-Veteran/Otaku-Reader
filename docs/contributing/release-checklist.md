@@ -48,9 +48,9 @@ Use this checklist when preparing a new release for distribution.
 
 Once these secrets are set, **signing is fully automated**. The `release.yml`
 workflow decodes `KEYSTORE_BASE64` into a temporary keystore file, writes
-`keystore.properties`, builds `assembleFullRelease` and `assembleFossRelease`,
-verifies both APKs with `apksigner verify`, then deletes the temporary files
-before uploading signed artifacts to the GitHub Release.
+`keystore.properties`, builds `assembleRelease`, verifies the APK with
+`apksigner verify`, then deletes the temporary files before uploading signed
+artifacts to the GitHub Release.
 
 ---
 
@@ -61,14 +61,13 @@ before uploading signed artifacts to the GitHub Release.
 ./gradlew clean assembleRelease
 
 # Output:
-# app/build/outputs/apk/full/release/app-full-release.apk
-# app/build/outputs/apk/foss/release/app-foss-release.apk
+# app/build/outputs/apk/release/app-release.apk
 ```
 
 ### Option 2: CI Build (automated)
 1. Push a `vX.Y.Z` tag to trigger `release.yml`
-2. The workflow builds and **signs** the APKs automatically using the repository secrets
-3. Signed, verified APKs are attached directly to the GitHub Release — no manual upload needed
+2. The workflow builds and **signs** the APK automatically using the repository secrets
+3. The signed, verified APK is attached directly to the GitHub Release — no manual upload needed
 
 ---
 
@@ -78,9 +77,8 @@ before uploading signed artifacts to the GitHub Release.
 2. **Tag version:** `vX.Y.Z` (matches versionName)
 3. **Release title:** `Otaku Reader vX.Y.Z`
 4. **Description:** Copy relevant section from CHANGELOG.md
-5. **Attach APKs:**
-   - `app-full-release.apk` (full features)
-   - `app-foss-release.apk` (open source only)
+5. **Attach APK:**
+   - `app-release.apk`
 6. **Mark as:** Pre-release (for beta) or Latest (for stable)
 7. **Publish release**
 
@@ -116,7 +114,7 @@ before uploading signed artifacts to the GitHub Release.
 | Build debug | `./gradlew assembleDebug` |
 | Build release | `./gradlew assembleRelease` |
 | Install debug | `adb install app/build/outputs/apk/debug/app-debug.apk` |
-| Install release | `adb install app/build/outputs/apk/full/release/app-full-release.apk` |
+| Install release | `adb install app/build/outputs/apk/release/app-release.apk` |
 
 ---
 

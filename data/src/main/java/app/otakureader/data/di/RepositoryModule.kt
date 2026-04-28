@@ -30,16 +30,13 @@ import dagger.hilt.components.SingletonComponent
 /**
  * Hilt module binding all non-AI repositories.
  *
- * The [AiRepository] binding is intentionally absent here — it lives in a
- * flavor-specific DI module so it can be swapped between the real Gemini
- * implementation (`full`) and the no-op stub (`foss`):
- *  - `full`: [app.otakureader.data.di.AiRepositoryModule] (data/src/full/...)
- *  - `foss`: [app.otakureader.core.ainoop.di.NoOpAiModule] (core/ai-noop)
- *
- * AI-adjacent repositories (CategorizationRepository, SfxTranslationRepository,
- * OcrTranslationRepository, ChapterSummaryRepository, SourceIntelligenceRepository,
- * SmartSearchCacheRepository) are bound in [AiRepositoryModule] (full flavor) or
- * NoOpAiModule (foss flavor) to prevent Hilt duplicate binding errors in FOSS builds.
+ * AI repository bindings (AiRepository, RecommendationRepository,
+ * CategorizationRepository, SfxTranslationRepository, OcrTranslationRepository,
+ * ChapterSummaryRepository, SourceIntelligenceRepository, SmartSearchCacheRepository)
+ * are intentionally absent here — they are provided by
+ * [app.otakureader.core.ainoop.di.NoOpAiModule] in `:core:ai-noop`. The Gemini-backed
+ * implementations live in a separate companion repo (see #708) and are not currently
+ * shipped with the app.
  */
 @Module
 @InstallIn(SingletonComponent::class)

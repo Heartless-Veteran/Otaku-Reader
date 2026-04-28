@@ -11,11 +11,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * No-op implementation of PanelAnalyzer for FOSS builds.
+ * No-op implementation of PanelAnalyzer.
  *
- * Panel-aware reading requires the Gemini Vision API, which is excluded from
- * FOSS builds. This stub ensures the app compiles and gracefully handles requests
- * by returning "not available" errors.
+ * Panel-aware reading requires the Gemini Vision API. The Gemini-backed
+ * implementation lives in a separate companion repo (see #708); this stub
+ * keeps the reader feature compiling and gracefully returns "not available"
+ * errors for all panel analysis requests.
  */
 @Singleton
 class PanelAnalyzer @Inject constructor(
@@ -24,14 +25,14 @@ class PanelAnalyzer @Inject constructor(
     private val cacheService: PanelCacheService
 ) {
     /**
-     * No-op initialization (AI is not available in FOSS builds).
+     * No-op initialization — the Gemini client is not available.
      */
     fun initialize(apiKey: String) {
-        // No-op: Gemini client is not available in FOSS builds
+        // No-op: Gemini client is not available in this build (see #708).
     }
 
     /**
-     * Always returns false in FOSS builds.
+     * Always returns false — AI is not available.
      */
     fun isInitialized(): Boolean = false
 
@@ -44,7 +45,7 @@ class PanelAnalyzer @Inject constructor(
         timeoutMillis: Long = 45_000L
     ): PanelAnalysisResultWrapper {
         return PanelAnalysisResultWrapper.Error(
-            PanelAnalysisException.NotAvailableInFoss()
+            PanelAnalysisException.NotAvailable()
         )
     }
 
@@ -56,7 +57,7 @@ class PanelAnalyzer @Inject constructor(
         readingDirection: ReadingDirection = ReadingDirection.RTL
     ): PanelAnalysisResultWrapper {
         return PanelAnalysisResultWrapper.Error(
-            PanelAnalysisException.NotAvailableInFoss()
+            PanelAnalysisException.NotAvailable()
         )
     }
 }

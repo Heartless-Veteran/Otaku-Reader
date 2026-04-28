@@ -23,18 +23,12 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Hilt module for FOSS builds that provides no-op AI repository implementations.
+ * Hilt module that provides no-op AI repository implementations.
  *
- * In a FOSS product flavor, include `:core:ai-noop` and install this module
- * instead of the real `AiModule` + `RepositoryModule`'s AI bindings.
- *
- * **Duplicate binding prevention**: This module should never be installed alongside
- * [AiRepositoryModule] (the real implementation in `data/src/full/`). The flavor
- * separation in build.gradle.kts enforces this: `foss` flavor depends on
- * `:core:ai-noop` but NOT `:core:ai`, while `full` flavor depends on `:core:ai`
- * but NOT `:core:ai-noop`. If both modules were accidentally included, Hilt would
- * report a duplicate binding error at compile time, preventing a broken build from
- * being created.
+ * AI features (Gemini-backed implementations) are not currently shipped with the
+ * app — they live in a separate companion repo (see #708). This module binds
+ * stubs for every AI-related repository so the rest of the app can depend on
+ * those interfaces without pulling in the Gemini SDK.
  */
 @Module
 @InstallIn(SingletonComponent::class)
