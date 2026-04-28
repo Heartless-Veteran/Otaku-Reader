@@ -10,8 +10,8 @@ The following CI jobs are required to pass before a PR can be merged:
 |---|---|---|
 | `Security Check` | `ci.yml` → `security` job | Prevents secrets from shipping in BuildConfig |
 | `Detekt` | `ci.yml` → `detekt` job | Enforces static analysis with zero tolerance |
-| `Unit Tests` | `ci.yml` → `unit-tests` job | Both `full` and `foss` flavors must pass |
-| `Assemble` | `ci.yml` → `assemble` job | Build must compile for both flavors |
+| `Unit Tests` | `ci.yml` → `unit-tests` job | `./gradlew testDebugUnitTest` must pass |
+| `Assemble` | `ci.yml` → `assemble` job | `./gradlew assembleDebug` must succeed |
 
 ## Settings to enable on `main`
 
@@ -30,7 +30,7 @@ In **Settings → Branches → Branch protection rules** for the `main` branch:
 
 Without enforced status checks, regressions can silently merge:
 
-- A failing `foss` flavor test (e.g. broken `core:ai-noop` binding) goes undetected if only `full` tests run.
+- A regression in the `:core:ai-noop` Hilt bindings goes undetected if the unit test job is skipped.
 - A hardcoded API key slips through if the security script never runs.
 - Detekt violations accumulate unchecked when the static analysis job is advisory only.
 

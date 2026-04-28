@@ -5,23 +5,6 @@ plugins {
 
 android {
     namespace = "app.otakureader.feature.settings"
-
-    // Mirror the flavor dimension from :app and :data so Gradle can match variants
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") {
-            dimension = "distribution"
-            buildConfigField("boolean", "AI_FEATURES_AVAILABLE", "true")
-        }
-        create("foss") {
-            dimension = "distribution"
-            buildConfigField("boolean", "AI_FEATURES_AVAILABLE", "false")
-        }
-    }
-
-    buildFeatures {
-        buildConfig = true
-    }
 }
 
 dependencies {

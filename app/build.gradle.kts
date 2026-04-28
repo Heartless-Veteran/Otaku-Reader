@@ -54,18 +54,11 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
-
-    // Mirror the distribution flavor dimension from :data so variant resolution works
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") { dimension = "distribution" }
-        create("foss") { dimension = "distribution" }
-    }
 }
 
 // CycloneDX v3.x - simplified configuration
 tasks.cyclonedxBom {
-    includeConfigs = listOf("fullReleaseRuntimeClasspath")
+    includeConfigs = listOf("releaseRuntimeClasspath")
     skipConfigs = listOf("debugRuntimeClasspath", "testRuntimeClasspath")
     projectType = "application"
     schemaVersion = "1.6"
@@ -79,7 +72,7 @@ licenseReport {
     filters = arrayOf(LicenseBundleNormalizer())
     // Exclude first-party modules from the license report
     excludeGroups = arrayOf("app.otakureader")
-    configurations = arrayOf("fullReleaseRuntimeClasspath")
+    configurations = arrayOf("releaseRuntimeClasspath")
 }
 
 dependencies {
@@ -113,10 +106,6 @@ dependencies {
 
     // Data layer (contains workers, repositories, etc.)
     implementation(projects.data)
-
-    // AI: full flavor uses real Gemini client, foss uses no-op
-    "fullImplementation"(projects.core.ai)
-    "fossImplementation"(projects.core.aiNoop)
 
     // Hilt WorkManager integration
     implementation(libs.hilt.work)

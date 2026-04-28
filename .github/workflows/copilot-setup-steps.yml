@@ -52,4 +52,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Pre-fetch Gradle dependencies
-        run: ./gradlew :app:dependencies --configuration fullDebugRuntimeClasspath --no-daemon -q || true
+        run: ./gradlew :app:dependencies --configuration debugRuntimeClasspath --no-daemon -q || true

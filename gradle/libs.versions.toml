@@ -69,11 +69,6 @@ rxandroid = "1.2.1"
 # Desugaring
 desugar-jdk-libs = "2.1.5"
 
-# AI
-generativeai = "0.9.0"
-mlkit-text-recognition = "16.0.1"
-mlkit-image-labeling = "17.0.9"
-
 # License reporting
 license-report = "2.8"
 
@@ -200,11 +195,6 @@ rxandroid = { group = "io.reactivex", name = "rxandroid", version.ref = "rxandro
 
 # Desugaring (core library desugaring for API 26+ language features)
 android-desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
-
-# AI
-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
-mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
-mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
 
 # Gradle plugins (as libraries for build-logic)
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
