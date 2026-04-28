@@ -16,7 +16,6 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
-import app.otakureader.core.preferences.SyncPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -104,11 +103,6 @@ object PreferencesModule {
     @Singleton
     fun provideBackupPreferences(dataStore: DataStore<Preferences>): BackupPreferences =
         BackupPreferences(dataStore)
-
-    @Provides
-    @Singleton
-    fun provideSyncPreferences(dataStore: DataStore<Preferences>): SyncPreferences =
-        SyncPreferences(dataStore)
 
     @Provides
     @Singleton

@@ -15,14 +15,6 @@ data class TrackerInfo(
     val isLoggedIn: Boolean
 )
 
-enum class SyncStatus {
-    DISABLED,
-    IDLE,
-    SYNCING,
-    SUCCESS,
-    ERROR
-}
-
 data class SettingsState(
     // --- Appearance ---
     val themeMode: Int = 0,            // 0=system, 1=light, 2=dark
@@ -162,21 +154,9 @@ data class SettingsState(
     val readingReminderHour: Int = 20,
 
     // --- Cloud Sync ---
-    val syncEnabled: Boolean = false,
-    val syncProviderId: String? = null,
-    val syncProviderName: String? = null,
-    val lastSyncTime: Long? = null,
-    val syncStatus: SyncStatus = SyncStatus.IDLE,
-    val autoSyncEnabled: Boolean = false,
-    val syncIntervalHours: Int = 24,
-    val syncOnlyOnWifi: Boolean = true,
-    val conflictResolutionStrategy: String = "PREFER_NEWER",
-    // Self-hosted
-    val selfHostedServerUrl: String = "",
-    val selfHostedAuthToken: String = "",
-    // Google Drive
-    val googleDriveAccountEmail: String? = null,
-    val isGoogleDriveSigningIn: Boolean = false,
+    // Removed: cloud sync (Google Drive / Dropbox / WebDAV / self-hosted) was extracted
+    // to a sibling repository. Local backup/restore stays in :data and remains exposed
+    // via the Backup section of this state.
 
     // App Update Checker
     val appUpdateCheckEnabled: Boolean = true,
@@ -328,18 +308,9 @@ sealed interface SettingsEvent : UiEvent {
     data class SetReadingReminderHour(val hour: Int) : SettingsEvent
 
     // Cloud Sync
-    data class SetSyncEnabled(val enabled: Boolean, val providerId: String?) : SettingsEvent
-    data object TriggerManualSync : SettingsEvent
-    data class SetAutoSyncEnabled(val enabled: Boolean) : SettingsEvent
-    data class SetSyncIntervalHours(val hours: Int) : SettingsEvent
-    data class SetSyncOnlyOnWifi(val onlyWifi: Boolean) : SettingsEvent
-    data class SetConflictResolutionStrategy(val strategy: String) : SettingsEvent
-    // Self-hosted
-    data class SetSelfHostedServerUrl(val url: String) : SettingsEvent
-    data class SetSelfHostedAuthToken(val token: String) : SettingsEvent
-    // Google Drive
-    data class GoogleSignInResult(val email: String) : SettingsEvent
-    data object DisconnectGoogleDrive : SettingsEvent
+    // Removed: cloud sync events (provider selection, manual sync, auto-sync interval,
+    // conflict resolution, self-hosted URL/token, Google Drive sign-in/disconnect) were
+    // extracted along with the cloud sync modules.
 
     // App Update Checker
     data class SetAppUpdateCheckEnabled(val enabled: Boolean) : SettingsEvent
@@ -361,5 +332,4 @@ sealed interface SettingsEffect : UiEffect {
     data object NavigateToMigrationEntry : SettingsEffect
     data object NavigateToAbout : SettingsEffect
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect
-    data object LaunchGoogleSignIn : SettingsEffect
 }

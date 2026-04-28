@@ -29,7 +29,6 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.core.discord)
     implementation(projects.data)
-    "fullImplementation"(libs.play.services.auth)
     // Note: feature.reader was removed as a dependency here. The shared types
     // (ImageQuality, ReaderMode, etc.) now come from :domain and ReaderSettingsRepository
     // comes from :data, which are both already included via the feature convention plugin.

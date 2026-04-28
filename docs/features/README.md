@@ -12,7 +12,7 @@ Complete documentation of all features available in Otaku Reader.
 - [Smart Prefetch](#smart-prefetch)
 - [Updates](#updates)
 - [Downloads](#downloads)
-- [Cloud Sync](#cloud-sync)
+- [Cloud Sync](#cloud-sync) — Extracted to [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)
 - [OPDS Catalog](#opds-catalog)
 - [AI Recommendations](#ai-recommendations)
 - [Discord Rich Presence](#discord-rich-presence)
@@ -37,7 +37,7 @@ Otaku Reader offers a comprehensive set of features for manga enthusiasts:
 | **Smart Prefetch** | Adaptive prefetch based on reading speed and behavior |
 | **Updates** | Auto-check, notifications, batch updates |
 | **Downloads** | Background queue, CBZ export, pause/resume |
-| **Cloud Sync** | Core engine complete; Google Drive OAuth integration pending |
+| **Cloud Sync** | _Extracted to [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)_ |
 | **OPDS** | Self-hosted catalog support (Komga, Kavita), add/browse/search |
 | **AI** | Gemini API integration complete; recommendation engine implementation pending |
 | **Discord** | Rich Presence showing currently reading manga |
@@ -366,56 +366,12 @@ The download system allows chapters to be saved locally for offline reading, wit
 
 ## Cloud Sync
 
-### Overview
-
-Cloud Sync keeps library data (favorites, categories, reading progress) synchronized across devices using a pluggable provider architecture.
-
-**Current Implementation Status:**
-- ✅ **Core Sync Engine**: Complete and production-ready
-- ✅ **Background Sync**: Fully functional with WorkManager integration
-- ⚠️ **Google Drive Provider**: Prototype implementation (REST API calls work, OAuth not implemented)
-- ❌ **OAuth Authentication**: Not implemented - requires Google Sign-In SDK integration
-- ❌ **Sync Settings UI**: Not connected to settings screen
-
-**User Impact:** Cloud sync cannot be used by end users until Google Drive OAuth authentication is implemented. The core sync engine is production-ready and well-tested, but users cannot authorize the app to access their Google Drive without the OAuth flow.
-
-### Providers
-
-| Provider | Implementation Status |
-|----------|----------------------|
-| **Google Drive** | ⚠️ Prototype (REST API v3 implemented, OAuth pending) |
-| **Dropbox** | ❌ Stub only (future implementation) |
-| **WebDAV** | ❌ Stub only (future implementation) |
-
-### Conflict Resolution Strategies
-
-| Strategy | Behavior |
-|----------|----------|
-| `PREFER_NEWER` | Keep the snapshot with the most recent timestamp (default) |
-| `PREFER_LOCAL` | Always use local data |
-| `PREFER_REMOTE` | Always use remote data |
-| `MERGE` | Intelligent merge: OR for booleans (favorites/read), max for progress |
-
-### Background Sync
-
-`SyncWorker` runs via WorkManager and is **fully implemented and production-ready**:
-
-- ✅ Configurable sync interval (1–168 hours)
-- ✅ Wi-Fi-only constraint
-- ✅ In-progress, success, and failure notifications via `SyncNotifier`
-- ✅ Automatic retry on transient failures
-- ✅ Proper handling of provider errors
-
-**Note:** Background sync infrastructure is complete, but requires OAuth implementation to function for end users.
-
-### What Is Synced
-
-- ✅ Library manga (favorites, categories)
-- ✅ Read progress (chapter read status, page progress)
-- ✅ Categories
-- ❌ Preferences (device-specific, not synced)
-- ❌ Full reading history (too large; may sync separately in future)
-- ❌ Theme/display settings (device-specific)
+> **Extracted.** Cloud sync (Google Drive / Dropbox / WebDAV / self-hosted server) was
+> moved to a sibling repository: [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync).
+>
+> The main app keeps **local backup & restore** (Mihon/Komikku-compatible JSON backups via the
+> Backup section in Settings) and **tracker sync** (AniList / MAL / Kitsu) — neither of which
+> uploads library data to a third-party cloud service.
 
 ## OPDS Catalog
 
