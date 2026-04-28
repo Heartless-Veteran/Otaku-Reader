@@ -69,7 +69,7 @@ The Kotlin / KSP / Compose Compiler / AGP versions are tightly coupled. Drift be
 4. Update `kotlin`, `ksp`, and `agp` in `gradle/libs.versions.toml` in the **same commit**.
 5. Run `./gradlew assembleDebug` locally — verify there are no version-mismatch warnings from KSP or the Compose Compiler.
 
-Renovate is configured to group bumps to Kotlin, KSP, the Compose Compiler plugin, and AGP into a single PR (`kotlin-ksp-compose-agp toolchain`) and to never auto-merge them. See the rule in [`renovate.json`](../../renovate.json).
+Renovate is configured to group bumps to Kotlin, KSP, the Compose Compiler plugin, Compose BOM, and AGP into a single PR (`kotlin-ksp-compose-agp toolchain`) and to never auto-merge them. See the rule in [`renovate.json`](../../renovate.json).
 
 ---
 
@@ -84,7 +84,7 @@ The repo uses `renovate.json` with targeted automerge:
 | Test libraries — minor/patch | ✅ Yes | `junit:junit:4.13` → `4.13.2` |
 | kotlinx libraries — patch only | ✅ Yes | `kotlinx-coroutines` patch bumps |
 | Major version bumps | ❌ Manual review | `v2` → `v3` |
-| Kotlin / KSP / Compose plugin / AGP triad | ❌ Manual review (grouped) | Always bumped together in one PR |
+| Kotlin / KSP / Compose plugin / Compose BOM / AGP toolchain | ❌ Manual review (grouped) | Always bumped together in one PR |
 | Security-sensitive (networking/crypto) | ❌ Manual review | OkHttp, BouncyCastle, etc. |
 
 If Renovate opens a PR and it matches automerge rules, CI must pass before it auto-merges. If a PR is blocked, it means a required check failed — investigate, don't override.
