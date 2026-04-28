@@ -19,9 +19,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,7 +54,6 @@ fun MoreScreen(
     onNavigateToBackup: () -> Unit = {},
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToFeed: () -> Unit = {},
-    onNavigateToRecommendations: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -148,17 +147,6 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_statistics),
                 supporting = stringResource(R.string.more_statistics_desc),
                 onClick = onNavigateToStatistics
-            )
-
-            HorizontalDivider()
-
-            MoreListItem(
-                icon = Icons.Default.AutoAwesome,
-                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                headline = stringResource(R.string.more_recommendations),
-                supporting = stringResource(R.string.more_recommendations_desc),
-                onClick = onNavigateToRecommendations
             )
 
             HorizontalDivider()

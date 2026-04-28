@@ -342,10 +342,6 @@ fun OtakuReaderNavHost(
             onNavigateToFeed = {
                 navController.navigate(Route.Feed)
             },
-            onNavigateToRecommendations = {
-                // AI recommendations — navigates to search as placeholder
-                navController.navigate(Route.Search(query = ""))
-            },
         )
 
         // Category management
