@@ -47,6 +47,32 @@ CycloneDX 1.6 JSON SBOM generation via `org.cyclonedx.bom` (v1.10.0).
 
 ---
 
+## Build Toolchain Version Matrix
+
+The Kotlin / KSP / Compose Compiler / AGP versions are tightly coupled. Drift between them is the #1 source of "won't build" pain. The single source of truth lives in [`gradle/libs.versions.toml`](../../gradle/libs.versions.toml); these values must be changed together.
+
+| Component | Version key in `libs.versions.toml` | Current | Notes |
+|---|---|---|---|
+| Kotlin | `kotlin` | `2.3.21` | Drives `kotlin-android`, `kotlin-jvm`, `kotlin-serialization`, and the `kotlin-compose` plugin (Compose Compiler is shipped by the Kotlin Compose plugin and tracks the Kotlin version automatically) |
+| KSP | `ksp` | `2.3.7` | Standalone versioning since Kotlin 2.3.x — verify on the [KSP releases page](https://github.com/google/ksp/releases) before bumping. Must be from the same Kotlin major.minor series |
+| Compose Compiler plugin | (uses `kotlin` ref) | tracks `kotlin` | Pinned via `compose-gradlePlugin` library and `kotlin-compose` plugin entries — do not pin separately |
+| AGP | `agp` | `9.1.1` | Drives `com.android.application`, `com.android.library`, `com.android.test` |
+| Compose BOM | `compose-bom` | `2026.04.01` | Manages all `androidx.compose.*` artifact versions |
+| Hilt | `hilt` | `2.59.2` | Plugin and runtime share the same key |
+| Room | `room` | `2.8.4` | Plugin, runtime, ktx, paging, testing, and compiler share the same key |
+
+### Bumping the toolchain
+
+1. Pick a target Kotlin version.
+2. Look up the matching KSP release on https://github.com/google/ksp/releases — KSP releases are tagged `<kotlin>-<ksp>` (e.g. `2.1.0-1.0.29`); for Kotlin 2.3.x the KSP version is standalone (e.g. `2.3.7`).
+3. Confirm the AGP version supports your Kotlin version on the [AGP / Kotlin compatibility table](https://developer.android.com/build/releases/gradle-plugin#compatibility).
+4. Update `kotlin`, `ksp`, and `agp` in `gradle/libs.versions.toml` in the **same commit**.
+5. Run `./gradlew assembleDebug` locally — verify there are no version-mismatch warnings from KSP or the Compose Compiler.
+
+Renovate is configured to group bumps to Kotlin, KSP, the Compose Compiler plugin, Compose BOM, and AGP into a single PR (`kotlin-ksp-compose-agp toolchain`) and to never auto-merge them. See the rule in [`renovate.json`](../../renovate.json).
+
+---
+
 ## Renovate Automerge Rules (S13)
 
 The repo uses `renovate.json` with targeted automerge:
@@ -58,6 +84,7 @@ The repo uses `renovate.json` with targeted automerge:
 | Test libraries — minor/patch | ✅ Yes | `junit:junit:4.13` → `4.13.2` |
 | kotlinx libraries — patch only | ✅ Yes | `kotlinx-coroutines` patch bumps |
 | Major version bumps | ❌ Manual review | `v2` → `v3` |
+| Kotlin / KSP / Compose plugin / Compose BOM / AGP toolchain | ❌ Manual review (grouped) | Always bumped together in one PR |
 | Security-sensitive (networking/crypto) | ❌ Manual review | OkHttp, BouncyCastle, etc. |
 
 If Renovate opens a PR and it matches automerge rules, CI must pass before it auto-merges. If a PR is blocked, it means a required check failed — investigate, don't override.
