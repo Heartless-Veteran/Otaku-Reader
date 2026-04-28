@@ -25,7 +25,7 @@ All app settings use **Preferences DataStore** (not SharedPreferences). Every pr
 | `BackupPreferences` | Auto-backup interval, last backup time, backup directory | 4+ |
 | `LocalSourcePreferences` | CBZ import directory, folder naming | 2+ |
 | `ReadingGoalPreferences` | Daily chapter target, streak tracking | 3+ |
-| `EncryptedApiKeyStore` | Tracker API tokens (encrypted) | AniList, MAL, Kitsu |
+| `EncryptedApiKeyStore` | API keys (encrypted) | Currently stores Gemini key; tracker OAuth tokens handled separately |
 | `EncryptedOpdsCredentialStore` | OPDS server credentials (encrypted) | Username/password pairs |
 
 ---
@@ -61,11 +61,32 @@ OtakuReaderTheme(
 
 ## SharedPreferences Check
 
-No `SharedPreferences` usage detected in current codebase:
-- All settings migrated to DataStore
-- Encrypted values use `EncryptedSharedPreferences` (AndroidX Security) only for API tokens — appropriate for this use case
+Some `SharedPreferences` usage remains in the codebase:
+- `CrashHandler` — stores crash reports locally (sync write required for process-death safety)
+- Extension `TrustedSignatures` — legacy storage, should migrate to DataStore
+- `EncryptedApiKeyStore` companion — unencrypted backup of API key hash
+
+All app **settings** are in DataStore. SharedPreferences is reserved for:
+- Crash reports (process-death safety)
+- Extension trust signatures (legacy, needs migration ticket)
+- Encrypted store companion files
 
 ---
+
+## Preference Classes
+
+| Class | Scope |
+|-------|-------|
+| `AppPreferences` | Legacy aggregate — being migrated to per-domain classes |
+| `GeneralPreferences` | Theme, locale, notifications, browse NSFW, Discord RPC, onboarding, app updates, image cache |
+| `LibraryPreferences` | Default category, sort, filter, display mode, grid columns |
+| `ReaderPreferences` | Reading mode, brightness, color filter, tap zones, fullscreen, cutout behavior |
+| `DownloadPreferences` | Location, concurrency, auto-delete, Wi-Fi only, battery threshold |
+| `BackupPreferences` | Auto-backup interval, last backup time, backup directory |
+| `LocalSourcePreferences` | CBZ import directory, folder naming |
+| `ReadingGoalPreferences` | Daily chapter target, streak tracking |
+| `EncryptedApiKeyStore` | API key encryption/decryption |
+| `EncryptedOpdsCredentialStore` | OPDS credential encryption |
 
 ## Proto DataStore Migration (Optional)
 
