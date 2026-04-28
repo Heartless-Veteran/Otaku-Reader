@@ -5,6 +5,7 @@
 
   <p><em>A modern, manga-only Android reader — built to be better than every Tachiyomi fork.</em></p>
 
+  [![Build](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-8.0+-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-0877d2?style=flat)](LICENSE)
