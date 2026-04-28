@@ -30,13 +30,8 @@ import dagger.hilt.components.SingletonComponent
 /**
  * Hilt module binding all non-AI repositories.
  *
- * AI repository bindings (AiRepository, RecommendationRepository,
- * CategorizationRepository, SfxTranslationRepository, OcrTranslationRepository,
- * ChapterSummaryRepository, SourceIntelligenceRepository, SmartSearchCacheRepository)
- * are intentionally absent here — they are provided by
- * [app.otakureader.core.ainoop.di.NoOpAiModule] in `:core:ai-noop`. The Gemini-backed
- * implementations live in a separate companion repo (see #708) and are not currently
- * shipped with the app.
+ * AI-related repositories were removed in Phase 0 (AI extraction).
+ * They now live in the companion Otaku-Reader-AI module.
  */
 @Module
 @InstallIn(SingletonComponent::class)

@@ -5,17 +5,6 @@ plugins {
 
 android {
     namespace = "app.otakureader.feature.settings"
-
-    defaultConfig {
-        // AI features are not currently shipped in the app (the Gemini-backed
-        // implementations live in a separate companion repo — see #708).
-        // SettingsMvi reads this flag to decide whether to surface AI UI.
-        buildConfigField("boolean", "AI_FEATURES_AVAILABLE", "false")
-    }
-
-    buildFeatures {
-        buildConfig = true
-    }
 }
 
 dependencies {

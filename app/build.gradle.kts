@@ -107,10 +107,6 @@ dependencies {
     // Data layer (contains workers, repositories, etc.)
     implementation(projects.data)
 
-    // AI: bind no-op repositories from :core:ai-noop. The real Gemini-backed
-    // implementations live in a separate companion repo (see #708).
-    implementation(projects.core.aiNoop)
-
     // Hilt WorkManager integration
     implementation(libs.hilt.work)
 
