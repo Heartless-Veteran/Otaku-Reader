@@ -1,8 +1,0 @@
-fix(navigation): resolve Kotlin compiler internal error with remember inlining
-
-- Remove @Stable annotation from OtakuReaderNavigator class
-- Rewrite rememberOtakuReaderNavigator with explicit return body
-- Fixes JVM backend internal error during compose compiler inlining
-
-The @Stable annotation combined with inline remember() call was
-causing a Kotlin compiler internal error in core:navigation.
