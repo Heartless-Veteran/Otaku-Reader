@@ -2,7 +2,7 @@ package app.otakureader.feature.library.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import app.otakureader.core.navigation.LibraryRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.feature.library.LibraryScreen
 
 fun NavGraphBuilder.libraryScreen(
@@ -14,7 +14,7 @@ fun NavGraphBuilder.libraryScreen(
     onRecommendationClick: (String) -> Unit = {},
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> }
 ) {
-    composable<LibraryRoute> {
+    composable<Route.Library> {
         LibraryScreen(
             onMangaClick = onMangaClick,
             onNavigateToSettings = onNavigateToSettings,
