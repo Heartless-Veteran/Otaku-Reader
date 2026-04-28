@@ -59,6 +59,9 @@ workmanager = "2.11.2"
 # Glance (widgets)
 glance = "1.1.1"
 
+# ProfileInstaller
+profileinstaller = "1.4.0"
+
 # Discord
 # Discord RPC is implemented natively in core/discord; no external library needed.
 
@@ -206,6 +209,7 @@ compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compile
 
 # Debug tools
 leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
+profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 
 # Screenshot testing
 roborazzi-core = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }

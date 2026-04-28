@@ -54,6 +54,12 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
+
+    // Baseline Profiles — AOT compilation for critical user journeys
+    baselineProfile {
+        baselineProfileOutputDir = layout.buildDirectory.dir("reports/baseline-prof")
+        saveInSrc = true
+    }
 }
 
 // CycloneDX v3.x - simplified configuration
@@ -135,6 +141,9 @@ dependencies {
     // Glance widgets
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+
+    // ProfileInstaller — enables on-device baseline profile installation
+    implementation(libs.profileinstaller)
 
     // Debug tools (LeakCanary — no-op in release builds)
     debugImplementation(libs.leakcanary)
