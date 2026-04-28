@@ -501,8 +501,3 @@ private fun EmptySourcesContent() {
     }
 }
 
-/**
- * Card that shows the AI-generated quality analysis for the currently selected source.
- */
-@Composable
-
