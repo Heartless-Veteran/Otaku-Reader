@@ -44,7 +44,9 @@ object DetailsContract {
         /** Whether the chapter filter bottom-sheet is currently visible. */
         val showChapterFilter: Boolean = false,
         /** Whether to show panorama cover (wide banner) instead of square thumbnail. */
-        val showPanoramaCover: Boolean = false
+        val showPanoramaCover: Boolean = false,
+        /** Whether automatic theme color extraction from cover is enabled. */
+        val autoThemeEnabled: Boolean = true
     ) : UiState {
         
         val canStartReading: Boolean

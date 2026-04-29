@@ -87,6 +87,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
+import app.otakureader.core.ui.theme.MangaDynamicTheme
+import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import coil3.compose.AsyncImage
@@ -160,8 +162,15 @@ fun DetailsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    val dynamicScheme = rememberCoverColorScheme(
+        imageUrl = state.manga?.thumbnailUrl,
+        darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+        enabled = state.autoThemeEnabled
+    )
+
+    MangaDynamicTheme(colorScheme = dynamicScheme) {
+        Scaffold(
+            topBar = {
             TopAppBar(
                 title = { Text(state.manga?.title ?: stringResource(R.string.details_title_fallback)) },
                 navigationIcon = {
@@ -241,6 +250,7 @@ fun DetailsScreen(
             else -> EmptyScreen(modifier = Modifier.padding(paddingValues))
         }
     }
+}
 }
 
 @Composable

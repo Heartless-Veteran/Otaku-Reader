@@ -11,6 +11,7 @@ import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
 import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,6 +45,7 @@ class DetailsViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val sourceRepository: SourceRepository,
     private val downloadPreferences: DownloadPreferences,
+    private val readerPreferences: ReaderPreferences,
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
 ) : ViewModel() {
@@ -281,6 +283,12 @@ class DetailsViewModel @Inject constructor(
                         deleteAfterReadOverride = override
                     )
                 }
+            }
+            .launchIn(viewModelScope)
+
+        readerPreferences.autoThemeColor
+            .onEach { enabled ->
+                _state.update { it.copy(autoThemeEnabled = enabled) }
             }
             .launchIn(viewModelScope)
     }
