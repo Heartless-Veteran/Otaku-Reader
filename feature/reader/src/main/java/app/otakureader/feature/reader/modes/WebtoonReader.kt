@@ -17,11 +17,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -101,7 +99,6 @@ fun WebtoonReader(
     // Coil's default decoder. Remembered so all pages share one factory instance.
     val webtoonDecoderFactory = remember { SubsamplingWebtoonDecoder.Factory() }
 
-    @OptIn(ExperimentalComposeUiApi::class)
     LazyColumn(
         state = listState,
         modifier = modifier
@@ -109,9 +106,18 @@ fun WebtoonReader(
             // Precise mouse-wheel scroll for DeX / external mouse (default Compose delta is too coarse).
             // scrollBy (non-animating) is used intentionally — animateScrollBy queues animations on
             // every pointer event and feels sluggish for continuous mouse-wheel input.
-            .onPointerEvent(PointerEventType.Scroll) { event ->
-                val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: return@onPointerEvent
-                coroutineScope.launch { listState.scrollBy(delta * MOUSE_SCROLL_MULTIPLIER) }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Scroll) {
+                            val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: continue
+                            coroutineScope.launch {
+                                listState.scroll { scrollBy(delta * MOUSE_SCROLL_MULTIPLIER) }
+                            }
+                        }
+                    }
+                }
             },
         contentPadding = PaddingValues(vertical = pageGapDp.dp),
         verticalArrangement = Arrangement.spacedBy(pageGapDp.dp)

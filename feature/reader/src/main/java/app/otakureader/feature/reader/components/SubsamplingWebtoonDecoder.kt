@@ -54,13 +54,7 @@ class SubsamplingWebtoonDecoder(
 
         val opts = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
-            // Honor Coil's bitmap config (e.g., RGB_565 for opaque images when allowRgb565
-            // is enabled, or ARGB_8888 otherwise). This preserves Coil's global memory
-            // optimizations while adding subsampling for oversized images.
-            inPreferredConfig = when (options.bitmapConfig) {
-                Bitmap.Config.HARDWARE -> Bitmap.Config.ARGB_8888  // Hardware bitmaps cannot be created via BitmapFactory.decodeStream
-                else -> options.bitmapConfig
-            }
+            inPreferredConfig = Bitmap.Config.ARGB_8888
         }
 
         var bitmap = source.use { src ->

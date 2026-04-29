@@ -39,12 +39,12 @@ interface ReaderSettingsRepository {
     val animatePageTransitions: Flow<Boolean>
     val showReadingModeOverlay: Flow<Boolean>
     val showTapZonesOverlay: Flow<Boolean>
-    val readerScale: Flow<Float>
+    val readerScale: Flow<Int>
     val autoZoomWideImages: Flow<Boolean>
     val invertTapZones: Flow<Boolean>
     val webtoonSidePadding: Flow<Int>
     val webtoonGapDp: Flow<Int>
-    val webtoonMenuHideSensitivity: Flow<Float>
+    val webtoonMenuHideSensitivity: Flow<Int>
     val webtoonDoubleTapZoom: Flow<Boolean>
     val webtoonDisableZoomOut: Flow<Boolean>
     val einkFlashOnPageChange: Flow<Boolean>
