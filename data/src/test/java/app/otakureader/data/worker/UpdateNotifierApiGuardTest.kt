@@ -3,6 +3,7 @@ package app.otakureader.data.worker
 import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import io.mockk.mockk
@@ -46,7 +47,7 @@ class UpdateNotifierSdk28ApiGuardTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        SingletonImageLoader.setUnsafe(mockk(relaxed = true))
+        SingletonImageLoader.setUnsafe(mockk<ImageLoader>(relaxed = true))
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         shadowNm = Shadows.shadowOf(nm)
         // Deliberately do NOT grant POST_NOTIFICATIONS permission here
@@ -80,7 +81,7 @@ class UpdateNotifierSdk33ApiGuardTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        SingletonImageLoader.setUnsafe(mockk(relaxed = true))
+        SingletonImageLoader.setUnsafe(mockk<ImageLoader>(relaxed = true))
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         shadowNm = Shadows.shadowOf(nm)
         // POST_NOTIFICATIONS is NOT granted — Robolectric denies unknown permissions by default.

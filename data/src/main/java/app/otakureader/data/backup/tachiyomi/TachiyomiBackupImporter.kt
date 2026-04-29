@@ -59,7 +59,7 @@ class TachiyomiBackupImporter @Inject constructor(
                     id = 0, // auto-generate
                     name = tachiyomiCategory.name,
                     order = tachiyomiCategory.order,
-                    flags = tachiyomiCategory.flags
+                    flags = tachiyomiCategory.flags.toInt()
                 )
                 val newId = categoryDao.insert(entity)
                 tachiyomiCategory.id?.let { oldId ->
@@ -79,7 +79,7 @@ class TachiyomiBackupImporter @Inject constructor(
 
                 val entity = MangaEntity(
                     id = existing?.id ?: 0,
-                    sourceId = tachiyomiManga.source.toString(),
+                    sourceId = tachiyomiManga.source,
                     url = tachiyomiManga.url,
                     title = tachiyomiManga.title,
                     artist = tachiyomiManga.artist,
@@ -90,14 +90,11 @@ class TachiyomiBackupImporter @Inject constructor(
                     thumbnailUrl = tachiyomiManga.thumbnailUrl,
                     favorite = tachiyomiManga.favorite,
                     lastUpdate = tachiyomiManga.lastUpdate,
-                    nextUpdate = tachiyomiManga.nextUpdate,
-                    calculateInterval = tachiyomiManga.calculateInterval,
                     initialized = existing?.initialized ?: false,
                     viewerFlags = tachiyomiManga.viewerFlags,
                     chapterFlags = tachiyomiManga.chapterFlags,
                     coverLastModified = tachiyomiManga.coverLastModified,
                     dateAdded = tachiyomiManga.dateAdded,
-                    filteredScanlators = tachiyomiManga.filteredScanlators
                 )
 
                 val newId = if (existing != null) {

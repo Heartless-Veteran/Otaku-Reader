@@ -5,11 +5,16 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Integration tests for [OpdsParser]: exercises XML parsing of OPDS (Atom) feeds
  * against realistic feed fixtures.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class OpdsParserTest {
 
     private fun parse(xml: String) = OpdsParser.parse(xml.trimIndent().byteInputStream())
@@ -232,7 +237,7 @@ class OpdsParserTest {
     @Test
     fun `feed with multiple entries parses all of them`() {
         val titles = listOf("One Piece", "Naruto", "Bleach", "Dragon Ball")
-        val entriesXml = titles.joinToString("\n") { title ->
+        val entriesXml = titles.joinToString("\n            ") { title ->
             "<entry><title>$title</title><id>urn:$title</id></entry>"
         }
         val feed = parse("""

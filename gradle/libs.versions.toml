@@ -103,6 +103,7 @@ espresso = "3.7.0"
 mockk = "1.14.9"
 turbine = "1.2.1"
 robolectric = "4.16.1"
+kover = "0.8.3"
 
 [libraries]
 # Kotlin
@@ -267,6 +268,7 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 room = { id = "androidx.room", version.ref = "room" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 # Convention plugins (local)
 otakureader-android-application = { id = "otakureader.android.application", version = "unspecified" }

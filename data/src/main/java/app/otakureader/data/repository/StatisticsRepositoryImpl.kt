@@ -81,12 +81,10 @@ class StatisticsRepositoryImpl @Inject constructor(
         val bestStreak = calculateBestStreak(readingDays)
         
         ReadingGoal(
-            targetChaptersPerDay = dailyGoal,
-            targetMinutesPerDay = weeklyGoal / 7,
-            currentStreak = currentStreak,
-            longestStreak = bestStreak,
-            totalChaptersThisWeek = weekCount,
-            totalMinutesThisWeek = weekMinutes.toInt()
+            dailyGoal = dailyGoal,
+            dailyProgress = todayCount,
+            weeklyGoal = weeklyGoal,
+            weeklyProgress = weekCount
         )
     }
     

@@ -2,6 +2,7 @@ package app.otakureader.domain.repository
 
 import app.otakureader.domain.model.ReadingList
 import app.otakureader.domain.model.ReadingListItem
+import app.otakureader.domain.model.ReadingListMangaItem
 import kotlinx.coroutines.flow.Flow
 
 interface ReadingListRepository {

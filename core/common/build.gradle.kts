@@ -16,4 +16,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     api(libs.kotlinx.coroutines.core)
     implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.zxing.core)
 }

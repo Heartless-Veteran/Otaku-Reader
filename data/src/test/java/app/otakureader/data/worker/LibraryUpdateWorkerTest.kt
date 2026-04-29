@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
@@ -51,6 +52,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadManager: DownloadManager
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var worker: LibraryUpdateWorker
 
     private lateinit var connectivityManager: ConnectivityManager
@@ -115,6 +117,7 @@ class LibraryUpdateWorkerTest {
         libraryPreferences = mockk()
         downloadManager = mockk(relaxed = true)
         chapterRepository = mockk()
+        notificationPreferences = mockk(relaxed = true)
 
         connectivityManager = mockk()
         network = mockk()
@@ -144,7 +147,8 @@ class LibraryUpdateWorkerTest {
             downloadPreferences,
             generalPreferences,
             downloadManager,
-            chapterRepository
+            chapterRepository,
+            notificationPreferences
         )
     }
 
@@ -537,8 +541,8 @@ class LibraryUpdateWorkerTest {
         // When
         val result = worker.doWork()
 
-        // Then - no manga updated because WiFi gate blocks the work
-        assertEquals(ListenableWorker.Result.success(), result)
+        // Then - work is retried because WiFi gate blocks the work until connectivity is restored
+        assertEquals(ListenableWorker.Result.retry(), result)
         coVerify(exactly = 0) { updateLibraryManga(any()) }
     }
 

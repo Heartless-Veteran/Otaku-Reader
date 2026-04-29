@@ -21,7 +21,7 @@ interface ReaderSettingsRepository {
     val fullscreen: Flow<Boolean>
     val incognitoMode: Flow<Boolean>
     val colorFilterMode: Flow<ColorFilterMode>
-    val customTintColor: Flow<Int>
+    val customTintColor: Flow<Long>
     val cropBordersEnabled: Flow<Boolean>
     val imageQuality: Flow<ImageQuality>
     val dataSaverEnabled: Flow<Boolean>

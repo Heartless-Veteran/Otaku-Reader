@@ -32,7 +32,7 @@ class PageLoader @Inject constructor(
      * @param chapterName name / title of the chapter
      * @param pageIndex   0-based index of this page within the chapter
      */
-    fun resolveUrl(
+    override fun resolveUrl(
         pageUrl: String,
         sourceName: String,
         mangaTitle: String,

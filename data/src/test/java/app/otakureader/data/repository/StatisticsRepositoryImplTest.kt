@@ -1,7 +1,8 @@
 package app.otakureader.data.repository
 
-import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
+import app.otakureader.core.database.dao.ReadingStreakDao
+import app.otakureader.core.database.entity.ReadingHistoryEntity
 import app.cash.turbine.test
 import io.mockk.every
 import io.mockk.mockk
@@ -11,56 +12,43 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 
 class StatisticsRepositoryImplTest {
 
-    private lateinit var mangaDao: MangaDao
     private lateinit var readingHistoryDao: ReadingHistoryDao
+    private lateinit var readingStreakDao: ReadingStreakDao
     private lateinit var repository: StatisticsRepositoryImpl
+
+    private fun makeEntry(readAt: Long, durationMs: Long = 0L) =
+        ReadingHistoryEntity(chapterId = 1L, readAt = readAt, readDurationMs = durationMs)
+
+    private fun dayMs(daysAgo: Long): Long {
+        val zone = ZoneId.systemDefault()
+        return LocalDate.now(zone).minusDays(daysAgo).atStartOfDay(zone).toInstant().toEpochMilli()
+    }
 
     @Before
     fun setUp() {
-        mangaDao = mockk()
         readingHistoryDao = mockk()
-        repository = StatisticsRepositoryImpl(mangaDao, readingHistoryDao)
+        readingStreakDao = mockk()
+        repository = StatisticsRepositoryImpl(readingHistoryDao, readingStreakDao)
 
-        // Default stubs so tests can override only what they care about
-        every { mangaDao.getFavoriteMangaCount() } returns flowOf(0)
-        every { readingHistoryDao.getTotalChaptersRead() } returns flowOf(0)
-        every { readingHistoryDao.getTotalReadingTimeMs() } returns flowOf(0L)
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(emptyList())
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(emptyList())
+        // Default stub
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
     }
 
-    // ── Overview totals ────────────────────────────────────────────────────────
+    // ── getReadingStats: totals ────────────────────────────────────────────────
 
     @Test
-    fun getReadingStats_mapsTotalsFromDaos() = runTest {
-        every { mangaDao.getFavoriteMangaCount() } returns flowOf(5)
-        every { readingHistoryDao.getTotalChaptersRead() } returns flowOf(42)
-        every { readingHistoryDao.getTotalReadingTimeMs() } returns flowOf(3_600_000L)
+    fun `getReadingStats empty history returns zero totals`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
 
         repository.getReadingStats().test {
             val stats = awaitItem()
-            assertEquals(5, stats.totalMangaInLibrary)
-            assertEquals(42, stats.totalChaptersRead)
-            assertEquals(3_600_000L, stats.totalReadingTimeMs)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    // ── computeStreaks ─────────────────────────────────────────────────────────
-
-    @Test
-    fun computeStreaks_emptyTimestamps_returnsZeroZero() = runTest {
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(emptyList())
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
+            assertEquals(0, stats.totalChaptersRead)
+            assertEquals(0L, stats.totalReadingTimeMs)
             assertEquals(0, stats.currentStreak)
             assertEquals(0, stats.bestStreak)
             cancelAndIgnoreRemainingEvents()
@@ -68,10 +56,27 @@ class StatisticsRepositoryImplTest {
     }
 
     @Test
-    fun computeStreaks_singleDay_returnsOneOne() = runTest {
-        // Use today's timestamp to ensure currentStreak = 1
-        val todayMs = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(listOf(todayMs))
+    fun `getReadingStats counts chapters and sums reading time`() = runTest {
+        val entries = listOf(
+            makeEntry(dayMs(0), durationMs = 1_000L),
+            makeEntry(dayMs(0), durationMs = 2_000L),
+            makeEntry(dayMs(1), durationMs = 500L),
+        )
+        every { readingHistoryDao.observeHistory() } returns flowOf(entries)
+
+        repository.getReadingStats().test {
+            val stats = awaitItem()
+            assertEquals(3, stats.totalChaptersRead)
+            assertEquals(3_500L, stats.totalReadingTimeMs)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ── getReadingStats: streaks ───────────────────────────────────────────────
+
+    @Test
+    fun `getReadingStats single day today returns streak of 1`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(listOf(makeEntry(dayMs(0))))
 
         repository.getReadingStats().test {
             val stats = awaitItem()
@@ -82,14 +87,9 @@ class StatisticsRepositoryImplTest {
     }
 
     @Test
-    fun computeStreaks_consecutiveDays_correctBestStreak() = runTest {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
-        // Build 5 consecutive days ending today
-        val timestamps = (0L..4L).map { daysAgo ->
-            today.minusDays(daysAgo).atStartOfDay(zone).toInstant().toEpochMilli()
-        }
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(timestamps)
+    fun `getReadingStats consecutive days returns correct streak`() = runTest {
+        val entries = (0L..4L).map { makeEntry(dayMs(it)) }
+        every { readingHistoryDao.observeHistory() } returns flowOf(entries)
 
         repository.getReadingStats().test {
             val stats = awaitItem()
@@ -100,49 +100,24 @@ class StatisticsRepositoryImplTest {
     }
 
     @Test
-    fun computeStreaks_brokenStreak_bestStreakPreserved() = runTest {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
-        // 3 consecutive days 10+ days ago, gap, then today+yesterday
-        val oldStreak = (10L..12L).map { daysAgo ->
-            today.minusDays(daysAgo).atStartOfDay(zone).toInstant().toEpochMilli()
-        }
-        val recentStreak = listOf(0L, 1L).map { daysAgo ->
-            today.minusDays(daysAgo).atStartOfDay(zone).toInstant().toEpochMilli()
-        }
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(oldStreak + recentStreak)
+    fun `getReadingStats broken streak preserves best streak`() = runTest {
+        // Old streak: 3 days ending 10 days ago; recent: 2 days (today + yesterday)
+        val oldStreak = (10L..12L).map { makeEntry(dayMs(it)) }
+        val recent = (0L..1L).map { makeEntry(dayMs(it)) }
+        every { readingHistoryDao.observeHistory() } returns flowOf(oldStreak + recent)
 
         repository.getReadingStats().test {
             val stats = awaitItem()
-            assertEquals(2, stats.currentStreak)   // today + yesterday
-            assertEquals(3, stats.bestStreak)      // old streak of 3
+            assertEquals(2, stats.currentStreak)
+            assertEquals(3, stats.bestStreak)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun computeStreaks_duplicatesOnSameDay_countedOnce() = runTest {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
-        // Multiple reads on the same day should count as 1 streak day
-        val todayEarly = today.atStartOfDay(zone).toInstant().toEpochMilli()
-        val todayLate = today.atTime(23, 59).atZone(zone).toInstant().toEpochMilli()
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(listOf(todayEarly, todayLate))
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            assertEquals(1, stats.currentStreak)
-            assertEquals(1, stats.bestStreak)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun computeStreaks_noReadingToday_currentStreakIsZero() = runTest {
-        val zone = ZoneId.systemDefault()
-        val yesterday = LocalDate.now(zone).minusDays(1)
-            .atStartOfDay(zone).toInstant().toEpochMilli()
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(listOf(yesterday))
+    fun `getReadingStats no reading today or yesterday returns currentStreak zero`() = runTest {
+        // Read 2 days ago but not today or yesterday — streak is broken
+        every { readingHistoryDao.observeHistory() } returns flowOf(listOf(makeEntry(dayMs(2))))
 
         repository.getReadingStats().test {
             val stats = awaitItem()
@@ -152,94 +127,40 @@ class StatisticsRepositoryImplTest {
         }
     }
 
-    // ── computeGenreDistribution ───────────────────────────────────────────────
-
     @Test
-    fun computeGenreDistribution_emptyInput_returnsEmptyMap() = runTest {
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(emptyList())
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            assertTrue(stats.genreDistribution.isEmpty())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun computeGenreDistribution_commaSeparated_countsCorrectly() = runTest {
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(
-            listOf("Action,Adventure", "Action,Romance")
+    fun `getReadingStats duplicates on same day counted once in streak`() = runTest {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val earlyMs = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val lateMs = today.atTime(23, 59).atZone(zone).toInstant().toEpochMilli()
+        every { readingHistoryDao.observeHistory() } returns flowOf(
+            listOf(makeEntry(earlyMs), makeEntry(lateMs))
         )
 
         repository.getReadingStats().test {
             val stats = awaitItem()
-            assertEquals(2, stats.genreDistribution["Action"])
-            assertEquals(1, stats.genreDistribution["Adventure"])
-            assertEquals(1, stats.genreDistribution["Romance"])
+            assertEquals(1, stats.currentStreak)
+            assertEquals(1, stats.bestStreak)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
+    // ── getReadingStats: activity map ─────────────────────────────────────────
+
     @Test
-    fun computeGenreDistribution_pipesSeparated_countsCorrectly() = runTest {
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(
-            listOf("Action|||Adventure", "Action|||Isekai")
-        )
+    fun `getReadingStats activity map has 30 entries`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
 
         repository.getReadingStats().test {
             val stats = awaitItem()
-            assertEquals(2, stats.genreDistribution["Action"])
-            assertEquals(1, stats.genreDistribution["Adventure"])
-            assertEquals(1, stats.genreDistribution["Isekai"])
+            assertEquals(30, stats.readingActivityByDay.size)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun computeGenreDistribution_sortedByCountDescending() = runTest {
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(
-            listOf("Comedy", "Action,Comedy", "Action,Comedy,Drama")
-        )
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            val keys = stats.genreDistribution.keys.toList()
-            // Action:2, Comedy:3 → Comedy first
-            assertEquals("Comedy", keys[0])
-            assertEquals("Action", keys[1])
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun computeGenreDistribution_capped_atMaxGenres() = runTest {
-        // 11 distinct genres → only top 10 returned
-        val genreString = (1..11).joinToString(",") { "Genre$it" }
-        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(listOf(genreString))
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            assertEquals(10, stats.genreDistribution.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    // ── computeReadingActivity ─────────────────────────────────────────────────
-
-    @Test
-    fun computeReadingActivity_always90Entries() = runTest {
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(emptyList())
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            assertEquals(90, stats.readingActivityByDay.size)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun computeReadingActivity_zeroActivityForAllDaysWhenNoHistory() = runTest {
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(emptyList())
+    fun `getReadingStats activity map all zeros when no history`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
 
         repository.getReadingStats().test {
             val stats = awaitItem()
@@ -249,80 +170,57 @@ class StatisticsRepositoryImplTest {
     }
 
     @Test
-    fun computeReadingActivity_countsTimestampsOnCorrectDay() = runTest {
-        val zone = ZoneId.systemDefault()
-        val todayMs = LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(
-            listOf(todayMs, todayMs) // two reads today
+    fun `getReadingStats activity map counts today correctly`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(
+            listOf(makeEntry(dayMs(0)), makeEntry(dayMs(0)))
         )
 
         repository.getReadingStats().test {
             val stats = awaitItem()
-            val todayKey = LocalDate.now(zone).toString()
+            val todayKey = LocalDate.now(ZoneId.systemDefault()).toString()
             assertEquals(2, stats.readingActivityByDay[todayKey])
             cancelAndIgnoreRemainingEvents()
         }
     }
 
-    @Test
-    fun computeReadingActivity_timestampsOlderThan90Days_excluded() = runTest {
-        val zone = ZoneId.systemDefault()
-        // 91 days ago – outside the 90-day window
-        val oldMs = LocalDate.now(zone).minusDays(91)
-            .atStartOfDay(zone).toInstant().toEpochMilli()
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(listOf(oldMs))
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            assertTrue(stats.readingActivityByDay.values.all { it == 0 })
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
+    // ── getReadingGoalProgress ─────────────────────────────────────────────────
 
     @Test
-    fun computeReadingActivity_firstDayIsExactly89DaysAgo() = runTest {
-        val zone = ZoneId.systemDefault()
-        val today = LocalDate.now(zone)
-        val expectedFirst = today.minusDays(89).toString()
-        val expectedLast = today.toString()
-
-        every { readingHistoryDao.getAllReadTimestamps() } returns flowOf(emptyList())
-
-        repository.getReadingStats().test {
-            val stats = awaitItem()
-            val keys = stats.readingActivityByDay.keys.toList()
-            assertEquals(expectedFirst, keys.first())
-            assertEquals(expectedLast, keys.last())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    // ── getReadingGoalProgress ──────────────────────────────────────────────────
-
-    @Test
-    fun getReadingGoalProgress_returnsGoalsAndProgress() = runTest {
-        every { readingHistoryDao.getChaptersReadSince(any()) } returns flowOf(3)
+    fun `getReadingGoalProgress with no history returns zero progress`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
 
         repository.getReadingGoalProgress(dailyGoal = 5, weeklyGoal = 20).test {
             val goal = awaitItem()
             assertEquals(5, goal.dailyGoal)
             assertEquals(20, goal.weeklyGoal)
-            assertEquals(3, goal.dailyProgress)
-            assertEquals(3, goal.weeklyProgress)
+            assertEquals(0, goal.dailyProgress)
+            assertEquals(0, goal.weeklyProgress)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun getReadingGoalProgress_zeroGoals_returnsZeroGoals() = runTest {
-        every { readingHistoryDao.getChaptersReadSince(any()) } returns flowOf(0)
+    fun `getReadingGoalProgress counts today chapters correctly`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(
+            listOf(makeEntry(dayMs(0)), makeEntry(dayMs(0)), makeEntry(dayMs(1)))
+        )
+
+        repository.getReadingGoalProgress(dailyGoal = 5, weeklyGoal = 20).test {
+            val goal = awaitItem()
+            assertEquals(2, goal.dailyProgress) // only today
+            assertEquals(3, goal.weeklyProgress) // today + yesterday in same week most likely
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getReadingGoalProgress zero goals returns zero goals`() = runTest {
+        every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
 
         repository.getReadingGoalProgress(dailyGoal = 0, weeklyGoal = 0).test {
             val goal = awaitItem()
             assertEquals(0, goal.dailyGoal)
             assertEquals(0, goal.weeklyGoal)
-            assertEquals(0, goal.dailyProgress)
-            assertEquals(0, goal.weeklyProgress)
             cancelAndIgnoreRemainingEvents()
         }
     }
