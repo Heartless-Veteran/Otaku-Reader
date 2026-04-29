@@ -109,13 +109,11 @@ fun StreakCard(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                last30Days.chunked(6).forEach { week -
-gt;
+                last30Days.chunked(7).forEach { week ->
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        week.forEach { count -
->
+                        week.forEach { count ->
                             val intensity = (count.toFloat() / maxValue).coerceIn(0f, 1f)
                             val color = when {
                                 count == 0 -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)

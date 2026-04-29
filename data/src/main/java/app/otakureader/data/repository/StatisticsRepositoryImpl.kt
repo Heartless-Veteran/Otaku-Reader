@@ -2,12 +2,10 @@ package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingStreakDao
-import app.otakureader.core.database.entity.ReadingStreakEntity
 import app.otakureader.domain.model.ReadingStats
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.repository.StatisticsRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
@@ -22,8 +20,7 @@ class StatisticsRepositoryImpl @Inject constructor(
     private val readingStreakDao: ReadingStreakDao,
 ) : StatisticsRepository {
 
-    override fun getReadingStats(): Flow<ReadingStats> = flow {
-        val history = readingHistoryDao.getAllHistory()
+    override fun getReadingStats(): Flow<ReadingStats> = readingHistoryDao.observeHistory().map { history ->
         val today = LocalDate.now()
         
         val readingDays = history
@@ -33,35 +30,32 @@ class StatisticsRepositoryImpl @Inject constructor(
         
         val currentStreak = calculateCurrentStreak(readingDays, today)
         val bestStreak = calculateBestStreak(readingDays)
-        val totalDaysRead = readingDays.size
         val totalChaptersRead = history.size
         val totalReadingTimeMs = history.sumOf { it.readDurationMs }
         
-        val activityByDay = (0..89).map { daysAgo ->
+        val activityByDay = (0..29).associate { daysAgo ->
             val date = today.minusDays(daysAgo.toLong())
-            history.count { 
+            val count = history.count { 
                 Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == date 
             }
-        }.reversed()
+            date.toString() to count
+        }
         
-        emit(ReadingStats(
+        ReadingStats(
+            totalMangaInLibrary = 0, // TODO: wire from mangaRepository
             totalChaptersRead = totalChaptersRead,
             totalReadingTimeMs = totalReadingTimeMs,
             currentStreak = currentStreak,
             bestStreak = bestStreak,
-            totalDaysRead = totalDaysRead,
-            readingActivityByDay = activityByDay,
-            averageChaptersPerDay = if (totalDaysRead > 0) totalChaptersRead.toFloat() / totalDaysRead else 0f,
-            averageReadingTimePerChapterMs = if (totalChaptersRead > 0) totalReadingTimeMs / totalChaptersRead else 0L,
-            longestSingleSessionMs = history.maxOfOrNull { it.readDurationMs } ?: 0L
-        ))
+            genreDistribution = emptyMap(), // TODO: compute from library genres
+            readingActivityByDay = activityByDay
+        )
     }
     
-    override fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal> = flow {
+    override fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal> = readingHistoryDao.observeHistory().map { history ->
         val today = LocalDate.now()
         val weekStart = today.minusDays(today.dayOfWeek.value.toLong() - 1)
         
-        val history = readingHistoryDao.getAllHistory()
         val todayCount = history.count {
             Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == today
         }
@@ -86,14 +80,14 @@ class StatisticsRepositoryImpl @Inject constructor(
         val currentStreak = calculateCurrentStreak(readingDays, today)
         val bestStreak = calculateBestStreak(readingDays)
         
-        emit(ReadingGoal(
+        ReadingGoal(
             targetChaptersPerDay = dailyGoal,
             targetMinutesPerDay = weeklyGoal / 7,
             currentStreak = currentStreak,
             longestStreak = bestStreak,
             totalChaptersThisWeek = weekCount,
             totalMinutesThisWeek = weekMinutes.toInt()
-        ))
+        )
     }
     
     private fun calculateCurrentStreak(readingDays: List<LocalDate>, today: LocalDate): Int {
