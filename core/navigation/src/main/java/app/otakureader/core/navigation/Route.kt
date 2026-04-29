@@ -150,6 +150,14 @@ sealed interface Route {
     @Serializable
     data object Onboarding : Route
 
+    // ─── QR Library Sharing ───
+
+    @Serializable
+    data object ShareLibrary : Route
+
+    @Serializable
+    data object ScanLibrary : Route
+
     // ─── About ───
 
     @Serializable
