@@ -15,6 +15,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.core.preferences.SearchHistoryPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
