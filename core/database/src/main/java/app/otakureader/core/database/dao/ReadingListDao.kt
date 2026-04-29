@@ -36,6 +36,9 @@ interface ReadingListDao {
     @Query("SELECT * FROM reading_lists WHERE id = :listId")
     fun getListWithManga(listId: Long): Flow<ReadingListWithMangaEntity?>
 
+    @Query("SELECT * FROM reading_list_items WHERE listId = :listId ORDER BY sortOrder ASC, addedAt DESC")
+    fun getItemsForList(listId: Long): Flow<List<ReadingListItemEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addMangaToList(item: ReadingListItemEntity)
 

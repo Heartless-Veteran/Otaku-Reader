@@ -19,6 +19,9 @@ interface ReadingListRepository {
     suspend fun reorderItem(listId: Long, mangaId: Long, sortOrder: Int)
     fun getItemCount(listId: Long): Flow<Int>
     
-    /** Get a list with all its manga (for UI display). */
-    fun getListWithManga(listId: Long): Flow<Pair<ReadingList, List<app.otakureader.domain.model.Manga>>>
+    /**
+     * Get a list with all its manga (for UI display).
+     * Junction metadata (note, sortOrder, addedAt) is preserved per manga entry.
+     */
+    fun getListWithManga(listId: Long): Flow<Pair<ReadingList, List<ReadingListMangaItem>>>
 }

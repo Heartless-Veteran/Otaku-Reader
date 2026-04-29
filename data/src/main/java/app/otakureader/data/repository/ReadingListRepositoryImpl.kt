@@ -7,8 +7,10 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.ReadingList
 import app.otakureader.domain.model.ReadingListItem
+import app.otakureader.domain.model.ReadingListMangaItem
 import app.otakureader.domain.repository.ReadingListRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -77,11 +79,35 @@ class ReadingListRepositoryImpl @Inject constructor(
         return readingListDao.getItemCount(listId)
     }
 
-    override fun getListWithManga(listId: Long): Flow<Pair<ReadingList, List<Manga>>> {
-        return readingListDao.getListWithManga(listId).map { entity ->
-            val list = entity?.list?.toDomain() ?: ReadingList(id = 0, name = "")
-            val manga = entity?.manga?.map { it.toDomain() } ?: emptyList()
-            list to manga
+    /**
+     * Get a list with all its manga, preserving junction metadata.
+     *
+     * We combine two flows:
+     * 1. `getListWithManga` — returns the list + manga entities via @Relation,
+     *    but loses note/sortOrder from the junction table.
+     * 2. `getItemsForList` — returns the raw junction rows with metadata.
+     *
+     * We then zip them by mangaId so every returned item carries its note + sortOrder.
+     */
+    override fun getListWithManga(listId: Long): Flow<Pair<ReadingList, List<ReadingListMangaItem>>> {
+        val listFlow = readingListDao.getListWithManga(listId)
+        val itemsFlow = readingListDao.getItemsForList(listId)
+
+        return combine(listFlow, itemsFlow) { listEntity, itemEntities ->
+            val list = listEntity?.list?.toDomain() ?: ReadingList(id = 0, name = "")
+            // Build a lookup map from mangaId -> domain model
+            val mangaMap = listEntity?.manga?.associateBy({ it.id }, { it.toDomain() }) ?: emptyMap()
+
+            val mangaItems = itemEntities.mapNotNull { item ->
+                val manga = mangaMap[item.mangaId] ?: return@mapNotNull null
+                ReadingListMangaItem(
+                    manga = manga,
+                    note = item.note,
+                    sortOrder = item.sortOrder,
+                    addedAt = item.addedAt
+                )
+            }
+            list to mangaItems
         }
     }
 
