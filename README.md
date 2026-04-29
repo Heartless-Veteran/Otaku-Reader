@@ -50,6 +50,8 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - ✅ **Completed series** — Mark manga as finished, dimmed covers + checkmark badge, dedicated filter tab
 - ❌ **Dropped series** — Mark abandoned manga, red cancel badge, "Dropped" filter — never re-click a manga you hated
 - 🔍 **Fuzzy search** — Find manga instantly instead of scrolling
+- 📂 **Reading list collections** — Create custom lists beyond categories: "Summer Binge", "Re-read Later", "Hidden Gems"
+- 📝 **Chapter notes** — Add personal notes to any chapter
 - 📂 **QR library sharing** — Scan a friend's phone, get their manga list instantly (local, no server)
 
 ### Reading Experience
@@ -63,22 +65,25 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - ⬇️ **Smart download rules** — Auto-download next chapters when you hit 80% reading progress
 - 📦 **CBZ export** — Archive downloaded chapters for backup or transfer
 - 📁 **Local source import** — CBZ/CBR/folder browsing without extensions
-- 🔔 **Notification batching** — Grouped chapter update alerts, not spam
+- 🔔 **Smart notification batching** — Grouped chapter update alerts with quiet hours, cooldown, and digest mode — never spam
 
 ### Discovery & Sources
 - 🔌 **Extension system** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
 - 🌐 **OPDS client** — Browse Komga, Kavita, Calibre-Web libraries
 - 🔍 **Global search** — Search across all installed sources simultaneously
+- 🕐 **Search history** — Recent queries as quick-tap chips — no more re-typing
 - 📰 **Feed** — New chapter updates from your sources in one place
 
 ### Tracking & Stats
 - 📊 **Reading streaks** — Consecutive-day counter with 30-day heatmap
 - 🏆 **Reading goals** — Daily/weekly chapter targets with progress
-- 🔗 **Tracker sync** — AniList, MAL, Kitsu (opt-in, local-only API keys)
 - 📈 **Statistics dashboard** — Time read, chapters completed, genre breakdown
+- 📤 **Statistics sharing** — Generate a beautiful shareable card of your reading stats
+- 🔗 **Tracker sync** — AniList, MAL, Kitsu (opt-in, local-only API keys)
 
 ### Backup & Migration
 - 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device
+- 🔄 **Auto-backup scheduling** — Periodic automatic backups with configurable interval and retention
 - 📲 **Tachiyomi/Mihon/Komikku import** — Bring your entire library from any fork
 - 🔄 **Source-to-source migration** — Move manga between sources without losing progress
 
@@ -98,6 +103,9 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 | Page bookmarks | ✅ Any page, any chapter | ❌ Not available |
 | Read time estimation | ✅ Adaptive to your speed | ❌ Not available |
 | Completed/Dropped status | ✅ Visual badges + filters | ❌ Manual deletion only |
+| Chapter notes | ✅ Per-chapter annotations | ❌ Not available |
+| Reading list collections | ✅ Custom lists beyond categories | ❌ Not available |
+| Statistics sharing | ✅ Social-ready cards | ❌ Not available |
 
 **Reading Modes:** Paged · Webtoon · Continuous Scroll · Dual-Page · Smart Panels
 
@@ -172,9 +180,15 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - [x] Completed/Dropped series sections
 - [x] Per-manga dynamic theme
 - [x] QR library sharing
-- [x] Tachiyomi/Mihon backup import
+- [x] Tachiyomi/Mihon/Komikku import
 - [x] Page bookmarks
 - [x] Read time estimation
+- [x] Chapter notes
+- [x] Reading list collections
+- [x] Statistics sharing
+- [x] Auto-backup scheduling
+- [x] Smart notification batching
+- [x] Search history
 
 ### Phase 4: Quality Gates & Release (IN PROGRESS)
 - [ ] 60%+ domain/data test coverage
@@ -189,7 +203,6 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - [ ] Per-source rate limiting with visible queue
 - [ ] Optional ActivityPub federation for read-status
 - [ ] Double-page spread auto-detection
-- [ ] Chapter/page-level notes
 
 ---
 
@@ -246,13 +259,13 @@ app/                    — Application module (DI wiring, manifest)
     ├── details/        — Manga info, chapters, read time estimates
     ├── reader/         — All reading modes + page bookmarks + smart download trigger
     ├── history/        — Reading history
-    ├── updates/        — New chapter feed
+    ├── updates/        — New chapter feed + smart notification batching
     ├── tracking/       — Tracker settings + sync
     ├── settings/       — App preferences
     ├── migration/      — Source-to-source + Tachiyomi import
     ├── onboarding/     — First-launch setup wizard
     ├── about/          — Credits, licenses, updates
-    ├── statistics/     — Reading stats + streaks + heatmap
+    ├── statistics/     — Reading stats + streaks + heatmap + shareable cards
     ├── feed/           — OPDS / external catalogs
     └── opds/           — OPDS server mode
 ```
