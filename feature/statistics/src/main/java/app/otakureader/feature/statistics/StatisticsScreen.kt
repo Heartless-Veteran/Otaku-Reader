@@ -1,5 +1,7 @@
 package app.otakureader.feature.statistics
 
+import android.content.Intent
+import android.graphics.Bitmap
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,13 +20,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,18 +34,25 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.share.createShareIntent
+import app.otakureader.core.ui.share.saveBitmapToCache
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
 
@@ -56,6 +65,8 @@ fun StatisticsScreen(
     viewModel: StatisticsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var shareBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val context = LocalContext.current
 
     Scaffold(
         modifier = modifier,
@@ -68,7 +79,11 @@ fun StatisticsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: trigger share sheet */ }) {
+                    IconButton(
+                        onClick = {
+                            shareBitmap = captureShareableCard(context, state)
+                        }
+                    ) {
                         Icon(Icons.Default.Share, contentDescription = stringResource(R.string.statistics_share))
                     }
                 }
@@ -102,6 +117,18 @@ fun StatisticsScreen(
                 readingGoal = state.readingGoal,
                 modifier = Modifier.padding(paddingValues)
             )
+        }
+    }
+
+    // Trigger share sheet when bitmap is captured
+    LaunchedEffect(shareBitmap) {
+        shareBitmap?.let { bitmap ->
+            val uri = saveBitmapToCache(context, bitmap)
+            val intent = createShareIntent(uri, "My Otaku Reader Stats")
+            context.startActivity(
+                Intent.createChooser(intent, "Share via")
+            )
+            shareBitmap = null
         }
     }
 }
