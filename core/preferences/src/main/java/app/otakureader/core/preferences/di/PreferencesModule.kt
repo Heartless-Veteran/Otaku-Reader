@@ -15,6 +15,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.core.preferences.SearchHistoryPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -112,6 +113,11 @@ object PreferencesModule {
     @Singleton
     fun provideNotificationPreferences(dataStore: DataStore<Preferences>): NotificationPreferences =
         NotificationPreferences(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideSearchHistoryPreferences(dataStore: DataStore<Preferences>): SearchHistoryPreferences =
+        SearchHistoryPreferences(dataStore)
 
     @Provides
     @Singleton
