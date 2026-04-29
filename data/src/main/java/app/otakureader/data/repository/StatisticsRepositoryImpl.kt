@@ -1,11 +1,13 @@
 package app.otakureader.data.repository
 
+import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.domain.model.ReadingStats
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.repository.StatisticsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
@@ -18,9 +20,13 @@ import javax.inject.Singleton
 class StatisticsRepositoryImpl @Inject constructor(
     private val readingHistoryDao: ReadingHistoryDao,
     private val readingStreakDao: ReadingStreakDao,
+    private val mangaDao: MangaDao,
 ) : StatisticsRepository {
 
-    override fun getReadingStats(): Flow<ReadingStats> = readingHistoryDao.observeHistory().map { history ->
+    override fun getReadingStats(): Flow<ReadingStats> = combine(
+        readingHistoryDao.observeHistory(),
+        mangaDao.countFavorites()
+    ) { history, libraryCount ->
         val today = LocalDate.now()
         
         val readingDays = history
@@ -42,7 +48,7 @@ class StatisticsRepositoryImpl @Inject constructor(
         }
         
         ReadingStats(
-            totalMangaInLibrary = 0, // TODO: wire from mangaRepository
+            totalMangaInLibrary = libraryCount,
             totalChaptersRead = totalChaptersRead,
             totalReadingTimeMs = totalReadingTimeMs,
             currentStreak = currentStreak,

@@ -25,10 +25,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,12 +51,21 @@ import kotlinx.serialization.json.Json
 fun ScanLibraryScreen(
     onNavigateBack: () -> Unit,
     onLibraryScanned: (ShareableLibrary) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ScanLibraryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     var scannedLibrary by remember { mutableStateOf<ShareableLibrary?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var isScanning by remember { mutableStateOf(false) }
+    val importState by viewModel.importState.collectAsState()
+
+    // Navigate back automatically once import finishes
+    LaunchedEffect(importState) {
+        if (importState is ScanLibraryViewModel.ImportState.Done) {
+            scannedLibrary?.let { onLibraryScanned(it) }
+        }
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -150,31 +161,65 @@ fun ScanLibraryScreen(
                 }
                 scannedLibrary != null -> {
                     val library = scannedLibrary!!
-                    Text(
-                        text = "Library found!",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        text = "${library.manga.size} manga ready to import",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    Button(
-                        onClick = { onLibraryScanned(library) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Add to My Library")
-                    }
-                    Button(
-                        onClick = {
-                            scannedLibrary = null
-                            error = null
-                            cameraLauncher.launch(Manifest.permission.CAMERA)
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Scan Another")
+                    when (val state = importState) {
+                        is ScanLibraryViewModel.ImportState.Importing -> {
+                            CircularProgressIndicator()
+                            Text(
+                                "Importing library…",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        is ScanLibraryViewModel.ImportState.Done -> {
+                            Text(
+                                text = "Import complete!",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                            Text(
+                                text = "${state.imported} added, ${state.skipped} not found locally",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        is ScanLibraryViewModel.ImportState.Error -> {
+                            Text(
+                                text = "Import failed: ${state.message}",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { viewModel.importLibrary(library) }) {
+                                Text("Retry")
+                            }
+                        }
+                        else -> {
+                            Text(
+                                text = "Library found!",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                            Text(
+                                text = "${library.manga.size} manga ready to import",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Button(
+                                onClick = { viewModel.importLibrary(library) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Add to My Library")
+                            }
+                            Button(
+                                onClick = {
+                                    scannedLibrary = null
+                                    error = null
+                                    cameraLauncher.launch(Manifest.permission.CAMERA)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Scan Another")
+                            }
+                        }
                     }
                 }
                 else -> {
