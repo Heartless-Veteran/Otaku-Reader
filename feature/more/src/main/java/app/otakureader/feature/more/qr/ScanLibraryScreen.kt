@@ -45,6 +45,10 @@ import kotlinx.serialization.json.Json
 
 /**
  * Screen that scans a QR code from another device and imports the library.
+ *
+ * @param onLibraryScanned Called after the import completes (not just when the QR is decoded).
+ *   The caller should navigate away at this point; the library data is provided for
+ *   informational use but the actual import was already performed by [viewModel].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -188,6 +192,8 @@ fun ScanLibraryScreen(
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(16.dp))
+                            // importLibrary() transitions to Importing before re-running,
+                            // so the UI correctly reflects the new attempt.
                             Button(onClick = { viewModel.importLibrary(library) }) {
                                 Text("Retry")
                             }

@@ -1,5 +1,6 @@
 package app.otakureader.feature.more.qr
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.model.ShareableLibrary
@@ -34,6 +35,10 @@ class ScanLibraryViewModel @Inject constructor(
     private val _importState = MutableStateFlow<ImportState>(ImportState.Idle)
     val importState: StateFlow<ImportState> = _importState.asStateFlow()
 
+    companion object {
+        private const val TAG = "ScanLibraryViewModel"
+    }
+
     /**
      * Attempts to import all manga from [library] into the user's library.
      *
@@ -52,11 +57,12 @@ class ScanLibraryViewModel @Inject constructor(
             try {
                 library.manga.forEach { item ->
                     val sourceId = item.sourceId.toLongOrNull()
-                    val manga = if (sourceId != null) {
-                        mangaRepository.getMangaBySourceAndUrl(sourceId, item.url)
-                    } else {
-                        null
+                    if (sourceId == null) {
+                        Log.w(TAG, "Skipping '${item.title}' — invalid sourceId: '${item.sourceId}'")
+                        skipped++
+                        return@forEach
                     }
+                    val manga = mangaRepository.getMangaBySourceAndUrl(sourceId, item.url)
                     if (manga != null) {
                         mangaRepository.addToFavorites(manga.id)
                         imported++
