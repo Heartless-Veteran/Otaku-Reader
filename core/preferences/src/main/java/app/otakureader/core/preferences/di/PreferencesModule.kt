@@ -15,6 +15,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.core.preferences.ReadingSpeedPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -107,6 +108,11 @@ object PreferencesModule {
     @Singleton
     fun provideReadingGoalPreferences(dataStore: DataStore<Preferences>): ReadingGoalPreferences =
         ReadingGoalPreferences(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideReadingSpeedPreferences(dataStore: DataStore<Preferences>): ReadingSpeedPreferences =
+        ReadingSpeedPreferences(dataStore)
 
     @Provides
     @Singleton
