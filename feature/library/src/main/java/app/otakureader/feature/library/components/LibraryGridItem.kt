@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +54,13 @@ fun LibraryGridItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .then(if (manga.userCompleted) Modifier.alpha(0.6f) else Modifier)
+                    .then(
+                        when {
+                            manga.userDropped -> Modifier.alpha(0.5f)
+                            manga.userCompleted -> Modifier.alpha(0.6f)
+                            else -> Modifier
+                        }
+                    )
             )
             
             // Completed badge
@@ -72,6 +79,27 @@ fun LibraryGridItem(
                         imageVector = Icons.Filled.CheckCircle,
                         contentDescription = "Completed",
                         tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            // Dropped badge
+            if (manga.userDropped) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                        .background(
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                            RoundedCornerShape(4.dp)
+                        )
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Cancel,
+                        contentDescription = "Dropped",
+                        tint = MaterialTheme.colorScheme.onError,
                         modifier = Modifier.size(16.dp)
                     )
                 }

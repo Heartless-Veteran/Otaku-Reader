@@ -48,6 +48,8 @@ data class MangaEntity(
     val contentRating: Int = 0,
     /** User has marked this manga as fully read / completed. */
     val userCompleted: Boolean = false,
+    /** User has dropped / abandoned this manga. */
+    val userDropped: Boolean = false,
 )
 
 enum class MangaStatus {

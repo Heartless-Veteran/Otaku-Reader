@@ -46,6 +46,8 @@ data class Manga(
     val contentRating: ContentRating = ContentRating.SAFE,
     /** User has marked this manga as fully read. */
     val userCompleted: Boolean = false,
+    /** User has dropped / abandoned this manga. */
+    val userDropped: Boolean = false,
 )
 
 @Serializable
