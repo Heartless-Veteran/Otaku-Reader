@@ -38,7 +38,7 @@ If a dependency is missing a recognized license, the report flags it with `UNKNO
 CycloneDX 1.6 JSON SBOM generation via `org.cyclonedx.bom` (v1.10.0).
 
 ```bash
-./gradlew :app:cyclonefxBom
+./gradlew :app:cyclonedxBom
 ```
 
 - Writes `docs/sbom.json`
@@ -113,8 +113,9 @@ Four checks **must** pass before any PR merges to `main`:
 
 1. **Security Check** — scans `BuildConfig` for hardcoded credentials
 2. **Detekt** — zero-tolerance static analysis
-3. **Unit Tests** — `./gradlew testDebugUnitTest`
-4. **Assemble** — `./gradlew assembleDebug` must succeed
+3. **Ktlint** — code style enforcement (`./gradlew ktlintCheck`)
+4. **Unit Tests** — `./gradlew testDebugUnitTest`
+5. **Assemble** — `./gradlew assembleDebug` must succeed
 
 See `branch-protection.md` for how to add a new required check to the branch protection settings.
 

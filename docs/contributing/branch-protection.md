@@ -10,6 +10,7 @@ The following CI jobs are required to pass before a PR can be merged:
 |---|---|---|
 | `Security Check` | `ci.yml` → `security` job | Prevents secrets from shipping in BuildConfig |
 | `Detekt` | `ci.yml` → `detekt` job | Enforces static analysis with zero tolerance |
+| `Ktlint` | `ci.yml` → `ktlint` job | Enforces Kotlin code style (ktlintCheck) |
 | `Unit Tests` | `ci.yml` → `unit-tests` job | `./gradlew testDebugUnitTest` must pass |
 | `Assemble` | `ci.yml` → `assemble` job | `./gradlew assembleDebug` must succeed |
 
@@ -22,7 +23,7 @@ In **Settings → Branches → Branch protection rules** for the `main` branch:
   - [x] Dismiss stale pull request approvals when new commits are pushed
 - [x] **Require status checks to pass before merging**
   - [x] Require branches to be up to date before merging
-  - Add the four check names listed above
+  - Add the five check names listed above
 - [x] **Require conversation resolution before merging**
 - [x] **Do not allow bypassing the above settings**
 
@@ -34,7 +35,7 @@ Without enforced status checks, regressions can silently merge:
 - A hardcoded API key slips through if the security script never runs.
 - Detekt violations accumulate unchecked when the static analysis job is advisory only.
 
-All four checks run in parallel (≈ 5–8 min wall-clock time on a typical PR).
+All five checks run in parallel (≈ 5–8 min wall-clock time on a typical PR).
 
 ## Adding a new required check
 
