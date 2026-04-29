@@ -14,7 +14,9 @@ import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.data.backup.BackupCreator
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -40,15 +42,20 @@ class AutoBackupWorker @AssistedInject constructor(
         }
 
         return try {
-            // Create backup
+            // Create backup — file I/O performed on IO dispatcher
             val backupDir = File(applicationContext.filesDir, AUTO_BACKUP_DIR)
-            backupDir.mkdirs()
+            val backupFile: File
+            val backupJson: String
 
-            val timestamp = System.currentTimeMillis()
-            val backupFile = File(backupDir, "auto_backup_$timestamp.json")
+            withContext(Dispatchers.IO) {
+                backupDir.mkdirs()
 
-            val backupJson = backupCreator.createBackup()
-            backupFile.writeText(backupJson)
+                val timestamp = System.currentTimeMillis()
+                backupFile = File(backupDir, "auto_backup_$timestamp.json")
+
+                backupJson = backupCreator.createBackup()
+                backupFile.writeText(backupJson)
+            }
 
             Log.i(TAG, "Auto-backup created: ${backupFile.name} (${backupFile.length()} bytes)")
 
@@ -64,14 +71,17 @@ class AutoBackupWorker @AssistedInject constructor(
 
     private suspend fun cleanupOldBackups(backupDir: File) {
         val maxCount = backupPreferences.autoBackupMaxCount.first()
-        val backups = backupDir.listFiles { f -> f.name.startsWith("auto_backup_") }
-            ?.sortedByDescending { it.lastModified() }
-            ?: return
 
-        if (backups.size > maxCount) {
-            backups.drop(maxCount).forEach { file ->
-                if (file.delete()) {
-                    Log.d(TAG, "Deleted old auto-backup: ${file.name}")
+        withContext(Dispatchers.IO) {
+            val backups = backupDir.listFiles { f -> f.name.startsWith("auto_backup_") }
+                ?.sortedByDescending { it.lastModified() }
+                ?: return@withContext
+
+            if (backups.size > maxCount) {
+                backups.drop(maxCount).forEach { file ->
+                    if (file.delete()) {
+                        Log.d(TAG, "Deleted old auto-backup: ${file.name}")
+                    }
                 }
             }
         }
