@@ -43,7 +43,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Page bookmarks
         PageBookmarkEntity::class,
     ],
-    version = 16,
+    version = 19,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
