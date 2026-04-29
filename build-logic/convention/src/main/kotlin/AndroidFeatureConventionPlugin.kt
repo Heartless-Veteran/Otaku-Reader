@@ -12,6 +12,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply {
+                apply("otakureader.android.library")
                 apply("otakureader.android.library.compose")
                 apply("otakureader.android.hilt")
             }
