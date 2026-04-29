@@ -31,7 +31,9 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: 🐘 Set up Gradle
+        uses: gradle/actions/setup-gradle@06cde1a1b8e5ba8cf3e3aa93e4ca7a91d07b0d21 # v4.3.0
 
       - name: Install Android SDK components
         run: |
