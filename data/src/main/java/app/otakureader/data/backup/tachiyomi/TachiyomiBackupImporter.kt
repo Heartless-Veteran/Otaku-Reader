@@ -73,7 +73,7 @@ class TachiyomiBackupImporter @Inject constructor(
             backup.manga.forEach { tachiyomiManga ->
                 // Check if already exists by source+url
                 val existing = mangaDao.getMangaBySourceAndUrl(
-                    tachiyomiManga.source.toString(),
+                    tachiyomiManga.source,
                     tachiyomiManga.url
                 )
 
@@ -117,12 +117,10 @@ class TachiyomiBackupImporter @Inject constructor(
 
             // Import chapters
             backup.chapters.forEach { tachiyomiChapter ->
+                // Map chapter's mangaId to our imported manga ID
                 val mangaId = mangaIdMap[tachiyomiChapter.mangaId]
-                    ?: mangaDao.getMangaBySourceAndUrl(
-                        "", // we don't know source from chapter alone
-                        ""
-                    )?.id // fallback, likely null
 
+                // Skip chapters whose manga wasn't imported (e.g. ID mapping failure)
                 if (mangaId != null) {
                     val existingChapters = chapterDao.getChaptersByMangaId(mangaId).first()
                     val existing = existingChapters.find { it.url == tachiyomiChapter.url }
