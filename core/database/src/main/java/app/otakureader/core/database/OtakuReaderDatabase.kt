@@ -10,6 +10,7 @@ import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.OpdsServerDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
+import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
@@ -20,6 +21,7 @@ import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.OpdsServerEntity
 import app.otakureader.core.database.entity.ReadingHistoryEntity
+import app.otakureader.core.database.entity.ReadingStreakEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
 
@@ -30,6 +32,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         CategoryEntity::class,
         MangaCategoryEntity::class,
         ReadingHistoryEntity::class,
+        ReadingStreakEntity::class,
         OpdsServerEntity::class,
         // Feed feature
         FeedItemEntity::class,
@@ -39,7 +42,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         TrackerSyncStateEntity::class,
         SyncConfigurationEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -49,6 +52,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun mangaCategoryDao(): MangaCategoryDao
     abstract fun readingHistoryDao(): ReadingHistoryDao
+    abstract fun readingStreakDao(): ReadingStreakDao
     abstract fun opdsServerDao(): OpdsServerDao
 
     // Feed + tracker sync DAOs
