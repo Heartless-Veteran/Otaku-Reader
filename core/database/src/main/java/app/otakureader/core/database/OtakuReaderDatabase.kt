@@ -10,6 +10,7 @@ import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.OpdsServerDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
+import app.otakureader.core.database.dao.ReadingListDao
 import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
@@ -20,6 +21,8 @@ import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.OpdsServerEntity
 import app.otakureader.core.database.entity.ReadingHistoryEntity
+import app.otakureader.core.database.entity.ReadingListEntity
+import app.otakureader.core.database.entity.ReadingListItemEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
 
@@ -38,8 +41,11 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Tracker sync feature
         TrackerSyncStateEntity::class,
         SyncConfigurationEntity::class,
+        // Reading lists
+        ReadingListEntity::class,
+        ReadingListItemEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -51,9 +57,10 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun readingHistoryDao(): ReadingHistoryDao
     abstract fun opdsServerDao(): OpdsServerDao
 
-    // Feed + tracker sync DAOs
+    // Feed + tracker sync + reading list DAOs
     abstract fun feedDao(): FeedDao
     abstract fun trackerSyncDao(): TrackerSyncDao
+    abstract fun readingListDao(): ReadingListDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

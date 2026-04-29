@@ -291,10 +291,44 @@ internal val MIGRATION_14_15 = object : Migration(14, 15) {
     }
 }
 
+internal val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `reading_lists` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `name` TEXT NOT NULL,
+                `description` TEXT,
+                `color` INTEGER,
+                `createdAt` INTEGER NOT NULL,
+                `updatedAt` INTEGER NOT NULL,
+                `sortOrder` INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `reading_list_items` (
+                `listId` INTEGER NOT NULL,
+                `mangaId` INTEGER NOT NULL,
+                `sortOrder` INTEGER NOT NULL DEFAULT 0,
+                `addedAt` INTEGER NOT NULL,
+                `note` TEXT,
+                PRIMARY KEY(`listId`, `mangaId`),
+                FOREIGN KEY(`listId`) REFERENCES `reading_lists`(`id`) ON DELETE CASCADE,
+                FOREIGN KEY(`mangaId`) REFERENCES `manga`(`id`) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_list_items_listId` ON `reading_list_items`(`listId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_list_items_mangaId` ON `reading_list_items`(`mangaId`)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
     MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
-    MIGRATION_14_15
+    MIGRATION_14_15, MIGRATION_15_16
 )
