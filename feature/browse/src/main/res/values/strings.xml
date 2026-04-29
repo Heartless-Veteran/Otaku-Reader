@@ -105,4 +105,8 @@
     <string name="browse_add_to_library">Add to Library</string>
     <string name="browse_exit_selection">Exit selection</string>
     <string name="browse_clear_selection">Clear selection</string>
+    <!-- Search History -->
+    <string name="search_history_title">Recent searches</string>
+    <string name="search_history_clear">Clear</string>
+    <string name="search_history_remove">Remove from history</string>
 </resources>

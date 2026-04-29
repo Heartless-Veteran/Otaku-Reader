@@ -3,6 +3,7 @@ package app.otakureader.feature.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.SearchHistoryPreferences
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
 import app.otakureader.domain.usecase.source.GlobalSearchUseCase
 import app.otakureader.sourceapi.MangaSource
@@ -23,7 +24,8 @@ import javax.inject.Inject
 class GlobalSearchViewModel @Inject constructor(
     private val getSourcesUseCase: GetSourcesUseCase,
     private val globalSearchUseCase: GlobalSearchUseCase,
-    private val generalPreferences: GeneralPreferences
+    private val generalPreferences: GeneralPreferences,
+    private val searchHistoryPreferences: SearchHistoryPreferences
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GlobalSearchState())
@@ -38,6 +40,15 @@ class GlobalSearchViewModel @Inject constructor(
 
     /** Tracks the currently active search so it can be cancelled on a new search. */
     private var searchJob: Job? = null
+
+    init {
+        // Load search history on init
+        viewModelScope.launch {
+            searchHistoryPreferences.recentSearches.collect { history ->
+                _state.update { it.copy(recentSearches = history) }
+            }
+        }
+    }
 
     fun initQuery(query: String) {
         if (query.isNotBlank() && _state.value.query.isBlank()) {
@@ -55,6 +66,9 @@ class GlobalSearchViewModel @Inject constructor(
                 val query = _state.value.query
                 if (query.isNotBlank()) {
                     performSearch(query)
+                    viewModelScope.launch {
+                        searchHistoryPreferences.addSearchQuery(query)
+                    }
                 }
             }
             is GlobalSearchEvent.OnMangaClick -> {
@@ -62,6 +76,23 @@ class GlobalSearchViewModel @Inject constructor(
                     _effect.send(
                         GlobalSearchEffect.NavigateToMangaDetail(event.sourceId, event.manga.url)
                     )
+                }
+            }
+            is GlobalSearchEvent.OnHistoryItemClick -> {
+                _state.update { it.copy(query = event.query) }
+                performSearch(event.query)
+                viewModelScope.launch {
+                    searchHistoryPreferences.addSearchQuery(event.query)
+                }
+            }
+            is GlobalSearchEvent.OnClearHistory -> {
+                viewModelScope.launch {
+                    searchHistoryPreferences.clearHistory()
+                }
+            }
+            is GlobalSearchEvent.OnRemoveHistoryItem -> {
+                viewModelScope.launch {
+                    searchHistoryPreferences.removeSearchQuery(event.query)
                 }
             }
         }

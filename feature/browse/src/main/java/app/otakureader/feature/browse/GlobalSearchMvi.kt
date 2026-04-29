@@ -19,13 +19,17 @@ data class SourceSearchResult(
 data class GlobalSearchState(
     val query: String = "",
     val isSearching: Boolean = false,
-    val sourceResults: List<SourceSearchResult> = emptyList()
+    val sourceResults: List<SourceSearchResult> = emptyList(),
+    val recentSearches: List<String> = emptyList()
 ) : UiState
 
 sealed interface GlobalSearchEvent : UiEvent {
     data class OnQueryChange(val query: String) : GlobalSearchEvent
     data object Search : GlobalSearchEvent
     data class OnMangaClick(val sourceId: String, val manga: SourceManga) : GlobalSearchEvent
+    data class OnHistoryItemClick(val query: String) : GlobalSearchEvent
+    data object OnClearHistory : GlobalSearchEvent
+    data class OnRemoveHistoryItem(val query: String) : GlobalSearchEvent
 }
 
 sealed interface GlobalSearchEffect : UiEffect {
