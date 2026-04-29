@@ -1,4 +1,10 @@
 [versions]
+# Android SDK levels — the single source of truth for the entire project.
+# Update these keys here; all modules pick them up automatically via AndroidConfig.kt.
+compile-sdk = "36"
+target-sdk = "36"
+min-sdk = "26"
+
 # Core
 kotlin = "2.3.21"
 agp = "9.1.1"
