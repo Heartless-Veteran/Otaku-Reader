@@ -22,8 +22,11 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +57,8 @@ fun MoreScreen(
     onNavigateToBackup: () -> Unit = {},
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToFeed: () -> Unit = {},
+    onNavigateToShareLibrary: () -> Unit = {},
+    onNavigateToScanLibrary: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -125,6 +130,29 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_backup),
                 supporting = stringResource(R.string.more_backup_desc),
                 onClick = onNavigateToBackup
+            )
+
+            HorizontalDivider()
+
+            // QR Library Sharing (#711)
+            MoreListItem(
+                icon = Icons.Default.QrCode,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                headline = stringResource(R.string.more_share_library),
+                supporting = stringResource(R.string.more_share_library_desc),
+                onClick = onNavigateToShareLibrary
+            )
+
+            HorizontalDivider()
+
+            MoreListItem(
+                icon = Icons.Default.QrCodeScanner,
+                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                headline = stringResource(R.string.more_scan_library),
+                supporting = stringResource(R.string.more_scan_library_desc),
+                onClick = onNavigateToScanLibrary
             )
 
             HorizontalDivider()

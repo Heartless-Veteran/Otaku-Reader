@@ -26,6 +26,8 @@ import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
 import app.otakureader.feature.more.navigation.moreScreen
+import app.otakureader.feature.more.navigation.scanLibraryScreen
+import app.otakureader.feature.more.navigation.shareLibraryScreen
 import app.otakureader.feature.onboarding.navigation.onboardingScreen
 import app.otakureader.feature.opds.navigation.opdsScreen
 import app.otakureader.feature.reader.navigation.readerScreen
@@ -341,6 +343,33 @@ fun OtakuReaderNavHost(
             },
             onNavigateToFeed = {
                 navController.navigate(Route.Feed)
+            },
+            onNavigateToShareLibrary = {
+                navController.navigate(Route.ShareLibrary)
+            },
+            onNavigateToScanLibrary = {
+                navController.navigate(Route.ScanLibrary)
+            },
+        )
+
+        // QR Library Sharing
+        shareLibraryScreen(
+            mangaList = emptyList(), // TODO: inject actual library data from repository
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onNavigateToScanLibrary = {
+                navController.navigate(Route.ScanLibrary)
+            },
+        )
+
+        scanLibraryScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onLibraryScanned = { library ->
+                // TODO: import scanned manga into library
+                navController.popBackStack()
             },
         )
 

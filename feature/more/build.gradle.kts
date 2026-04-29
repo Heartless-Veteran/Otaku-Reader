@@ -13,4 +13,8 @@ dependencies {
     implementation(projects.core.navigation)
     implementation(projects.domain)
     implementation(libs.kotlinx.serialization.json)
+
+    // QR / Barcode
+    implementation(libs.zxing.core)
+    implementation(libs.zxing.android.embedded)
 }
