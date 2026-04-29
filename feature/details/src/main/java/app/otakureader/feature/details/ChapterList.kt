@@ -63,7 +63,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
-import coil3.compose.AsyncImage
+import app.otakureader.core.common.estimateReadTimeMinutes
+import app.otakureader.core.common.formatReadTime
+import app.otakureader.core.common.estimatePageCount
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -429,6 +431,18 @@ fun ChapterListItem(
                         text = "Page ${chapter.lastPageRead} / ${chapter.totalPages}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Read time estimate
+                if (!chapter.read) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    val estPages = if (chapter.totalPages > 0) chapter.totalPages else estimatePageCount(chapter.chapterNumber, -1)
+                    val estMinutes = estimateReadTimeMinutes(estPages)
+                    Text(
+                        text = "~${formatReadTime(estMinutes)} read",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
