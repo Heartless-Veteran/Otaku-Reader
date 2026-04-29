@@ -40,4 +40,8 @@ interface MangaRepository {
     suspend fun markUserCompleted(id: Long, completed: Boolean)
     fun getCompletedManga(): Flow<List<Manga>>
     fun getActiveManga(): Flow<List<Manga>>
+
+    // Dropped series tracking
+    suspend fun markUserDropped(id: Long, dropped: Boolean)
+    fun getDroppedManga(): Flow<List<Manga>>
 }

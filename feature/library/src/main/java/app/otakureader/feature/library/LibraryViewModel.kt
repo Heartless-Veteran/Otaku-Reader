@@ -294,6 +294,7 @@ class LibraryViewModel @Inject constructor(
             LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
             LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
             LibraryFilterMode.COMPLETED -> filtered.filter { it.userCompleted }
+            LibraryFilterMode.DROPPED -> filtered.filter { it.userDropped }
             LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
             LibraryFilterMode.ALL -> filtered
         }
@@ -489,6 +490,7 @@ class LibraryViewModel @Inject constructor(
         dateAdded = dateAdded,
         status = status,
         totalChapterCount = totalChapters,
-        userCompleted = userCompleted
+        userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 }

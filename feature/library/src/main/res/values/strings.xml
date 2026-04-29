@@ -56,6 +56,14 @@
     <string name="library_search">Search library</string>
     <string name="library_search_placeholder">Search…</string>
     <string name="library_search_close">Close search</string>
+
+    <!-- Filter chips -->
+    <string name="library_filter_all">All</string>
+    <string name="library_filter_downloaded">Downloaded</string>
+    <string name="library_filter_unread">Unread</string>
+    <string name="library_filter_completed">Completed</string>
+    <string name="library_filter_dropped">Dropped</string>
+    <string name="library_filter_tracking">Tracking</string>
     <!-- Bulk selection actions -->
     <string name="library_deselect_all">Deselect all</string>
     <string name="library_mark_selected_read">Mark as read</string>

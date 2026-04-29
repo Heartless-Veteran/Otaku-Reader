@@ -42,7 +42,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         TrackerSyncStateEntity::class,
         SyncConfigurationEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

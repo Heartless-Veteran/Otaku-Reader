@@ -17,6 +17,7 @@ enum class LibraryFilterMode {
     DOWNLOADED,
     UNREAD,
     COMPLETED,
+    DROPPED,
     TRACKING
 }
 
@@ -60,7 +61,8 @@ data class LibraryMangaItem(
     val dateAdded: Long = 0L,
     val status: MangaStatus = MangaStatus.UNKNOWN,
     val totalChapterCount: Int = 0,
-    val userCompleted: Boolean = false
+    val userCompleted: Boolean = false,
+    val userDropped: Boolean = false
 )
 
 data class CategoryItem(

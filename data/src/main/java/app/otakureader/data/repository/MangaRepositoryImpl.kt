@@ -177,6 +177,17 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
+    // Dropped series tracking
+    override suspend fun markUserDropped(id: Long, dropped: Boolean) {
+        mangaDao.updateUserDropped(id, dropped)
+    }
+
+    override fun getDroppedManga(): Flow<List<Manga>> {
+        return mangaDao.getDroppedManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -206,6 +217,7 @@ class MangaRepositoryImpl @Inject constructor(
         preloadPagesAfter = preloadPagesAfter,
         contentRating = ContentRating.fromOrdinal(contentRating),
         userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -236,5 +248,6 @@ class MangaRepositoryImpl @Inject constructor(
         preloadPagesAfter = preloadPagesAfter,
         contentRating = contentRating.ordinal,
         userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 }
