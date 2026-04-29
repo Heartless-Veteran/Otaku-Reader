@@ -405,8 +405,8 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Scale Settings ====================
 
     /** Scale type: 0 = Fit Screen, 1 = Fit Width, 2 = Fit Height, 3 = Original, 4 = Smart Fit */
-    override val readerScale: Flow<Float> = dataStore.data.map { prefs ->
-        (prefs[Keys.READER_SCALE] ?: 0).toFloat()
+    override val readerScale: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.READER_SCALE] ?: 0
     }
 
     suspend fun setReaderScale(scale: Int) {
@@ -452,8 +452,8 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Menu hide sensitivity: 0 = Low, 1 = Medium, 2 = High */
-    override val webtoonMenuHideSensitivity: Flow<Float> = dataStore.data.map { prefs ->
-        (prefs[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] ?: 0).toFloat()
+    override val webtoonMenuHideSensitivity: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] ?: 0
     }
 
     suspend fun setWebtoonMenuHideSensitivity(sensitivity: Int) {

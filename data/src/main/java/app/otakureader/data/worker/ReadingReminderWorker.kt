@@ -17,8 +17,6 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.preferences.ReadingGoalPreferences
-import app.otakureader.domain.repository.StatisticsRepository
-import app.otakureader.domain.usecase.ai.GenerateSmartNotificationUseCase
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -41,8 +39,6 @@ class ReadingReminderWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val readingGoalPreferences: ReadingGoalPreferences,
     private val readingHistoryDao: ReadingHistoryDao,
-    private val statisticsRepository: StatisticsRepository,
-    private val generateSmartNotificationUseCase: GenerateSmartNotificationUseCase
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -58,9 +54,7 @@ class ReadingReminderWorker @AssistedInject constructor(
             // Don't remind if daily goal is set and already met
             if (dailyGoal > 0 && chaptersToday >= dailyGoal) return Result.success()
 
-            val currentStreak = statisticsRepository.getReadingStats().first().currentStreak
-            val aiText = generateSmartNotificationUseCase(chaptersToday, dailyGoal, currentStreak)
-            showNotification(dailyGoal, chaptersToday, aiText)
+            showNotification(dailyGoal, chaptersToday)
             Result.success()
         } catch (e: Exception) {
             Result.success() // Non-critical; don't retry
@@ -68,7 +62,7 @@ class ReadingReminderWorker @AssistedInject constructor(
     }
 
     @SuppressLint("MissingPermission")
-    private fun showNotification(dailyGoal: Int, chaptersToday: Int, aiText: String?) {
+    private fun showNotification(dailyGoal: Int, chaptersToday: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     applicationContext,
@@ -79,7 +73,7 @@ class ReadingReminderWorker @AssistedInject constructor(
 
         createChannel()
 
-        val contentText = aiText ?: when {
+        val contentText = when {
             dailyGoal > 0 && chaptersToday > 0 ->
                 "You've read $chaptersToday/$dailyGoal chapters today. Keep going!"
             dailyGoal > 0 ->

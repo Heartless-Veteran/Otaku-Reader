@@ -1,7 +1,7 @@
 package app.otakureader.feature.library.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +23,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.Manga
-import coil.compose.AsyncImage
+import coil3.compose.AsyncImage
 
 /**
  * Grid item for a manga in the library.
@@ -38,8 +38,10 @@ fun LibraryGridItem(
 ) {
     Column(
         modifier = modifier
-            .clickable { onClick() }
-            .then(if (onLongClick != null) Modifier.clickable(onClick = onClick, onLongClick = onLongClick) else Modifier)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(4.dp)
     ) {
         // Cover with badges

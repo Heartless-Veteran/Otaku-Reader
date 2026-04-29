@@ -167,11 +167,11 @@ fun ZoomableImage(
                 // imageQuality caps by explicit pixel budget; dataSaverEnabled is a fallback cap
                 // when quality is ORIGINAL.  Where the container is already measured we further
                 // cap at the container dimension so we never decode more pixels than fit on screen.
-                if (imageQuality.pixels != null) {
+                val qPixels = imageQuality.pixels
+                if (qPixels != null) {
                     // Coil fits the image into the given box (ContentScale.Fit semantics),
                     // so equal width and height effectively cap the longer side at that value.
-                    val targetPx = if (containerMax > 0) min(imageQuality.pixels, containerMax)
-                                   else imageQuality.pixels
+                    val targetPx = if (containerMax > 0) min(qPixels, containerMax) else qPixels
                     builder.size(targetPx, targetPx)
                 } else if (dataSaverEnabled) {
                     val targetPx = if (containerMax > 0) min(DATA_SAVER_MAX_DIMENSION, containerMax)

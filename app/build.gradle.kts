@@ -54,12 +54,6 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
-
-    // Baseline Profiles — AOT compilation for critical user journeys
-    baselineProfile {
-        baselineProfileOutputDir = layout.buildDirectory.dir("reports/baseline-prof")
-        saveInSrc = true
-    }
 }
 
 // CycloneDX v3.x - simplified configuration
