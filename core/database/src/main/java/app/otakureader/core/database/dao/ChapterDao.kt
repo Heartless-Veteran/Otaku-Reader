@@ -46,6 +46,9 @@ interface ChapterDao {
     @Query("UPDATE chapters SET bookmark = :bookmark WHERE id = :chapterId")
     suspend fun updateBookmark(chapterId: Long, bookmark: Boolean)
     
+    @Query("UPDATE chapters SET userNotes = :notes WHERE id = :chapterId")
+    suspend fun updateChapterNotes(chapterId: Long, notes: String?)
+    
     @Delete
     suspend fun delete(chapter: ChapterEntity)
     

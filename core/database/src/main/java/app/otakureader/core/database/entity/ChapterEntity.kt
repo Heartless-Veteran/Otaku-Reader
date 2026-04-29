@@ -39,5 +39,7 @@ data class ChapterEntity(
     val sourceOrder: Int = 0,
     val dateFetch: Long = 0,
     val dateUpload: Long = 0,
-    val lastModified: Long = 0
+    val lastModified: Long = 0,
+    /** User notes for this specific chapter. */
+    val userNotes: String? = null
 )
