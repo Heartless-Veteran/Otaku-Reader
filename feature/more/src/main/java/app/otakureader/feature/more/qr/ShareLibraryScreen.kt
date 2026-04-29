@@ -41,6 +41,9 @@ import app.otakureader.domain.model.MangaStatus
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 /**
  * Screen that generates a QR code encoding the user's library.
  * The receiving device scans this code and imports the manga list.
@@ -48,11 +51,12 @@ import kotlinx.serialization.json.Json
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareLibraryScreen(
-    mangaList: List<ShareableManga>,
     onNavigateBack: () -> Unit,
     onScanLibrary: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: ShareLibraryViewModel = hiltViewModel()
 ) {
+    val mangaList by viewModel.library.collectAsStateWithLifecycle()
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 

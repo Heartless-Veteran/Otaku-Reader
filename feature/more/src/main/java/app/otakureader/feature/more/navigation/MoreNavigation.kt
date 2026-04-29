@@ -34,13 +34,11 @@ fun NavGraphBuilder.moreScreen(
 }
 
 fun NavGraphBuilder.shareLibraryScreen(
-    mangaList: List<app.otakureader.domain.model.ShareableManga>,
     onNavigateBack: () -> Unit,
     onNavigateToScanLibrary: () -> Unit,
 ) {
     composable<Route.ShareLibrary> {
         ShareLibraryScreen(
-            mangaList = mangaList,
             onNavigateBack = onNavigateBack,
             onScanLibrary = onNavigateToScanLibrary,
         )

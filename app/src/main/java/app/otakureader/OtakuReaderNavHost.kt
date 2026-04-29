@@ -354,7 +354,6 @@ fun OtakuReaderNavHost(
 
         // QR Library Sharing
         shareLibraryScreen(
-            mangaList = emptyList(), // TODO: inject actual library data from repository
             onNavigateBack = {
                 navController.popBackStack()
             },
