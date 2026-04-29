@@ -24,6 +24,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +65,11 @@ fun StatisticsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.statistics_back))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* TODO: trigger share sheet */ }) {
+                        Icon(Icons.Default.Share, contentDescription = stringResource(R.string.statistics_share))
                     }
                 }
             )
