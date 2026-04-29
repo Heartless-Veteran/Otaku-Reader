@@ -115,6 +115,9 @@
     <string name="settings_restore_backup">Restore Backup</string>
     <string name="settings_restore_backup_description">Import library and settings from a backup file</string>
     <string name="settings_restore_button">Restore</string>
+    <string name="settings_import_tachiyomi">Import from Tachiyomi/Mihon</string>
+    <string name="settings_import_tachiyomi_description">Bring your library from another manga reader app</string>
+    <string name="settings_import_button">Import</string>
     <string name="settings_automatic_backups">Automatic Backups</string>
     <string name="settings_enable_auto_backup">Enable automatic backups</string>
     <string name="settings_enable_auto_backup_description">Periodically save a backup to device storage</string>
