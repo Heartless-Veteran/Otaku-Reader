@@ -293,7 +293,7 @@ class LibraryViewModel @Inject constructor(
         filtered = when (params.filterMode) {
             LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
             LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
-            LibraryFilterMode.COMPLETED -> filtered.filter { it.status == MangaStatus.COMPLETED }
+            LibraryFilterMode.COMPLETED -> filtered.filter { it.userCompleted }
             LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
             LibraryFilterMode.ALL -> filtered
         }
@@ -488,6 +488,7 @@ class LibraryViewModel @Inject constructor(
         lastRead = lastRead,
         dateAdded = dateAdded,
         status = status,
-        totalChapterCount = totalChapters
+        totalChapterCount = totalChapters,
+        userCompleted = userCompleted
     )
 }
