@@ -59,7 +59,8 @@ data class LibraryMangaItem(
     val lastRead: Long? = null,
     val dateAdded: Long = 0L,
     val status: MangaStatus = MangaStatus.UNKNOWN,
-    val totalChapterCount: Int = 0
+    val totalChapterCount: Int = 0,
+    val userCompleted: Boolean = false
 )
 
 data class CategoryItem(

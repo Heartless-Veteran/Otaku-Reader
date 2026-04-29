@@ -44,6 +44,8 @@ data class Manga(
     val preloadPagesBefore: Int? = null,
     val preloadPagesAfter: Int? = null,
     val contentRating: ContentRating = ContentRating.SAFE,
+    /** User has marked this manga as fully read. */
+    val userCompleted: Boolean = false,
 )
 
 @Serializable

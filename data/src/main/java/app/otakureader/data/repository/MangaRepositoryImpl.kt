@@ -160,6 +160,23 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
+    // Completed series tracking
+    override suspend fun markUserCompleted(id: Long, completed: Boolean) {
+        mangaDao.updateUserCompleted(id, completed)
+    }
+
+    override fun getCompletedManga(): Flow<List<Manga>> {
+        return mangaDao.getCompletedManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getActiveManga(): Flow<List<Manga>> {
+        return mangaDao.getActiveManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -188,6 +205,7 @@ class MangaRepositoryImpl @Inject constructor(
         preloadPagesBefore = preloadPagesBefore,
         preloadPagesAfter = preloadPagesAfter,
         contentRating = ContentRating.fromOrdinal(contentRating),
+        userCompleted = userCompleted,
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -217,5 +235,6 @@ class MangaRepositoryImpl @Inject constructor(
         preloadPagesBefore = preloadPagesBefore,
         preloadPagesAfter = preloadPagesAfter,
         contentRating = contentRating.ordinal,
+        userCompleted = userCompleted,
     )
 }

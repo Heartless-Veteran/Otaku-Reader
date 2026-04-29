@@ -83,8 +83,17 @@ interface MangaDao {
     @Query("SELECT EXISTS(SELECT 1 FROM manga WHERE id = :id AND favorite = 1)")
     fun isFavorite(id: Long): Flow<Boolean>
     
-    @Query("SELECT COUNT(*) FROM manga WHERE favorite = 1")
-    fun getFavoriteMangaCount(): Flow<Int>
+    @Query("UPDATE manga SET userCompleted = :completed WHERE id = :id")
+    suspend fun updateUserCompleted(id: Long, completed: Boolean)
+
+    @Query("SELECT * FROM manga WHERE favorite = 1 AND userCompleted = 1 ORDER BY title ASC")
+    fun getCompletedManga(): Flow<List<MangaEntity>>
+
+    @Query("SELECT * FROM manga WHERE favorite = 1 AND userCompleted = 0 ORDER BY title ASC")
+    fun getActiveManga(): Flow<List<MangaEntity>>
+
+    @Query("SELECT COUNT(*) FROM manga WHERE favorite = 1 AND userCompleted = 1")
+    fun getCompletedMangaCount(): Flow<Int>
 
     @Query("SELECT genre FROM manga WHERE favorite = 1 AND genre IS NOT NULL")
     fun getFavoriteMangaGenres(): Flow<List<String>>
