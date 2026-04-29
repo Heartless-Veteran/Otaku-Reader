@@ -110,6 +110,11 @@ object PreferencesModule {
 
     @Provides
     @Singleton
+    fun provideNotificationPreferences(dataStore: DataStore<Preferences>): NotificationPreferences =
+        NotificationPreferences(dataStore)
+
+    @Provides
+    @Singleton
     fun provideEncryptedOpdsCredentialStore(
         @ApplicationContext context: Context
     ): EncryptedOpdsCredentialStore = EncryptedOpdsCredentialStore(context)
