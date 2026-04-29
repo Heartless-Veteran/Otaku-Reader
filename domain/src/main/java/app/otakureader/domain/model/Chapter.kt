@@ -22,5 +22,7 @@ data class Chapter(
     val lastPageRead: Int = 0,
     val chapterNumber: Float = -1f,
     val dateUpload: Long = 0,
-    val dateFetch: Long = 0
+    val dateFetch: Long = 0,
+    /** User notes for this specific chapter. */
+    val userNotes: String? = null
 )

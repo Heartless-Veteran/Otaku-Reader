@@ -65,6 +65,10 @@ class ChapterRepositoryImpl @Inject constructor(
     override suspend fun updateBookmark(chapterId: Long, bookmark: Boolean) {
         chapterDao.updateBookmark(chapterId, bookmark)
     }
+
+    override suspend fun updateChapterNotes(chapterId: Long, notes: String?) {
+        chapterDao.updateChapterNotes(chapterId, notes)
+    }
     
     override suspend fun insertChapters(chapters: List<Chapter>) {
         chapterDao.insertAll(chapters.map { it.toEntity() })
@@ -139,7 +143,8 @@ class ChapterRepositoryImpl @Inject constructor(
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,
-        dateFetch = dateFetch
+        dateFetch = dateFetch,
+        userNotes = userNotes
     )
 
     private fun ChapterWithHistoryEntity.toDomain() = ChapterWithHistory(
@@ -202,7 +207,8 @@ class ChapterRepositoryImpl @Inject constructor(
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,
-        dateFetch = dateFetch
+        dateFetch = dateFetch,
+        userNotes = userNotes
     )
 }
 
