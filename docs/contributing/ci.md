@@ -61,6 +61,22 @@ The Kotlin / KSP / Compose Compiler / AGP versions are tightly coupled. Drift be
 | Hilt | `hilt` | `2.59.2` | Plugin and runtime share the same key |
 | Room | `room` | `2.8.4` | Plugin, runtime, ktx, paging, testing, and compiler share the same key |
 
+### SDK API Levels
+
+Android SDK levels are also centralised in `gradle/libs.versions.toml` and read by every convention plugin via `AndroidConfig.kt` in `build-logic/`. **Never hardcode `compileSdk`, `targetSdk`, or `minSdk` in a plugin or module `build.gradle.kts`.**
+
+| Key | Current | Purpose |
+|---|---|---|
+| `compile-sdk` | `36` | `compileSdk` for all library and application modules |
+| `target-sdk` | `36` | `targetSdk` for application modules only |
+| `min-sdk` | `26` | `minSdk` for all modules |
+
+To upgrade API levels:
+
+1. Update `compile-sdk`, `target-sdk`, and/or `min-sdk` in `gradle/libs.versions.toml`.
+2. Run `./gradlew assembleDebug --warning-mode all` and confirm zero API-level warnings.
+3. Commit only the TOML change — no plugin files need editing.
+
 ### Bumping the toolchain
 
 1. Pick a target Kotlin version.
