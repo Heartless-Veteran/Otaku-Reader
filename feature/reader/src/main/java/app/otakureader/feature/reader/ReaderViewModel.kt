@@ -10,7 +10,9 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PageNavigationEvent
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.model.PageBookmark
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
@@ -64,6 +66,7 @@ class ReaderViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
+    private val pageBookmarkRepository: PageBookmarkRepository,
     private val settingsRepository: ReaderSettingsRepository,
     private val behaviorTracker: ReadingBehaviorTracker,
     private val settingsLoaderDelegate: ReaderSettingsLoaderDelegate,
@@ -112,6 +115,7 @@ class ReaderViewModel @Inject constructor(
     init {
         loadSettings()
         loadChapter()
+        observePageBookmarks()
         discordDelegate.startObserving(
             scope = viewModelScope,
             getCurrentManga = { currentManga },
@@ -119,6 +123,24 @@ class ReaderViewModel @Inject constructor(
             getState = { _state.value },
         )
         observeSettingsWriteFailures()
+    }
+
+    /**
+     * Observe bookmark status for the current chapter and update state reactively.
+     */
+    private fun observePageBookmarks() {
+        viewModelScope.launch {
+            var previousJob: Job? = null
+            _state.collect { state ->
+                previousJob?.cancel()
+                previousJob = viewModelScope.launch {
+                    pageBookmarkRepository.isPageBookmarked(chapterId, state.currentPage)
+                        .collect { isBookmarked ->
+                            _state.update { it.copy(isCurrentPageBookmarked = isBookmarked) }
+                        }
+                }
+            }
+        }
     }
 
     /**
@@ -660,7 +682,23 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun toggleBookmark() {
-        // Implementation for toggling bookmark on current page
+        val state = _state.value
+        val currentPage = state.currentPage
+        viewModelScope.launch {
+            if (state.isCurrentPageBookmarked) {
+                pageBookmarkRepository.removeBookmark(chapterId, currentPage)
+                _effect.send(ReaderEffect.ShowSnackbar("Page bookmark removed"))
+            } else {
+                pageBookmarkRepository.addBookmark(
+                    PageBookmark(
+                        mangaId = mangaId,
+                        chapterId = chapterId,
+                        pageIndex = currentPage
+                    )
+                )
+                _effect.send(ReaderEffect.ShowSnackbar("Page bookmarked"))
+            }
+        }
     }
 
     private fun sharePage() {

@@ -291,10 +291,33 @@ internal val MIGRATION_14_15 = object : Migration(14, 15) {
     }
 }
 
+internal val MIGRATION_15_16 = object : Migration(15, 16) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `page_bookmarks` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `manga_id` INTEGER NOT NULL,
+                `chapter_id` INTEGER NOT NULL,
+                `page_index` INTEGER NOT NULL,
+                `note` TEXT,
+                `created_at` INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY(`chapter_id`) REFERENCES `chapters`(`id`)
+                    ON UPDATE NO ACTION ON DELETE CASCADE,
+                FOREIGN KEY(`manga_id`) REFERENCES `manga`(`id`)
+                    ON UPDATE NO ACTION ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_page_bookmarks_chapter_id` ON `page_bookmarks` (`chapter_id`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_page_bookmarks_manga_id` ON `page_bookmarks` (`manga_id`)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
     MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
-    MIGRATION_14_15
+    MIGRATION_14_15, MIGRATION_15_16
 )
