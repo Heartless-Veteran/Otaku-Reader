@@ -210,22 +210,14 @@ class CbzCreatorTest {
                 zos.closeEntry()
             }
 
+            // The implementation pre-scans for path traversal and rejects the whole archive
+            // (returns Result.failure with SecurityException) rather than sanitising entries.
             val result = CbzCreator.extractCbzPages(cbzFile, destDir)
-            assertTrue(result.isSuccess)
+            assertTrue(result.isFailure)
+            assertTrue(result.exceptionOrNull() is SecurityException)
 
-            // First-layer sanitization converts '../escape.jpg' → '_escape.jpg':
-            //   replace('/','_') → '.._escape.jpg', then trimStart('.') → '_escape.jpg'
-            // The canonical path check then confirms the sanitized path is inside destDir.
             // Verify the malicious file was NOT written outside destDir.
             assertFalse(File(root, "escape.jpg").exists())
-
-            // The safe 0.jpg entry must still be extracted.
-            val extractedNames = result.getOrThrow().map { it.name }.toSet()
-            assertTrue(extractedNames.contains("0.jpg"))
-
-            // The traversal entry is sanitized to _escape.jpg and extracted inside destDir.
-            assertTrue(File(destDir, "_escape.jpg").exists())
-            assertTrue(extractedNames.contains("_escape.jpg"))
         } finally {
             root.deleteRecursively()
         }

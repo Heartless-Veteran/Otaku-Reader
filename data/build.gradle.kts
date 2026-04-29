@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.otakureader.android.hilt)
     alias(libs.plugins.otakureader.android.room)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -75,4 +76,14 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.robolectric)
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(60)
+            }
+        }
+    }
 }

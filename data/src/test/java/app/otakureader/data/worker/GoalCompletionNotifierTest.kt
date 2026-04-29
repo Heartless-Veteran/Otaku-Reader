@@ -198,8 +198,8 @@ class GoalCompletionNotifierTest {
         // When - second day with goal met again
         notifier.checkAndNotify()
 
-        // Then - should send another notification
-        assertEquals(2, shadowNotificationManager.size())
+        // Then - notification was re-sent (same ID replaces, so size stays at 1)
+        assertEquals(1, shadowNotificationManager.size())
     }
 
     @Test

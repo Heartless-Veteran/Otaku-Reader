@@ -6,6 +6,7 @@ import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
@@ -89,9 +90,6 @@ abstract class RepositoryModule {
     abstract fun bindReadingHistoryScheduler(
         impl: WorkManagerHistoryScheduler
     ): ReadingHistoryScheduler
-
-import app.otakureader.domain.repository.PageBookmarkRepository
-import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 
     @Binds
     abstract fun bindPageBookmarkRepository(

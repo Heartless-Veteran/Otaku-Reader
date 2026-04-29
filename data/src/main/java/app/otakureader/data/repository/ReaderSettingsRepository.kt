@@ -39,7 +39,7 @@ class ReaderSettingsRepository @Inject constructor(
      * Consumers can observe this to surface a user-facing warning.
      */
     private val _writeFailureEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val writeFailureEvents: Flow<Unit> = _writeFailureEvents.asSharedFlow()
+    override val writeFailureEvents: Flow<Unit> = _writeFailureEvents.asSharedFlow()
 
     init {
         // Migrate the legacy image-quality ordinal key to the stable string key once on
@@ -65,22 +65,22 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Reader Mode ====================
     
-    val readerMode: Flow<ReaderMode> = dataStore.data.map { prefs ->
+    override val readerMode: Flow<ReaderMode> = dataStore.data.map { prefs ->
         val ordinal = prefs[Keys.READER_MODE] ?: 0
         ReaderMode.entries.getOrNull(ordinal) ?: ReaderMode.SINGLE_PAGE
     }
     
-    suspend fun setReaderMode(mode: ReaderMode) {
+    override suspend fun setReaderMode(mode: ReaderMode) {
         safeEdit { it[Keys.READER_MODE] = mode.ordinal }
     }
     
     // ==================== Brightness ====================
     
-    val brightness: Flow<Float> = dataStore.data.map { prefs ->
+    override val brightness: Flow<Float> = dataStore.data.map { prefs ->
         prefs[Keys.BRIGHTNESS] ?: DEFAULT_BRIGHTNESS
     }
     
-    suspend fun setBrightness(brightness: Float) {
+    override suspend fun setBrightness(brightness: Float) {
         safeEdit { it[Keys.BRIGHTNESS] = brightness.coerceIn(0.1f, 1.5f) }
     }
     
@@ -100,66 +100,66 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.DOUBLE_TAP_ZOOM] ?: true
     }
     
-    suspend fun setDoubleTapZoomEnabled(enabled: Boolean) {
+    override suspend fun setDoubleTapZoomEnabled(enabled: Boolean) {
         safeEdit { it[Keys.DOUBLE_TAP_ZOOM] = enabled }
     }
     
     // ==================== Keep Screen On ====================
     
-    val keepScreenOn: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val keepScreenOn: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.KEEP_SCREEN_ON] ?: true
     }
     
-    suspend fun setKeepScreenOn(enabled: Boolean) {
+    override suspend fun setKeepScreenOn(enabled: Boolean) {
         safeEdit { it[Keys.KEEP_SCREEN_ON] = enabled }
     }
     
     // ==================== Show Page Number ====================
     
-    val showPageNumber: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showPageNumber: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_PAGE_NUMBER] ?: true
     }
     
-    suspend fun setShowPageNumber(enabled: Boolean) {
+    override suspend fun setShowPageNumber(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_PAGE_NUMBER] = enabled }
     }
     
     // ==================== Reading Direction ====================
     
-    val readingDirection: Flow<ReadingDirection> = dataStore.data.map { prefs ->
+    override val readingDirection: Flow<ReadingDirection> = dataStore.data.map { prefs ->
         val ordinal = prefs[Keys.READING_DIRECTION] ?: 0
         ReadingDirection.entries.getOrNull(ordinal) ?: ReadingDirection.LTR
     }
     
-    suspend fun setReadingDirection(direction: ReadingDirection) {
+    override suspend fun setReadingDirection(direction: ReadingDirection) {
         safeEdit { it[Keys.READING_DIRECTION] = direction.ordinal }
     }
     
     // ==================== Volume Key Navigation ====================
     
-    val volumeKeysEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val volumeKeysEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.VOLUME_KEYS_ENABLED] ?: false
     }
     
-    suspend fun setVolumeKeysEnabled(enabled: Boolean) {
+    override suspend fun setVolumeKeysEnabled(enabled: Boolean) {
         safeEdit { it[Keys.VOLUME_KEYS_ENABLED] = enabled }
     }
 
-    val volumeKeysInverted: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val volumeKeysInverted: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.VOLUME_KEYS_INVERTED] ?: false
     }
 
-    suspend fun setVolumeKeysInverted(inverted: Boolean) {
+    override suspend fun setVolumeKeysInverted(inverted: Boolean) {
         safeEdit { it[Keys.VOLUME_KEYS_INVERTED] = inverted }
     }
     
     // ==================== Fullscreen ====================
     
-    val fullscreen: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val fullscreen: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.FULLSCREEN] ?: true
     }
     
-    suspend fun setFullscreen(enabled: Boolean) {
+    override suspend fun setFullscreen(enabled: Boolean) {
         safeEdit { it[Keys.FULLSCREEN] = enabled }
     }
     
@@ -169,7 +169,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.AUTO_SCROLL_SPEED] ?: DEFAULT_AUTO_SCROLL_SPEED
     }
     
-    suspend fun setAutoScrollSpeed(speed: Float) {
+    override suspend fun setAutoScrollSpeed(speed: Float) {
         safeEdit { it[Keys.AUTO_SCROLL_SPEED] = speed.coerceIn(10f, 500f) }
     }
     
@@ -183,7 +183,7 @@ class ReaderSettingsRepository @Inject constructor(
         )
     }
 
-    suspend fun setTapZoneConfig(config: TapZoneConfig) {
+    override suspend fun setTapZoneConfig(config: TapZoneConfig) {
         safeEdit { prefs ->
             prefs[Keys.TAP_ZONE_LEFT] = config.leftZoneWidth
             prefs[Keys.TAP_ZONE_CENTER] = config.centerZoneWidth
@@ -193,35 +193,35 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Incognito Mode ====================
 
-    val incognitoMode: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val incognitoMode: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.INCOGNITO_MODE] ?: false
     }
 
-    suspend fun setIncognitoMode(enabled: Boolean) {
+    override suspend fun setIncognitoMode(enabled: Boolean) {
         safeEdit { it[Keys.INCOGNITO_MODE] = enabled }
     }
 
-    val colorFilterMode: Flow<ColorFilterMode> = dataStore.data.map { prefs ->
+    override val colorFilterMode: Flow<ColorFilterMode> = dataStore.data.map { prefs ->
         ColorFilterMode.entries.getOrNull(prefs[Keys.COLOR_FILTER_MODE] ?: 0)
             ?: ColorFilterMode.NONE
     }
 
-    suspend fun setColorFilterMode(mode: ColorFilterMode) {
+    override suspend fun setColorFilterMode(mode: ColorFilterMode) {
         safeEdit { it[Keys.COLOR_FILTER_MODE] = mode.ordinal }
     }
 
-    val customTintColor: Flow<Long> = dataStore.data.map { prefs ->
+    override val customTintColor: Flow<Long> = dataStore.data.map { prefs ->
         prefs[Keys.CUSTOM_TINT_COLOR] ?: 0x4000AAFFL
     }
 
-    suspend fun setCustomTintColor(color: Long) {
+    override suspend fun setCustomTintColor(color: Long) {
         safeEdit { it[Keys.CUSTOM_TINT_COLOR] = color }
     }
 
     // ==================== Page Preloading (#264) ====================
 
     /** Number of pages to preload before the current page (0–10). */
-    val preloadPagesBefore: Flow<Int> = dataStore.data.map { prefs ->
+    override val preloadPagesBefore: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.PRELOAD_PAGES_BEFORE] ?: DEFAULT_PRELOAD_PAGES
     }
 
@@ -230,7 +230,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Number of pages to preload after the current page (0–10). */
-    val preloadPagesAfter: Flow<Int> = dataStore.data.map { prefs ->
+    override val preloadPagesAfter: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.PRELOAD_PAGES_AFTER] ?: DEFAULT_PRELOAD_PAGES
     }
 
@@ -241,7 +241,7 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Smart Prefetch Settings ====================
 
     /** Whether smart prefetch is enabled. */
-    val smartPrefetchEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val smartPrefetchEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SMART_PREFETCH_ENABLED] ?: true
     }
 
@@ -250,7 +250,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Prefetch strategy ordinal (0=Conservative, 1=Balanced, 2=Aggressive, 3=Adaptive). */
-    val prefetchStrategyOrdinal: Flow<Int> = dataStore.data.map { prefs ->
+    override val prefetchStrategyOrdinal: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.PREFETCH_STRATEGY] ?: 1 // Default to Balanced
     }
 
@@ -259,7 +259,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Whether adaptive learning is enabled for prefetch optimization. */
-    val adaptiveLearningEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val adaptiveLearningEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.ADAPTIVE_LEARNING_ENABLED] ?: true
     }
 
@@ -268,7 +268,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Whether to prefetch adjacent chapters. */
-    val prefetchAdjacentChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val prefetchAdjacentChapters: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.PREFETCH_ADJACENT_CHAPTERS] ?: false
     }
 
@@ -277,7 +277,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Whether to only prefetch on WiFi (disable on mobile data). */
-    val prefetchOnlyOnWiFi: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val prefetchOnlyOnWiFi: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.PREFETCH_ONLY_ON_WIFI] ?: false
     }
 
@@ -288,11 +288,11 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Crop Borders ====================
 
     /** Whether automatic border cropping is enabled during image decoding. */
-    val cropBordersEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val cropBordersEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.CROP_BORDERS_ENABLED] ?: false
     }
 
-    suspend fun setCropBordersEnabled(enabled: Boolean) {
+    override suspend fun setCropBordersEnabled(enabled: Boolean) {
         safeEdit { it[Keys.CROP_BORDERS_ENABLED] = enabled }
     }
 
@@ -309,7 +309,7 @@ class ReaderSettingsRepository @Inject constructor(
      * and the legacy key is removed. This ensures the migration happens once and future reads
      * use the stable string key.
      */
-    val imageQuality: Flow<ImageQuality> = dataStore.data.map { prefs ->
+    override val imageQuality: Flow<ImageQuality> = dataStore.data.map { prefs ->
         val name = prefs[Keys.IMAGE_QUALITY]
         if (name != null) {
             ImageQuality.entries.firstOrNull { it.name == name } ?: ImageQuality.ORIGINAL
@@ -331,7 +331,7 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Data Saver Mode ====================
 
     /** Whether data saver mode is enabled to reduce image quality and bandwidth usage. */
-    val dataSaverEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val dataSaverEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.DATA_SAVER_ENABLED] ?: false
     }
 
@@ -342,7 +342,7 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Overlay Settings ====================
 
     /** Whether the reading session timer overlay is shown in the reader. */
-    val showReadingTimer: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showReadingTimer: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_READING_TIMER] ?: false
     }
 
@@ -351,7 +351,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Whether the battery/time overlay is shown in the reader. */
-    val showBatteryTime: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showBatteryTime: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_BATTERY_TIME] ?: false
     }
 
@@ -361,7 +361,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Display Settings ====================
 
-    val showContentInCutout: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showContentInCutout: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_CONTENT_IN_CUTOUT] ?: true
     }
 
@@ -370,7 +370,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Background color: 0 = Black, 1 = White, 2 = Gray, 3 = Auto */
-    val backgroundColor: Flow<Int> = dataStore.data.map { prefs ->
+    override val backgroundColor: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.BACKGROUND_COLOR] ?: 0
     }
 
@@ -378,7 +378,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.BACKGROUND_COLOR] = color.coerceIn(0, 3) }
     }
 
-    val animatePageTransitions: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val animatePageTransitions: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true
     }
 
@@ -386,7 +386,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.ANIMATE_PAGE_TRANSITIONS] = enabled }
     }
 
-    val showReadingModeOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showReadingModeOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_READING_MODE_OVERLAY] ?: true
     }
 
@@ -394,7 +394,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SHOW_READING_MODE_OVERLAY] = enabled }
     }
 
-    val showTapZonesOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showTapZonesOverlay: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_TAP_ZONES_OVERLAY] ?: false
     }
 
@@ -405,15 +405,15 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Scale Settings ====================
 
     /** Scale type: 0 = Fit Screen, 1 = Fit Width, 2 = Fit Height, 3 = Original, 4 = Smart Fit */
-    val readerScale: Flow<Int> = dataStore.data.map { prefs ->
-        prefs[Keys.READER_SCALE] ?: 0
+    override val readerScale: Flow<Float> = dataStore.data.map { prefs ->
+        (prefs[Keys.READER_SCALE] ?: 0).toFloat()
     }
 
     suspend fun setReaderScale(scale: Int) {
         safeEdit { it[Keys.READER_SCALE] = scale.coerceIn(0, 4) }
     }
 
-    val autoZoomWideImages: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val autoZoomWideImages: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true
     }
 
@@ -423,7 +423,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Tap Zone Settings ====================
 
-    val invertTapZones: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val invertTapZones: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.INVERT_TAP_ZONES] ?: false
     }
 
@@ -434,7 +434,7 @@ class ReaderSettingsRepository @Inject constructor(
     // ==================== Webtoon Settings ====================
 
     /** Side padding: 0 = None, 1 = Small, 2 = Medium, 3 = Large */
-    val webtoonSidePadding: Flow<Int> = dataStore.data.map { prefs ->
+    override val webtoonSidePadding: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0
     }
 
@@ -443,7 +443,7 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Gap between webtoon pages in dp. Range: 0–16, default 4. */
-    val webtoonGapDp: Flow<Int> = dataStore.data.map { prefs ->
+    override val webtoonGapDp: Flow<Int> = dataStore.data.map { prefs ->
         prefs[Keys.WEBTOON_GAP_DP] ?: 4
     }
 
@@ -452,15 +452,15 @@ class ReaderSettingsRepository @Inject constructor(
     }
 
     /** Menu hide sensitivity: 0 = Low, 1 = Medium, 2 = High */
-    val webtoonMenuHideSensitivity: Flow<Int> = dataStore.data.map { prefs ->
-        prefs[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] ?: 0
+    override val webtoonMenuHideSensitivity: Flow<Float> = dataStore.data.map { prefs ->
+        (prefs[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] ?: 0).toFloat()
     }
 
     suspend fun setWebtoonMenuHideSensitivity(sensitivity: Int) {
         safeEdit { it[Keys.WEBTOON_MENU_HIDE_SENSITIVITY] = sensitivity.coerceIn(0, 2) }
     }
 
-    val webtoonDoubleTapZoom: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val webtoonDoubleTapZoom: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.WEBTOON_DOUBLE_TAP_ZOOM] ?: true
     }
 
@@ -468,7 +468,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.WEBTOON_DOUBLE_TAP_ZOOM] = enabled }
     }
 
-    val webtoonDisableZoomOut: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val webtoonDisableZoomOut: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.WEBTOON_DISABLE_ZOOM_OUT] ?: false
     }
 
@@ -478,7 +478,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== E-ink Settings ====================
 
-    val einkFlashOnPageChange: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val einkFlashOnPageChange: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.EINK_FLASH_ON_PAGE_CHANGE] ?: false
     }
 
@@ -486,7 +486,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.EINK_FLASH_ON_PAGE_CHANGE] = enabled }
     }
 
-    val einkBlackAndWhite: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val einkBlackAndWhite: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.EINK_BLACK_AND_WHITE] ?: false
     }
 
@@ -496,7 +496,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Reading Behavior ====================
 
-    val skipReadChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val skipReadChapters: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SKIP_READ_CHAPTERS] ?: false
     }
 
@@ -504,7 +504,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SKIP_READ_CHAPTERS] = enabled }
     }
 
-    val skipFilteredChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val skipFilteredChapters: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true
     }
 
@@ -512,7 +512,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SKIP_FILTERED_CHAPTERS] = enabled }
     }
 
-    val skipDuplicateChapters: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val skipDuplicateChapters: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SKIP_DUPLICATE_CHAPTERS] ?: false
     }
 
@@ -520,7 +520,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SKIP_DUPLICATE_CHAPTERS] = enabled }
     }
 
-    val alwaysShowChapterTransition: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val alwaysShowChapterTransition: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.ALWAYS_SHOW_CHAPTER_TRANSITION] ?: true
     }
 
@@ -530,7 +530,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     // ==================== Actions ====================
 
-    val showActionsOnLongTap: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val showActionsOnLongTap: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SHOW_ACTIONS_ON_LONG_TAP] ?: true
     }
 
@@ -538,7 +538,7 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SHOW_ACTIONS_ON_LONG_TAP] = enabled }
     }
 
-    val savePagesToSeparateFolders: Flow<Boolean> = dataStore.data.map { prefs ->
+    override val savePagesToSeparateFolders: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] ?: false
     }
 

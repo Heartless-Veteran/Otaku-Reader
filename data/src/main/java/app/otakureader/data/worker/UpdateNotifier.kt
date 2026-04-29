@@ -127,7 +127,9 @@ class UpdateNotifier(private val context: Context) {
 
         val summaryNotification = buildSummaryNotification(mangaCount, totalNewChapters)
         notificationManager.notify(UPDATE_NOTIFICATION_TAG, SUMMARY_NOTIFICATION_ID, summaryNotification)
-    }(mangaCount: Int, totalNewChapters: Int): android.app.Notification {
+    }
+
+    private fun buildSummaryNotification(mangaCount: Int, totalNewChapters: Int): android.app.Notification {
         val contentText = when {
             mangaCount == 1 -> "$totalNewChapters new chapter${if (totalNewChapters > 1) "s" else ""} available"
             else -> "$totalNewChapters new chapters in $mangaCount manga"

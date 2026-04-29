@@ -13,6 +13,7 @@ import app.otakureader.core.preferences.EncryptedOpdsCredentialStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
+import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.core.preferences.ReadingSpeedPreferences

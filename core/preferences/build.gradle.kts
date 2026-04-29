@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.otakureader.android.library)
     alias(libs.plugins.otakureader.android.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -11,6 +12,7 @@ dependencies {
     implementation(projects.core.common)
     api(libs.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.security.crypto)
 
     testImplementation(libs.junit)

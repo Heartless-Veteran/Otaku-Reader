@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -58,7 +59,7 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences)
+        downloadManager = DownloadManager(context, downloader, downloadPreferences, TestScope(testDispatcher))
     }
 
     // -------------------------------------------------------------------------
