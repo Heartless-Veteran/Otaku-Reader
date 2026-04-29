@@ -20,6 +20,7 @@ import app.otakureader.data.history.WorkManagerHistoryScheduler
 import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
+import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import dagger.Binds
@@ -86,6 +87,14 @@ abstract class RepositoryModule {
     abstract fun bindReadingHistoryScheduler(
         impl: WorkManagerHistoryScheduler
     ): ReadingHistoryScheduler
+
+import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.data.repository.PageBookmarkRepositoryImpl
+
+    @Binds
+    abstract fun bindPageBookmarkRepository(
+        impl: PageBookmarkRepositoryImpl
+    ): PageBookmarkRepository
 
     @Binds
     abstract fun bindSourceRepository(
