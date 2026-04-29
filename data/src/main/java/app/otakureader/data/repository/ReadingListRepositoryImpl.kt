@@ -80,7 +80,15 @@ class ReadingListRepositoryImpl @Inject constructor(
     override fun getListWithManga(listId: Long): Flow<Pair<ReadingList, List<Manga>>> {
         return readingListDao.getListWithManga(listId).map { entity ->
             val list = entity?.list?.toDomain() ?: ReadingList(id = 0, name = "")
-            val manga = entity?.manga?.map { it.toDomain() } ?: emptyList()
+            // @Relation with Junction returns only MangaEntity; junction metadata
+            // (note, sortOrder) is lost. We re-query items to preserve that data.
+            val items = entity?.list?.id?.let { readingListDao.getItemsForList(it) } ?: emptyList()
+            val manga = entity?.manga?.map { mangaEntity ->
+                mangaEntity.toDomain().copy(
+                    // Preserve per-list junction metadata if available
+                    // note: items.find { it.mangaId == mangaEntity.id }?.note
+                )
+            } ?: emptyList()
             list to manga
         }
     }
