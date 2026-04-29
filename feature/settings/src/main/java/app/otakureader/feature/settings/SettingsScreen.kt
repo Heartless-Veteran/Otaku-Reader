@@ -1498,6 +1498,20 @@ private fun DataStorageSection(state: SettingsState, onEvent: (SettingsEvent) ->
                 }
             )
 
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_import_tachiyomi)) },
+                supportingContent = { Text(stringResource(R.string.settings_import_tachiyomi_description)) },
+                trailingContent = {
+                    if (state.isRestoreInProgress) {
+                        CircularProgressIndicator()
+                    } else {
+                        Button(onClick = { onEvent(SettingsEvent.OnImportTachiyomiBackup) }) {
+                            Text(stringResource(R.string.settings_import_button))
+                        }
+                    }
+                }
+            )
+
             // ── Automatic backups ──
             HorizontalDivider()
             SectionHeader(title = stringResource(R.string.settings_automatic_backups))

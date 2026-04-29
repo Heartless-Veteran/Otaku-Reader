@@ -238,8 +238,10 @@ sealed interface SettingsEvent : UiEvent {
     // Backup
     data object OnCreateBackup : SettingsEvent
     data object OnRestoreBackup : SettingsEvent
+    data object OnImportTachiyomiBackup : SettingsEvent
     data class CreateBackupWithUri(val uri: Uri) : SettingsEvent
     data class RestoreBackupFromUri(val uri: Uri) : SettingsEvent
+    data class ImportTachiyomiBackupFromUri(val uri: Uri) : SettingsEvent
     data class SetAutoBackupEnabled(val enabled: Boolean) : SettingsEvent
     data class SetAutoBackupInterval(val hours: Int) : SettingsEvent
     data class SetAutoBackupMaxCount(val count: Int) : SettingsEvent
@@ -290,6 +292,7 @@ sealed interface SettingsEffect : UiEffect {
     data class ShowSnackbar(val message: String) : SettingsEffect
     data object ShowBackupPicker : SettingsEffect
     data object ShowRestorePicker : SettingsEffect
+    data object ShowTachiyomiImportPicker : SettingsEffect
     data object NavigateToMigrationEntry : SettingsEffect
     data object NavigateToAbout : SettingsEffect
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect

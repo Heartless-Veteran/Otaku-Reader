@@ -1,11 +1,14 @@
 package app.otakureader.feature.settings.delegate
 
+import android.content.Context
 import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.data.backup.BackupScheduler
 import app.otakureader.data.backup.repository.BackupRepository
+import app.otakureader.data.backup.tachiyomi.TachiyomiBackupImporter
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
@@ -16,9 +19,11 @@ import javax.inject.Singleton
 
 @Singleton
 class BackupSettingsDelegate @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val backupPreferences: BackupPreferences,
     private val backupRepository: BackupRepository,
     private val backupScheduler: BackupScheduler,
+    private val tachiyomiImporter: TachiyomiBackupImporter,
 ) {
 
     private var updateState: ((SettingsState) -> SettingsState) -> Unit = {}
@@ -49,6 +54,24 @@ class BackupSettingsDelegate @Inject constructor(
     ): Boolean = when (event) {
         SettingsEvent.OnCreateBackup -> { sendEffect(SettingsEffect.ShowBackupPicker); true }
         SettingsEvent.OnRestoreBackup -> { sendEffect(SettingsEffect.ShowRestorePicker); true }
+        SettingsEvent.OnImportTachiyomiBackup -> { sendEffect(SettingsEffect.ShowTachiyomiImportPicker); true }
+        is SettingsEvent.ImportTachiyomiBackupFromUri -> {
+            updateState { it.copy(isRestoreInProgress = true) }
+            try {
+                val json = context.contentResolver.openInputStream(event.uri)?.use { it.readBytes().decodeToString() }
+                    ?: throw IllegalStateException("Failed to read backup file")
+                val result = tachiyomiImporter.importBackup(json)
+                sendEffect(SettingsEffect.ShowSnackbar(
+                    "Imported ${result.mangaImported} manga, ${result.chaptersImported} chapters, ${result.categoriesImported} categories"
+                ))
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
+            } finally {
+                updateState { it.copy(isRestoreInProgress = false) }
+            }
+            true
+        }
         is SettingsEvent.CreateBackupWithUri -> {
             updateState { it.copy(isBackupInProgress = true) }
             try {
