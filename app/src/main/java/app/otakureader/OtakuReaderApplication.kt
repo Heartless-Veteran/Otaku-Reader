@@ -64,11 +64,11 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         val cache = SingletonImageLoader.get(this).memoryCache
         when (level) {
             ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ->
-                cache?.trimToSize((cache.maxSize * 0.5).toInt())
+                cache?.trimToSize((cache.maxSize * 0.5).toLong())
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
             ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
-                cache?.trimToSize(0)
+                cache?.trimToSize(0L)
             }
         }
     }
@@ -92,7 +92,7 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         return ImageLoader.Builder(context)
             .memoryCache {
                 MemoryCache.Builder()
-                    .maxSizeBytes(maxMemoryCacheBytes)
+                    .maxSizeBytes(maxMemoryCacheBytes.toLong())
                     .build()
             }
             .diskCache {

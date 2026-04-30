@@ -70,4 +70,7 @@ object DatabaseModule {
 
     @Provides
     fun provideReadingListDao(database: OtakuReaderDatabase) = database.readingListDao()
+
+    @Provides
+    fun providePageBookmarkDao(database: OtakuReaderDatabase) = database.pageBookmarkDao()
 }

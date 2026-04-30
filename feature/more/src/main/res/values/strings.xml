@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="more_title">More</string>
+    <string name="more_back">Back</string>
     
     <!-- Settings -->
     <string name="more_settings">Settings</string>
@@ -34,7 +35,7 @@
     <string name="more_share_library">Share Library</string>
     <string name="more_share_library_desc">Show a QR code to share your manga list</string>
     <string name="more_scan_library">Scan Library</string>
-    <string name="more_scan_library_desc">Import manga from a friend's QR code</string>
+    <string name="more_scan_library_desc">Import manga from a friend\'s QR code</string>
 
     <!-- Version footer -->
     <string name="more_version_label">Otaku Reader v%s</string>

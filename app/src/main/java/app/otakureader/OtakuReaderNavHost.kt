@@ -205,7 +205,7 @@ fun OtakuReaderNavHost(
         sourceMangaDetailScreen(
             onNavigateToMangaDetail = { mangaId ->
                 navController.navigate(Route.MangaDetails(mangaId)) {
-                    popUpTo { inclusive = true }
+                    popUpTo<Route.SourceMangaDetail> { inclusive = true }
                 }
             }
         )
@@ -402,7 +402,7 @@ fun OtakuReaderNavHost(
             onComplete = {
                 onOnboardingComplete()
                 navController.navigate(Route.Library) {
-                    popUpTo { inclusive = true }
+                    popUpTo<Route.Onboarding> { inclusive = true }
                 }
             },
             onNavigateToExtensions = {

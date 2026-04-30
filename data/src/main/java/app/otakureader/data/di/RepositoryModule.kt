@@ -3,6 +3,7 @@ package app.otakureader.data.di
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
@@ -98,4 +99,9 @@ abstract class RepositoryModule {
     abstract fun bindSourceRepository(
         impl: SourceRepositoryImpl
     ): SourceRepository
+
+    @Binds
+    abstract fun bindExtensionManagementRepository(
+        impl: SourceRepositoryImpl
+    ): ExtensionManagementRepository
 }

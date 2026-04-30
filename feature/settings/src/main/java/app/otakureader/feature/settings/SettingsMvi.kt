@@ -6,7 +6,6 @@ import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.domain.model.ImageQuality
-import app.otakureader.feature.settings.BuildConfig
 
 data class TrackerInfo(
     val id: Int,

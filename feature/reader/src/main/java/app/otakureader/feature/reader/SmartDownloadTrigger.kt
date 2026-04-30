@@ -50,7 +50,7 @@ class SmartDownloadTrigger @Inject constructor(
 
             // Check favorites-only constraint
             if (rule.favoritesOnly) {
-                val manga = mangaRepository.getMangaById(mangaId).first() ?: return@launch
+                val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
                 if (!manga.favorite) return@launch
             }
 
@@ -61,17 +61,23 @@ class SmartDownloadTrigger @Inject constructor(
             if (getFreeStorageMb() < rule.minFreeStorageMb) return@launch
 
             // Queue next N unread chapters
-            val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
+            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+            val chapters = chapterRepository.getChaptersByMangaIdSync(mangaId)
             val currentIndex = chapters.indexOfFirst { it.id == chapterId }
             if (currentIndex < 0) return@launch
 
             val toDownload = chapters
                 .drop(currentIndex + 1)
-                .filter { !it.read && !it.downloaded }
+                .filter { !it.read }
                 .take(rule.chaptersAhead)
 
-            if (toDownload.isNotEmpty()) {
-                downloadRepository.startDownload(chapters = toDownload)
+            for (chapter in toDownload) {
+                downloadRepository.enqueueChapter(
+                    mangaId = mangaId,
+                    chapterId = chapter.id,
+                    mangaTitle = manga.title,
+                    chapterTitle = chapter.name,
+                )
             }
         }
     }

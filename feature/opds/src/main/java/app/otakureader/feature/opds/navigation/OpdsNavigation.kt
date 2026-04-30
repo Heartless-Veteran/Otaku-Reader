@@ -13,7 +13,6 @@ fun NavGraphBuilder.opdsScreen(
     composable<Route.OpdsCatalog> { backStackEntry ->
         val route = backStackEntry.toRoute<Route.OpdsCatalog>()
         OpdsScreen(
-            serverId = route.serverId,
             onNavigateBack = onNavigateBack,
             onNavigateToMangaDetail = onNavigateToMangaDetail
         )

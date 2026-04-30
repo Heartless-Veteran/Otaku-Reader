@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import app.otakureader.core.common.estimateReadTimeMinutes
 import app.otakureader.core.common.formatReadTime
 import app.otakureader.core.common.estimatePageCount
+import coil3.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
