@@ -262,12 +262,30 @@ fun OtakuReaderNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
+            onNavigateToAbout = {
+                navController.navigate(Route.About)
+            },
             onNavigateToMigrationEntry = {
                 navController.navigate(Route.MigrationEntry)
             },
-            onNavigateToAbout = {
-                navController.navigate(Route.About)
-            }
+            onNavigateToAppearance = {
+                navController.navigate(Route.SettingsAppearance)
+            },
+            onNavigateToLibrary = {
+                navController.navigate(Route.SettingsLibrary)
+            },
+            onNavigateToReader = {
+                navController.navigate(Route.SettingsReader)
+            },
+            onNavigateToDownloads = {
+                navController.navigate(Route.SettingsDownloads)
+            },
+            onNavigateToTracking = {
+                navController.navigate(Route.SettingsTracking)
+            },
+            onNavigateToBackup = {
+                navController.navigate(Route.SettingsBackup)
+            },
         )
 
         downloadsScreen(

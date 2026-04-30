@@ -108,6 +108,7 @@
     <string name="settings_reminder_evening">Evening (8 PM)</string>
 
     <!-- Backup, Restore & Migration -->
+    <string name="settings_backup">Backup &amp; Restore</string>
     <string name="settings_backup_restore_migration">Backup, Restore &amp; Migration</string>
     <string name="settings_create_backup">Create Backup</string>
     <string name="settings_create_backup_description">Export your library and settings</string>
@@ -357,4 +358,9 @@
     <!-- Cloud Sync removed: cloud sync (Google Drive / Dropbox / WebDAV / self-hosted)
          was extracted to a sibling repository. Local backup/restore strings live in
          the Backup section above. -->
+
+    <!-- About section (settings hub) -->
+    <string name="settings_about">About</string>
+    <string name="settings_about_title">About Otaku Reader</string>
+    <string name="settings_about_description">App info, FAQ, licenses</string>
 </resources>
