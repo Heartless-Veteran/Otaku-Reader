@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.model.ShareableLibrary
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -71,6 +72,9 @@ class ScanLibraryViewModel @Inject constructor(
                     }
                 }
                 _importState.value = ImportState.Done(imported, skipped)
+            } catch (e: CancellationException) {
+                // Re-throw CancellationException to allow proper coroutine cancellation
+                throw e
             } catch (e: Exception) {
                 _importState.value = ImportState.Error(e.message ?: "Import failed")
             }

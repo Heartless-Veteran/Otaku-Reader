@@ -226,6 +226,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetDownloadAheadWhileReading(val count: Int) : SettingsEvent
     data class SetDownloadAheadOnlyOnWifi(val enabled: Boolean) : SettingsEvent
     data class SetDownloadLocation(val location: String?) : SettingsEvent
+    data object RequestDownloadLocationPicker : SettingsEvent
 
     // Local Source
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent

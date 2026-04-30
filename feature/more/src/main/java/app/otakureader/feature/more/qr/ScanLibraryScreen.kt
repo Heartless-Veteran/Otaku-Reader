@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.domain.model.ShareableLibrary
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
@@ -62,7 +62,7 @@ fun ScanLibraryScreen(
     var scannedLibrary by remember { mutableStateOf<ShareableLibrary?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var isScanning by remember { mutableStateOf(false) }
-    val importState by viewModel.importState.collectAsState()
+    val importState by viewModel.importState.collectAsStateWithLifecycle()
 
     // Navigate back automatically once import finishes
     LaunchedEffect(importState) {
@@ -126,7 +126,7 @@ fun ScanLibraryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan Library") },
+                title = { Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(app.otakureader.feature.more.R.string.more_back))
@@ -146,7 +146,7 @@ fun ScanLibraryScreen(
             when {
                 isScanning -> {
                     CircularProgressIndicator()
-                    Text("Opening camera...", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_opening_camera), style = MaterialTheme.typography.bodyMedium)
                 }
                 error != null -> {
                     Text(
@@ -160,7 +160,7 @@ fun ScanLibraryScreen(
                         error = null
                         cameraLauncher.launch(Manifest.permission.CAMERA)
                     }) {
-                        Text("Try Again")
+                        Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_try_again))
                     }
                 }
                 scannedLibrary != null -> {
@@ -169,24 +169,24 @@ fun ScanLibraryScreen(
                         is ScanLibraryViewModel.ImportState.Importing -> {
                             CircularProgressIndicator()
                             Text(
-                                "Importing library…",
+                                stringResource(app.otakureader.feature.more.R.string.more_scan_library_importing),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                         is ScanLibraryViewModel.ImportState.Done -> {
                             Text(
-                                text = "Import complete!",
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_import_complete),
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                text = "${state.imported} added, ${state.skipped} not found locally",
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_import_result, state.imported, state.skipped),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         is ScanLibraryViewModel.ImportState.Error -> {
                             Text(
-                                text = "Import failed: ${state.message}",
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_import_failed, state.message),
                                 color = MaterialTheme.colorScheme.error,
                                 style = MaterialTheme.typography.bodyMedium,
                                 textAlign = TextAlign.Center
@@ -195,16 +195,16 @@ fun ScanLibraryScreen(
                             // importLibrary() transitions to Importing before re-running,
                             // so the UI correctly reflects the new attempt.
                             Button(onClick = { viewModel.importLibrary(library) }) {
-                                Text("Retry")
+                                Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_retry))
                             }
                         }
                         else -> {
                             Text(
-                                text = "Library found!",
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_found),
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                text = "${library.manga.size} manga ready to import",
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_ready_to_import, library.manga.size),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -213,7 +213,7 @@ fun ScanLibraryScreen(
                                 onClick = { viewModel.importLibrary(library) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Add to My Library")
+                                Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_add_to_library))
                             }
                             Button(
                                 onClick = {
@@ -223,14 +223,14 @@ fun ScanLibraryScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text("Scan Another")
+                                Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_scan_another))
                             }
                         }
                     }
                 }
                 else -> {
                     Text(
-                        text = "Point your camera at a library QR code",
+                        text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_prompt),
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center
                     )

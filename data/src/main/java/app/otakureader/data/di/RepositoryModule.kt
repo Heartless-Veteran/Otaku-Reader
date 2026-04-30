@@ -8,6 +8,7 @@ import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
@@ -23,6 +24,7 @@ import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
 import app.otakureader.data.repository.PageBookmarkRepositoryImpl
+import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import dagger.Binds
@@ -104,4 +106,9 @@ abstract class RepositoryModule {
     abstract fun bindExtensionManagementRepository(
         impl: SourceRepositoryImpl
     ): ExtensionManagementRepository
+
+    @Binds
+    abstract fun bindReadingListRepository(
+        impl: ReadingListRepositoryImpl
+    ): ReadingListRepository
 }

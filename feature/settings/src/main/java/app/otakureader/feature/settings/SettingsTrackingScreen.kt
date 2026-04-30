@@ -182,9 +182,9 @@ private fun TrackingContent(state: SettingsState, onEvent: (SettingsEvent) -> Un
                                     Icons.Default.Visibility
                                 },
                                 contentDescription = if (passwordVisible) {
-                                    stringResource(R.string.settings_ai_hide_key)
+                                    stringResource(R.string.settings_tracker_hide_password)
                                 } else {
-                                    stringResource(R.string.settings_ai_show_key)
+                                    stringResource(R.string.settings_tracker_show_password)
                                 },
                             )
                         }

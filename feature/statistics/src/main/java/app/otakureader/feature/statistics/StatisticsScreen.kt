@@ -141,7 +141,9 @@ private fun StatisticsContent(
             StreakCard(
                 currentStreak = stats.currentStreak,
                 bestStreak = stats.bestStreak,
-                readingActivityByDay = stats.readingActivityByDay.values.toList()
+                readingActivityByDay = stats.readingActivityByDay.entries
+                    .sortedBy { it.key }
+                    .map { it.value }
             )
         }
 

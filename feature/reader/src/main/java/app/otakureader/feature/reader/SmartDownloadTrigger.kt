@@ -74,6 +74,7 @@ class SmartDownloadTrigger @Inject constructor(
                 downloadRepository.enqueueChapter(
                     mangaId = mangaId,
                     chapterId = chapter.id,
+                    sourceName = manga.sourceId.toString(),
                     mangaTitle = manga.title,
                     chapterTitle = chapter.name,
                 )

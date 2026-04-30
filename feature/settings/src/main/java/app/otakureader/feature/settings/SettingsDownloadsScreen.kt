@@ -162,11 +162,11 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
         headlineContent = { Text(stringResource(R.string.settings_download_location)) },
         supportingContent = { Text(locationText) },
         trailingContent = {
-            OutlinedButton(onClick = { onEvent(SettingsEvent.SetDownloadLocation(null)) }) {
+            OutlinedButton(onClick = { onEvent(SettingsEvent.RequestDownloadLocationPicker) }) {
                 Text(stringResource(R.string.settings_change))
             }
         },
-        modifier = Modifier.clickable { onEvent(SettingsEvent.SetDownloadLocation(null)) },
+        modifier = Modifier.clickable { onEvent(SettingsEvent.RequestDownloadLocationPicker) },
     )
 
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
