@@ -146,16 +146,17 @@ fun MoreScreen(
 
             HorizontalDivider()
 
-            MoreListItem(
-                icon = Icons.Default.PhotoCamera,
-                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                headline = stringResource(R.string.more_scan_library),
-                supporting = stringResource(R.string.more_scan_library_desc),
-                onClick = onNavigateToScanLibrary
-            )
-
-            HorizontalDivider()
+            // TODO: Scan Library — hidden until implemented (currently no-op)
+            // MoreListItem(
+            //     icon = Icons.Default.PhotoCamera,
+            //     iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            //     iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+            //     headline = stringResource(R.string.more_scan_library),
+            //     supporting = stringResource(R.string.more_scan_library_desc),
+            //     onClick = onNavigateToScanLibrary
+            // )
+            //
+            // HorizontalDivider()
 
             MoreListItem(
                 icon = Icons.Default.Download,
@@ -168,16 +169,17 @@ fun MoreScreen(
 
             HorizontalDivider()
 
-            MoreListItem(
-                icon = Icons.Default.QueryStats,
-                iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                headline = stringResource(R.string.more_statistics),
-                supporting = stringResource(R.string.more_statistics_desc),
-                onClick = onNavigateToStatistics
-            )
-
-            HorizontalDivider()
+            // TODO: Statistics — hidden until implemented (currently returns emptyMap)
+            // MoreListItem(
+            //     icon = Icons.Default.QueryStats,
+            //     iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            //     iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+            //     headline = stringResource(R.string.more_statistics),
+            //     supporting = stringResource(R.string.more_statistics_desc),
+            //     onClick = onNavigateToStatistics
+            // )
+            //
+            // HorizontalDivider()
 
             MoreListItem(
                 icon = Icons.Default.Info,

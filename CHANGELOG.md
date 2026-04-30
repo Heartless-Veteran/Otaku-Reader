@@ -32,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extension system with 2000+ Tachiyomi-compatible sources
 - Library management with categories and favorites
 - Download system with offline reading and CBZ export
-- AI features: categorization, recommendations, smart search
 - Tracker sync (MAL, AniList, Kitsu, MangaUpdates, Shikimori)
 - Discord Rich Presence integration
 - OPDS catalog support
