@@ -45,15 +45,17 @@ jobs:
       env:
         CI: true
 
-    - name: 📋 Generate Dependency License Report
-      run: ./gradlew :app:generateLicenseReport --no-daemon --no-configuration-cache
-      env:
-        CI: true
-
-    - name: 🔍 Generate SBOM (CycloneDX)
-      run: ./gradlew :app:cyclonedxBom --no-daemon --no-configuration-cache
-      env:
-        CI: true
+    # TODO: Re-enable license report and SBOM after fixing variant resolution
+    # See: https://github.com/HeartlessVeteran2/Otaku-Reader/issues/783
+    # - name: 📋 Generate Dependency License Report
+    #   run: ./gradlew :app:generateLicenseReport --no-daemon --no-configuration-cache
+    #   env:
+    #     CI: true
+    #
+    # - name: 🔍 Generate SBOM (CycloneDX)
+    #   run: ./gradlew :app:cyclonedxBom --no-daemon --no-configuration-cache
+    #   env:
+    #     CI: true
 
     - name: 📝 Generate Release Notes
       run: |
@@ -68,7 +70,5 @@ jobs:
         body_path: RELEASE_NOTES.md
         files: |
           app/build/outputs/apk/release/*.apk
-          docs/sbom.json
-          docs/DEPENDENCY_LICENSES.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
