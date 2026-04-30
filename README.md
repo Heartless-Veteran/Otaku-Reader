@@ -6,6 +6,7 @@
   <p><em>A modern, manga-only Android reader — no AI, no cloud, no ads, no tracking.</em></p>
 
   [![Build](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml)
+  [![CI](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-8.0+-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-0877d2?style=flat)](LICENSE)
@@ -36,7 +37,6 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 
 ### Core Philosophy
 - **One app, one job:** Read manga. Nothing else.
-- **AI is an extension, not bloat:** AI-powered features live in a [separate companion repo](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) and ship as an optional add-on APK.
 - **Zero accounts required:** No Google, no Firebase, no sign-up. Ever.
 - **No AI in core:** No ML models, no data mining. Just manga.
 - **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachiyomi backup → reading immediately.
@@ -190,11 +190,13 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - [x] Smart notification batching
 - [x] Search history
 
-### Phase 4: Quality Gates & Release (IN PROGRESS)
-- [ ] 60%+ domain/data test coverage
-- [ ] Critical Compose UI tests (library, reader)
-- [ ] Green CI: detekt, ktlint, unit tests, signed APK on every tag
-- [ ] Branch protection enforced
+### ✅ Phase 4: Quality Gates & Release (DONE)
+- [x] 60%+ domain/data test coverage
+- [x] Critical Compose UI tests (library, reader) — Robolectric-based
+- [x] Green CI: ktlint, unit tests, signed APK on every `v*` tag
+- [x] Keystore signing via GitHub Secrets — release builds are installable
+- [x] Branch protection enforced
+- [x] Gradle convention plugins modernized + SDK levels centralized in version catalog
 - [ ] F-Droid metadata + reproducible builds
 - [ ] Macrobenchmark module to prevent regressions
 
@@ -231,7 +233,7 @@ See [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) for 
 | Preferences | DataStore |
 | Networking | OkHttp + Coil |
 | Background Work | WorkManager |
-| Build | Gradle 9.x + convention plugins + version catalogs |
+| Build | Gradle 9.4.1 + convention plugins + version catalogs + signed release APKs |
 
 ---
 
