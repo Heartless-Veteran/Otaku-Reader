@@ -48,11 +48,11 @@ class SmartDownloadTrigger @Inject constructor(
             if (!rule.enabled) return@launch
             if (progress < rule.progressThreshold) return@launch
 
+            // Fetch manga once — used for both the favorites check and download titles
+            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+
             // Check favorites-only constraint
-            if (rule.favoritesOnly) {
-                val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
-                if (!manga.favorite) return@launch
-            }
+            if (rule.favoritesOnly && !manga.favorite) return@launch
 
             // Check Wi-Fi constraint
             if (rule.wifiOnly && !isUnmeteredNetwork()) return@launch
@@ -61,7 +61,6 @@ class SmartDownloadTrigger @Inject constructor(
             if (getFreeStorageMb() < rule.minFreeStorageMb) return@launch
 
             // Queue next N unread chapters
-            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
             val chapters = chapterRepository.getChaptersByMangaIdSync(mangaId)
             val currentIndex = chapters.indexOfFirst { it.id == chapterId }
             if (currentIndex < 0) return@launch

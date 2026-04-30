@@ -29,6 +29,11 @@ import javax.inject.Inject
 @HiltAndroidApp
 class OtakuReaderApplication : Application(), Configuration.Provider, SingletonImageLoader.Factory {
 
+    companion object {
+        /** Fraction of the memory cache to retain when the UI is hidden. */
+        private const val TRIM_MEMORY_UI_HIDDEN_FACTOR = 0.5
+    }
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -64,7 +69,7 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         val cache = SingletonImageLoader.get(this).memoryCache
         when (level) {
             ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ->
-                cache?.trimToSize((cache.maxSize * 0.5).toLong())
+                cache?.trimToSize((cache.maxSize * TRIM_MEMORY_UI_HIDDEN_FACTOR).toLong())
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
             ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
