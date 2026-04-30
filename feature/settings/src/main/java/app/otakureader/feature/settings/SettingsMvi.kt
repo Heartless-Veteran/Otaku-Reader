@@ -6,7 +6,6 @@ import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.domain.model.ImageQuality
-import app.otakureader.feature.settings.BuildConfig
 
 data class TrackerInfo(
     val id: Int,
@@ -227,6 +226,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetDownloadAheadWhileReading(val count: Int) : SettingsEvent
     data class SetDownloadAheadOnlyOnWifi(val enabled: Boolean) : SettingsEvent
     data class SetDownloadLocation(val location: String?) : SettingsEvent
+    data object RequestDownloadLocationPicker : SettingsEvent
 
     // Local Source
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent

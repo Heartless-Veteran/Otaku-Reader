@@ -3,6 +3,7 @@ package app.otakureader.data.di
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
@@ -16,7 +17,6 @@ import app.otakureader.data.repository.ChapterRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
 import app.otakureader.data.repository.FeedRepositoryImpl
 import app.otakureader.data.repository.MangaRepositoryImpl
-import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.ReaderSettingsRepository
 import app.otakureader.data.loader.PageLoader as PageLoaderImpl
 import app.otakureader.data.history.WorkManagerHistoryScheduler
@@ -24,6 +24,7 @@ import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
 import app.otakureader.data.repository.PageBookmarkRepositoryImpl
+import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import dagger.Binds
@@ -100,6 +101,11 @@ abstract class RepositoryModule {
     abstract fun bindSourceRepository(
         impl: SourceRepositoryImpl
     ): SourceRepository
+
+    @Binds
+    abstract fun bindExtensionManagementRepository(
+        impl: SourceRepositoryImpl
+    ): ExtensionManagementRepository
 
     @Binds
     abstract fun bindReadingListRepository(

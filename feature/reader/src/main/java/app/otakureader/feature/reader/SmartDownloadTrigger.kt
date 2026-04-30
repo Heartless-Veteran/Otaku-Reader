@@ -9,8 +9,8 @@ import app.otakureader.domain.model.SmartDownloadRule
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.core.common.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,8 +32,8 @@ class SmartDownloadTrigger @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
+    @ApplicationScope private val scope: CoroutineScope,
 ) {
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     /**
      * Call this whenever reader progress updates.
@@ -48,11 +48,11 @@ class SmartDownloadTrigger @Inject constructor(
             if (!rule.enabled) return@launch
             if (progress < rule.progressThreshold) return@launch
 
+            // Fetch manga once — used for both the favorites check and download titles
+            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+
             // Check favorites-only constraint
-            if (rule.favoritesOnly) {
-                val manga = mangaRepository.getMangaById(mangaId).first() ?: return@launch
-                if (!manga.favorite) return@launch
-            }
+            if (rule.favoritesOnly && !manga.favorite) return@launch
 
             // Check Wi-Fi constraint
             if (rule.wifiOnly && !isUnmeteredNetwork()) return@launch
@@ -61,17 +61,23 @@ class SmartDownloadTrigger @Inject constructor(
             if (getFreeStorageMb() < rule.minFreeStorageMb) return@launch
 
             // Queue next N unread chapters
-            val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
+            val chapters = chapterRepository.getChaptersByMangaIdSync(mangaId)
             val currentIndex = chapters.indexOfFirst { it.id == chapterId }
             if (currentIndex < 0) return@launch
 
             val toDownload = chapters
                 .drop(currentIndex + 1)
-                .filter { !it.read && !it.downloaded }
+                .filter { !it.read }
                 .take(rule.chaptersAhead)
 
-            if (toDownload.isNotEmpty()) {
-                downloadRepository.startDownload(chapters = toDownload)
+            for (chapter in toDownload) {
+                downloadRepository.enqueueChapter(
+                    mangaId = mangaId,
+                    chapterId = chapter.id,
+                    sourceName = manga.sourceId.toString(),
+                    mangaTitle = manga.title,
+                    chapterTitle = chapter.name,
+                )
             }
         }
     }

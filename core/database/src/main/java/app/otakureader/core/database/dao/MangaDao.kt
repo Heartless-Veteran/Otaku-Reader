@@ -104,6 +104,9 @@ interface MangaDao {
     @Query("SELECT COUNT(*) FROM manga WHERE favorite = 1 AND userDropped = 1")
     fun getDroppedMangaCount(): Flow<Int>
 
+    @Query("SELECT COUNT(*) FROM manga WHERE favorite = 1")
+    fun countFavorites(): Flow<Int>
+
     @Query("SELECT genre FROM manga WHERE favorite = 1 AND genre IS NOT NULL")
     fun getFavoriteMangaGenres(): Flow<List<String>>
 

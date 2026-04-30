@@ -205,7 +205,7 @@ fun OtakuReaderNavHost(
         sourceMangaDetailScreen(
             onNavigateToMangaDetail = { mangaId ->
                 navController.navigate(Route.MangaDetails(mangaId)) {
-                    popUpTo { inclusive = true }
+                    popUpTo<Route.SourceMangaDetail> { inclusive = true }
                 }
             }
         )
@@ -262,12 +262,30 @@ fun OtakuReaderNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
+            onNavigateToAbout = {
+                navController.navigate(Route.About)
+            },
             onNavigateToMigrationEntry = {
                 navController.navigate(Route.MigrationEntry)
             },
-            onNavigateToAbout = {
-                navController.navigate(Route.About)
-            }
+            onNavigateToAppearance = {
+                navController.navigate(Route.SettingsAppearance)
+            },
+            onNavigateToLibrary = {
+                navController.navigate(Route.SettingsLibrary)
+            },
+            onNavigateToReader = {
+                navController.navigate(Route.SettingsReader)
+            },
+            onNavigateToDownloads = {
+                navController.navigate(Route.SettingsDownloads)
+            },
+            onNavigateToTracking = {
+                navController.navigate(Route.SettingsTracking)
+            },
+            onNavigateToBackup = {
+                navController.navigate(Route.SettingsBackup)
+            },
         )
 
         downloadsScreen(
@@ -384,7 +402,7 @@ fun OtakuReaderNavHost(
             onComplete = {
                 onOnboardingComplete()
                 navController.navigate(Route.Library) {
-                    popUpTo { inclusive = true }
+                    popUpTo<Route.Onboarding> { inclusive = true }
                 }
             },
             onNavigateToExtensions = {

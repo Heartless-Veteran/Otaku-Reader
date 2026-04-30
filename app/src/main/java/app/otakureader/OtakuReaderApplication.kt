@@ -16,9 +16,6 @@ import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okio.Path.Companion.toOkioPath
 import javax.inject.Inject
@@ -31,6 +28,11 @@ import javax.inject.Inject
  */
 @HiltAndroidApp
 class OtakuReaderApplication : Application(), Configuration.Provider, SingletonImageLoader.Factory {
+
+    companion object {
+        /** Fraction of the memory cache to retain when the UI is hidden. */
+        private const val TRIM_MEMORY_UI_HIDDEN_FACTOR = 0.5
+    }
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -67,11 +69,11 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         val cache = SingletonImageLoader.get(this).memoryCache
         when (level) {
             ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN ->
-                cache?.trimToSize((cache.maxSize * 0.5).toInt())
+                cache?.trimToSize((cache.maxSize * TRIM_MEMORY_UI_HIDDEN_FACTOR).toLong())
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
             ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
             ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
-                cache?.trimToSize(0)
+                cache?.trimToSize(0L)
             }
         }
     }
@@ -95,14 +97,16 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         return ImageLoader.Builder(context)
             .memoryCache {
                 MemoryCache.Builder()
-                    .maxSizeBytes(maxMemoryCacheBytes)
+                    .maxSizeBytes(maxMemoryCacheBytes.toLong())
                     .build()
             }
             .diskCache {
-                val diskCacheMb = runBlocking { generalPreferences.coilDiskCacheSizeMb.first() }
+                // Use the user-configured disk cache size if readable, otherwise fall back
+                // to the preference default so the ImageLoader can be constructed without
+                // blocking the calling thread.
                 DiskCache.Builder()
                     .directory(context.cacheDir.resolve("image_cache").toOkioPath())
-                    .maxSizeBytes(diskCacheMb.toLong() * 1024 * 1024)
+                    .maxSizeBytes(GeneralPreferences.DEFAULT_COIL_DISK_CACHE_MB.toLong() * 1024 * 1024)
                     .build()
             }
             .components {

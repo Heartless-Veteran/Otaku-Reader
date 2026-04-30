@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="more_title">More</string>
+    <string name="more_back">Back</string>
     
     <!-- Settings -->
     <string name="more_settings">Settings</string>
@@ -34,7 +35,20 @@
     <string name="more_share_library">Share Library</string>
     <string name="more_share_library_desc">Show a QR code to share your manga list</string>
     <string name="more_scan_library">Scan Library</string>
-    <string name="more_scan_library_desc">Import manga from a friend's QR code</string>
+    <string name="more_scan_library_desc">Import manga from a friend\'s QR code</string>
+    <string name="more_scan_library_title">Scan Library</string>
+    <string name="more_scan_library_opening_camera">Opening camera…</string>
+    <string name="more_scan_library_try_again">Try Again</string>
+    <string name="more_scan_library_importing">Importing library…</string>
+    <string name="more_scan_library_import_complete">Import complete!</string>
+    <string name="more_scan_library_import_result">%1$d added, %2$d not found locally</string>
+    <string name="more_scan_library_import_failed">Import failed: %1$s</string>
+    <string name="more_scan_library_retry">Retry</string>
+    <string name="more_scan_library_found">Library found!</string>
+    <string name="more_scan_library_ready_to_import">%1$d manga ready to import</string>
+    <string name="more_scan_library_add_to_library">Add to My Library</string>
+    <string name="more_scan_library_scan_another">Scan Another</string>
+    <string name="more_scan_library_prompt">Point your camera at a library QR code</string>
 
     <!-- Version footer -->
     <string name="more_version_label">Otaku Reader v%s</string>

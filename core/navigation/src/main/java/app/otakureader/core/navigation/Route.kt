@@ -108,19 +108,22 @@ sealed interface Route {
     data object Settings : Route
 
     @Serializable
-    data object SettingsTracking : Route
+    data object SettingsAppearance : Route
 
     @Serializable
-    data object SettingsBackup : Route
-
-    @Serializable
-    data object SettingsDownloads : Route
+    data object SettingsLibrary : Route
 
     @Serializable
     data object SettingsReader : Route
 
     @Serializable
-    data object SettingsLibrary : Route
+    data object SettingsDownloads : Route
+
+    @Serializable
+    data object SettingsTracking : Route
+
+    @Serializable
+    data object SettingsBackup : Route
 
     // ─── Downloads ───
 

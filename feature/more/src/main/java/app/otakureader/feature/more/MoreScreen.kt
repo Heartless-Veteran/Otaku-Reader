@@ -147,7 +147,7 @@ fun MoreScreen(
             HorizontalDivider()
 
             MoreListItem(
-                icon = Icons.Default.QrCodeScanner,
+                icon = Icons.Default.PhotoCamera,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                 headline = stringResource(R.string.more_scan_library),

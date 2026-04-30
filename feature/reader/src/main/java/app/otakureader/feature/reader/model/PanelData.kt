@@ -6,10 +6,10 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Data models for panel analysis results from Gemini Vision API.
+ * Data models for panel analysis results from local image processing.
  *
  * These models extend the basic ComicPanel with additional metadata
- * from AI-based panel detection, including confidence scores and
+ * from panel detection, including confidence scores and
  * detected text regions.
  */
 
@@ -200,8 +200,9 @@ sealed class PanelAnalysisException(message: String, cause: Throwable? = null) :
     /**
      * Thrown when panel-aware reading is requested but no real implementation is bound.
      *
-     * The Gemini-backed PanelAnalyzer was extracted to a separate companion repo (see #708);
-     * the in-app stub returns this exception for every analysis request.
+     * The local [PanelDetector] handles panel detection using image processing;
+     * this exception is reserved for cases where the detector cannot run
+     * (e.g. missing bitmap, unsupported format).
      */
     class NotAvailable(message: String = "Panel-aware reading is not currently available") : PanelAnalysisException(message)
     class ApiError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)

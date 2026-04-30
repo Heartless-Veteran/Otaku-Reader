@@ -13,11 +13,11 @@ import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.core.common.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,7 +44,8 @@ class SourceRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val localSourcePreferences: LocalSourcePreferences,
     private val healthMonitor: SourceHealthMonitor,
-    private val httpClient: OkHttpClient
+    private val httpClient: OkHttpClient,
+    @ApplicationScope private val scope: CoroutineScope,
 ) : SourceRepository, ExtensionManagementRepository {
 
     private companion object {
@@ -63,12 +64,14 @@ class SourceRepositoryImpl @Inject constructor(
         context: Context,
         localDirectory: String,
         healthMonitor: SourceHealthMonitor,
-        httpClient: OkHttpClient
+        httpClient: OkHttpClient,
+        scope: CoroutineScope,
     ) : this(
         context,
         LocalSourcePreferences.ofDirectory(localDirectory),
         healthMonitor,
-        httpClient
+        httpClient,
+        scope,
     )
 
     /**
@@ -88,15 +91,13 @@ class SourceRepositoryImpl @Inject constructor(
     private val latestMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
     private val searchCache = ConcurrentHashMap<String, ConcurrentHashMap<Pair<String, Int>, MangaPage>>()
 
-    private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     private val extensionLoader by lazy {
         TachiyomiExtensionLoader(context.packageManager)
     }
 
     init {
         // Load all installed extensions on initialization
-        initScope.launch { refreshSources() }
+        scope.launch { refreshSources() }
     }
 
     override suspend fun getSource(sourceId: String): MangaSource? {

@@ -6,6 +6,7 @@ import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -55,7 +56,7 @@ class DownloadSettingsDelegate @Inject constructor(
 
     suspend fun handleEvent(
         event: SettingsEvent,
-        @Suppress("UNUSED_PARAMETER") sendEffect: suspend (SettingsEffect) -> Unit,
+        sendEffect: suspend (SettingsEffect) -> Unit,
     ): Boolean = when (event) {
         is SettingsEvent.SetDeleteAfterReading -> { downloadPreferences.setDeleteAfterReading(event.enabled); true }
         is SettingsEvent.SetSaveAsCbz -> { downloadPreferences.setSaveAsCbz(event.enabled); true }
@@ -66,6 +67,10 @@ class DownloadSettingsDelegate @Inject constructor(
         is SettingsEvent.SetDownloadAheadWhileReading -> { downloadPreferences.setDownloadAheadWhileReading(event.count); true }
         is SettingsEvent.SetDownloadAheadOnlyOnWifi -> { downloadPreferences.setDownloadAheadOnlyOnWifi(event.enabled); true }
         is SettingsEvent.SetDownloadLocation -> { downloadPreferences.setDownloadLocation(event.location); true }
+        is SettingsEvent.RequestDownloadLocationPicker -> {
+            sendEffect(SettingsEffect.ShowDownloadLocationPicker(downloadPreferences.downloadLocation.first()))
+            true
+        }
         else -> false
     }
 }

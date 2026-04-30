@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
  * Panel-aware reader that provides intelligent panel-by-panel navigation.
  * 
  * This component enhances the reading experience by:
- * - Using Gemini Vision AI for accurate panel detection
+ * - Using local image processing (edge detection + line analysis) for panel detection
  * - Supporting both RTL (manga) and LTR (comics) reading orders
  * - Providing smooth animated transitions between panels
  * - Allowing tap or swipe navigation

@@ -51,8 +51,7 @@ class SmartNotificationBatcher(
 
         // Check quiet hours
         if (respectQuiet && isInQuietHours()) {
-            Log.d(TAG, "In quiet hours — deferring ${mangaList.size} notifications")
-            // Store for later or just drop — dropping is acceptable for quiet hours
+            Log.d(TAG, "In quiet hours — dropping ${mangaList.size} notifications")
             return
         }
 

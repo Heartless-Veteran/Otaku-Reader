@@ -2,7 +2,6 @@ package app.otakureader.feature.more.qr
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.ShareableManga
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,9 +25,10 @@ class ShareLibraryViewModel @Inject constructor(
                 _library.value = mangaList.map { manga ->
                     ShareableManga(
                         title = manga.title,
+                        sourceId = manga.sourceId.toString(),
                         url = manga.url,
                         thumbnailUrl = manga.thumbnailUrl,
-                        status = manga.status?.name ?: MangaStatus.UNKNOWN.name
+                        status = manga.status,
                     )
                 }
             }
