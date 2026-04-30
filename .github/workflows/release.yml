@@ -46,12 +46,12 @@ jobs:
         CI: true
 
     - name: 📋 Generate Dependency License Report
-      run: ./gradlew :app:generateLicenseReport --no-daemon
+      run: ./gradlew :app:generateLicenseReport --no-daemon --no-configuration-cache
       env:
         CI: true
 
     - name: 🔍 Generate SBOM (CycloneDX)
-      run: ./gradlew :app:cyclonedxBom --no-daemon
+      run: ./gradlew :app:cyclonedxBom --no-daemon --no-configuration-cache
       env:
         CI: true
 
