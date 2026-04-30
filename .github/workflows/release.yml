@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -22,7 +26,7 @@ jobs:
         distribution: 'temurin'
         
     - name: 🐘 Set up Gradle
-      uses: gradle/actions/setup-gradle@06cde1a1b8e5ba8cf3e3aa93e4ca7a91d07b0d21 # v4.3.0
+      uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
     - name: 🔑 Grant execute permission for gradlew
       run: chmod +x gradlew
