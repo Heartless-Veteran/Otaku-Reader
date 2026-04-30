@@ -30,9 +30,9 @@ interface ExtensionRepoRepository {
     suspend fun removeRepository(url: String)
 
     /**
-     * Get the default/active repository URL.
+     * Get the currently active repository URL, or null if none is set.
      */
-    suspend fun getActiveRepository(): String
+    suspend fun getActiveRepository(): String?
 
     /**
      * Set the active repository URL.

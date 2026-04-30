@@ -19,26 +19,13 @@ class ExtensionRepoRepositoryImpl(
 ) : ExtensionRepoRepository {
 
     companion object {
-        const val DEFAULT_KOMIKKU_REPO = "https://raw.githubusercontent.com/komikku-app/extensions/repo"
-        const val DEFAULT_KOMIKKU_TRACKER_REPO = "https://raw.githubusercontent.com/komikku-app/tracker-extensions/repo"
-        const val DEFAULT_KEIYOUSHI_REPO = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
-        const val DEFAULT_SUWAYOMI_REPO = "https://raw.githubusercontent.com/Suwayomi/tachiyomi-extension/repo"
-
-        val DEFAULT_REPOS = listOf(
-            DEFAULT_KOMIKKU_REPO,
-            DEFAULT_KOMIKKU_TRACKER_REPO,
-            DEFAULT_KEIYOUSHI_REPO,
-            DEFAULT_SUWAYOMI_REPO,
-        )
-
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
         private val ACTIVE_REPOSITORY_KEY = stringPreferencesKey("active_extension_repository")
     }
 
     override fun getRepositories(): Flow<List<String>> {
         return dataStore.data.map { preferences ->
-            preferences[REPOSITORIES_KEY]?.toList()
-                ?: DEFAULT_REPOS
+            preferences[REPOSITORIES_KEY]?.toList() ?: emptyList()
         }
     }
 
@@ -61,15 +48,15 @@ class ExtensionRepoRepositoryImpl(
             currentRepos.remove(url)
             preferences[REPOSITORIES_KEY] = currentRepos
 
-            // If removing the active repository, set a new one
+            // If removing the active repository, clear it
             if (preferences[ACTIVE_REPOSITORY_KEY] == url) {
-                preferences[ACTIVE_REPOSITORY_KEY] = currentRepos.firstOrNull() ?: DEFAULT_KOMIKKU_REPO
+                preferences.remove(ACTIVE_REPOSITORY_KEY)
             }
         }
     }
 
-    override suspend fun getActiveRepository(): String {
-        return dataStore.data.first()[ACTIVE_REPOSITORY_KEY] ?: DEFAULT_KOMIKKU_REPO
+    override suspend fun getActiveRepository(): String? {
+        return dataStore.data.first()[ACTIVE_REPOSITORY_KEY]
     }
 
     override suspend fun setActiveRepository(url: String) {
@@ -86,7 +73,7 @@ class ExtensionRepoRepositoryImpl(
     override suspend fun clearRepositories() {
         dataStore.edit { preferences ->
             preferences.remove(REPOSITORIES_KEY)
-            preferences[ACTIVE_REPOSITORY_KEY] = DEFAULT_KOMIKKU_REPO
+            preferences.remove(ACTIVE_REPOSITORY_KEY)
         }
     }
 }
