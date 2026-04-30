@@ -674,10 +674,9 @@ class ReaderViewModel @Inject constructor(
         _state.update { it.copy(error = null) }
     }
 
-    private fun loadChapterById(chapterId: String) {
-        // Implementation for loading a different chapter
+    private fun loadChapterById(chapterId: Long) {
         viewModelScope.launch {
-            _effect.send(ReaderEffect.NavigateToChapter(chapterId.toLong()))
+            _effect.send(ReaderEffect.NavigateToChapter(chapterId))
         }
     }
 

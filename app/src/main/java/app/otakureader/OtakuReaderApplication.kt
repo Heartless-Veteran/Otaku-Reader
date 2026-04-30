@@ -93,11 +93,11 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         val maxMemoryCacheBytes = minOf(
             (Runtime.getRuntime().maxMemory() * 0.15).toLong(),
             256L * 1024 * 1024
-        ).toInt()
+        )
         return ImageLoader.Builder(context)
             .memoryCache {
                 MemoryCache.Builder()
-                    .maxSizeBytes(maxMemoryCacheBytes.toLong())
+                    .maxSizeBytes(maxMemoryCacheBytes)
                     .build()
             }
             .diskCache {

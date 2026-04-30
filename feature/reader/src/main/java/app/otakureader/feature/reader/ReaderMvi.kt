@@ -425,7 +425,7 @@ sealed interface ReaderEvent {
     data object LastPanel : PanelNavigation
 
     /** Load a new chapter; resume from [resumeFromPage] (default 0). */
-    data class LoadChapter(val chapterId: String, val resumeFromPage: Int = 0) : ChapterNavigation
+    data class LoadChapter(val chapterId: Long, val resumeFromPage: Int = 0) : ChapterNavigation
 
     /** Navigate to next chapter. */
     data object NextChapter : ChapterNavigation
