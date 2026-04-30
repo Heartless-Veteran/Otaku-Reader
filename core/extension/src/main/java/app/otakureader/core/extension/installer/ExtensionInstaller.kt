@@ -46,7 +46,7 @@ class ExtensionInstaller(
 ) {
     
     companion object {
-        private const val EXTENSIONS_DIR = "extensions"
+        private const val EXTENSIONS_DIR = "exts"
         private const val DOWNLOADS_DIR = "extension_downloads"
         private const val BUFFER_SIZE = 8192
     }
@@ -169,7 +169,7 @@ class ExtensionInstaller(
                     _installationState.value = InstallationState.Installing
 
                     // Move APK to permanent location
-                    val destFile = File(extensionsDir, "${extension.pkgName}.apk")
+                    val destFile = File(extensionsDir, "${extension.pkgName}.ext")
                     apkFile.copyTo(destFile, overwrite = true)
 
                     // Update extension with final path
@@ -261,7 +261,7 @@ class ExtensionInstaller(
                         }
 
                         // Move new APK to permanent location
-                        val destFile = File(extensionsDir, "$pkgName.apk")
+                        val destFile = File(extensionsDir, "$pkgName.ext")
                         newApkFile.copyTo(destFile, overwrite = true)
 
                         // Update repository
@@ -335,12 +335,12 @@ class ExtensionInstaller(
                 context.startActivity(deleteIntent)
 
                 // Remove any locally cached private APK copy for this package.
-                File(extensionsDir, "$pkgName.apk").takeIf { it.exists() }?.delete()
+                File(extensionsDir, "$pkgName.ext").takeIf { it.exists() }?.delete()
 
                 Result.success(Unit)
             } else {
                 // Private/sideloaded extension: delete local APK and remove from DB.
-                File(extensionsDir, "$pkgName.apk").takeIf { it.exists() }?.delete()
+                File(extensionsDir, "$pkgName.ext").takeIf { it.exists() }?.delete()
 
                 // Remove from repository and notify the receiver.
                 repository.uninstallExtension(pkgName).also {
@@ -441,21 +441,21 @@ class ExtensionInstaller(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !context.packageManager.canRequestPackageInstalls()
         ) {
-            // Ask the user to grant install permission for unknown apps
-            val intent = Intent(
-                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                "package:${context.packageName}".toUri()
-            ).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+            // Skip system install if permission is not granted.
+            // Internal private-extension loading already works; system install
+            // is only an optional optimisation for shared-package discovery.
+            android.util.Log.d(
+                "ExtensionInstaller",
+                "Skipping system install — permission not granted. " +
+                    "Extension will load via internal path: ${apkFile.absolutePath}",
+            )
             return
         }
 
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
-            apkFile
+            apkFile,
         )
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")
