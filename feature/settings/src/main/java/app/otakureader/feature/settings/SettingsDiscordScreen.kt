@@ -1,9 +1,7 @@
 package app.otakureader.feature.settings
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,32 +56,36 @@ fun SettingsDiscordScreen(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
+        LazyColumn(
+            modifier = Modifier.padding(paddingValues),
         ) {
-            SectionHeader(title = stringResource(R.string.settings_discord))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_discord_rich_presence)) },
-                supportingContent = { Text(stringResource(R.string.settings_discord_rich_presence_description)) },
-                trailingContent = {
-                    Switch(
-                        checked = state.discordRpcEnabled,
-                        onCheckedChange = { viewModel.onEvent(SettingsEvent.SetDiscordRpcEnabled(it)) },
-                    )
-                },
-            )
-            HorizontalDivider()
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_discord_status_title)) },
-                supportingContent = {
-                    Text(
-                        text = stringResource(R.string.settings_discord_status_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-            )
+            item(key = "discord_header") {
+                SectionHeader(title = stringResource(R.string.settings_discord))
+            }
+            item(key = "discord_rich_presence_toggle") {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_discord_rich_presence)) },
+                    supportingContent = { Text(stringResource(R.string.settings_discord_rich_presence_description)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.discordRpcEnabled,
+                            onCheckedChange = { viewModel.onEvent(SettingsEvent.SetDiscordRpcEnabled(it)) },
+                        )
+                    },
+                )
+            }
+            item(key = "discord_divider") { HorizontalDivider() }
+            item(key = "discord_status_info") {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_discord_status_title)) },
+                    supportingContent = {
+                        Text(
+                            text = stringResource(R.string.settings_discord_status_description),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                )
+            }
         }
     }
 }

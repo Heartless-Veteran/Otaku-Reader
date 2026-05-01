@@ -363,7 +363,7 @@
 
     <!-- Dedicated settings destinations -->
     <string name="settings_discord_status_title">Implementation status</string>
-    <string name="settings_discord_status_description">Rich Presence currently controls Otaku Reader's local Discord activity state. Native Discord transport support can be layered onto this screen without changing the user-facing route.</string>
+    <string name="settings_discord_status_description">Rich Presence currently controls Otaku Reader\'s local Discord activity state. Native Discord transport support can be layered onto this screen without changing the user-facing route.</string>
     <string name="settings_widgets">Widgets</string>
     <string name="settings_widgets_available">Available widgets</string>
     <string name="settings_widget_continue_reading">Continue Reading</string>
