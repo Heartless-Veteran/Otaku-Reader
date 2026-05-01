@@ -361,6 +361,27 @@
          was extracted to a sibling repository. Local backup/restore strings live in
          the Backup section above. -->
 
+    <!-- Dedicated settings destinations -->
+    <string name="settings_discord_status_title">Implementation status</string>
+    <string name="settings_discord_status_description">Rich Presence currently controls Otaku Reader's local Discord activity state. Native Discord transport support can be layered onto this screen without changing the user-facing route.</string>
+    <string name="settings_widgets">Widgets</string>
+    <string name="settings_widgets_available">Available widgets</string>
+    <string name="settings_widget_continue_reading">Continue Reading</string>
+    <string name="settings_widget_continue_reading_description">Shows up to three library titles that have reading progress so you can jump back in quickly.</string>
+    <string name="settings_widget_recent_updates">Recent Updates</string>
+    <string name="settings_widget_recent_updates_description">Shows the newest chapter updates from your library.</string>
+    <string name="settings_widget_now_reading">Now Reading</string>
+    <string name="settings_widget_now_reading_description">Shows your most recent active chapter as a compact home or lock-screen widget.</string>
+    <string name="settings_widgets_how_to_add">How to add widgets</string>
+    <string name="settings_widgets_how_to_add_description">Long-press your launcher home screen, choose Widgets, then select an Otaku Reader widget. Widget refresh cadence is controlled by Android and the widget provider metadata.</string>
+    <string name="settings_local_source_supported_formats">Supported local library formats</string>
+    <string name="settings_local_source_archives">Archives</string>
+    <string name="settings_local_source_archives_description">CBZ, ZIP, and EPUB files can be scanned directly from the configured local-source directory.</string>
+    <string name="settings_local_source_folders">Image folders</string>
+    <string name="settings_local_source_folders_description">Plain folders containing readable image files are exposed as local manga.</string>
+    <string name="settings_local_source_metadata">Metadata</string>
+    <string name="settings_local_source_metadata_description">series.json and ComicInfo.xml metadata are recognized when present, and directory traversal is constrained to the configured base directory.</string>
+
     <!-- About section (settings hub) -->
     <string name="settings_about">About</string>
     <string name="settings_about_title">About Otaku Reader</string>

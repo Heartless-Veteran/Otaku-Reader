@@ -66,6 +66,9 @@ fun SettingsScreen(
     onNavigateToDownloads: () -> Unit = {},
     onNavigateToTracking: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
+    onNavigateToDiscord: () -> Unit = {},
+    onNavigateToWidgetConfiguration: () -> Unit = {},
+    onNavigateToLocalSourceBrowser: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -129,6 +132,18 @@ fun SettingsScreen(
             SettingsCategoryRow(
                 title = stringResource(R.string.settings_backup),
                 onClick = onNavigateToBackup,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.settings_discord),
+                onClick = onNavigateToDiscord,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.settings_widgets),
+                onClick = onNavigateToWidgetConfiguration,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.settings_local_source),
+                onClick = onNavigateToLocalSourceBrowser,
             )
 
             // ── Local source ──────────────────────────────────────────
