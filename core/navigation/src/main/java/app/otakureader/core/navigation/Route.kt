@@ -125,6 +125,15 @@ sealed interface Route {
     @Serializable
     data object SettingsBackup : Route
 
+    @Serializable
+    data object SettingsDiscord : Route
+
+    @Serializable
+    data object WidgetConfiguration : Route
+
+    @Serializable
+    data object LocalSourceBrowser : Route
+
     // ─── Downloads ───
 
     @Serializable

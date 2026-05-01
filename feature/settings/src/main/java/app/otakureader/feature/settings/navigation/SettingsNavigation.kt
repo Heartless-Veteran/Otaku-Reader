@@ -4,12 +4,15 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.settings.SettingsScreen
+import app.otakureader.feature.settings.localSourceBrowserScreen
 import app.otakureader.feature.settings.settingsAppearanceScreen
 import app.otakureader.feature.settings.settingsBackupScreen
+import app.otakureader.feature.settings.settingsDiscordScreen
 import app.otakureader.feature.settings.settingsDownloadsScreen
 import app.otakureader.feature.settings.settingsLibraryScreen
 import app.otakureader.feature.settings.settingsReaderScreen
 import app.otakureader.feature.settings.settingsTrackingScreen
+import app.otakureader.feature.settings.widgetConfigurationScreen
 
 /**
  * Registers the settings hub and all settings sub-screen destinations in the NavGraph.
@@ -27,6 +30,9 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToDownloads: () -> Unit = {},
     onNavigateToTracking: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
+    onNavigateToDiscord: () -> Unit = {},
+    onNavigateToWidgetConfiguration: () -> Unit = {},
+    onNavigateToLocalSourceBrowser: () -> Unit = {},
 ) {
     composable<Route.Settings> {
         SettingsScreen(
@@ -39,6 +45,9 @@ fun NavGraphBuilder.settingsScreen(
             onNavigateToDownloads = onNavigateToDownloads,
             onNavigateToTracking = onNavigateToTracking,
             onNavigateToBackup = onNavigateToBackup,
+            onNavigateToDiscord = onNavigateToDiscord,
+            onNavigateToWidgetConfiguration = onNavigateToWidgetConfiguration,
+            onNavigateToLocalSourceBrowser = onNavigateToLocalSourceBrowser,
         )
     }
 
@@ -51,4 +60,7 @@ fun NavGraphBuilder.settingsScreen(
         onNavigateBack = onNavigateBack,
         onNavigateToMigrationEntry = onNavigateToMigrationEntry,
     )
+    settingsDiscordScreen(onNavigateBack = onNavigateBack)
+    widgetConfigurationScreen(onNavigateBack = onNavigateBack)
+    localSourceBrowserScreen(onNavigateBack = onNavigateBack)
 }

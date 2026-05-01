@@ -1,5 +1,6 @@
 package app.otakureader.data.repository
 
+import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.entity.ReadingHistoryEntity
@@ -19,6 +20,7 @@ class StatisticsRepositoryImplTest {
 
     private lateinit var readingHistoryDao: ReadingHistoryDao
     private lateinit var readingStreakDao: ReadingStreakDao
+    private lateinit var mangaDao: MangaDao
     private lateinit var repository: StatisticsRepositoryImpl
 
     private fun makeEntry(readAt: Long, durationMs: Long = 0L) =
@@ -33,10 +35,13 @@ class StatisticsRepositoryImplTest {
     fun setUp() {
         readingHistoryDao = mockk()
         readingStreakDao = mockk()
-        repository = StatisticsRepositoryImpl(readingHistoryDao, readingStreakDao)
+        mangaDao = mockk()
+        repository = StatisticsRepositoryImpl(readingHistoryDao, readingStreakDao, mangaDao)
 
         // Default stub
         every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())
+        every { mangaDao.countFavorites() } returns flowOf(0)
+        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(emptyList())
     }
 
     // ── getReadingStats: totals ────────────────────────────────────────────────
@@ -179,6 +184,36 @@ class StatisticsRepositoryImplTest {
             val stats = awaitItem()
             val todayKey = LocalDate.now(ZoneId.systemDefault()).toString()
             assertEquals(2, stats.readingActivityByDay[todayKey])
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ── getReadingStats: genre distribution ────────────────────────────────────
+
+    @Test
+    fun `getReadingStats builds genre distribution from favorite manga genres`() = runTest {
+        every { mangaDao.countFavorites() } returns flowOf(4)
+        every { mangaDao.getFavoriteMangaGenres() } returns flowOf(
+            listOf(
+                "Action, Adventure",
+                "Action; Drama",
+                "Comedy | Action",
+                "  ",
+            )
+        )
+
+        repository.getReadingStats().test {
+            val stats = awaitItem()
+            assertEquals(4, stats.totalMangaInLibrary)
+            assertEquals(
+                mapOf(
+                    "Action" to 3,
+                    "Adventure" to 1,
+                    "Comedy" to 1,
+                    "Drama" to 1,
+                ),
+                stats.genreDistribution,
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }

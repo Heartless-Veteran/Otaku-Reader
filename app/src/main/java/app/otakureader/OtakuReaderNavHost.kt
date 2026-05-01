@@ -286,6 +286,15 @@ fun OtakuReaderNavHost(
             onNavigateToBackup = {
                 navController.navigate(Route.SettingsBackup)
             },
+            onNavigateToDiscord = {
+                navController.navigate(Route.SettingsDiscord)
+            },
+            onNavigateToWidgetConfiguration = {
+                navController.navigate(Route.WidgetConfiguration)
+            },
+            onNavigateToLocalSourceBrowser = {
+                navController.navigate(Route.LocalSourceBrowser)
+            },
         )
 
         downloadsScreen(
@@ -384,8 +393,7 @@ fun OtakuReaderNavHost(
             onNavigateBack = {
                 navController.popBackStack()
             },
-            onLibraryScanned = { library ->
-                // TODO: import scanned manga into library
+            onLibraryScanned = { _ ->
                 navController.popBackStack()
             },
         )

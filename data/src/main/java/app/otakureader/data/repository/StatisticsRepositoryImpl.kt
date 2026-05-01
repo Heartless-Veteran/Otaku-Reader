@@ -25,8 +25,9 @@ class StatisticsRepositoryImpl @Inject constructor(
 
     override fun getReadingStats(): Flow<ReadingStats> = combine(
         readingHistoryDao.observeHistory(),
-        mangaDao.countFavorites()
-    ) { history, libraryCount ->
+        mangaDao.countFavorites(),
+        mangaDao.getFavoriteMangaGenres(),
+    ) { history, libraryCount, favoriteGenreValues ->
         val today = LocalDate.now()
         
         val readingDays = history
@@ -53,7 +54,7 @@ class StatisticsRepositoryImpl @Inject constructor(
             totalReadingTimeMs = totalReadingTimeMs,
             currentStreak = currentStreak,
             bestStreak = bestStreak,
-            genreDistribution = emptyMap(), // TODO: compute from library genres
+            genreDistribution = buildGenreDistribution(favoriteGenreValues),
             readingActivityByDay = activityByDay
         )
     }
@@ -94,6 +95,21 @@ class StatisticsRepositoryImpl @Inject constructor(
         )
     }
     
+    private fun buildGenreDistribution(rawGenreValues: List<String>): Map<String, Int> = rawGenreValues
+        .asSequence()
+        .flatMap { rawGenreValue ->
+            rawGenreValue
+                .split(',', ';', '|')
+                .asSequence()
+        }
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .groupingBy { it }
+        .eachCount()
+        .entries
+        .sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key.lowercase() })
+        .associate { it.key to it.value }
+
     private fun calculateCurrentStreak(readingDays: List<LocalDate>, today: LocalDate): Int {
         if (readingDays.isEmpty()) return 0
         if (!readingDays.contains(today) && !readingDays.contains(today.minusDays(1))) return 0

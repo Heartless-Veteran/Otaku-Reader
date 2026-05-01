@@ -16,6 +16,15 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+ktlint {
+    version.set("1.8.0")
+    android.set(true)
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
+}
+
 detekt {
     toolVersion = libs.versions.detekt.get()
     config.setFrom(files("config/detekt/detekt.yml"))
