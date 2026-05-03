@@ -1,4 +1,4 @@
-package app.otakureader.feature.statistics
+package app.otakureader.feature.statistics.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

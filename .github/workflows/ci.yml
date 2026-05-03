@@ -87,14 +87,6 @@ jobs:
           path: '**/build/test-results/**/*.xml'
           retention-days: 14
 
-      - name: 📈 Upload JUnit to CI Insights
-        if: always()
-        uses: mergifyio/gha-mergify-ci@62b45952da6270cad56cce30b8d63276f9d99c88 # v16
-        continue-on-error: true
-        with:
-          token: ${{ secrets.MERGIFY_TOKEN }}
-          report_path: "**/build/test-results/**/*.xml"
-          job_name: unit-tests
 
       - name: 🚨 Fail if any tests failed
         if: steps.tests.outcome == 'failure'
@@ -221,7 +213,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: 📋 Generate Dependency License Report
-        run: ./gradlew :app:generateLicenseReport --no-daemon
+        run: ./gradlew :app:generateLicenseReport --no-daemon --no-configuration-cache
         env:
           CI: true
 
