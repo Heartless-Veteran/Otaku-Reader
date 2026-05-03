@@ -11,6 +11,7 @@
     <string name="statistics_manga">Manga</string>
     <string name="statistics_chapters">Chapters</string>
     <string name="statistics_reading_time">Reading Time</string>
+    <string name="statistics_streak">Reading Streak</string>
     <string name="statistics_current_streak">Current Streak</string>
     <string name="statistics_best_streak">Best Streak</string>
     <string name="statistics_daily_goal">Daily Goal</string>

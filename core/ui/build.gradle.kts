@@ -22,6 +22,7 @@ dependencies {
     api(libs.compose.material.icons.extended)
     api(libs.compose.foundation)
     api(libs.compose.runtime)
+    api(libs.compose.ui.text.google.fonts)
 
     api(libs.lifecycle.viewmodel.compose)
     api(libs.lifecycle.runtime.compose)

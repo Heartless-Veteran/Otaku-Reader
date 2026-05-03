@@ -9,12 +9,120 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColorScheme = lightColorScheme()
 private val DarkColorScheme = darkColorScheme()
+
+// ─── Design-system token layer ────────────────────────────────────────────────
+
+@Immutable
+data class OtakuColors(
+    val bg: Color,
+    val surface1: Color,
+    val surface2: Color,
+    val surface3: Color,
+    val border: Color,
+    val borderStrong: Color,
+    val fg: Color,
+    val fgMuted: Color,
+    val fgDim: Color,
+    val accent: Color,
+    val accentSoft: Color,
+    val accentDim: Color,
+    val accentGlow: Color,
+    val success: Color,
+    val warning: Color,
+    val danger: Color,
+    val isDark: Boolean,
+)
+
+val LocalOtakuColors = staticCompositionLocalOf { darkOtakuColors() }
+
+fun darkOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
+    bg = Color(0xFF0B0B12),
+    surface1 = Color(0xFF14141F),
+    surface2 = Color(0xFF1C1C2A),
+    surface3 = Color(0xFF25253A),
+    border = Color(0xFF2A2A3E),
+    borderStrong = Color(0xFF3A3A55),
+    fg = Color(0xFFF2F2F7),
+    fgMuted = Color(0xFF9D9DAE),
+    fgDim = Color(0xFF65657A),
+    accent = accent,
+    accentSoft = Color(0xFF8F7BFF),
+    accentDim = Color(0x296B4EFF),
+    accentGlow = Color(0x406B4EFF),
+    success = Color(0xFF4ADE80),
+    warning = Color(0xFFFBBF24),
+    danger = Color(0xFFF87171),
+    isDark = true,
+)
+
+fun oledOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
+    bg = Color(0xFF000000),
+    surface1 = Color(0xFF0A0A0F),
+    surface2 = Color(0xFF15151E),
+    surface3 = Color(0xFF1F1F2C),
+    border = Color(0xFF1E1E2E),
+    borderStrong = Color(0xFF2D2D42),
+    fg = Color(0xFFF2F2F7),
+    fgMuted = Color(0xFF9D9DAE),
+    fgDim = Color(0xFF65657A),
+    accent = accent,
+    accentSoft = Color(0xFF8F7BFF),
+    accentDim = Color(0x296B4EFF),
+    accentGlow = Color(0x406B4EFF),
+    success = Color(0xFF4ADE80),
+    warning = Color(0xFFFBBF24),
+    danger = Color(0xFFF87171),
+    isDark = true,
+)
+
+fun lightOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
+    bg = Color(0xFFF7F7FB),
+    surface1 = Color(0xFFFFFFFF),
+    surface2 = Color(0xFFF0F0F8),
+    surface3 = Color(0xFFE8E8F4),
+    border = Color(0xFFE2E2EE),
+    borderStrong = Color(0xFFD0D0E0),
+    fg = Color(0xFF1A1A2E),
+    fgMuted = Color(0xFF6B6B80),
+    fgDim = Color(0xFF9999B0),
+    accent = accent,
+    accentSoft = Color(0xFF8F7BFF),
+    accentDim = Color(0x186B4EFF),
+    accentGlow = Color(0x306B4EFF),
+    success = Color(0xFF16A34A),
+    warning = Color(0xFFD97706),
+    danger = Color(0xFFDC2626),
+    isDark = false,
+)
+
+fun sepiaOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
+    bg = Color(0xFFF4ECD8),
+    surface1 = Color(0xFFFAF4E8),
+    surface2 = Color(0xFFEDE3CE),
+    surface3 = Color(0xFFE4D8BE),
+    border = Color(0xFFD4C9AE),
+    borderStrong = Color(0xFFC4B89E),
+    fg = Color(0xFF2C2018),
+    fgMuted = Color(0xFF6B5A4A),
+    fgDim = Color(0xFF9B8A7A),
+    accent = accent,
+    accentSoft = Color(0xFF8F7BFF),
+    accentDim = Color(0x186B4EFF),
+    accentGlow = Color(0x306B4EFF),
+    success = Color(0xFF16A34A),
+    warning = Color(0xFFD97706),
+    danger = Color(0xFFDC2626),
+    isDark = false,
+)
 
 /** Color scheme ID for the user-defined custom accent color. */
 const val COLOR_SCHEME_CUSTOM_ACCENT = 11
@@ -112,11 +220,19 @@ fun OtakuReaderTheme(
         pureBlackScheme
     }
 
-    MaterialTheme(
-        colorScheme = finalColorScheme,
-        typography = OtakuReaderTypography,
-        content = content
-    )
+    val otakuColors = when {
+        usePureBlack && darkTheme -> oledOtakuColors(accent = finalColorScheme.primary)
+        darkTheme -> darkOtakuColors(accent = finalColorScheme.primary)
+        else -> lightOtakuColors(accent = finalColorScheme.primary)
+    }
+
+    CompositionLocalProvider(LocalOtakuColors provides otakuColors) {
+        MaterialTheme(
+            colorScheme = finalColorScheme,
+            typography = OtakuReaderTypography,
+            content = content
+        )
+    }
 }
 
 /**

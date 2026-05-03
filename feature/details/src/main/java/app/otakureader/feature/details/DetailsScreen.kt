@@ -97,11 +97,21 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.sp
 import app.otakureader.core.ui.adaptive.isExpanded
 import app.otakureader.core.ui.adaptive.rememberWindowWidthSizeClass
+import app.otakureader.core.ui.theme.LocalOtakuColors
 
 private val MARKDOWN_BOLD_REGEX = Regex("""\*\*(.+?)\*\*""")
 private val MARKDOWN_ITALIC_REGEX = Regex("""(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)""")
@@ -126,6 +136,16 @@ fun DetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val listState = rememberLazyListState()
+    val heroScrollOffset by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex == 0)
+                listState.firstVisibleItemScrollOffset.toFloat()
+            else
+                Float.MAX_VALUE
+        }
+    }
+    val topBarAlpha by remember { derivedStateOf { (heroScrollOffset / 600f).coerceIn(0f, 1f) } }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -172,12 +192,20 @@ fun DetailsScreen(
         Scaffold(
             topBar = {
             TopAppBar(
-                title = { Text(state.manga?.title ?: stringResource(R.string.details_title_fallback)) },
+                title = {
+                    Text(
+                        text = state.manga?.title ?: stringResource(R.string.details_title_fallback),
+                        modifier = Modifier.alpha(topBarAlpha),
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.details_back))
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = topBarAlpha),
+                ),
                 actions = {
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.details_refresh))
@@ -245,6 +273,7 @@ fun DetailsScreen(
             state.manga != null -> DetailsContent(
                 state = state,
                 onEvent = viewModel::onEvent,
+                listState = listState,
                 modifier = Modifier.padding(paddingValues)
             )
             else -> EmptyScreen(modifier = Modifier.padding(paddingValues))
@@ -257,10 +286,16 @@ fun DetailsScreen(
 private fun DetailsContent(
     state: DetailsContract.State,
     onEvent: (DetailsContract.Event) -> Unit,
+    listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {
     val manga = state.manga ?: return
     val widthSizeClass = rememberWindowWidthSizeClass()
+    val scrollOffset: () -> Float = {
+        if (listState.firstVisibleItemIndex == 0)
+            listState.firstVisibleItemScrollOffset.toFloat()
+        else Float.MAX_VALUE
+    }
 
     if (widthSizeClass.isExpanded) {
         // Tablet / DeX / desktop: split the screen so the chapter list isn't
@@ -289,14 +324,14 @@ private fun DetailsContent(
             }
         }
     } else {
-        // Phone / small tablet: single scrolling column with info above chapters,
-        // matching the original behavior.
+        // Phone / small tablet: single scrolling column with info above chapters.
         LazyColumn(
+            state = listState,
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            detailsInfoItems(manga = manga, state = state, onEvent = onEvent)
+            detailsInfoItems(manga = manga, state = state, onEvent = onEvent, scrollOffset = scrollOffset)
             detailsChapterItems(state = state, onEvent = onEvent)
         }
     }
@@ -325,6 +360,7 @@ private fun LazyListScope.detailsInfoItems(
     manga: app.otakureader.domain.model.Manga,
     state: DetailsContract.State,
     onEvent: (DetailsContract.Event) -> Unit,
+    scrollOffset: () -> Float = { 0f },
 ) {
     item {
         MangaHeader(
@@ -332,7 +368,8 @@ private fun LazyListScope.detailsInfoItems(
             isFavorite = state.isFavorite,
             showPanoramaCover = state.showPanoramaCover,
             onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
-            onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) }
+            onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) },
+            scrollOffset = scrollOffset,
         )
     }
 
@@ -341,13 +378,15 @@ private fun LazyListScope.detailsInfoItems(
             description = manga.description,
             expanded = state.descriptionExpanded,
             onToggle = { onEvent(DetailsContract.Event.ToggleDescription) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 
     item {
         MangaNotes(
             notes = manga.notes,
-            onEditClick = { onEvent(DetailsContract.Event.ShowNoteEditor) }
+            onEditClick = { onEvent(DetailsContract.Event.ShowNoteEditor) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
     }
 
@@ -359,11 +398,12 @@ private fun LazyListScope.detailsInfoItems(
             onSuggestionClick = { suggestion ->
                 onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
             },
-            onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) }
+            onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
     }
 
-    item { HorizontalDivider() }
+    item { HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp)) }
 
     item {
         DeleteAfterReadOption(
@@ -421,10 +461,11 @@ private fun MangaHeader(
     showPanoramaCover: Boolean,
     onToggleFavorite: () -> Unit,
     onTogglePanoramaCover: () -> Unit,
+    scrollOffset: () -> Float = { 0f },
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     Column(modifier = modifier.fillMaxWidth()) {
-        // Cover image - either panorama (wide) or standard (square)
         if (showPanoramaCover) {
             // Panorama mode - wide banner cover
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -436,8 +477,6 @@ private fun MangaHeader(
                         .fillMaxWidth()
                         .height(200.dp)
                 )
-                
-                // Toggle button overlay
                 IconButton(
                     onClick = onTogglePanoramaCover,
                     modifier = Modifier
@@ -455,80 +494,105 @@ private fun MangaHeader(
                 }
             }
         } else {
-            // Standard mode - thumbnail + info side by side
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Box {
-                    AsyncImage(
-                        model = manga.thumbnailUrl,
-                        contentDescription = manga.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(width = 120.dp, height = 180.dp)
-                    )
-                    
-                    // Toggle button overlay
-                    IconButton(
-                        onClick = onTogglePanoramaCover,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(32.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                shape = CircleShape
+            // Parallax hero — full-width 300dp box with blurred background cover
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            ) {
+                // Background: blurred cover with depth parallax
+                AsyncImage(
+                    model = manga.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .blur(16.dp)
+                        .graphicsLayer {
+                            val offset = scrollOffset()
+                            translationY = offset * 0.4f
+                            scaleX = 1.15f
+                            scaleY = 1.15f
+                        }
+                )
+                // Gradient overlay: fade to surface color at bottom
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.5f to otaku.bg.copy(alpha = 0.4f),
+                                1f to otaku.bg.copy(alpha = 0.92f),
                             )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AspectRatio,
-                            contentDescription = stringResource(R.string.details_toggle_panorama),
-                            modifier = Modifier.size(18.dp)
                         )
+                )
+                // Cover thumbnail + title/author row with slower parallax
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .graphicsLayer { translationY = scrollOffset() * 0.15f },
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    // Cover thumbnail
+                    Box {
+                        AsyncImage(
+                            model = manga.thumbnailUrl,
+                            contentDescription = manga.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(width = 100.dp, height = 150.dp)
+                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        )
+                        IconButton(
+                            onClick = onTogglePanoramaCover,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(28.dp)
+                                .background(
+                                    color = Color.Black.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AspectRatio,
+                                contentDescription = stringResource(R.string.details_toggle_panorama),
+                                modifier = Modifier.size(14.dp),
+                                tint = Color.White,
+                            )
+                        }
                     }
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = manga.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    manga.author?.let { author ->
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.details_author, author),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = manga.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
                         )
-                    }
-
-                    manga.artist?.let { artist ->
-                        Text(
-                            text = stringResource(R.string.details_artist, artist),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = manga.status.colorValue()
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    FilledIconToggleButton(
-                        checked = isFavorite,
-                        onCheckedChange = { onToggleFavorite() }
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        manga.author?.let { author ->
+                            Text(
+                                text = author,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FilledIconToggleButton(
+                            checked = isFavorite,
+                            onCheckedChange = { onToggleFavorite() }
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                            )
+                        }
                     }
                 }
             }
