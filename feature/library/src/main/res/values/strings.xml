@@ -52,6 +52,9 @@
     <string name="category_delete_cancel">Cancel</string>
     <string name="category_empty_title">No categories yet</string>
     <string name="category_empty_message">Create categories to organize your library</string>
+    <string name="category_mark_nsfw">Mark as NSFW</string>
+    <string name="category_remove_nsfw">Remove NSFW</string>
+    <string name="category_nsfw_toggled">NSFW status updated</string>
     <!-- Search -->
     <string name="library_search">Search library</string>
     <string name="library_search_placeholder">Search…</string>
