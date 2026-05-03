@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import app.otakureader.core.common.di.ApplicationScope
@@ -91,10 +92,15 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
         try {
             val loadResult = extensionLoader.loadExtensionFromPkgName(packageName)
             if (loadResult is ExtensionLoadResult.Success) {
-                extensionRepository.installExtension(packageName, loadResult.extension.apkPath ?: "")
+                val apkPath = loadResult.extension.apkPath
+                if (apkPath.isNullOrBlank()) {
+                    Log.w(TAG, "Extension $packageName loaded but has no APK path; skipping install")
+                    return
+                }
+                extensionRepository.installExtension(packageName, apkPath)
             }
         } catch (e: Exception) {
-            // Not an extension or failed to load — silently ignore
+            Log.e(TAG, "Failed to install extension for package $packageName", e)
         }
     }
 
@@ -102,11 +108,12 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
         try {
             extensionRepository.uninstallExtension(packageName)
         } catch (e: Exception) {
-            // Extension was not tracked — silently ignore
+            Log.d(TAG, "Package $packageName was not a tracked extension; nothing to remove")
         }
     }
 
     companion object {
+        private const val TAG = "ExtensionInstallReceiver"
         private const val ACTION_EXTENSION_ADDED = "app.otakureader.ACTION_EXTENSION_ADDED"
         private const val ACTION_EXTENSION_REPLACED = "app.otakureader.ACTION_EXTENSION_REPLACED"
         private const val ACTION_EXTENSION_REMOVED = "app.otakureader.ACTION_EXTENSION_REMOVED"
