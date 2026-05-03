@@ -1,4 +1,4 @@
-package app.otakureader.feature.reader.panel
+package app.otakureader.feature.reader.services
 
 import android.content.Context
 import androidx.datastore.core.DataStore

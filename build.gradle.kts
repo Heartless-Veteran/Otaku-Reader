@@ -35,7 +35,7 @@ detekt {
         "core",
         "data/src",
         "domain/src",
-        "feature"
+        "feature",
     )
 }
 
