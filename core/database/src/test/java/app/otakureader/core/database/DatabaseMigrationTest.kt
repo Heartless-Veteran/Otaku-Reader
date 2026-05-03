@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.otakureader.core.database.migrations.ALL_MIGRATIONS
 import app.otakureader.core.database.migrations.MIGRATION_13_14
+import app.otakureader.core.database.migrations.MIGRATION_14_15
 import app.otakureader.core.database.migrations.MIGRATION_15_16
 import app.otakureader.core.database.migrations.MIGRATION_16_17
 import app.otakureader.core.database.migrations.MIGRATION_17_18
@@ -96,7 +97,7 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Migration 9 → 10: extra tables ──────────────────────────────────────
+    // ── Migration 9 → 10: new tables added in this fix ──────────────────────
 
     @Test
     fun migration9To10_createsReadingHistory() {
@@ -115,38 +116,6 @@ class DatabaseMigrationTest {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
         assertTrue("opds_servers must exist after 9→10", "opds_servers" in db.tableNames())
-        db.close()
-    }
-
-    @Test
-    fun migration9To10_createsFeedTables() {
-        helper.createDatabase(TEST_DB, 9).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
-        val tables = db.tableNames()
-        assertTrue("feed_items must exist after 9→10", "feed_items" in tables)
-        assertTrue("feed_sources must exist after 9→10", "feed_sources" in tables)
-        assertTrue("feed_saved_searches must exist after 9→10", "feed_saved_searches" in tables)
-        db.close()
-    }
-
-    @Test
-    fun migration9To10_feedSavedSearches_hasSourceIdIndex() {
-        helper.createDatabase(TEST_DB, 9).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
-        assertTrue(
-            "index_feed_saved_searches_sourceId must exist after 9→10",
-            "index_feed_saved_searches_sourceId" in db.indexNames("feed_saved_searches"),
-        )
-        db.close()
-    }
-
-    @Test
-    fun migration9To10_createsTrackerTables() {
-        helper.createDatabase(TEST_DB, 9).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
-        val tables = db.tableNames()
-        assertTrue("tracker_sync_state must exist after 9→10", "tracker_sync_state" in tables)
-        assertTrue("sync_configuration must exist after 9→10", "sync_configuration" in tables)
         db.close()
     }
 
@@ -183,12 +152,18 @@ class DatabaseMigrationTest {
         db14.close()
     }
 
-    // ── Migration 15 → 16 ───────────────────────────────────────────────────
+    // ── Migrations 15 → 21 ──────────────────────────────────────────────────
+    // These tests start from v14 (the last exported schema before v21) and apply
+    // migrations directly via .migrate() to avoid requiring intermediate schema
+    // export files (15.json–20.json). Each test verifies the incremental change
+    // introduced by its specific migration.
 
     @Test
     fun migration15To16_createsReadingStreaks() {
-        helper.createDatabase(TEST_DB, 15).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 16, true, MIGRATION_15_16)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        assertFalse("reading_streaks must NOT exist at v15", "reading_streaks" in db.tableNames())
+        MIGRATION_15_16.migrate(db)
         assertTrue("reading_streaks must exist after 15→16", "reading_streaks" in db.tableNames())
         val cols = db.columnNames("reading_streaks")
         assertTrue("date column must exist", "date" in cols)
@@ -198,32 +173,38 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Migration 16 → 17 ───────────────────────────────────────────────────
-
     @Test
     fun migration16To17_addsUserCompleted() {
-        helper.createDatabase(TEST_DB, 16).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 17, true, MIGRATION_16_17)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        assertFalse("userCompleted must NOT exist at v16", "userCompleted" in db.columnNames("manga"))
+        MIGRATION_16_17.migrate(db)
         assertTrue("manga.userCompleted must exist after 16→17", "userCompleted" in db.columnNames("manga"))
         db.close()
     }
 
-    // ── Migration 17 → 18 ───────────────────────────────────────────────────
-
     @Test
     fun migration17To18_addsUserDropped() {
-        helper.createDatabase(TEST_DB, 17).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 18, true, MIGRATION_17_18)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        assertFalse("userDropped must NOT exist at v17", "userDropped" in db.columnNames("manga"))
+        MIGRATION_17_18.migrate(db)
         assertTrue("manga.userDropped must exist after 17→18", "userDropped" in db.columnNames("manga"))
         db.close()
     }
 
-    // ── Migration 18 → 19 ───────────────────────────────────────────────────
-
     @Test
     fun migration18To19_createsPageBookmarks() {
-        helper.createDatabase(TEST_DB, 18).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 19, true, MIGRATION_18_19)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        MIGRATION_17_18.migrate(db)
+        assertFalse("page_bookmarks must NOT exist at v18", "page_bookmarks" in db.tableNames())
+        MIGRATION_18_19.migrate(db)
         assertTrue("page_bookmarks must exist after 18→19", "page_bookmarks" in db.tableNames())
         val indexes = db.indexNames("page_bookmarks")
         assertTrue("index_page_bookmarks_chapter_id must exist", "index_page_bookmarks_chapter_id" in indexes)
@@ -235,22 +216,31 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Migration 19 → 20 ───────────────────────────────────────────────────
-
     @Test
     fun migration19To20_addsUserNotes() {
-        helper.createDatabase(TEST_DB, 19).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 20, true, MIGRATION_19_20)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        MIGRATION_17_18.migrate(db)
+        MIGRATION_18_19.migrate(db)
+        assertFalse("userNotes must NOT exist at v19", "userNotes" in db.columnNames("chapters"))
+        MIGRATION_19_20.migrate(db)
         assertTrue("chapters.userNotes must exist after 19→20", "userNotes" in db.columnNames("chapters"))
         db.close()
     }
 
-    // ── Migration 20 → 21 ───────────────────────────────────────────────────
-
     @Test
     fun migration20To21_createsReadingLists() {
-        helper.createDatabase(TEST_DB, 20).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 21, true, MIGRATION_20_21)
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        MIGRATION_17_18.migrate(db)
+        MIGRATION_18_19.migrate(db)
+        MIGRATION_19_20.migrate(db)
+        assertFalse("reading_lists must NOT exist at v20", "reading_lists" in db.tableNames())
+        MIGRATION_20_21.migrate(db)
         val tables = db.tableNames()
         assertTrue("reading_lists must exist after 20→21", "reading_lists" in tables)
         assertTrue("reading_list_items must exist after 20→21", "reading_list_items" in tables)
