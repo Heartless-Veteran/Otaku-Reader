@@ -179,7 +179,8 @@ fun captureShareableCard(
     val bitmap = createBitmap(composeView.width, composeView.height)
     composeView.draw(android.graphics.Canvas(bitmap))
 
-    val file = File(context.cacheDir, "reading_stats_${System.currentTimeMillis()}.png")
+    val statsDir = File(context.cacheDir, "shared_stats").also { it.mkdirs() }
+    val file = File(statsDir, "reading_stats_${System.currentTimeMillis()}.png")
     FileOutputStream(file).use { out ->
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
     }

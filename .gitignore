@@ -17,6 +17,7 @@ local.properties
 *.aab
 *.ap_
 *.dex
+*.class
 
 # Google Services / Signing
 google-services.json

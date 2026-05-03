@@ -49,6 +49,30 @@ internal val MIGRATION_8_9 = object : Migration(8, 9) {
 internal val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE manga ADD COLUMN calculate_interval INTEGER NOT NULL DEFAULT 0")
+        // reading_history
+        db.execSQL("CREATE TABLE IF NOT EXISTS `reading_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapter_id` INTEGER NOT NULL, `read_at` INTEGER NOT NULL, `read_duration_ms` INTEGER NOT NULL, FOREIGN KEY(`chapter_id`) REFERENCES `chapters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_reading_history_chapter_id` ON `reading_history` (`chapter_id`)")
+        // opds_servers
+        db.execSQL("CREATE TABLE IF NOT EXISTS `opds_servers` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `url` TEXT NOT NULL)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_opds_servers_url` ON `opds_servers` (`url`)")
+        // feed_items
+        db.execSQL("CREATE TABLE IF NOT EXISTS `feed_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `mangaId` INTEGER NOT NULL, `mangaTitle` TEXT NOT NULL, `mangaThumbnailUrl` TEXT, `chapterId` INTEGER NOT NULL, `chapterName` TEXT NOT NULL, `chapterNumber` REAL NOT NULL, `sourceId` INTEGER NOT NULL, `sourceName` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `isRead` INTEGER NOT NULL)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_sourceId` ON `feed_items` (`sourceId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_timestamp` ON `feed_items` (`timestamp`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_items_mangaId` ON `feed_items` (`mangaId`)")
+        // feed_sources
+        db.execSQL("CREATE TABLE IF NOT EXISTS `feed_sources` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sourceId` INTEGER NOT NULL, `sourceName` TEXT NOT NULL, `isEnabled` INTEGER NOT NULL, `itemCount` INTEGER NOT NULL, `order` INTEGER NOT NULL)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_feed_sources_sourceId` ON `feed_sources` (`sourceId`)")
+        // feed_saved_searches
+        db.execSQL("CREATE TABLE IF NOT EXISTS `feed_saved_searches` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sourceId` INTEGER NOT NULL, `sourceName` TEXT NOT NULL, `query` TEXT NOT NULL, `filtersJson` TEXT, `order` INTEGER NOT NULL)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_feed_saved_searches_sourceId` ON `feed_saved_searches` (`sourceId`)")
+        // tracker_sync_state
+        db.execSQL("CREATE TABLE IF NOT EXISTS `tracker_sync_state` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `mangaId` INTEGER NOT NULL, `trackerId` INTEGER NOT NULL, `remoteId` TEXT NOT NULL, `localLastChapterRead` REAL NOT NULL, `localTotalChapters` INTEGER NOT NULL, `localStatus` INTEGER NOT NULL, `localLastModified` INTEGER NOT NULL, `remoteLastChapterRead` REAL NOT NULL, `remoteTotalChapters` INTEGER NOT NULL, `remoteStatus` INTEGER NOT NULL, `remoteLastModified` INTEGER, `syncStatus` INTEGER NOT NULL, `lastSyncAttempt` INTEGER, `lastSuccessfulSync` INTEGER, `syncError` TEXT)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_tracker_sync_state_mangaId_trackerId` ON `tracker_sync_state` (`mangaId`, `trackerId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_tracker_sync_state_syncStatus` ON `tracker_sync_state` (`syncStatus`)")
+        // sync_configuration
+        db.execSQL("CREATE TABLE IF NOT EXISTS `sync_configuration` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `trackerId` INTEGER NOT NULL, `enabled` INTEGER NOT NULL, `syncDirection` INTEGER NOT NULL, `conflictResolution` INTEGER NOT NULL, `autoSyncInterval` INTEGER NOT NULL, `syncOnChapterRead` INTEGER NOT NULL, `syncOnMarkComplete` INTEGER NOT NULL)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_configuration_trackerId` ON `sync_configuration` (`trackerId`)")
     }
 }
 
@@ -78,6 +102,7 @@ internal val MIGRATION_13_14 = object : Migration(13, 14) {
         db.execSQL("CREATE TABLE IF NOT EXISTS manga_sync (_id INTEGER PRIMARY KEY AUTOINCREMENT, manga_id INTEGER NOT NULL, sync_id INTEGER NOT NULL, remote_id INTEGER NOT NULL, library_id INTEGER, title TEXT, last_chapter_read INTEGER, total_chapters INTEGER, score REAL, status INTEGER, tracking_url TEXT, start_date INTEGER, finish_date INTEGER)")
         db.execSQL("INSERT INTO manga_sync SELECT * FROM tracks")
         db.execSQL("DROP TABLE tracks")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `contentRating` INTEGER NOT NULL DEFAULT 0")
     }
 }
 
@@ -88,6 +113,7 @@ internal val MIGRATION_14_15 = object : Migration(14, 15) {
         db.execSQL("DROP TABLE IF EXISTS `recommendations`")
         db.execSQL("DROP TABLE IF EXISTS `reading_patterns`")
         db.execSQL("DROP TABLE IF EXISTS `recommendation_refreshes`")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_chapters_mangaId_dateFetch` ON `chapters` (`mangaId`, `dateFetch`)")
     }
 }
 
@@ -138,6 +164,7 @@ internal val MIGRATION_18_19 = object : Migration(18, 19) {
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_page_bookmarks_chapter_id` ON `page_bookmarks` (`chapter_id`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_page_bookmarks_manga_id` ON `page_bookmarks` (`manga_id`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_page_bookmarks_manga_id_created_at` ON `page_bookmarks` (`manga_id`, `created_at`)")
     }
 }
 
@@ -178,6 +205,7 @@ internal val MIGRATION_20_21 = object : Migration(20, 21) {
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_list_items_listId` ON `reading_list_items`(`listId`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_list_items_mangaId` ON `reading_list_items`(`mangaId`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reading_list_items_listId_addedAt` ON `reading_list_items` (`listId`, `addedAt`)")
     }
 }
 
