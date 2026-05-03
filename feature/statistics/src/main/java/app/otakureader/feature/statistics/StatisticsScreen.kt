@@ -370,13 +370,13 @@ private fun StreakCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 StreakStatItem(
-                    value = "${currentStreak}d",
+                    value = stringResource(R.string.statistics_streak_days_short, currentStreak),
                     label = stringResource(R.string.statistics_current_streak),
                     valueColor = otaku.accent,
                     modifier = Modifier.weight(1f),
                 )
                 StreakStatItem(
-                    value = "${bestStreak}d",
+                    value = stringResource(R.string.statistics_streak_days_short, bestStreak),
                     label = stringResource(R.string.statistics_best_streak),
                     valueColor = otaku.warning,
                     modifier = Modifier.weight(1f),
@@ -447,7 +447,7 @@ private fun MiniActivityBars(
         val gapWidth = totalGapWidth / (barCount - 1).coerceAtLeast(1)
         values.forEachIndexed { index, value ->
             val fraction = value.toFloat() / maxVal
-            val barHeight = (size.height * 0.8f * fraction).coerceAtLeast(if (value > 0) 4f else 0f)
+            val barHeight = (size.height * 0.8f * fraction).coerceAtLeast(4f)
             val x = index * (barWidth + gapWidth)
             val y = size.height - barHeight
             drawRoundRect(
@@ -500,7 +500,10 @@ private fun GenreDistributionBars(genres: Map<String, Int>) {
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        genres.entries.take(8).forEachIndexed { index, (genre, count) ->
+        genres.entries
+            .sortedByDescending { it.value }
+            .take(MAX_TOP_GENRES)
+            .forEachIndexed { index, (genre, count) ->
             GenreBar(
                 genre = genre,
                 count = count,
@@ -549,6 +552,8 @@ private fun GenreBar(
         }
     }
 }
+
+private const val MAX_TOP_GENRES = 8
 
 private fun formatReadingTime(ms: Long): String {
     if (ms == 0L) return "0m"

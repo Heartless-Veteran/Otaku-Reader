@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 
@@ -44,6 +45,13 @@ data class OtakuColors(
 
 val LocalOtakuColors = staticCompositionLocalOf { darkOtakuColors() }
 
+/** Derives accent variant colors from a base accent, independent of the default purple. */
+private fun accentSoft(accent: Color): Color = lerp(accent, Color.White, 0.35f)
+private fun accentDim(accent: Color, isDark: Boolean): Color =
+    accent.copy(alpha = if (isDark) 0.16f else 0.10f)
+private fun accentGlow(accent: Color, isDark: Boolean): Color =
+    accent.copy(alpha = if (isDark) 0.25f else 0.18f)
+
 fun darkOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     bg = Color(0xFF0B0B12),
     surface1 = Color(0xFF14141F),
@@ -55,9 +63,9 @@ fun darkOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     fgMuted = Color(0xFF9D9DAE),
     fgDim = Color(0xFF65657A),
     accent = accent,
-    accentSoft = Color(0xFF8F7BFF),
-    accentDim = Color(0x296B4EFF),
-    accentGlow = Color(0x406B4EFF),
+    accentSoft = accentSoft(accent),
+    accentDim = accentDim(accent, isDark = true),
+    accentGlow = accentGlow(accent, isDark = true),
     success = Color(0xFF4ADE80),
     warning = Color(0xFFFBBF24),
     danger = Color(0xFFF87171),
@@ -75,9 +83,9 @@ fun oledOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     fgMuted = Color(0xFF9D9DAE),
     fgDim = Color(0xFF65657A),
     accent = accent,
-    accentSoft = Color(0xFF8F7BFF),
-    accentDim = Color(0x296B4EFF),
-    accentGlow = Color(0x406B4EFF),
+    accentSoft = accentSoft(accent),
+    accentDim = accentDim(accent, isDark = true),
+    accentGlow = accentGlow(accent, isDark = true),
     success = Color(0xFF4ADE80),
     warning = Color(0xFFFBBF24),
     danger = Color(0xFFF87171),
@@ -95,9 +103,9 @@ fun lightOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     fgMuted = Color(0xFF6B6B80),
     fgDim = Color(0xFF9999B0),
     accent = accent,
-    accentSoft = Color(0xFF8F7BFF),
-    accentDim = Color(0x186B4EFF),
-    accentGlow = Color(0x306B4EFF),
+    accentSoft = accentSoft(accent),
+    accentDim = accentDim(accent, isDark = false),
+    accentGlow = accentGlow(accent, isDark = false),
     success = Color(0xFF16A34A),
     warning = Color(0xFFD97706),
     danger = Color(0xFFDC2626),
@@ -115,9 +123,9 @@ fun sepiaOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     fgMuted = Color(0xFF6B5A4A),
     fgDim = Color(0xFF9B8A7A),
     accent = accent,
-    accentSoft = Color(0xFF8F7BFF),
-    accentDim = Color(0x186B4EFF),
-    accentGlow = Color(0x306B4EFF),
+    accentSoft = accentSoft(accent),
+    accentDim = accentDim(accent, isDark = false),
+    accentGlow = accentGlow(accent, isDark = false),
     success = Color(0xFF16A34A),
     warning = Color(0xFFD97706),
     danger = Color(0xFFDC2626),
@@ -136,6 +144,7 @@ const val COLOR_SCHEME_CUSTOM_ACCENT = 11
  * @param darkTheme Whether to use dark theme. Defaults to system setting.
  * @param colorScheme Color scheme selection (0=System Default, 1=Dynamic, 2-10=Custom schemes, [COLOR_SCHEME_CUSTOM_ACCENT]=Custom accent)
  * @param usePureBlack Whether to use Pure Black (#000000) background in dark mode (AMOLED)
+ * @param useSepia Whether to apply the sepia warm-paper token set (reader mode)
  * @param useHighContrast Whether to boost contrast for improved accessibility
  * @param customAccentColor ARGB Long used when [colorScheme] == [COLOR_SCHEME_CUSTOM_ACCENT]
  */
@@ -144,6 +153,7 @@ fun OtakuReaderTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     colorScheme: Int = 0,
     usePureBlack: Boolean = false,
+    useSepia: Boolean = false,
     useHighContrast: Boolean = false,
     customAccentColor: Long = 0xFF1976D2L,
     content: @Composable () -> Unit
@@ -223,6 +233,7 @@ fun OtakuReaderTheme(
     val otakuColors = when {
         usePureBlack && darkTheme -> oledOtakuColors(accent = finalColorScheme.primary)
         darkTheme -> darkOtakuColors(accent = finalColorScheme.primary)
+        useSepia -> sepiaOtakuColors(accent = finalColorScheme.primary)
         else -> lightOtakuColors(accent = finalColorScheme.primary)
     }
 

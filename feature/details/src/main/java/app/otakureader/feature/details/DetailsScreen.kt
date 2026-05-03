@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AspectRatio
@@ -106,9 +107,9 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.sp
 import app.otakureader.core.ui.adaptive.isExpanded
 import app.otakureader.core.ui.adaptive.rememberWindowWidthSizeClass
 import app.otakureader.core.ui.theme.LocalOtakuColors
@@ -121,6 +122,13 @@ private val MARKDOWN_ITALIC_REGEX = Regex("""(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)
 // description benefit from extra width; the two weights must sum to 1f.
 private const val INFO_PANE_WEIGHT = 0.55f
 private const val CHAPTER_PANE_WEIGHT = 0.45f
+
+// Parallax hero constants
+private val HERO_HEIGHT = 300.dp
+private const val HERO_TOP_BAR_FADE_RANGE = 600f
+private const val HERO_BG_PARALLAX_FACTOR = 0.4f
+private const val HERO_FG_PARALLAX_FACTOR = 0.15f
+private const val HERO_BG_SCALE = 1.15f
 private val MARKDOWN_LINK_REGEX = Regex("""\[(.+?)]\((.+?)\)""")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,6 +144,7 @@ fun DetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val isExpanded = rememberWindowWidthSizeClass().isExpanded
     val listState = rememberLazyListState()
     val heroScrollOffset by remember {
         derivedStateOf {
@@ -145,7 +154,13 @@ fun DetailsScreen(
                 Float.MAX_VALUE
         }
     }
-    val topBarAlpha by remember { derivedStateOf { (heroScrollOffset / 600f).coerceIn(0f, 1f) } }
+    // In expanded (tablet) layout there is no parallax hero — keep the TopAppBar fully opaque.
+    val topBarAlpha by remember(isExpanded) {
+        derivedStateOf {
+            if (isExpanded) 1f
+            else (heroScrollOffset / HERO_TOP_BAR_FADE_RANGE).coerceIn(0f, 1f)
+        }
+    }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -286,7 +301,7 @@ fun DetailsScreen(
 private fun DetailsContent(
     state: DetailsContract.State,
     onEvent: (DetailsContract.Event) -> Unit,
-    listState: LazyListState = rememberLazyListState(),
+    listState: LazyListState,
     modifier: Modifier = Modifier
 ) {
     val manga = state.manga ?: return
@@ -494,11 +509,11 @@ private fun MangaHeader(
                 }
             }
         } else {
-            // Parallax hero — full-width 300dp box with blurred background cover
+            // Parallax hero — full-width HERO_HEIGHT box with blurred background cover
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(HERO_HEIGHT)
             ) {
                 // Background: blurred cover with depth parallax
                 AsyncImage(
@@ -510,9 +525,9 @@ private fun MangaHeader(
                         .blur(16.dp)
                         .graphicsLayer {
                             val offset = scrollOffset()
-                            translationY = offset * 0.4f
-                            scaleX = 1.15f
-                            scaleY = 1.15f
+                            translationY = offset * HERO_BG_PARALLAX_FACTOR
+                            scaleX = HERO_BG_SCALE
+                            scaleY = HERO_BG_SCALE
                         }
                 )
                 // Gradient overlay: fade to surface color at bottom
@@ -532,7 +547,7 @@ private fun MangaHeader(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(horizontal = 16.dp, vertical = 16.dp)
-                        .graphicsLayer { translationY = scrollOffset() * 0.15f },
+                        .graphicsLayer { translationY = scrollOffset() * HERO_FG_PARALLAX_FACTOR },
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.Bottom,
                 ) {
@@ -544,7 +559,7 @@ private fun MangaHeader(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(width = 100.dp, height = 150.dp)
-                                .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                         )
                         IconButton(
                             onClick = onTogglePanoramaCover,
