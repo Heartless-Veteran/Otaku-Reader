@@ -233,7 +233,7 @@ See [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) for 
 | Preferences | DataStore |
 | Networking | OkHttp + Coil |
 | Background Work | WorkManager |
-| Build | Gradle 8.10.2 + convention plugins + version catalogs + signed release APKs |
+| Build | Gradle 9.5.0 + convention plugins + version catalogs + signed release APKs |
 
 ---
 
