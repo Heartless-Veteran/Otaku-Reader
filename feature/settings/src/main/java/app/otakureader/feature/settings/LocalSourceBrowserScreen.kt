@@ -129,10 +129,6 @@ fun LocalSourceBrowserScreen(
                 )
             }
         }
-                headlineContent = { Text(stringResource(R.string.settings_local_source_metadata)) },
-                supportingContent = { Text(stringResource(R.string.settings_local_source_metadata_description)) },
-            )
-        }
     }
 }
 
