@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -35,18 +36,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.components.MonoLabel
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
 
-/** Statistics screen showing reading analytics. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
@@ -63,7 +67,10 @@ fun StatisticsScreen(
                 title = { Text(stringResource(R.string.statistics_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.statistics_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.statistics_back)
+                        )
                     }
                 }
             )
@@ -114,24 +121,18 @@ private fun StatisticsContent(
     ) {
         item { Spacer(modifier = Modifier.height(4.dp)) }
 
+        // Gradient hero card — reading overview
+        item { StatsHeroCard(stats = stats) }
+
         // Reading goals progress
         if (readingGoal.dailyGoal > 0 || readingGoal.weeklyGoal > 0) {
             item {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(4.dp))
                 SectionTitle(stringResource(R.string.statistics_reading_goals))
                 Spacer(modifier = Modifier.height(8.dp))
                 ReadingGoalsSection(readingGoal)
             }
-        }
-
-        // Summary cards
-        item {
-            if (readingGoal.dailyGoal > 0 || readingGoal.weeklyGoal > 0) {
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-            SectionTitle(stringResource(R.string.statistics_overview))
-            Spacer(modifier = Modifier.height(8.dp))
-            SummaryCards(stats)
         }
 
         // Reading streak
@@ -173,6 +174,85 @@ private fun StatisticsContent(
     }
 }
 
+/** Gradient hero card showing the three primary stats. */
+@Composable
+private fun StatsHeroCard(
+    stats: ReadingStats,
+    modifier: Modifier = Modifier
+) {
+    val otaku = LocalOtakuColors.current
+    val gradientEnd = Color.hsl(290f, 0.65f, if (otaku.isDark) 0.28f else 0.72f)
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(otaku.accent, gradientEnd),
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Column {
+                Text(
+                    text = stringResource(R.string.statistics_overview),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.75f),
+                    letterSpacing = 1.sp,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                ) {
+                    HeroStatItem(
+                        value = stats.totalMangaInLibrary.toString(),
+                        label = stringResource(R.string.statistics_manga),
+                        modifier = Modifier.weight(1f),
+                    )
+                    HeroStatItem(
+                        value = stats.totalChaptersRead.toString(),
+                        label = stringResource(R.string.statistics_chapters),
+                        modifier = Modifier.weight(1f),
+                    )
+                    HeroStatItem(
+                        value = formatReadingTime(stats.totalReadingTimeMs),
+                        label = stringResource(R.string.statistics_reading_time),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroStatItem(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.75f),
+        )
+    }
+}
+
 @Composable
 private fun SectionTitle(title: String) {
     Text(
@@ -180,81 +260,6 @@ private fun SectionTitle(title: String) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
     )
-}
-
-@Composable
-private fun SummaryCards(stats: ReadingStats) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatCard(
-            label = stringResource(R.string.statistics_manga),
-            value = stats.totalMangaInLibrary.toString(),
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            label = stringResource(R.string.statistics_chapters),
-            value = stats.totalChaptersRead.toString(),
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            label = stringResource(R.string.statistics_reading_time),
-            value = formatReadingTime(stats.totalReadingTimeMs),
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-@Composable
-private fun StatCard(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun StreakRow(currentStreak: Int, bestStreak: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatCard(
-            label = stringResource(R.string.statistics_current_streak),
-            value = "${currentStreak}d",
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            label = stringResource(R.string.statistics_best_streak),
-            value = "${bestStreak}d",
-            modifier = Modifier.weight(1f)
-        )
-    }
 }
 
 @Composable
@@ -286,6 +291,7 @@ private fun GoalProgressCard(
 ) {
     val fraction = (progress.toFloat() / goal.toFloat()).coerceIn(0f, 1f)
     val isComplete = progress >= goal
+    val otaku = LocalOtakuColors.current
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -306,12 +312,19 @@ private fun GoalProgressCard(
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = if (isComplete) stringResource(R.string.statistics_goal_complete) else stringResource(R.string.statistics_goal_progress, progress, goal),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (isComplete) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isComplete) {
+                    Text(
+                        text = stringResource(R.string.statistics_goal_complete),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = otaku.success,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                } else {
+                    MonoLabel(
+                        text = stringResource(R.string.statistics_goal_progress, progress, goal),
+                        color = otaku.fgMuted,
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
@@ -320,10 +333,128 @@ private fun GoalProgressCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = if (isComplete) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.secondary,
+                color = if (isComplete) otaku.success else otaku.accent,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+@Composable
+private fun StreakCard(
+    currentStreak: Int,
+    bestStreak: Int,
+    readingActivityByDay: List<Int>,
+    modifier: Modifier = Modifier
+) {
+    val otaku = LocalOtakuColors.current
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.statistics_streak),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                StreakStatItem(
+                    value = stringResource(R.string.statistics_streak_days_short, currentStreak),
+                    label = stringResource(R.string.statistics_current_streak),
+                    valueColor = otaku.accent,
+                    modifier = Modifier.weight(1f),
+                )
+                StreakStatItem(
+                    value = stringResource(R.string.statistics_streak_days_short, bestStreak),
+                    label = stringResource(R.string.statistics_best_streak),
+                    valueColor = otaku.warning,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            // Mini bar chart of recent reading activity
+            if (readingActivityByDay.isNotEmpty()) {
+                MiniActivityBars(
+                    values = readingActivityByDay.takeLast(30),
+                    barColor = otaku.accent,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StreakStatItem(
+    value: String,
+    label: String,
+    valueColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = valueColor,
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Mini vertical bar chart for recent daily activity. */
+@Composable
+private fun MiniActivityBars(
+    values: List<Int>,
+    barColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val maxVal = values.maxOrNull()?.coerceAtLeast(1) ?: 1
+    Canvas(modifier = modifier) {
+        val barCount = values.size
+        val totalGapWidth = size.width * 0.3f
+        val barWidth = (size.width - totalGapWidth) / barCount
+        val gapWidth = totalGapWidth / (barCount - 1).coerceAtLeast(1)
+        values.forEachIndexed { index, value ->
+            val fraction = value.toFloat() / maxVal
+            val barHeight = (size.height * 0.8f * fraction).coerceAtLeast(4f)
+            val x = index * (barWidth + gapWidth)
+            val y = size.height - barHeight
+            drawRoundRect(
+                color = if (value > 0) barColor else barColor.copy(alpha = 0.15f),
+                topLeft = androidx.compose.ui.geometry.Offset(x, y),
+                size = androidx.compose.ui.geometry.Size(barWidth, barHeight),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
             )
         }
     }
@@ -355,19 +486,29 @@ private fun ReadingActivityGrid(activityByDay: Map<String, Int>) {
     }
 }
 
-/** Horizontal bar chart for top genres. */
+/** Horizontal bar chart for top genres with multi-color accent progression. */
 @Composable
 private fun GenreDistributionBars(genres: Map<String, Int>) {
     val maxCount = genres.values.maxOrNull() ?: 1
-    val barColor = MaterialTheme.colorScheme.primary
+    val otaku = LocalOtakuColors.current
+    val accentColors = listOf(
+        otaku.accent,
+        otaku.accentSoft,
+        otaku.warning,
+        otaku.success,
+        Color.hsl(200f, 0.7f, 0.55f),
+    )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        for ((genre, count) in genres) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        genres.entries
+            .sortedByDescending { it.value }
+            .take(MAX_TOP_GENRES)
+            .forEachIndexed { index, (genre, count) ->
             GenreBar(
                 genre = genre,
                 count = count,
                 fraction = count.toFloat() / maxCount.toFloat(),
-                barColor = barColor
+                barColor = accentColors[index % accentColors.size],
             )
         }
     }
@@ -384,19 +525,21 @@ private fun GenreBar(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = genre,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = count.toString(),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            MonoLabel(
+                text = count.toString(),
+                color = barColor,
             )
         }
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
@@ -404,11 +547,13 @@ private fun GenreBar(
                 .clip(RoundedCornerShape(3.dp))
         ) {
             val barWidth = size.width * fraction
-            drawRect(color = barColor.copy(alpha = 0.2f), size = size)
+            drawRect(color = barColor.copy(alpha = 0.15f), size = size)
             drawRect(color = barColor, size = size.copy(width = barWidth))
         }
     }
 }
+
+private const val MAX_TOP_GENRES = 8
 
 private fun formatReadingTime(ms: Long): String {
     if (ms == 0L) return "0m"

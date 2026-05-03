@@ -71,6 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.components.MangaCard
+import app.otakureader.core.ui.components.OtakuChip
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.domain.model.Manga
 import coil3.compose.AsyncImage
 import androidx.compose.material3.LinearProgressIndicator
@@ -480,40 +482,25 @@ private fun CategoryFilterChips(
     ) {
         // "All" chip
         item {
-            FilterChip(
+            OtakuChip(
+                label = stringResource(R.string.library_category_all),
                 selected = selectedCategory == null,
                 onClick = { onCategorySelected(null) },
-                label = { Text(stringResource(R.string.library_category_all)) }
             )
         }
-        
+
         // Category chips
         items(
             items = categories,
             key = { it.id }
         ) { category ->
-            FilterChip(
+            OtakuChip(
+                label = category.name,
                 selected = selectedCategory == category.id,
                 onClick = { onCategorySelected(category.id) },
-                label = { Text(category.name) }
             )
         }
     }
-}
-
-@Composable
-private fun FilterChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    label: @Composable () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.material3.FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = label,
-        modifier = modifier
-    )
 }
 
 // ── Continue Reading ────────────────────────────────────────────────────────
