@@ -53,7 +53,7 @@ jobs:
           echo "| Debug Build | $((END-START))s |" >> benchmark.md
 
       - name: Upload Benchmark Results
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: benchmark-results
           path: benchmark.md
@@ -107,7 +107,7 @@ jobs:
           CI: true
 
       - name: Upload Generated Profile
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: baseline-profile-${{ github.run_number }}
           path: app/src/main/baseline-prof.txt
