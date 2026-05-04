@@ -269,6 +269,7 @@ fun BackupSyncConfiguration.toSyncConfigurationEntity(): SyncConfigurationEntity
 /**
  * Creates a [BackupPreferences] from individual preference values.
  */
+@Suppress("LongParameterList")
 fun createBackupPreferences(
     themeMode: Int,
     useDynamicColor: Boolean,

@@ -65,7 +65,7 @@ class ExtensionRepositoryImpl(
                 status = InstallStatus.INSTALLED.name,
                 apkPath = apkPath,
                 installDate = System.currentTimeMillis()
-            ) ?: throw IllegalStateException("Extension not found: $pkgName")
+            ) ?: error("Extension not found: $pkgName")
             
             localDataSource.insertExtension(extension)
             Result.success(mapper.toDomain(extension))
@@ -90,7 +90,7 @@ class ExtensionRepositoryImpl(
             localDataSource.updateStatus(pkgName, InstallStatus.UPDATING.name)
             
             val existing = localDataSource.getExtensionByPkgName(pkgName)
-                ?: throw IllegalStateException("Extension not found: $pkgName")
+                ?: error("Extension not found: $pkgName")
             
             val updated = existing.copy(
                 status = InstallStatus.INSTALLED.name,

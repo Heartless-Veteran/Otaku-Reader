@@ -5,7 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.Assert.*
+import org.junit.Assert.assertTrue
 
 /**
  * Instrumented tests for verifying browse screen string resources.
@@ -14,10 +14,6 @@ import org.junit.Assert.*
 class BrowseStringResourcesTest {
 
     private val context: Context = ApplicationProvider.getApplicationProvider()
-
-    private val supportedLocales = listOf(
-        "ar", "de", "es", "fr", "ja", "ko", "pt", "ru", "zh-rCN"
-    )
 
     @Test
     fun testBrowseStringsExist() {

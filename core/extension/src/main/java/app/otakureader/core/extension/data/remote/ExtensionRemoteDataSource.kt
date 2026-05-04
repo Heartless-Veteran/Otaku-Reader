@@ -225,6 +225,7 @@ class ExtensionRemoteDataSourceImpl(
      * Tries index.min.json first (common format for Keiyoushi/Komikku/Suwayomi),
      * then falls back to index.json if that fails.
      */
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun fetchFromRepository(baseUrl: String): List<Extension> {
         val trimmedBaseUrl = baseUrl.trimEnd('/')
 

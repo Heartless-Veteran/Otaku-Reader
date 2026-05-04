@@ -48,7 +48,6 @@ class ExtensionInstaller(
     companion object {
         private const val EXTENSIONS_DIR = "exts"
         private const val DOWNLOADS_DIR = "extension_downloads"
-        private const val BUFFER_SIZE = 8192
     }
     
     private val _installationState = MutableStateFlow<InstallationState>(InstallationState.Idle)
@@ -221,7 +220,8 @@ class ExtensionInstaller(
      * @param newApkFile The new APK file
      * @return Result containing the updated Extension
      */
-    suspend fun update(pkgName: String, newApkFile: File): Result<Extension> = 
+    @Suppress("LongMethod")
+    suspend fun update(pkgName: String, newApkFile: File): Result<Extension> =
         withContext(Dispatchers.IO) {
             try {
                 _installationState.value = InstallationState.Verifying

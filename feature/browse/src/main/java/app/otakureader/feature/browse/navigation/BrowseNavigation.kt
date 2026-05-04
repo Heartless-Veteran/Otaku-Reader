@@ -15,6 +15,7 @@ import app.otakureader.feature.browse.SourceMangaDetailScreen
 import app.otakureader.feature.browse.SourceMangaScreen
 import app.otakureader.feature.browse.extension.ExtensionInstallScreen
 
+@Suppress("UnusedParameter")
 fun NavGraphBuilder.browseScreen(
     onMangaClick: (sourceId: String, mangaUrl: String, mangaTitle: String) -> Unit,
     onNavigateToSource: (sourceId: String) -> Unit,

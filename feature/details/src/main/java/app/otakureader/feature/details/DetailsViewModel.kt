@@ -38,6 +38,7 @@ import javax.inject.Inject
  * ViewModel for Manga Details Screen following MVI pattern
  */
 @HiltViewModel
+@Suppress("LargeClass")
 class DetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
@@ -74,6 +75,7 @@ class DetailsViewModel @Inject constructor(
         observeStaticSettings()
     }
 
+    @Suppress("CyclomaticComplexMethod")
     fun onEvent(event: DetailsContract.Event) {
         when (event) {
             is DetailsContract.Event.Refresh -> refreshData()
@@ -189,6 +191,7 @@ class DetailsViewModel @Inject constructor(
      * Fetch thumbnails for downloaded chapters in the background.
      * Only fetches for chapters that have been downloaded to avoid excessive network requests.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun fetchThumbnailsForDownloadedChapters(chapters: List<Chapter>) {
         viewModelScope.launch {
             val chaptersNeedingThumbnails = chapters.filter { chapter ->
@@ -665,6 +668,7 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    @Suppress("UnusedParameter")
     private fun setDeleteAfterReadOverride(mode: DeleteAfterReadMode) {
         // Delete-after-reading feature has been removed.
         // Provide explicit feedback so the user is aware this action is no longer supported.

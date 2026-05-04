@@ -1,8 +1,8 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
-import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.domain.model.ReadingStats
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.repository.StatisticsRepository
@@ -19,7 +19,6 @@ import javax.inject.Singleton
 @Singleton
 class StatisticsRepositoryImpl @Inject constructor(
     private val readingHistoryDao: ReadingHistoryDao,
-    private val readingStreakDao: ReadingStreakDao,
     private val mangaDao: MangaDao,
 ) : StatisticsRepository {
 
@@ -66,18 +65,10 @@ class StatisticsRepositoryImpl @Inject constructor(
         val todayCount = history.count {
             Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == today
         }
-        val todayMinutes = history.filter {
-            Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == today
-        }.sumOf { it.readDurationMs } / 60000
-        
         val weekCount = history.count {
             val date = Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate()
             !date.isBefore(weekStart) && !date.isAfter(today)
         }
-        val weekMinutes = history.filter {
-            val date = Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate()
-            !date.isBefore(weekStart) && !date.isAfter(today)
-        }.sumOf { it.readDurationMs } / 60000
         
         val readingDays = history
             .map { Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() }

@@ -71,6 +71,7 @@ class BrowseViewModel @Inject constructor(
         observeSavedSearches()
     }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun onEvent(event: BrowseEvent) {
         when (event) {
             is BrowseEvent.SelectSource -> {

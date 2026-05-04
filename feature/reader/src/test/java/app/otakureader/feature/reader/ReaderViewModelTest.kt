@@ -60,6 +60,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass")
 class ReaderViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -85,6 +86,7 @@ class ReaderViewModelTest {
     private lateinit var panelDetectionService: PanelDetectionService
 
     @Before
+    @Suppress("LongMethod")
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         mockkStatic(SystemClock::class)
@@ -475,8 +477,8 @@ class ReaderViewModelTest {
     @Test
     fun `preloadPages falls back to defaults when settings read fails`() = runTest {
         // Simulate settings read failure by returning a throwing flow
-        every { settingsRepository.preloadPagesBefore } returns kotlinx.coroutines.flow.flow { throw RuntimeException("Read failed") }
-        every { settingsRepository.preloadPagesAfter } returns kotlinx.coroutines.flow.flow { throw RuntimeException("Read failed") }
+        every { settingsRepository.preloadPagesBefore } returns kotlinx.coroutines.flow.flow { throw IllegalStateException("Read failed") }
+        every { settingsRepository.preloadPagesAfter } returns kotlinx.coroutines.flow.flow { throw IllegalStateException("Read failed") }
 
         val vm = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -725,6 +727,7 @@ class ReaderViewModelTest {
     }
 
     @Test
+    @Suppress("LongMethod")
     fun `download-ahead enqueues next chapter when near end and pages resolve`() = runTest {
         val currentChapter = Chapter(
             id = chapterId,

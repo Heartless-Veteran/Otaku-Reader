@@ -67,8 +67,6 @@ import app.otakureader.feature.reader.ReaderViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// FAB positioning constants
-private val FAB_BASE_OFFSET = 80.dp
 
 /**
  * Ultimate Reader Screen with full gallery view, tap zones, and all 4 reading modes.
@@ -82,6 +80,7 @@ private val FAB_BASE_OFFSET = 80.dp
  * - Settings persistence
  */
 @Composable
+@Suppress("UnusedParameter")
 fun ReaderScreen(
     mangaId: Long,
     chapterId: Long,

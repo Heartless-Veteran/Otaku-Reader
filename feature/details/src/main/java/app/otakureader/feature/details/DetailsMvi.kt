@@ -1,3 +1,4 @@
+@file:Suppress("MatchingDeclarationName")
 package app.otakureader.feature.details
 
 import app.otakureader.core.common.mvi.UiEffect

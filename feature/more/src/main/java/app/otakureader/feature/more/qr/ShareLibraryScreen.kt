@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.more.qr
 
 import android.graphics.Bitmap

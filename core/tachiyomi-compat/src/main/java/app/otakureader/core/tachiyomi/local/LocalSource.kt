@@ -421,6 +421,7 @@ class LocalSource(
         }
     }
 
+    @Suppress("CognitiveComplexMethod")
     private fun parseOpfMeta(stream: InputStream): LocalMeta? {
         return try {
             val factory = XmlPullParserFactory.newInstance()
@@ -546,6 +547,7 @@ class LocalSource(
      * item's href and then look for images referenced from that XHTML document.
      * For image-only EPUBs (non-standard), we return image manifest items directly.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun parseOpfSpineImagePaths(stream: InputStream): List<String> {
         return try {
             val factory = XmlPullParserFactory.newInstance()

@@ -34,6 +34,7 @@ class ReaderPrefetchDelegate @Inject constructor(
     var cachedPreloadBefore: Int = ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
     var cachedPreloadAfter: Int = ReaderSettingsRepository.DEFAULT_PRELOAD_PAGES
 
+    @Suppress("CognitiveComplexMethod")
     fun preloadPages(
         scope: CoroutineScope,
         pages: List<ReaderPage>,
@@ -76,8 +77,9 @@ class ReaderPrefetchDelegate @Inject constructor(
                         if (!imageUrl.isNullOrBlank()) {
                             try {
                                 imageLoader.enqueue(ImageRequest.Builder(context).data(imageUrl).build())
-                            } catch (e: Exception) {
-                                if (e is CancellationException) throw e
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (_: Exception) {
                             }
                         }
                     }

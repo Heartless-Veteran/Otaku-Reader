@@ -16,7 +16,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +54,6 @@ fun PanelNavigationView(
     modifier: Modifier = Modifier
 ) {
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
-    val scope = rememberCoroutineScope()
 
     // Animated scale and offset for smooth panel transitions
     val scale = remember { Animatable(1f) }
@@ -113,7 +111,6 @@ fun PanelNavigationView(
             onTap = { offset ->
                 // Handle tap for panel navigation
                 val tapX = offset.x / containerSize.width
-                val tapY = offset.y / containerSize.height
 
                 // Navigate to next panel on right tap, previous on left tap
                 if (tapX > 0.7f && currentPanelIndex < totalPanels - 1) {

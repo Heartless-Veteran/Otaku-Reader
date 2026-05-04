@@ -1,12 +1,10 @@
 package app.otakureader.feature.reader.viewmodel.delegate
 
-import android.content.Context
 import android.util.Log
 import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.feature.reader.ReaderState
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -22,7 +20,6 @@ import javax.inject.Inject
  * so the ViewModel does not directly orchestrate WorkManager and DataStore reads.
  */
 class ReaderHistoryDelegate @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val chapterRepository: ChapterRepository,
     private val settingsRepository: ReaderSettingsRepository,
     private val historyScheduler: ReadingHistoryScheduler,
@@ -88,6 +85,7 @@ class ReaderHistoryDelegate @Inject constructor(
      * suspend function so it can be tested directly without going through the
      * `onCleared()` boundary.
      */
+    @Suppress("ThrowsCount")
     suspend fun cleanupOnExit(
         chapterId: Long,
         sessionReadAt: Long,

@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.details
 
 import androidx.compose.foundation.background
@@ -1456,8 +1457,6 @@ private fun EmptyScreen(modifier: Modifier = Modifier) {
         Text(stringResource(R.string.details_no_manga))
     }
 }
-
-private const val DISMISS_BUTTON_BACKGROUND_ALPHA = 0.72f
 
 @Composable
 private fun SourceSuggestionsSection(

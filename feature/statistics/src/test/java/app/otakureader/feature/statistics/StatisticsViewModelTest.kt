@@ -113,7 +113,7 @@ class StatisticsViewModelTest {
     fun init_withError_setsErrorState() = runTest {
         every { getReadingStatsUseCase() } returns flowOf(sampleStats)
         every { statisticsRepository.getReadingGoalProgress(any(), any()) } returns
-            flow { throw RuntimeException("Stats unavailable") }
+            flow { throw IllegalStateException("Stats unavailable") }
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()

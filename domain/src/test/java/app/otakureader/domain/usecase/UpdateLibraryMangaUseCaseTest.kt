@@ -3,7 +3,6 @@ package app.otakureader.domain.usecase
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
-import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.SourceChapter
 import io.mockk.coEvery
@@ -19,7 +18,6 @@ import org.junit.Test
 
 class UpdateLibraryMangaUseCaseTest {
 
-    private lateinit var mangaRepository: MangaRepository
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var sourceRepository: SourceRepository
     private lateinit var useCase: UpdateLibraryMangaUseCase
@@ -41,10 +39,9 @@ class UpdateLibraryMangaUseCaseTest {
 
     @Before
     fun setUp() {
-        mangaRepository = mockk()
         chapterRepository = mockk()
         sourceRepository = mockk()
-        useCase = UpdateLibraryMangaUseCase(mangaRepository, chapterRepository, sourceRepository)
+        useCase = UpdateLibraryMangaUseCase(chapterRepository, sourceRepository)
     }
 
     @Test

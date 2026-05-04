@@ -1,3 +1,4 @@
+@file:Suppress("UnusedPrivateMember")
 package app.otakureader.core.ui.theme
 
 import androidx.compose.foundation.background

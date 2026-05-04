@@ -1,3 +1,4 @@
+@file:Suppress("MatchingDeclarationName")
 package app.otakureader.core.ui.adaptive
 
 import androidx.compose.runtime.Composable

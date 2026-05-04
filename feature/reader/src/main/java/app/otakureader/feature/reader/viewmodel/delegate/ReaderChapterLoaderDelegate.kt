@@ -51,9 +51,9 @@ class ReaderChapterLoaderDelegate @Inject constructor(
                 chapter = chapter,
             )
             Result.Success(manga = manga, chapter = chapter, pages = pages)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            // Cancellation must propagate; everything else surfaces as Failure.
-            if (e is kotlinx.coroutines.CancellationException) throw e
             Result.Failure(e)
         }
     }

@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.core.database.migrations
 
 import androidx.room.migration.Migration
