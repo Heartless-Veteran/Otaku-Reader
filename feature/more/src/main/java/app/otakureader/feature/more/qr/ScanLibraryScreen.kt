@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.more.qr
 
 import android.Manifest
@@ -240,6 +241,7 @@ fun ScanLibraryScreen(
     }
 }
 
+@Suppress("UnusedParameter")
 private fun launchQrScanner(
     context: android.content.Context,
     onResult: (com.journeyapps.barcodescanner.ScanIntentResult) -> Unit

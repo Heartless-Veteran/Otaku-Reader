@@ -3,7 +3,6 @@ package app.otakureader.domain.usecase
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
-import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
@@ -15,7 +14,6 @@ import javax.inject.Inject
  * This will compare fetched chapters with stored chapters and insert any new ones.
  */
 class UpdateLibraryMangaUseCase @Inject constructor(
-    private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val sourceRepository: SourceRepository
 ) {

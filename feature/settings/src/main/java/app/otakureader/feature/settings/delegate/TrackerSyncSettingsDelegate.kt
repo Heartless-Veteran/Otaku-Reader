@@ -79,8 +79,9 @@ class TrackerSyncSettingsDelegate @Inject constructor(
                     sendEffect(SettingsEffect.ShowSnackbar("Failed to login to ${tracker.name}"))
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
             sendEffect(SettingsEffect.ShowSnackbar("Error: ${e.message}"))
         } finally {
             updateState { it.copy(trackingLoginInProgress = false) }

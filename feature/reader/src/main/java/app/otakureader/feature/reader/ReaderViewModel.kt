@@ -1,6 +1,5 @@
 package app.otakureader.feature.reader
 
-import android.content.Context
 import android.os.SystemClock
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -27,7 +26,6 @@ import app.otakureader.feature.reader.viewmodel.delegate.ReaderHistoryDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderPrefetchDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderSettingsLoaderDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -62,8 +60,8 @@ import javax.inject.Inject
  *  | [ReaderDownloadAheadDelegate]  | Download-ahead trigger                        |
  */
 @HiltViewModel
+@Suppress("LargeClass")
 class ReaderViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val pageBookmarkRepository: PageBookmarkRepository,
@@ -201,6 +199,7 @@ class ReaderViewModel @Inject constructor(
     /**
      * Load chapter pages and initialize reader state.
      */
+    @Suppress("LongMethod")
     private fun loadChapter() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }

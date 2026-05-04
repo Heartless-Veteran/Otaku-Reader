@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import app.otakureader.domain.model.ReadingDirection
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

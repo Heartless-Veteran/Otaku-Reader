@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.core.database.dao
 
 import androidx.room.Room

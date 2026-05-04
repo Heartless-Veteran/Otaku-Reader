@@ -382,6 +382,7 @@ class DownloadManager @Inject constructor(
     /**
      * Launches a download job for the given chapter. Must be called outside [mutex] lock.
      */
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     private suspend fun launchDownloadJob(chapterId: Long, request: ChapterDownloadRequest) {
         mutex.withLock {
             // Double-check we haven't exceeded the limit

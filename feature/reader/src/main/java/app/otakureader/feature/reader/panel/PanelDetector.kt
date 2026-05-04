@@ -105,8 +105,6 @@ class PanelDetector @Inject constructor() {
         for (y in 1 until height - 1) {
             for (x in 1 until width - 1) {
                 val idx = y * width + x
-                val current = grayscale[idx]
-
                 // Calculate gradient in x and y directions
                 val gx = kotlin.math.abs(grayscale[idx + 1] - grayscale[idx - 1])
                 val gy = kotlin.math.abs(grayscale[idx + width] - grayscale[idx - width])

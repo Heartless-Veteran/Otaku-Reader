@@ -96,6 +96,7 @@ class SearchLibraryMangaUseCase @Inject constructor(
         )
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun matchesCriteria(manga: Manga, criteria: SearchCriteria): Boolean {
         val searchableText = buildString {
             append(manga.title.lowercase())

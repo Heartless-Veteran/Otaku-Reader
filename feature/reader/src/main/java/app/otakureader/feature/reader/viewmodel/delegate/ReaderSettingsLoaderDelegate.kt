@@ -37,6 +37,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
      * delegate's cache is the canonical place those values live now that the
      * prefetch concern has been split out of the ViewModel.
      */
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod", "InstanceOfCheckForException")
     suspend fun load(current: ReaderState, manga: Manga?): ReaderState = coroutineScope {
         val modeD = async { settingsRepository.readerMode.first() }
         val brightnessD = async { settingsRepository.brightness.first() }

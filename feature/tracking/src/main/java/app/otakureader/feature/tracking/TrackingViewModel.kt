@@ -48,6 +48,7 @@ class TrackingViewModel @Inject constructor(
     /** Tracks the current entry-observation job so it can be cancelled on re-entry. */
     private var observeEntriesJob: Job? = null
 
+    @Suppress("CyclomaticComplexMethod")
     fun onEvent(event: TrackingEvent) {
         when (event) {
             is TrackingEvent.LoadTrackers -> loadTrackers(event.mangaId, event.mangaTitle)

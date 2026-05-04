@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
     // Crash report from the previous run – shown once, then cleared from SharedPreferences
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
+    @Suppress("LongMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

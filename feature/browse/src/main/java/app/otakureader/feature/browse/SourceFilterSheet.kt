@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.browse
 
 import androidx.compose.foundation.clickable

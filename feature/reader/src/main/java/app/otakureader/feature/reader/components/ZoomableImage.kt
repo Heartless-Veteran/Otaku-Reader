@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.reader.components
 
 import androidx.compose.animation.core.Animatable
@@ -89,7 +90,7 @@ fun ZoomableImage(
             .pointerInput(imageUrl, minScale, maxScale) {
                 coroutineScope {
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
+                        awaitFirstDown(requireUnconsumed = false)
 
                         do {
                             val event = awaitPointerEvent()
@@ -123,6 +124,7 @@ fun ZoomableImage(
                                             zoomState.onPan(panChange)
                                         }
                                     }
+                                    onZoomChange?.invoke(newScale)
 
                                     event.changes.forEach { it.consume() }
                                 }

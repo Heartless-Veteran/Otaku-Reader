@@ -1,5 +1,3 @@
-import com.github.jk1.license.filter.LicenseBundleNormalizer
-import com.github.jk1.license.render.InventoryMarkdownReportRenderer
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -7,7 +5,6 @@ plugins {
     alias(libs.plugins.otakureader.android.application)
     alias(libs.plugins.otakureader.android.hilt)
     alias(libs.plugins.kotlin.serialization)
-    alias(libs.plugins.license.report)
     alias(libs.plugins.cyclonedx.bom)
 }
 
@@ -66,13 +63,45 @@ tasks.cyclonedxBom {
     // Output defaults to build/reports/cyclonedx/bom.json
 }
 
-licenseReport {
-    outputDir = "${rootProject.projectDir}/docs"
-    renderers = arrayOf(InventoryMarkdownReportRenderer("DEPENDENCY_LICENSES.md", "Otaku Reader Dependencies"))
-    filters = arrayOf(LicenseBundleNormalizer())
-    // Exclude first-party modules from the license report
-    excludeGroups = arrayOf("app.otakureader")
-    configurations = arrayOf("releaseRuntimeClasspath")
+// Custom license report task — replaces the jk1 plugin which cannot resolve
+// Android library variants under AGP 9 + Gradle 9.5 without ambiguity errors.
+// Uses metadata-only resolution (resolutionResult.allComponents) so no artifact
+// files are downloaded and no variant-selection ambiguity occurs.
+tasks.register("generateLicenseReport") {
+    group = "reporting"
+    description = "Generates docs/DEPENDENCY_LICENSES.md from the release dependency graph"
+
+    val output = rootProject.file("docs/DEPENDENCY_LICENSES.md")
+    outputs.file(output)
+
+    doLast {
+        val components = configurations.getByName("releaseRuntimeClasspath")
+            .incoming
+            .resolutionResult
+            .allComponents
+            .mapNotNull { it.moduleVersion }
+            .filter { it.group != "app.otakureader" }
+            .sortedBy { "${it.group}:${it.name}" }
+            .distinctBy { "${it.group}:${it.name}" }
+
+        val md = buildString {
+            appendLine("# Otaku Reader — Dependency Licenses")
+            appendLine()
+            appendLine(
+                "Auto-generated from the `releaseRuntimeClasspath` dependency graph. " +
+                    "For full license texts see each library's repository."
+            )
+            appendLine()
+            appendLine("| Artifact | Version |")
+            appendLine("|:---------|:--------|")
+            components.forEach { mv ->
+                appendLine("| `${mv.group}:${mv.name}` | `${mv.version}` |")
+            }
+        }
+        output.parentFile.mkdirs()
+        output.writeText(md)
+        logger.lifecycle("License report written to ${output.relativeTo(rootProject.projectDir)}")
+    }
 }
 
 dependencies {

@@ -70,6 +70,7 @@ class TachiyomiManifestParser {
     /**
      * Parse extension manifest from XML string
      */
+    @Suppress("CognitiveComplexMethod")
     fun parseManifestXml(manifestXml: String): ExtensionInfo {
         val factory = XmlPullParserFactory.newInstance()
         val parser = factory.newPullParser()
@@ -143,6 +144,7 @@ class TachiyomiManifestParser {
      * - The `className` field is validated to contain only valid Java identifier
      *   characters, preventing class-injection attacks.
      */
+    @Suppress("LoopWithTooManyJumpStatements")
     private fun parseSourcesJson(json: String): List<SourceInfo> {
         val sources = mutableListOf<SourceInfo>()
 
@@ -387,12 +389,9 @@ class TachiyomiManifestParser {
             // Read string pool chunk header
             val chunkType = readUInt16(bytes, offset)
             if (chunkType == 0x0001) { // String pool type
-                val chunkSize = readUInt32(bytes, offset + 4)
                 val stringCount = readUInt32(bytes, offset + 8)
-                val styleCount = readUInt32(bytes, offset + 12)
                 val flags = readUInt32(bytes, offset + 16)
                 val stringsStart = readUInt32(bytes, offset + 20)
-                val stylesStart = readUInt32(bytes, offset + 24)
 
                 // Read string offsets
                 val stringOffsets = (0 until stringCount.toInt()).map { i ->

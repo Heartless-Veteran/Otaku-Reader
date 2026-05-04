@@ -15,6 +15,7 @@ import app.otakureader.core.database.migrations.MIGRATION_19_20
 import app.otakureader.core.database.migrations.MIGRATION_20_21
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test

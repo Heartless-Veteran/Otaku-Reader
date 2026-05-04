@@ -469,9 +469,6 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    companion object {
-    }
-
     private fun Manga.toLibraryItem(
         isDownloaded: Boolean = false,
         hasTracking: Boolean = false

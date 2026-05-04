@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.details
 
 import androidx.compose.animation.AnimatedContent
@@ -157,6 +158,7 @@ fun ChapterList(
 }
 
 @Composable
+@Suppress("UnusedParameter")
 private fun ChapterListHeader(
     chapterCount: Int,
     selectedCount: Int,

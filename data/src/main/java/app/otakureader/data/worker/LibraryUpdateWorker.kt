@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.data.worker
 
 import android.content.Context
@@ -43,6 +44,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences
 ) : CoroutineWorker(context, workerParams) {
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     override suspend fun doWork(): Result {
         return try {
             // Check if update should only run on Wi-Fi
