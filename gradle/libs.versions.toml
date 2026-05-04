@@ -83,7 +83,7 @@ rxandroid = "1.2.1"
 desugar-jdk-libs = "2.1.5"
 
 # License reporting
-license-report = "2.9.1"
+license-report = "2.8"
 
 # SBOM generation
 cyclonedx-bom = "1.9.0"
