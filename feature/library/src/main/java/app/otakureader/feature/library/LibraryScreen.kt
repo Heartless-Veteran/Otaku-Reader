@@ -466,8 +466,6 @@ private fun EmptyLibraryMessage(
     }
 }
 
-private const val DISMISS_BUTTON_BACKGROUND_ALPHA = 0.72f
-
 @Composable
 private fun CategoryFilterChips(
     categories: List<CategoryItem>,

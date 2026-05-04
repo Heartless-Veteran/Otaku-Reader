@@ -51,12 +51,12 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
             ACTION_EXTENSION_ADDED,
             -> {
                 if (isReplacing(intent)) return
-                launchAsync { handlePackageAdded(context, packageName) }
+                launchAsync { handlePackageAdded(packageName) }
             }
 
             Intent.ACTION_PACKAGE_REPLACED,
             ACTION_EXTENSION_REPLACED,
-            -> launchAsync { handlePackageAdded(context, packageName) }
+            -> launchAsync { handlePackageAdded(packageName) }
 
             Intent.ACTION_PACKAGE_REMOVED,
             ACTION_EXTENSION_REMOVED,
@@ -88,7 +88,7 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
     private fun getPackageNameFromIntent(intent: Intent): String? =
         intent.data?.schemeSpecificPart
 
-    private suspend fun handlePackageAdded(context: Context, packageName: String) {
+    private suspend fun handlePackageAdded(packageName: String) {
         try {
             val loadResult = extensionLoader.loadExtensionFromPkgName(packageName)
             if (loadResult is ExtensionLoadResult.Success) {

@@ -107,6 +107,7 @@ fun SmartPanelsReader(
 }
 
 @Composable
+@Suppress("UnusedParameter")
 private fun SmartPanelView(
     page: ReaderPage,
     currentPanel: Int,

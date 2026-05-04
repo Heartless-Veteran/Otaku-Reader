@@ -138,6 +138,7 @@ class ReadingBehaviorTracker @Inject constructor() {
      * This allows per-manga behavior tracking in the future.
      * Currently returns global behavior.
      */
+    @Suppress("UnusedParameter")
     fun getBehaviorForManga(mangaId: Long): ReadingBehavior {
         // For now, return global behavior
         // In the future, we could track per-manga behavior

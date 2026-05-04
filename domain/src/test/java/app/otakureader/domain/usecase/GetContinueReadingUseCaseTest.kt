@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.domain.usecase
 
 import app.otakureader.domain.model.ContinueReadingItem

@@ -415,6 +415,7 @@ private fun MangaGridWithBadge(title: String, unreadCount: Int) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("UnusedParameter")
 private fun NormalTopBar(
     onSearchClick: () -> Unit,
     onMoreClick: () -> Unit

@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -136,9 +135,6 @@ fun PanelAwareReader(
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
     val alpha = remember { Animatable(1f) }
-
-    // Track drag state for swipe gestures
-    var dragOffset by remember { mutableFloatStateOf(0f) }
 
     // Animate to current panel when it changes
     LaunchedEffect(validPanelIndex, containerSize) {
@@ -384,6 +380,7 @@ private fun TapZones(
  * Overlay with panel navigation controls.
  */
 @Composable
+@Suppress("UnusedParameter")
 private fun PanelReaderOverlay(
     currentPanel: Int,
     totalPanels: Int,

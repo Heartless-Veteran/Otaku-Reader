@@ -5,7 +5,6 @@ import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.MangaDao
-import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
@@ -22,14 +21,12 @@ import javax.inject.Inject
  * @param mangaDao Manga DAO
  * @param chapterDao Chapter DAO
  * @param categoryDao Category DAO
- * @param mangaCategoryDao Manga-Category junction DAO
  */
 class TachiyomiBackupImporter @Inject constructor(
     private val database: OtakuReaderDatabase,
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
-    private val mangaCategoryDao: MangaCategoryDao
 ) {
 
     private val json = Json {
@@ -43,6 +40,7 @@ class TachiyomiBackupImporter @Inject constructor(
      * @param backupJson Tachiyomi backup JSON string
      * @return ImportResult with statistics
      */
+    @Suppress("LongMethod")
     suspend fun importBackup(backupJson: String): ImportResult {
         val backup = json.decodeFromString<TachiyomiBackup>(backupJson)
 

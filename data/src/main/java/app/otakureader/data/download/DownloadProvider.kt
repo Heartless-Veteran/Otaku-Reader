@@ -288,6 +288,7 @@ object DownloadProvider {
         return dir.deleteRecursively()
     }
 
+    @Suppress("CyclomaticComplexMethod", "CognitiveComplexMethod")
     fun migrateChapterDownload(
         root: File,
         fromSourceName: String,

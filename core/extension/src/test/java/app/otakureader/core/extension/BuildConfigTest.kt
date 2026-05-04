@@ -1,7 +1,9 @@
 package app.otakureader.core.extension
 
 import org.junit.Test
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 
 /**
  * Tests for BuildConfig to ensure DEBUG flag is correctly generated and behaves as expected.

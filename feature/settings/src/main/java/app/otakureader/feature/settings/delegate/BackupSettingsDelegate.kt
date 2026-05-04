@@ -48,6 +48,7 @@ class BackupSettingsDelegate @Inject constructor(
         }
     }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "InstanceOfCheckForException")
     suspend fun handleEvent(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,
@@ -59,7 +60,7 @@ class BackupSettingsDelegate @Inject constructor(
             updateState { it.copy(isRestoreInProgress = true) }
             try {
                 val json = context.contentResolver.openInputStream(event.uri)?.use { it.readBytes().decodeToString() }
-                    ?: throw IllegalStateException("Failed to read backup file")
+                    ?: error("Failed to read backup file")
                 val result = tachiyomiImporter.importBackup(json)
                 sendEffect(SettingsEffect.ShowSnackbar(
                     "Imported ${result.mangaImported} manga, ${result.chaptersImported} chapters, ${result.categoriesImported} categories"

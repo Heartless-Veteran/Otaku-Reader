@@ -78,6 +78,7 @@ class AppearanceSettingsDelegate @Inject constructor(
         }
     }
 
+    @Suppress("UnusedParameter")
     suspend fun handleEvent(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,

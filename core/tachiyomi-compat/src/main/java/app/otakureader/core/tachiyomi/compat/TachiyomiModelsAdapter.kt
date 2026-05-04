@@ -69,6 +69,7 @@ object TachiyomiModelsAdapter {
     /**
      * Convert Tachiyomi SPage to Otaku Reader Page
      */
+    @Suppress("UnusedParameter")
     fun toPage(sPage: eu.kanade.tachiyomi.source.model.Page, chapterId: Long, index: Int): app.otakureader.sourceapi.Page {
         return app.otakureader.sourceapi.Page(
             index = index,

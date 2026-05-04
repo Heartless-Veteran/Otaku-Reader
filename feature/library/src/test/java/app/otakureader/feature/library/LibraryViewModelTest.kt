@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.library
 
 import app.otakureader.core.preferences.GeneralPreferences
@@ -298,7 +299,7 @@ class LibraryViewModelTest {
     @Test
     fun loadLibrary_onError_setsErrorState() = runTest {
         every { getLibraryManga() } returns kotlinx.coroutines.flow.flow {
-            throw RuntimeException("Database error")
+            throw IllegalStateException("Database error")
         }
 
         val viewModel = createViewModel()

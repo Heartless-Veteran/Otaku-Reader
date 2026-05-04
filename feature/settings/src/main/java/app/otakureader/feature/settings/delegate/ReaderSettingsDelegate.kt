@@ -18,6 +18,7 @@ class ReaderSettingsDelegate @Inject constructor(
     private val readerSettingsRepository: ReaderSettingsRepository,
 ) {
 
+    @Suppress("LongMethod")
     fun startObserving(
         scope: CoroutineScope,
         updateState: ((SettingsState) -> SettingsState) -> Unit,
@@ -141,6 +142,7 @@ class ReaderSettingsDelegate @Inject constructor(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     suspend fun handleEvent(
         event: SettingsEvent,
         @Suppress("UNUSED_PARAMETER") sendEffect: suspend (SettingsEffect) -> Unit,

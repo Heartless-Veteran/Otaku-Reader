@@ -80,6 +80,7 @@ class MangaUpdatesTracker(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught", "SwallowedException")
     override suspend fun update(entry: TrackEntry): TrackEntry {
         val listId = toRemoteStatus(entry.status)
         val request = MangaUpdatesListRequest(

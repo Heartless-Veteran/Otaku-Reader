@@ -323,11 +323,10 @@ class SourceRepositoryImpl @Inject constructor(
                 Result.success(chapters)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: InterruptedIOException) {
+                Result.failure(e)
             } catch (e: Exception) {
-                // Don't record transient I/O interruptions (e.g. socket timeouts) as source failures
-                if (e !is InterruptedIOException) {
-                    healthMonitor.recordFailure(sourceId, e)
-                }
+                healthMonitor.recordFailure(sourceId, e)
                 Result.failure(e)
             }
         }

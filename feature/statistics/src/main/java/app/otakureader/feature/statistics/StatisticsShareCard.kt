@@ -53,7 +53,6 @@ fun StatisticsShareCard(
     modifier: Modifier = Modifier
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
-    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val surfaceColor = MaterialTheme.colorScheme.surface
 
     Card(

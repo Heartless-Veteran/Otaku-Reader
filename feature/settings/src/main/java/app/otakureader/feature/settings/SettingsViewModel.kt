@@ -203,8 +203,9 @@ class SettingsViewModel @Inject constructor(
                 } else {
                     _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_cache_failed)))
                 }
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_cache_failed)))
             }
         }
@@ -215,8 +216,9 @@ class SettingsViewModel @Inject constructor(
             try {
                 chapterRepository.clearAllHistory()
                 _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_history_success)))
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_history_failed)))
             }
         }
