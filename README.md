@@ -41,6 +41,9 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - **No AI in core:** No ML models, no data mining. Just manga.
 - **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachiyomi backup → reading immediately.
 
+### Built From Scratch
+This is not a fork. Otaku Reader was written from the ground up by a single developer — the core app, UI, and architecture are original work. The only third-party component is the extension system, which enables compatibility with existing source repositories. Everything else is homegrown. Bugs and rough edges are expected; this is a work in progress.
+
 ---
 
 ## 🚀 Features
