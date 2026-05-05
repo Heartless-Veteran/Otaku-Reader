@@ -1,12 +1,9 @@
 package app.otakureader.domain.model
 
-import androidx.compose.runtime.Immutable
-
 /**
  * Represents a manga the user is actively reading, shown in the
  * "Continue Reading" carousel on the Library screen.
  */
-@Immutable
 data class ContinueReadingItem(
     val mangaId: Long,
     val chapterId: Long,

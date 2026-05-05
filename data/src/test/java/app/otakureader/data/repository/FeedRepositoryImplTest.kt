@@ -330,11 +330,14 @@ class FeedRepositoryImplTest {
     @Test
     fun `refreshFeed enqueues FeedRefreshWorker one-time job`() = runTest {
         mockkObject(FeedRefreshWorker.Companion)
-        every { FeedRefreshWorker.enqueueOneTime(any()) } just Runs
+        try {
+            every { FeedRefreshWorker.enqueueOneTime(any()) } just Runs
 
-        repository.refreshFeed()
+            repository.refreshFeed()
 
-        verify { FeedRefreshWorker.enqueueOneTime(context) }
-        unmockkObject(FeedRefreshWorker.Companion)
+            verify { FeedRefreshWorker.enqueueOneTime(context) }
+        } finally {
+            unmockkObject(FeedRefreshWorker.Companion)
+        }
     }
 }

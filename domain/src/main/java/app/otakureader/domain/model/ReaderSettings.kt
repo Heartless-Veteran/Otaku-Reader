@@ -47,7 +47,6 @@ enum class TapZoneAction {
 /**
  * Configuration for tap zones on the reader screen.
  */
-@Immutable
 data class TapZoneConfig(
     /** Width percentage for left zone (0.0 - 1.0) */
     val leftZoneWidth: Float = 0.25f,
