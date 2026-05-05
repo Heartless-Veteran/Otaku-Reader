@@ -53,7 +53,7 @@ Shared infrastructure lives in `core/` sub-modules:
 - `core/tachiyomi-compat` — bridges Tachiyomi APKs to `source-api` interfaces
 - `source-api` — pure Kotlin contract (`Source`, `HttpSource`, `SManga`, `SChapter`, `Page`, `MangasPage`, `Filter`). No Android deps.
 
-Dependency rule: `domain` has zero deps. `data` depends on `domain`. `feature/*` depends on `domain` + `core/*`. No feature module may depend on another feature module.
+Dependency rule: `domain` has zero deps. `data` depends on `domain` + `core/*`. `feature/*` depends on `domain` + `core/*`. No feature module may depend on another feature module.
 
 ## MVI Pattern
 
