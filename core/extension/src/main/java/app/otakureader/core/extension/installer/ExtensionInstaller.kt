@@ -194,7 +194,11 @@ class ExtensionInstaller(
                     result
                 }
                 is ExtensionLoadResult.Untrusted -> {
-                    // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
+                    // Note: ExtensionLoader CAN return Untrusted for shared extensions whose
+                    // signature is not in TrustedSignatureStore. However, install() always calls
+                    // loader.loadExtension(apkFile.absolutePath, isShared = false), bypassing the
+                    // trust check. This branch is unreachable in practice but is kept defensively
+                    // for code clarity and in case the trust model changes in the future.
                     // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
                     _installationState.value = InstallationState.Error(
                         "Extension is not trusted. Please verify its signature before installing.",
@@ -281,7 +285,11 @@ class ExtensionInstaller(
                         result
                     }
                     is ExtensionLoadResult.Untrusted -> {
-                        // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
+                        // Note: ExtensionLoader CAN return Untrusted for shared extensions whose
+                        // signature is not in TrustedSignatureStore. However, install() always calls
+                        // loader.loadExtension(apkFile.absolutePath, isShared = false), bypassing the
+                        // trust check. This branch is unreachable in practice but is kept defensively
+                        // for code clarity and in case the trust model changes in the future.
                         // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
                         _installationState.value = InstallationState.Error(
                             "Extension is not trusted. Please verify its signature before updating.",

@@ -90,7 +90,9 @@ Never mutate state directly. Never use `LiveData`. Never use `GlobalScope`.
 - All `@Binds`/`@Provides` must have matching `@InstallIn` scope
 - Run `./gradlew :app:kspDebugKotlin` to catch missing bindings at compile time without running full tests
 
-Two orphan interfaces in `domain/repository/` (as of last audit): `TrackerSyncRepository` (no impl — delete it) and `ExtensionManagementRepository` (no binding — wire to `SourceRepositoryImpl`).
+**Resolved (as of latest audit):**
+- `TrackerSyncRepository` → implemented by `TrackerSyncRepositoryImpl` at `data/tracking/repository/TrackerSyncRepositoryImpl.kt`, bound via `data/tracking/di/TrackingModule.kt`
+- `ExtensionManagementRepository` → bound to `SourceRepositoryImpl` in `data/di/RepositoryModule.kt` (line 106)
 
 ## Room Database Rules
 
