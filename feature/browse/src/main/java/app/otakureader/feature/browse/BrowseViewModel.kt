@@ -18,6 +18,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -79,7 +80,9 @@ class BrowseViewModel @Inject constructor(
                     it.copy(
                         currentSourceId = event.sourceId,
                         availableFilters = FilterList(),
-                        activeFilters = FilterList()
+                        activeFilters = FilterList(),
+                        hasSearchResults = false,
+                        searchResults = emptyList()
                     )
                 }
                 loadPopularManga(event.sourceId)
@@ -90,7 +93,12 @@ class BrowseViewModel @Inject constructor(
                 navigateToDetail(sourceId, event.manga.url)
             }
             is BrowseEvent.OnSearchQueryChange -> {
-                _state.update { it.copy(searchQuery = event.query) }
+                _state.update {
+                    it.copy(
+                        searchQuery = event.query,
+                        hasSearchResults = if (event.query.isBlank()) false else it.hasSearchResults
+                    )
+                }
             }
             is BrowseEvent.Search -> performSearch()
             is BrowseEvent.LoadNextPage -> loadNextPage()
@@ -181,7 +189,7 @@ class BrowseViewModel @Inject constructor(
         val sourceId = _state.value.currentSourceId ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isSearching = true, error = null) }
+            _state.update { it.copy(isSearching = true, hasSearchResults = true, error = null) }
             searchMangaUseCase(sourceId, query, 1, _state.value.activeFilters)
                 .onSuccess { mangaPage ->
                     _state.update {
@@ -197,6 +205,7 @@ class BrowseViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSearching = false,
+                            hasSearchResults = false,
                             error = error.message ?: "Search failed"
                         )
                     }
@@ -339,13 +348,14 @@ class BrowseViewModel @Inject constructor(
     // --- Saved Searches ---
 
     private fun observeSavedSearches() {
-        val currentSourceId = _state.value.currentSourceId
-        feedRepository.getSavedSearches()
-            .map { searches ->
-                if (currentSourceId != null) searches.filter { it.sourceId.toString() == currentSourceId }
-                else searches
-            }
-            .onEach { searches -> _state.update { it.copy(savedSearches = searches) } }
+        combine(
+            feedRepository.getSavedSearches(),
+            _state.map { it.currentSourceId }.distinctUntilChanged()
+        ) { searches, sourceId ->
+            if (sourceId != null) searches.filter { it.sourceId.toString() == sourceId }
+            else searches
+        }
+            .onEach { filtered -> _state.update { it.copy(savedSearches = filtered) } }
             .launchIn(viewModelScope)
     }
 

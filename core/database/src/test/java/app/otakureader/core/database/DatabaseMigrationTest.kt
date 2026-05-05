@@ -13,6 +13,8 @@ import app.otakureader.core.database.migrations.MIGRATION_17_18
 import app.otakureader.core.database.migrations.MIGRATION_18_19
 import app.otakureader.core.database.migrations.MIGRATION_19_20
 import app.otakureader.core.database.migrations.MIGRATION_20_21
+import app.otakureader.core.database.migrations.MIGRATION_10_11
+import app.otakureader.core.database.migrations.MIGRATION_11_12
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -117,6 +119,61 @@ class DatabaseMigrationTest {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
         assertTrue("opds_servers must exist after 9→10", "opds_servers" in db.tableNames())
+        db.close()
+    }
+
+    // ── Migration 10 → 11 ───────────────────────────────────────────────────
+    // Adds: chapters.version (INTEGER NOT NULL DEFAULT 0)
+    //       chapters.is_syncing (INTEGER NOT NULL DEFAULT 0)
+
+    @Test
+    fun migration10To11_addsVersionAndIsSyncingToChapters() {
+        helper.createDatabase(TEST_DB, 9).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
+        assertFalse("version must NOT exist at v10", "version" in db.columnNames("chapters"))
+        assertFalse("is_syncing must NOT exist at v10", "is_syncing" in db.columnNames("chapters"))
+        MIGRATION_10_11.migrate(db)
+        val cols = db.columnNames("chapters")
+        assertTrue("chapters.version must exist after 10→11", "version" in cols)
+        assertTrue("chapters.is_syncing must exist after 10→11", "is_syncing" in cols)
+        db.close()
+    }
+
+    @Test
+    fun migration10To11_versionAndIsSyncingDefaultToZero() {
+        helper.createDatabase(TEST_DB, 9).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
+        MIGRATION_10_11.migrate(db)
+        assertEquals("chapters.version default must be 0", "0", db.columnDefaultValue("chapters", "version"))
+        assertEquals("chapters.is_syncing default must be 0", "0", db.columnDefaultValue("chapters", "is_syncing"))
+        db.close()
+    }
+
+    // ── Migration 11 → 12 ───────────────────────────────────────────────────
+    // Adds: manga.last_modified_at (INTEGER DEFAULT 0)
+    //       chapters.last_modified_at (INTEGER DEFAULT 0)
+
+    @Test
+    fun migration11To12_addsLastModifiedAtToMangaAndChapters() {
+        helper.createDatabase(TEST_DB, 9).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
+        MIGRATION_10_11.migrate(db)
+        assertFalse("manga.last_modified_at must NOT exist at v11", "last_modified_at" in db.columnNames("manga"))
+        assertFalse("chapters.last_modified_at must NOT exist at v11", "last_modified_at" in db.columnNames("chapters"))
+        MIGRATION_11_12.migrate(db)
+        assertTrue("manga.last_modified_at must exist after 11→12", "last_modified_at" in db.columnNames("manga"))
+        assertTrue("chapters.last_modified_at must exist after 11→12", "last_modified_at" in db.columnNames("chapters"))
+        db.close()
+    }
+
+    @Test
+    fun migration11To12_lastModifiedAtDefaultsToZero() {
+        helper.createDatabase(TEST_DB, 9).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
+        MIGRATION_10_11.migrate(db)
+        MIGRATION_11_12.migrate(db)
+        assertEquals("manga.last_modified_at default must be 0", "0", db.columnDefaultValue("manga", "last_modified_at"))
+        assertEquals("chapters.last_modified_at default must be 0", "0", db.columnDefaultValue("chapters", "last_modified_at"))
         db.close()
     }
 
@@ -270,7 +327,12 @@ class DatabaseMigrationTest {
         assertTrue("page_bookmarks must exist after full chain", "page_bookmarks" in tables)
         assertTrue("tracker_sync_state must exist after full chain", "tracker_sync_state" in tables)
         assertTrue("contentRating must exist in manga after full chain", "contentRating" in db.columnNames("manga"))
-        assertTrue("userNotes must exist in chapters after full chain", "userNotes" in db.columnNames("chapters"))
+        assertTrue("last_modified_at must exist in manga after full chain", "last_modified_at" in db.columnNames("manga"))
+        val chapterCols = db.columnNames("chapters")
+        assertTrue("userNotes must exist in chapters after full chain", "userNotes" in chapterCols)
+        assertTrue("version must exist in chapters after full chain", "version" in chapterCols)
+        assertTrue("is_syncing must exist in chapters after full chain", "is_syncing" in chapterCols)
+        assertTrue("last_modified_at must exist in chapters after full chain", "last_modified_at" in chapterCols)
         db.close()
     }
 }
@@ -304,4 +366,15 @@ private fun SupportSQLiteDatabase.indexNames(table: String): Set<String> {
         while (cursor.moveToNext()) names.add(cursor.getString(nameIdx))
     }
     return names
+}
+
+private fun SupportSQLiteDatabase.columnDefaultValue(table: String, column: String): String? {
+    query("PRAGMA table_info(`$table`)").use { cursor ->
+        val nameIdx = cursor.getColumnIndex("name")
+        val dfltIdx = cursor.getColumnIndex("dflt_value")
+        while (cursor.moveToNext()) {
+            if (cursor.getString(nameIdx) == column) return cursor.getString(dfltIdx)
+        }
+    }
+    return null
 }

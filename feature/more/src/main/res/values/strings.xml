@@ -53,4 +53,8 @@
 
     <!-- Version footer -->
     <string name="more_version_label">Otaku Reader v%s</string>
+
+    <!-- Update Errors -->
+    <string name="more_update_errors">Update Errors</string>
+    <string name="more_update_errors_desc">Review and clear update failures</string>
 </resources>

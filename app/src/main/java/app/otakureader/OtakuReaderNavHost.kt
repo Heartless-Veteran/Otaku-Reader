@@ -377,6 +377,9 @@ fun OtakuReaderNavHost(
             onNavigateToScanLibrary = {
                 navController.navigate(Route.ScanLibrary)
             },
+            onNavigateToUpdateErrors = {
+                navController.navigate(Route.Updates)
+            },
         )
 
         // QR Library Sharing

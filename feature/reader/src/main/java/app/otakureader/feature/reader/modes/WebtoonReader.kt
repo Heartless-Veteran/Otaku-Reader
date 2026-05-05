@@ -47,6 +47,7 @@ fun WebtoonReader(
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
     dataSaverEnabled: Boolean = false,
     pageGapDp: Int = 4,
+    disableZoomOut: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState(
@@ -143,6 +144,7 @@ fun WebtoonReader(
                     dataSaverEnabled = dataSaverEnabled,
                     onTap = onTap,
                     decoderFactory = webtoonDecoderFactory,
+                    minScale = if (disableZoomOut) 1f else 0.5f,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

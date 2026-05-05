@@ -18,7 +18,8 @@ enum class LibraryFilterMode {
     UNREAD,
     COMPLETED,
     DROPPED,
-    TRACKING
+    TRACKING,
+    READING_LIST
 }
 
 data class LibraryState(
@@ -40,6 +41,10 @@ data class LibraryState(
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
     val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
+    // Reading list filter
+    val readingLists: List<ReadingListFilterItem> = emptyList(),
+    val filterReadingListId: Long? = null,
+    val readingListMangaIds: Set<Long> = emptySet(),
     // Continue Reading
     val continueReadingItems: List<ContinueReadingItem> = emptyList(),
     // Daily reading goal progress (shown in header when a goal is set)
@@ -71,6 +76,12 @@ data class CategoryItem(
     val count: Int
 )
 
+data class ReadingListFilterItem(
+    val id: Long,
+    val name: String,
+    val count: Int
+)
+
 sealed class LibraryEvent {
     data object Refresh : LibraryEvent()
     data class OnMangaClick(val mangaId: Long) : LibraryEvent()
@@ -92,6 +103,8 @@ sealed class LibraryEvent {
     data object DownloadSelected : LibraryEvent()
     // Continue Reading
     data class ContinueReadingClick(val mangaId: Long, val chapterId: Long) : LibraryEvent()
+    // Reading list filter (null = clear/show all)
+    data class SetFilterReadingList(val listId: Long?) : LibraryEvent()
 }
 
 sealed class LibraryEffect {

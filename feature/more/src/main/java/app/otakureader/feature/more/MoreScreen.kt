@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
@@ -65,6 +66,7 @@ fun MoreScreen(
     onNavigateToFeed: () -> Unit = {},
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
+    onNavigateToUpdateErrors: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -173,6 +175,17 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_downloads),
                 supporting = stringResource(R.string.more_downloads_desc),
                 onClick = onNavigateToDownloads
+            )
+
+            HorizontalDivider()
+
+            MoreListItem(
+                icon = Icons.Default.ErrorOutline,
+                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+                iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                headline = stringResource(R.string.more_update_errors),
+                supporting = stringResource(R.string.more_update_errors_desc),
+                onClick = onNavigateToUpdateErrors
             )
 
             HorizontalDivider()

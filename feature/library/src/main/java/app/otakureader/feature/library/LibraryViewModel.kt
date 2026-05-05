@@ -10,6 +10,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
@@ -31,6 +32,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -51,6 +53,7 @@ class LibraryViewModel @Inject constructor(
     private val getContinueReading: GetContinueReadingUseCase,
     private val readingGoalPreferences: ReadingGoalPreferences,
     private val statisticsRepository: StatisticsRepository,
+    private val readingListRepository: ReadingListRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -70,6 +73,7 @@ class LibraryViewModel @Inject constructor(
         observeNewUpdatesCount()
         observeContinueReading()
         observeGoalProgress()
+        observeReadingLists()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -92,6 +96,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.RemoveSelectedFromLibrary -> removeSelectedFromLibrary()
             is LibraryEvent.DownloadSelected -> downloadSelected()
             is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId, event.chapterId)
+            is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
         }
     }
 
@@ -215,7 +220,9 @@ class LibraryViewModel @Inject constructor(
         val filterSourceId: Long?,
         val showNsfw: Boolean,
         val selectedCategory: Long?,
-        val categoryMangaIds: Set<Long> = emptySet() // Manga IDs in the selected category
+        val categoryMangaIds: Set<Long> = emptySet(),
+        val filterReadingListId: Long? = null,
+        val readingListMangaIds: Set<Long> = emptySet()
     )
 
     private fun observeFilteredItems() {
@@ -233,10 +240,24 @@ class LibraryViewModel @Inject constructor(
                 }
         }
 
-        // Combine all items with filter params (now including category manga IDs from state)
+        // When reading list filter changes, reactively track the manga IDs in that list
+        _state.map { it.filterReadingListId }
+            .distinctUntilChanged()
+            .flatMapLatest { listId ->
+                if (listId != null) {
+                    readingListRepository.getListWithManga(listId)
+                        .map { (_, items) -> items.map { it.manga.id }.toSet() }
+                } else {
+                    flowOf(emptySet())
+                }
+            }
+            .onEach { ids -> _state.update { it.copy(readingListMangaIds = ids) } }
+            .launchIn(viewModelScope)
+
+        // Combine all items with filter params (now including category and reading list manga IDs from state)
         combine(
             _allItems,
-            _state.map { 
+            _state.map {
                 FilterSortParams(
                     query = it.searchQuery,
                     filterHasNotes = it.filterHasNotes,
@@ -245,7 +266,9 @@ class LibraryViewModel @Inject constructor(
                     filterSourceId = it.filterSourceId,
                     showNsfw = it.showNsfw,
                     selectedCategory = it.selectedCategory,
-                    categoryMangaIds = it.categoryFilterMangaIds
+                    categoryMangaIds = it.categoryFilterMangaIds,
+                    filterReadingListId = it.filterReadingListId,
+                    readingListMangaIds = it.readingListMangaIds
                 )
             }.distinctUntilChanged()
         ) { items, params ->
@@ -296,6 +319,7 @@ class LibraryViewModel @Inject constructor(
             LibraryFilterMode.COMPLETED -> filtered.filter { it.userCompleted }
             LibraryFilterMode.DROPPED -> filtered.filter { it.userDropped }
             LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
+            LibraryFilterMode.READING_LIST -> filtered.filter { it.id in params.readingListMangaIds }
             LibraryFilterMode.ALL -> filtered
         }
 
@@ -466,6 +490,30 @@ class LibraryViewModel @Inject constructor(
     private fun onContinueReadingClick(mangaId: Long, chapterId: Long) {
         viewModelScope.launch {
             _effect.send(LibraryEffect.NavigateToReader(mangaId, chapterId))
+        }
+    }
+
+    private fun observeReadingLists() {
+        readingListRepository.getAllLists()
+            .map { lists ->
+                lists.map { list ->
+                    ReadingListFilterItem(
+                        id = list.id,
+                        name = list.name,
+                        count = list.itemCount
+                    )
+                }
+            }
+            .onEach { items -> _state.update { it.copy(readingLists = items) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun onSetFilterReadingList(listId: Long?) {
+        _state.update {
+            it.copy(
+                filterReadingListId = listId,
+                filterMode = if (listId != null) LibraryFilterMode.READING_LIST else LibraryFilterMode.ALL
+            )
         }
     }
 

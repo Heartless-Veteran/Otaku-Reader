@@ -251,14 +251,14 @@ private fun BrowseContent(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (state.isSearching) {
-            // Show search results
+        if (state.isSearching || state.hasSearchResults) {
+            // Show search results (isSearching acts as loading indicator within results view)
             SearchResultsContent(
                 results = state.searchResults,
                 onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
                 onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                 hasNextPage = state.hasNextPage,
-                isLoading = state.isLoading
+                isLoading = state.isSearching
             )
         } else {
             // Show sources and popular manga
