@@ -1,11 +1,14 @@
 package app.otakureader.domain.model
 
+import androidx.compose.runtime.Immutable
+
 /**
  * Configuration for smart (auto) download behavior.
  *
  * When enabled, the app automatically queues downloads for upcoming chapters
  * based on reading progress — no manual intervention required.
  */
+@Immutable
 data class SmartDownloadRule(
     val enabled: Boolean = false,
     /** How many upcoming chapters to pre-download. */
