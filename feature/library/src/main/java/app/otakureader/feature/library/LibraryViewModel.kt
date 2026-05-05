@@ -312,6 +312,11 @@ class LibraryViewModel @Inject constructor(
             filtered = filtered.filter { it.sourceId == params.filterSourceId }
         }
 
+        // Reading list filter (applied independently of filterMode to avoid DataStore conflicts)
+        if (params.filterReadingListId != null) {
+            filtered = filtered.filter { it.id in params.readingListMangaIds }
+        }
+
         // Filter mode
         filtered = when (params.filterMode) {
             LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
@@ -319,7 +324,7 @@ class LibraryViewModel @Inject constructor(
             LibraryFilterMode.COMPLETED -> filtered.filter { it.userCompleted }
             LibraryFilterMode.DROPPED -> filtered.filter { it.userDropped }
             LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
-            LibraryFilterMode.READING_LIST -> filtered.filter { it.id in params.readingListMangaIds }
+            LibraryFilterMode.READING_LIST -> filtered
             LibraryFilterMode.ALL -> filtered
         }
 
@@ -504,17 +509,21 @@ class LibraryViewModel @Inject constructor(
                     )
                 }
             }
-            .onEach { items -> _state.update { it.copy(readingLists = items) } }
+            .onEach { items ->
+                _state.update { state ->
+                    val currentListId = state.filterReadingListId
+                    val stillExists = currentListId == null || items.any { it.id == currentListId }
+                    state.copy(
+                        readingLists = items,
+                        filterReadingListId = if (stillExists) currentListId else null
+                    )
+                }
+            }
             .launchIn(viewModelScope)
     }
 
     private fun onSetFilterReadingList(listId: Long?) {
-        _state.update {
-            it.copy(
-                filterReadingListId = listId,
-                filterMode = if (listId != null) LibraryFilterMode.READING_LIST else LibraryFilterMode.ALL
-            )
-        }
+        _state.update { it.copy(filterReadingListId = listId) }
     }
 
     private fun Manga.toLibraryItem(

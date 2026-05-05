@@ -79,6 +79,7 @@ class BrowseViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         currentSourceId = event.sourceId,
+                        searchQuery = "",
                         availableFilters = FilterList(),
                         activeFilters = FilterList(),
                         hasSearchResults = false,
@@ -352,7 +353,7 @@ class BrowseViewModel @Inject constructor(
             feedRepository.getSavedSearches(),
             _state.map { it.currentSourceId }.distinctUntilChanged()
         ) { searches, sourceId ->
-            if (sourceId != null) searches.filter { it.sourceId.toString() == sourceId }
+            if (sourceId != null) searches.filter { it.sourceName == sourceId }
             else searches
         }
             .onEach { filtered -> _state.update { it.copy(savedSearches = filtered) } }

@@ -526,7 +526,6 @@ class LibraryViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(42L, viewModel.state.value.filterReadingListId)
-        assertEquals(LibraryFilterMode.READING_LIST, viewModel.state.value.filterMode)
     }
 
     @Test
@@ -541,13 +540,12 @@ class LibraryViewModelTest {
 
         viewModel.onEvent(LibraryEvent.SetFilterReadingList(42L))
         testDispatcher.scheduler.advanceUntilIdle()
-        assertEquals(LibraryFilterMode.READING_LIST, viewModel.state.value.filterMode)
+        assertEquals(42L, viewModel.state.value.filterReadingListId)
 
         viewModel.onEvent(LibraryEvent.SetFilterReadingList(null))
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewModel.state.value.filterReadingListId)
-        assertEquals(LibraryFilterMode.ALL, viewModel.state.value.filterMode)
     }
 
     @Test

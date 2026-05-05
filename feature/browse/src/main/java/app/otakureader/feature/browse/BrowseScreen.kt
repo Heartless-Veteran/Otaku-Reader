@@ -258,7 +258,7 @@ private fun BrowseContent(
                 onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
                 onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                 hasNextPage = state.hasNextPage,
-                isLoading = state.isSearching
+                isLoading = state.isSearching || state.isLoading
             )
         } else {
             // Show sources and popular manga

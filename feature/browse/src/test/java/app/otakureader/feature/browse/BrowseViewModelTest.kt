@@ -3,7 +3,6 @@ package app.otakureader.feature.browse
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.repository.FeedRepository
-import kotlinx.coroutines.flow.MutableStateFlow
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
@@ -308,8 +307,8 @@ class BrowseViewModelTest {
 
     @Test
     fun `saved searches filtered to selected source`() = runTest {
-        val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "Source 1", query = "one piece", filters = emptyMap())
-        val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "Source 2", query = "naruto", filters = emptyMap())
+        val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "1", query = "one piece", filters = emptyMap())
+        val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "2", query = "naruto", filters = emptyMap())
         val source = MangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
 
         every { feedRepository.getSavedSearches() } returns flowOf(listOf(search1, search2))
@@ -338,8 +337,8 @@ class BrowseViewModelTest {
 
     @Test
     fun `saved searches update when source changes`() = runTest {
-        val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "Source 1", query = "one piece", filters = emptyMap())
-        val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "Source 2", query = "naruto", filters = emptyMap())
+        val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "1", query = "one piece", filters = emptyMap())
+        val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "2", query = "naruto", filters = emptyMap())
         val source1 = MangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
         val source2 = MangaSource(id = "2", name = "Source 2", lang = "en", isNsfw = false)
 
