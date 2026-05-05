@@ -141,7 +141,7 @@ Current: Kotlin 2.3.21 · KSP 2.3.7 · AGP 9.1.1 · Compose BOM 2026.04.01 · co
 - No hardcoded strings — use resource files
 - No `!!` — use `?.let`, `?: return`, or explicit null handling
 - Never call `source.fetchPageList()` directly — always route through `SourceRepository`
-- No secrets in `BuildConfig` — use `EncryptedSharedPreferences` or Gradle properties
+- No secrets in `BuildConfig` — use encrypted DataStore stores or Gradle properties
 
 ## Commit Format
 
