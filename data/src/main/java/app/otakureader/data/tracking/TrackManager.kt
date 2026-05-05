@@ -25,4 +25,23 @@ class TrackManager @Inject constructor(
     /** Returns only the trackers that the user has authenticated with. */
     val loggedIn: List<Tracker>
         get() = all.filter { it.isLoggedIn }
+
+    /**
+     * Authenticate a tracker by its string identifier.
+     *
+     * @param trackerId Tracker string ID (e.g., "anilist", "mal", "kitsu", "shikimori").
+     * @param code OAuth authorization code or token.
+     * @return `true` on success.
+     */
+    suspend fun login(trackerId: String, code: String): Boolean {
+        val tracker = when (trackerId.lowercase()) {
+            "anilist" -> get(app.otakureader.domain.model.TrackerType.ANILIST)
+            "mal" -> get(app.otakureader.domain.model.TrackerType.MY_ANIME_LIST)
+            "kitsu" -> get(app.otakureader.domain.model.TrackerType.KITSU)
+            "shikimori" -> get(app.otakureader.domain.model.TrackerType.SHIKIMORI)
+            "mangaupdates" -> get(app.otakureader.domain.model.TrackerType.MANGA_UPDATES)
+            else -> null
+        }
+        return tracker?.login("", code) ?: false
+    }
 }
