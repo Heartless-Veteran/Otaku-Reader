@@ -420,6 +420,7 @@ private fun ReaderContent(
                     imageQuality = state.imageQuality,
                     dataSaverEnabled = state.dataSaverEnabled,
                     pageGapDp = state.webtoonGapDp,
+                    disableZoomOut = state.webtoonDisableZoomOut,
                     modifier = Modifier.fillMaxSize()
                 )
             }

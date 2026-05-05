@@ -15,6 +15,7 @@ data class BrowseState(
     val searchQuery: String = "",
     val searchResults: List<SourceManga> = emptyList(),
     val isSearching: Boolean = false,
+    val hasSearchResults: Boolean = false,
     val error: String? = null,
     val hasNextPage: Boolean = false,
     val currentPage: Int = 1,

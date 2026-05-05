@@ -385,6 +385,21 @@ private fun MangaGrid(
             )
         }
 
+        // Reading list filter chips (full-width span, only shown when reading lists exist)
+        if (state.readingLists.isNotEmpty()) {
+            item(
+                span = { GridItemSpan(maxLineSpan) },
+                contentType = "reading_list_filter_section"
+            ) {
+                ReadingListFilterChips(
+                    readingLists = state.readingLists,
+                    selectedListId = state.filterReadingListId,
+                    onListSelected = { onEvent(LibraryEvent.SetFilterReadingList(it)) },
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+        }
+
         // Manga grid items
         gridItems(
             items = state.mangaList,
@@ -496,6 +511,39 @@ private fun CategoryFilterChips(
                 label = category.name,
                 selected = selectedCategory == category.id,
                 onClick = { onCategorySelected(category.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReadingListFilterChips(
+    readingLists: List<ReadingListFilterItem>,
+    selectedListId: Long?,
+    onListSelected: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        item {
+            OtakuChip(
+                label = stringResource(R.string.library_reading_list_all),
+                selected = selectedListId == null,
+                onClick = { onListSelected(null) },
+            )
+        }
+
+        items(
+            items = readingLists,
+            key = { it.id }
+        ) { list ->
+            OtakuChip(
+                label = list.name,
+                selected = selectedListId == list.id,
+                onClick = { onListSelected(list.id) },
             )
         }
     }

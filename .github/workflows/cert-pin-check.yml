@@ -48,12 +48,12 @@ jobs:
             fi
           }
 
-          check_pin "myanimelist.net"       "r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E="
-          check_pin "api.myanimelist.net"   "r/mIkG3eEpVdm+u/ko/cwxzOMo1bk4TyHIlByibiA5E="
-          check_pin "graphql.anilist.co"    "kIdp6NNEd8wsugYyyIYFsi1ylMv2M01eUNwHcm0etyk="
-          check_pin "kitsu.app"             "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
-          check_pin "api.mangaupdates.com"  "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
-          check_pin "shikimori.one"         "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
+          check_pin "myanimelist.net"       "efrF+PUxbl1xw8PF8f6KvRrel4/kWrRWFWuu6PQj2bo="
+          check_pin "api.myanimelist.net"   "JhaUbPsimbNLHKKcoc09+5qss1K+Hb8XpX2uthsDY4A="
+          check_pin "graphql.anilist.co"    "qvGMxVkebAxISqRUcDy3CljP+wieT8aKikYTCVu0PH4="
+          check_pin "kitsu.app"             "Hrs6IIkHfcrDYD7JZOmpHh/QXgq4ZfY7IKy+UnzF4bA="
+          check_pin "api.mangaupdates.com"  "02qttGMepJs9pxcSmAyDxfnjZv0EoAw8IkZSv+rzbu8="
+          check_pin "shikimori.one"         "1biKOxoipnu596Dxf12XU0Vu2EXlLUQnUj4p+ycBKSY="
 
           if [ -n "$FAILURES" ]; then
             echo -e "$FAILURES"
