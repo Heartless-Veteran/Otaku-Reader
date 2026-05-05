@@ -1,16 +1,23 @@
 package app.otakureader.data.repository
 
+import android.content.Context
 import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.core.database.entity.FeedItemEntity
 import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
+import app.otakureader.data.worker.FeedRefreshWorker
 import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.model.FeedSource
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.Runs
+import io.mockk.unmockkObject
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -21,6 +28,7 @@ import java.time.Instant
 
 class FeedRepositoryImplTest {
 
+    private lateinit var context: Context
     private lateinit var feedDao: FeedDao
     private lateinit var repository: FeedRepositoryImpl
 
@@ -58,8 +66,9 @@ class FeedRepositoryImplTest {
 
     @Before
     fun setUp() {
+        context = mockk()
         feedDao = mockk()
-        repository = FeedRepositoryImpl(feedDao)
+        repository = FeedRepositoryImpl(context, feedDao)
     }
 
     // ---- getFeedSources ----
@@ -316,11 +325,19 @@ class FeedRepositoryImplTest {
         coVerify { feedDao.updateSavedSearchOrder(2L, 4) }
     }
 
-    // ---- refreshFeed (no-op) ----
+    // ---- refreshFeed ----
 
     @Test
-    fun `refreshFeed is a no-op and does not throw`() = runTest {
-        // refreshFeed is a no-op — actual refresh is done by FeedRefreshWorker
-        repository.refreshFeed()
+    fun `refreshFeed enqueues FeedRefreshWorker one-time job`() = runTest {
+        mockkObject(FeedRefreshWorker.Companion)
+        try {
+            every { FeedRefreshWorker.enqueueOneTime(any()) } just Runs
+
+            repository.refreshFeed()
+
+            verify { FeedRefreshWorker.enqueueOneTime(context) }
+        } finally {
+            unmockkObject(FeedRefreshWorker.Companion)
+        }
     }
 }

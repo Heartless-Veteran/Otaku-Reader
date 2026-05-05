@@ -1,5 +1,7 @@
 package app.otakureader.domain.model
 
+import androidx.compose.runtime.Immutable
+
 /**
  * Reading modes supported by the reader.
  * Placed in :domain so that both :feature:reader and :feature:settings can reference

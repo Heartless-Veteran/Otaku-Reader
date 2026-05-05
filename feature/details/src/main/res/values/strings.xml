@@ -47,6 +47,8 @@
     <string name="details_notify_title">Notify for new chapters</string>
     <string name="details_notify_enabled">You will be notified when new chapters are found</string>
     <string name="details_notify_disabled">Notifications are muted for this manga</string>
+    <string name="details_notify_icon_on">Notifications on</string>
+    <string name="details_notify_icon_off">Notifications off</string>
 
     <!-- Reader settings -->
     <string name="details_reader_settings">Reader Settings</string>
