@@ -147,7 +147,7 @@ private fun ExtensionsContent(
                 value = state.searchQuery,
                 onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
                 placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.extensions_search_cd)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -427,7 +427,7 @@ private fun FilterAndSortRow(
         ) {
             Icon(
                 imageVector = Icons.Default.Warning,
-                contentDescription = "Extension icon",
+                contentDescription = stringResource(R.string.extensions_icon_cd),
                 tint = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -451,7 +451,7 @@ private fun FilterAndSortRow(
             TextButton(onClick = { showSortMenu = true }) {
                 Icon(
                     imageVector = Icons.Default.Sort,
-                    contentDescription = "Language",
+                    contentDescription = stringResource(R.string.extensions_language_cd),
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
@@ -476,7 +476,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.NAME) {
-                            Icon(Icons.Default.Check, contentDescription = "Installed")
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
                         }
                     }
                 )
@@ -488,7 +488,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.RECENTLY_ADDED) {
-                            Icon(Icons.Default.Check, contentDescription = "Installed")
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
                         }
                     }
                 )
@@ -500,7 +500,7 @@ private fun FilterAndSortRow(
                     },
                     leadingIcon = {
                         if (sortMode == SortMode.LANGUAGE) {
-                            Icon(Icons.Default.Check, contentDescription = "Installed")
+                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
                         }
                     }
                 )
@@ -537,7 +537,7 @@ private fun UpdateAllButton(
                 } else {
                     Icon(
                         imageVector = Icons.Default.Update,
-                        contentDescription = "Extension language",
+                        contentDescription = stringResource(R.string.extensions_language_flag_cd),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -588,7 +588,7 @@ private fun RepositoryManager(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(text = "Repositories", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.extensions_repositories_title), style = MaterialTheme.typography.titleMedium)
 
         repositories.forEach { repo ->
             Row(

@@ -317,7 +317,7 @@ fun ChapterListItem(
         targetValue = if (chapter.read) 0.6f else 1f,
         label = "readAlpha"
     )
-
+    val chapterNameFormat = stringResource(R.string.details_chapter_number_format)
     var showMenu by remember { mutableStateOf(false) }
 
     Card(
@@ -355,7 +355,7 @@ fun ChapterListItem(
                 if (chapter.thumbnailUrl != null) {
                     AsyncImage(
                         model = chapter.thumbnailUrl,
-                        contentDescription = "Chapter thumbnail",
+                        contentDescription = stringResource(R.string.details_chapter_thumbnail_cd),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -370,7 +370,7 @@ fun ChapterListItem(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             Text(
-                                text = "Load\npreview",
+                                text = stringResource(R.string.details_chapter_load_preview),
                                 style = MaterialTheme.typography.labelSmall,
                                 textAlign = TextAlign.Center
                             )
@@ -392,7 +392,7 @@ fun ChapterListItem(
             // Chapter info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatChapterName(chapter),
+                    text = formatChapterName(chapter, chapterNameFormat),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (chapter.read) FontWeight.Normal else FontWeight.Medium,
                     maxLines = 1,
@@ -431,7 +431,7 @@ fun ChapterListItem(
                 if (chapter.lastPageRead > 0 && !chapter.read && chapter.totalPages > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Page ${chapter.lastPageRead} / ${chapter.totalPages}",
+                        text = stringResource(R.string.details_chapter_reading_progress, chapter.lastPageRead, chapter.totalPages),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -443,7 +443,7 @@ fun ChapterListItem(
                     val estPages = if (chapter.totalPages > 0) chapter.totalPages else estimatePageCount(chapter.chapterNumber, -1)
                     val estMinutes = estimateReadTimeMinutes(estPages)
                     Text(
-                        text = "~${formatReadTime(estMinutes)} read",
+                        text = stringResource(R.string.details_chapter_read_time, formatReadTime(estMinutes)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -585,24 +585,25 @@ private fun DownloadIcon(
         },
         modifier = modifier
     ) {
+        val downloadContentDesc = when (status) {
+            DetailsContract.DownloadStatus.NOT_DOWNLOADED -> stringResource(R.string.details_chapter_download)
+            DetailsContract.DownloadStatus.DOWNLOADING -> stringResource(R.string.details_chapter_downloading)
+            DetailsContract.DownloadStatus.DOWNLOADED -> stringResource(R.string.details_chapter_delete_download)
+        }
         Icon(
             imageVector = icon,
-            contentDescription = when (status) {
-                DetailsContract.DownloadStatus.NOT_DOWNLOADED -> "Download chapter"
-                DetailsContract.DownloadStatus.DOWNLOADING -> "Downloading"
-                DetailsContract.DownloadStatus.DOWNLOADED -> "Delete download"
-            },
+            contentDescription = downloadContentDesc,
             tint = tint
         )
     }
 }
 
-/**
- * Format chapter name for display
- */
-private fun formatChapterName(chapter: DetailsContract.ChapterItem): String {
+private fun formatChapterName(chapter: DetailsContract.ChapterItem, chapterFormat: String): String {
     return when {
-        chapter.chapterNumber >= 0 -> "Chapter ${chapter.chapterNumber.toInt()}${if (chapter.name.contains(":")) chapter.name.substringAfter(":") else ""}".trim()
+        chapter.chapterNumber >= 0 -> {
+            val suffix = if (chapter.name.contains(":")) chapter.name.substringAfter(":") else ""
+            String.format(chapterFormat, chapter.chapterNumber.toInt(), suffix).trim()
+        }
         else -> chapter.name
     }
 }

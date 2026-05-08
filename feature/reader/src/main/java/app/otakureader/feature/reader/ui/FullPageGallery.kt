@@ -96,7 +96,7 @@ fun FullPageGallery(
                     actions = {
                         Icon(
                             imageVector = Icons.Default.GridView,
-                            contentDescription = "Page image",
+                            contentDescription = stringResource(R.string.reader_page_image),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(end = 4.dp)
                         )
@@ -182,7 +182,7 @@ private fun GalleryThumbnailItem(
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Text(
-                        text = "CURRENT",
+                        text = stringResource(R.string.reader_current_page_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.align(Alignment.Center)
@@ -192,7 +192,7 @@ private fun GalleryThumbnailItem(
         }
 
         Text(
-            text = "Page $pageNumber",
+            text = stringResource(R.string.reader_page_number, pageNumber),
             style = MaterialTheme.typography.labelMedium,
             color = if (isSelected) {
                 MaterialTheme.colorScheme.primary

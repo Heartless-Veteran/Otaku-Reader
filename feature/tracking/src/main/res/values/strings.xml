@@ -46,6 +46,16 @@
     
     <!-- Back -->
     <string name="tracking_back">Go back</string>
+
+    <!-- OAuth screen -->
+    <string name="tracking_oauth_title">Tracker Login</string>
+    <string name="tracking_oauth_linking">Linking %1$s…</string>
+    <string name="tracking_oauth_link_failed">Failed to link %1$s</string>
+    <string name="tracking_oauth_unknown_error">Unknown error</string>
+    <string name="tracking_oauth_retry">Retry</string>
+    <string name="tracking_oauth_go_back">Go Back</string>
+    <string name="tracking_oauth_linked_success">%1$s linked successfully!</string>
+    <string name="tracking_oauth_linked_snackbar">Successfully linked %1$s account</string>
     
     <!-- Login feedback -->
     <string name="tracking_login_success">Logged in to %1$s</string>

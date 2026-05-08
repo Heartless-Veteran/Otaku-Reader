@@ -81,7 +81,7 @@ fun PageThumbnailStrip(
                     )
                     
                     Text(
-                        text = "Expand",
+                        text = stringResource(R.string.reader_strip_expand),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier

@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -79,7 +80,7 @@ fun StatisticsShareCard(
         ) {
             // Header
             Text(
-                text = "My Reading Year",
+                text = stringResource(R.string.statistics_share_my_reading_year),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = primaryColor
@@ -95,7 +96,7 @@ fun StatisticsShareCard(
                 color = primaryColor
             )
             Text(
-                text = "chapters read",
+                text = stringResource(R.string.statistics_share_chapters_read),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -110,17 +111,17 @@ fun StatisticsShareCard(
                 ShareStatItem(
                     icon = Icons.Default.Book,
                     value = stats.totalMangaInLibrary.toString(),
-                    label = "in library"
+                    label = stringResource(R.string.statistics_share_in_library)
                 )
                 ShareStatItem(
                     icon = Icons.Default.Schedule,
                     value = formatDuration(stats.totalReadingTimeMs),
-                    label = "time spent"
+                    label = stringResource(R.string.statistics_share_time_spent)
                 )
                 ShareStatItem(
                     icon = Icons.Default.Whatshot,
                     value = stats.currentStreak.toString(),
-                    label = "day streak"
+                    label = stringResource(R.string.statistics_share_day_streak)
                 )
             }
 
@@ -128,7 +129,7 @@ fun StatisticsShareCard(
 
             // Footer
             Text(
-                text = "📚 Otaku Reader",
+                text = stringResource(R.string.statistics_share_footer),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
@@ -194,11 +195,11 @@ fun captureShareableCard(
 /**
  * Creates a share intent for the statistics card.
  */
-fun createShareIntent(uri: Uri): Intent {
+fun createShareIntent(uri: Uri, shareText: String): Intent {
     return Intent(Intent.ACTION_SEND).apply {
         type = "image/png"
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_TEXT, "Check out my reading stats! 📚")
+        putExtra(Intent.EXTRA_TEXT, shareText)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 }

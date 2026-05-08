@@ -45,11 +45,11 @@ feature/*/       Compose screens + HiltViewModels per feature.
 
 Shared infrastructure lives in `core/` sub-modules:
 - `core/common` — utilities, `Result<T>`, `ReadTimeEstimator`
-- `core/database` — Room v9 with explicit migrations (v2→v9)
-- `core/preferences` — DataStore wrappers (`GeneralPreferences`, `ReaderPreferences`, `DownloadPreferences`, etc.)
+- `core/database` — Room v21 with explicit migrations (v2→v21)
+- `core/preferences` — DataStore wrappers (`GeneralPreferences`, `ReaderPreferences`, `DownloadPreferences`, `PendingOAuthStore`, `EncryptedOpdsCredentialStore`, etc.)
 - `core/ui` — Material 3 design system, dynamic color from cover art
 - `core/navigation` — type-safe Compose Navigation routes
-- `core/extension` — `ExtensionLoader`, `TrustedSignatureStore`
+- `core/extension` — `ExtensionLoader`, `TrustedSignatureStore` (EncryptedSharedPreferences-backed)
 - `core/tachiyomi-compat` — bridges Tachiyomi APKs to `source-api` interfaces
 - `source-api` — pure Kotlin contract (`Source`, `HttpSource`, `SManga`, `SChapter`, `Page`, `MangasPage`, `Filter`). No Android deps.
 
@@ -98,7 +98,7 @@ Never mutate state directly. Never use `LiveData`. Never use `GlobalScope`.
 
 - All DAO reads return `Flow<T>`, never a plain value
 - `fallbackToDestructiveMigration()` is only enabled in debug builds (`BuildConfig.DEBUG`) — never in production
-- Current DB version: 9. Migrations live in `core/database/`. All are additive (no destructive changes)
+- Current DB version: 21. Migrations live in `core/database/`. All are additive (no destructive changes)
 - Adding a migration: increment version → write `Migration(N, N+1)` → add to `.addMigrations(...)` → write a `MigrationTestHelper` test → commit the exported schema JSON
 
 ## Extension System (Non-Negotiable)
@@ -111,14 +111,14 @@ Flow: `ExtensionLoader` → validate signature → load DEX → instantiate `Cat
 
 ## DataStore / Preferences
 
-All settings use `Preferences DataStore` — never `SharedPreferences` for new settings. Preference classes: `GeneralPreferences`, `LibraryPreferences`, `ReaderPreferences`, `DownloadPreferences`, `BackupPreferences`, `ReadingGoalPreferences`, `EncryptedApiKeyStore`, `EncryptedOpdsCredentialStore`. Every class exposes `Flow<T>` for reads and `suspend fun setXxx()` for writes.
+All settings use `Preferences DataStore` — never `SharedPreferences` for new settings. Preference classes: `GeneralPreferences`, `LibraryPreferences`, `ReaderPreferences`, `DownloadPreferences`, `BackupPreferences`, `ReadingGoalPreferences`, `EncryptedApiKeyStore`, `EncryptedOpdsCredentialStore`, `PendingOAuthStore`. Every class exposes `Flow<T>` for reads and `suspend fun setXxx()` for writes.
 
 Batch DataStore reads with `async/await` to avoid sequential blocking on cold start.
 
 ## Reader Engine
 
 Four modes share `ReaderState` but have mode-specific composables:
-- **Single Page** — `HorizontalPager` with `beyondBoundsPageCount = 1`
+- **Single Page** — `HorizontalPager` with `beyondViewportPageCount = 1`
 - **Dual Page** — auto-detects spreads by aspect ratio (threshold 1.2)
 - **Webtoon** — `LazyColumn` with `contentType = { "manga_page" }`, configurable gap
 - **Smart Panels** — ML Kit panel detection, results cached in `LruCache<String, 50>`, falls back to single-page on failure

@@ -23,9 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -53,6 +51,9 @@ fun TrackerOAuthScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val trackerDisplayName = trackerName(tracker)
+
+    val linkedSnackbar = stringResource(R.string.tracking_oauth_linked_snackbar, trackerDisplayName)
 
     LaunchedEffect(tracker, code) {
         viewModel.exchangeCode(tracker, code, callbackState)
@@ -64,9 +65,7 @@ fun TrackerOAuthScreen(
 
     LaunchedEffect(state.success) {
         if (state.success) {
-            snackbarHostState.showSnackbar(
-                "Successfully linked ${trackerName(tracker)} account"
-            )
+            snackbarHostState.showSnackbar(linkedSnackbar)
             kotlinx.coroutines.delay(1500)
             onNavigateBack()
         }
@@ -75,7 +74,7 @@ fun TrackerOAuthScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tracker Login") },
+                title = { Text(stringResource(R.string.tracking_oauth_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -100,7 +99,7 @@ fun TrackerOAuthScreen(
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Linking ${trackerName(tracker)}...",
+                            text = stringResource(R.string.tracking_oauth_linking, trackerDisplayName),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -120,24 +119,24 @@ fun TrackerOAuthScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Failed to link ${trackerName(tracker)}",
+                            text = stringResource(R.string.tracking_oauth_link_failed, trackerDisplayName),
                             style = MaterialTheme.typography.titleMedium,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = state.error ?: "Unknown error",
+                            text = state.error ?: stringResource(R.string.tracking_oauth_unknown_error),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(onClick = { viewModel.exchangeCode(tracker, code, callbackState) }) {
-                            Text("Retry")
+                            Text(stringResource(R.string.tracking_oauth_retry))
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(onClick = onNavigateBack) {
-                            Text("Go Back")
+                            Text(stringResource(R.string.tracking_oauth_go_back))
                         }
                     }
                 }
@@ -150,7 +149,7 @@ fun TrackerOAuthScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "${trackerName(tracker)} linked successfully!",
+                            text = stringResource(R.string.tracking_oauth_linked_success, trackerDisplayName),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
