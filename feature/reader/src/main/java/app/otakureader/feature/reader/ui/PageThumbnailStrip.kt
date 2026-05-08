@@ -107,7 +107,11 @@ fun PageThumbnailStrip(
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(pages) { index, page ->
+                    itemsIndexed(
+                        items = pages,
+                        key = { _, page -> page.id },
+                        contentType = { _, _ -> "thumbnail" }
+                    ) { index, page ->
                         PageThumbnailItem(
                             page = page,
                             pageNumber = index + 1,

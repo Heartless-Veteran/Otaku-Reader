@@ -129,7 +129,11 @@ fun FullPageGallery(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    itemsIndexed(pages) { index, page ->
+                    itemsIndexed(
+                        items = pages,
+                        key = { _, page -> page.id },
+                        contentType = { _, _ -> "thumbnail" }
+                    ) { index, page ->
                         GalleryThumbnailItem(
                             page = page,
                             pageNumber = index + 1,

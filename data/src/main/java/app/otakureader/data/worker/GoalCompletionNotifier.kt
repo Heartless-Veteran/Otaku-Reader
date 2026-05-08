@@ -23,8 +23,6 @@ import javax.inject.Singleton
 
 internal const val GOAL_CHANNEL_ID = "reading_goal_channel"
 private const val GOAL_NOTIFICATION_ID = 4002
-private const val PREFS_NAME = "goal_completion_notifier"
-private const val KEY_LAST_NOTIFIED_DATE = "last_notified_date"
 
 /**
  * Sends a one-time "daily goal reached!" notification the first time the user
@@ -32,7 +30,8 @@ private const val KEY_LAST_NOTIFIED_DATE = "last_notified_date"
  *
  * Call [checkAndNotify] after a chapter read is recorded. The notifier fires the
  * notification when today's chapter count equals the daily goal and the goal has
- * not already been achieved today (tracked via persistent SharedPreferences).
+ * not already been achieved today. Last-notified date is stored via
+ * [ReadingGoalPreferences] DataStore instead of raw SharedPreferences.
  */
 @Singleton
 class GoalCompletionNotifier @Inject constructor(
@@ -58,21 +57,10 @@ class GoalCompletionNotifier @Inject constructor(
 
         // Fire only when the goal is hit exactly (transition from just-below to met)
         // and we haven't already notified today.
-        if (chaptersToday == dailyGoal && !wasNotifiedToday(today)) {
+        if (chaptersToday == dailyGoal && readingGoalPreferences.getLastGoalNotifiedDate() != today.toString()) {
             showNotification(dailyGoal)
-            markNotifiedToday(today)
+            readingGoalPreferences.setLastGoalNotifiedDate(today.toString())
         }
-    }
-
-    private fun wasNotifiedToday(today: LocalDate): Boolean {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val lastNotified = prefs.getString(KEY_LAST_NOTIFIED_DATE, null)
-        return lastNotified == today.toString()
-    }
-
-    private fun markNotifiedToday(today: LocalDate) {
-        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putString(KEY_LAST_NOTIFIED_DATE, today.toString()).apply()
     }
 
     @SuppressLint("MissingPermission")

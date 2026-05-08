@@ -85,7 +85,7 @@ fun OtakuReaderNavHost(
             }
             is DeepLinkResult.TrackerOAuth -> {
                 navController.navigate(
-                    Route.TrackerOAuth(deepLinkResult.tracker, deepLinkResult.code)
+                    Route.TrackerOAuth(deepLinkResult.tracker, deepLinkResult.code, deepLinkResult.state)
                 ) {
                     launchSingleTop = true
                 }

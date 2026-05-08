@@ -150,8 +150,9 @@ fun ScanLibraryScreen(
                     Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_opening_camera), style = MaterialTheme.typography.bodyMedium)
                 }
                 error != null -> {
+                    val message = error ?: return@Column
                     Text(
-                        text = error!!,
+                        text = message,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
@@ -165,7 +166,7 @@ fun ScanLibraryScreen(
                     }
                 }
                 scannedLibrary != null -> {
-                    val library = scannedLibrary!!
+                    val library = scannedLibrary ?: return@Column
                     when (val state = importState) {
                         is ScanLibraryViewModel.ImportState.Importing -> {
                             CircularProgressIndicator()

@@ -10,21 +10,71 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+
+  # ── Quality gate — must pass before the release artifact is built ────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: ☕ Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: 🐘 Set up Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+
+      - name: 🔑 Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: 🔐 Security check
+        run: bash scripts/check-buildconfig-security.sh
+
+      - name: 🔍 Detekt
+        run: ./gradlew detekt --no-daemon
+        env:
+          CI: true
+
+      - name: 🎨 Ktlint
+        run: ./gradlew ktlintCheck --no-daemon
+        env:
+          CI: true
+
+      - name: 🧪 Unit tests
+        run: ./gradlew testDebugUnitTest --no-daemon
+        env:
+          CI: true
+
+      - name: 📊 Coverage gate
+        run: ./gradlew :domain:koverVerify :data:koverVerifyDebug --no-daemon
+        env:
+          CI: true
+
+  # ── Release build — only runs after validate passes ──────────────────────────
   release:
+    name: Build & Publish
+    needs: validate
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
+
     steps:
     - name: 📥 Checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-      
+
     - name: ☕ Set up JDK 21
       uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
       with:
         java-version: '21'
         distribution: 'temurin'
-        
+
     - name: 🐘 Set up Gradle
       uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
 
@@ -36,6 +86,7 @@ jobs:
         echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> keystore.properties
         echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> keystore.properties
         echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
+        echo "KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
 
     - name: 🔑 Grant execute permission for gradlew
       run: chmod +x gradlew
@@ -44,6 +95,12 @@ jobs:
       run: ./gradlew assembleRelease --no-daemon
       env:
         CI: true
+
+    - name: 🧹 Clean up keystore
+      if: always()
+      run: |
+        rm -f "$KEYSTORE_PATH"
+        rm -f keystore.properties
 
     # TODO: Re-enable license report and SBOM after fixing variant resolution
     # See: https://github.com/HeartlessVeteran2/Otaku-Reader/issues/783
@@ -63,7 +120,7 @@ jobs:
         echo "" >> RELEASE_NOTES.md
         echo "### What's New" >> RELEASE_NOTES.md
         echo "- See [CHANGELOG.md](CHANGELOG.md) for details" >> RELEASE_NOTES.md
-        
+
     - name: 🚀 Create Release
       uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
       with:

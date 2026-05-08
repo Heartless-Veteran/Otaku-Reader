@@ -24,6 +24,8 @@ sealed class DeepLinkResult {
     data class TrackerOAuth(
         val tracker: String,
         val code: String,
+        /** CSRF state token returned by the provider; null if the provider omitted it. */
+        val state: String? = null,
     ) : DeepLinkResult()
 
     /** Navigate directly to the Library screen. */
@@ -129,7 +131,8 @@ object DeepLinkHandler {
             "shikimori-oauth" -> "shikimori"
             else -> return DeepLinkResult.Invalid
         }
-        return DeepLinkResult.TrackerOAuth(tracker = tracker, code = code)
+        val state = uri.getQueryParameter("state")
+        return DeepLinkResult.TrackerOAuth(tracker = tracker, code = code, state = state)
     }
 
     /**

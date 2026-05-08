@@ -3,6 +3,7 @@ package app.otakureader.feature.tracking
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.PendingOAuthStore
 import app.otakureader.domain.model.SyncStatus
 import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -29,6 +31,7 @@ class TrackingViewModel @Inject constructor(
     trackers: Set<@JvmSuppressWildcards Tracker>,
     private val trackRepository: TrackRepository,
     private val trackerSyncRepository: TrackerSyncRepository,
+    private val pendingOAuthStore: PendingOAuthStore,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -127,10 +130,17 @@ class TrackingViewModel @Inject constructor(
         if (isOAuthTracker(trackerId)) {
             val tracker = trackerMap[trackerId]
             val codeVerifier = generateCodeVerifier()
+            val state = UUID.randomUUID().toString()
             val oauthUrl = tracker?.authorizationUrl(codeVerifier)
                 ?: getOAuthUrl(trackerId) // Fallback to base URL for trackers that haven't
                                           // implemented authorizationUrl() yet
-            _effect.trySend(TrackingEffect.OpenOAuth(trackerId, oauthUrl))
+
+            // Persist {trackerId, codeVerifier, state} before opening the browser so they
+            // survive the process boundary crossing during the OAuth redirect.
+            viewModelScope.launch {
+                pendingOAuthStore.save(trackerId, codeVerifier, state)
+                _effect.send(TrackingEffect.OpenOAuth(trackerId, oauthUrl))
+            }
         } else {
             _state.update { it.copy(loginDialogTrackerId = trackerId) }
         }

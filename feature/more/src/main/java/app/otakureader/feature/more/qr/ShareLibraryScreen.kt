@@ -104,20 +104,22 @@ fun ShareLibraryScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val currentError = error
+            val currentBitmap = qrBitmap
             when {
-                error != null -> {
+                currentError != null -> {
                     Text(
-                        text = error!!,
+                        text = currentError,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                qrBitmap == null -> {
+                currentBitmap == null -> {
                     CircularProgressIndicator()
                 }
                 else -> {
                     Image(
-                        bitmap = qrBitmap!!.asImageBitmap(),
+                        bitmap = currentBitmap.asImageBitmap(),
                         contentDescription = "QR code containing library data",
                         modifier = Modifier.size(280.dp)
                     )

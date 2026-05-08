@@ -48,13 +48,14 @@ fun TrackerOAuthScreen(
     code: String,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    callbackState: String? = null,
     viewModel: TrackerOAuthViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(tracker, code) {
-        viewModel.exchangeCode(tracker, code)
+        viewModel.exchangeCode(tracker, code, callbackState)
     }
 
     LaunchedEffect(state.error) {
@@ -131,7 +132,7 @@ fun TrackerOAuthScreen(
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(24.dp))
-                        Button(onClick = { viewModel.exchangeCode(tracker, code) }) {
+                        Button(onClick = { viewModel.exchangeCode(tracker, code, callbackState) }) {
                             Text("Retry")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
