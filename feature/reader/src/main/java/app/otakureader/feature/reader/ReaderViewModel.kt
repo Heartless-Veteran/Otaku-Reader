@@ -87,7 +87,6 @@ class ReaderViewModel @Inject constructor(
 
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null
-    private var hasTriggeredDeletion = false
 
     private var autoSaveJob: Job? = null
 
@@ -220,7 +219,6 @@ class ReaderViewModel @Inject constructor(
                 is ReaderChapterLoaderDelegate.Result.Success -> {
                     currentManga = result.manga
                     currentChapter = result.chapter
-                    hasTriggeredDeletion = false
 
                     val pages = result.pages
                     val initialPage = result.chapter.lastPageRead
@@ -420,7 +418,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleAction(event: ReaderEvent.ActionEvent) {
         when (event) {
             ReaderEvent.ToggleBookmark -> toggleBookmark()
-            ReaderEvent.SharePage -> sharePage()
+            ReaderEvent.SharePage -> Unit
             ReaderEvent.DismissError -> dismissError()
             ReaderEvent.Retry -> loadChapter()
         }
@@ -481,10 +479,6 @@ class ReaderViewModel @Inject constructor(
             val chapter = currentChapter
             if (manga != null && chapter != null) {
                 discordDelegate.updatePresence(manga.title, chapter.name, pages.size, validPage + 1)
-            }
-
-            if (pages.isNotEmpty() && validPage == pages.lastIndex) {
-                maybeDeleteAfterReading()
             }
 
             // Trigger download-ahead when user is near end of chapter
@@ -699,11 +693,6 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private fun sharePage() {
-        // Implementation for sharing current page
-    }
-
-
     /**
      * Schedule auto-save of reading progress with debouncing to prevent excessive database writes.
      * Multiple rapid page changes will only trigger one save after the delay period.
@@ -777,14 +766,6 @@ class ReaderViewModel @Inject constructor(
         changePage(page)
         _state.update { it.copy(isGalleryOpen = false) }
     }
-
-    private fun maybeDeleteAfterReading() {
-        // Delete-after-reading feature has been removed. This method is kept as a placeholder
-        // for potential future implementation but currently does nothing.
-        if (hasTriggeredDeletion) return
-        hasTriggeredDeletion = true
-    }
-
 
     override fun onCleared() {
         super.onCleared()

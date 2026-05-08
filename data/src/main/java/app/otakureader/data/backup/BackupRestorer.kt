@@ -52,21 +52,29 @@ class BackupRestorer @Inject constructor(
 
     /**
      * Restores all data from a backup JSON string.
+     *
+     * All database writes are wrapped in a single Room transaction so that a
+     * partial restore (e.g. process death mid-way) leaves the database unchanged.
+     * Preference restoration runs after the transaction because DataStore cannot
+     * participate in a Room transaction.
+     *
      * @param backupJson JSON string containing the backup data
      * @throws Exception if the backup cannot be parsed or restored
      */
     suspend fun restoreBackup(backupJson: String) {
         val backupData = json.decodeFromString<BackupData>(backupJson)
 
-        // Restore in order: categories first, then manga with chapters, then independent data
-        restoreCategories(backupData)
-        restoreManga(backupData)
+        database.withTransaction {
+            restoreCategories(backupData)
+            restoreManga(backupData)
+            restoreOpdsServers(backupData)
+            restoreFeedSources(backupData)
+            restoreFeedSavedSearches(backupData)
+            restoreSyncConfigurations(backupData)
+            restoreTrackerSyncStates(backupData)
+        }
+
         restorePreferences(backupData)
-        restoreOpdsServers(backupData)
-        restoreFeedSources(backupData)
-        restoreFeedSavedSearches(backupData)
-        restoreSyncConfigurations(backupData)
-        restoreTrackerSyncStates(backupData)
     }
 
     /**
@@ -189,36 +197,26 @@ class BackupRestorer @Inject constructor(
 
     private suspend fun restoreOpdsServers(backupData: BackupData) {
         if (backupData.opdsServers.isEmpty()) return
-        database.withTransaction {
-            opdsServerDao.insertAll(backupData.opdsServers.map { it.toOpdsServerEntity() })
-        }
+        opdsServerDao.insertAll(backupData.opdsServers.map { it.toOpdsServerEntity() })
     }
 
     private suspend fun restoreFeedSources(backupData: BackupData) {
         if (backupData.feedSources.isEmpty()) return
-        database.withTransaction {
-            feedDao.insertFeedSources(backupData.feedSources.map { it.toFeedSourceEntity() })
-        }
+        feedDao.insertFeedSources(backupData.feedSources.map { it.toFeedSourceEntity() })
     }
 
     private suspend fun restoreFeedSavedSearches(backupData: BackupData) {
         if (backupData.feedSavedSearches.isEmpty()) return
-        database.withTransaction {
-            feedDao.insertSavedSearches(backupData.feedSavedSearches.map { it.toFeedSavedSearchEntity() })
-        }
+        feedDao.insertSavedSearches(backupData.feedSavedSearches.map { it.toFeedSavedSearchEntity() })
     }
 
     private suspend fun restoreSyncConfigurations(backupData: BackupData) {
         if (backupData.syncConfigurations.isEmpty()) return
-        database.withTransaction {
-            trackerSyncDao.insertSyncConfigurations(backupData.syncConfigurations.map { it.toSyncConfigurationEntity() })
-        }
+        trackerSyncDao.insertSyncConfigurations(backupData.syncConfigurations.map { it.toSyncConfigurationEntity() })
     }
 
     private suspend fun restoreTrackerSyncStates(backupData: BackupData) {
         if (backupData.trackerSyncStates.isEmpty()) return
-        database.withTransaction {
-            trackerSyncDao.insertSyncStates(backupData.trackerSyncStates.map { it.toTrackerSyncStateEntity() })
-        }
+        trackerSyncDao.insertSyncStates(backupData.trackerSyncStates.map { it.toTrackerSyncStateEntity() })
     }
 }
