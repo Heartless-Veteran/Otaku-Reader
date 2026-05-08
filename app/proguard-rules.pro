@@ -23,5 +23,10 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
+# Keep custom Coil 3 Decoder implementations loaded reflectively by the ImageLoader pipeline.
+# Without this, R8 would strip Factory/create() methods that Coil discovers at runtime.
+-keep class * implements coil3.decode.Decoder { *; }
+-keep class * implements coil3.decode.Decoder$Factory { *; }
+
 # NOTE: Firebase/Firestore rules were removed — Firebase is not a project dependency.
 # If Firebase is added in the future, re-add the appropriate keep rules.
