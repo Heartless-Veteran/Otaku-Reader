@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.AniListApi
 import app.otakureader.data.tracking.api.AniListGraphQlQuery
 import app.otakureader.domain.model.TrackEntry
@@ -22,14 +23,15 @@ import app.otakureader.domain.tracking.Tracker
  *  - "REPEATING" → RE_READING
  */
 class AniListTracker(
-    private val api: AniListApi
+    private val api: AniListApi,
+    private val tokenStore: TrackerTokenStore,
 ) : Tracker {
 
     override val id: Int = TrackerType.ANILIST
     override val name: String = "AniList"
 
-    private var accessToken: String? = null
-    private var currentUserId: Long? = null
+    private var accessToken: String? = tokenStore.getTokens(TrackerType.ANILIST)?.accessToken
+    private var currentUserId: Long? = tokenStore.getTokens(TrackerType.ANILIST)?.userId
 
     override val isLoggedIn: Boolean
         get() = accessToken != null
@@ -38,6 +40,7 @@ class AniListTracker(
     override suspend fun login(username: String, password: String): Boolean {
         return try {
             accessToken = password
+            tokenStore.saveTokens(trackerId = id, accessToken = password)
             true
         } catch (e: Exception) {
             accessToken = null
@@ -48,6 +51,7 @@ class AniListTracker(
     override fun logout() {
         accessToken = null
         currentUserId = null
+        tokenStore.clearTokens(id)
     }
 
     override suspend fun search(query: String): List<TrackEntry> {

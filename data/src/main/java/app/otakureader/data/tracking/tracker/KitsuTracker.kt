@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.KitsuApi
 import app.otakureader.data.tracking.api.KitsuLibraryEntryAttributes
 import app.otakureader.data.tracking.api.KitsuLibraryEntryData
@@ -35,15 +36,16 @@ class KitsuTracker(
     private val oauthApi: KitsuOAuthApi,
     private val api: KitsuApi,
     private val clientId: String,
-    private val redirectUri: String
+    private val redirectUri: String,
+    private val tokenStore: TrackerTokenStore,
 ) : Tracker {
 
     override val id: Int = TrackerType.KITSU
     override val name: String = "Kitsu"
 
-    private var accessToken: String? = null
-    private var refreshToken: String? = null
-    private var userId: Long? = null
+    private var accessToken: String? = tokenStore.getTokens(TrackerType.KITSU)?.accessToken
+    private var refreshToken: String? = tokenStore.getTokens(TrackerType.KITSU)?.refreshToken
+    private var userId: Long? = tokenStore.getTokens(TrackerType.KITSU)?.userId
     private val tokenMutex = Mutex()
 
     override val isLoggedIn: Boolean
@@ -68,6 +70,12 @@ class KitsuTracker(
             val uid = fetchCurrentUserId()
             if (uid != null) {
                 userId = uid
+                tokenStore.saveTokens(
+                    trackerId = id,
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken,
+                    userId = uid,
+                )
                 true
             } else {
                 tokenMutex.withLock {
@@ -89,6 +97,7 @@ class KitsuTracker(
         accessToken = null
         refreshToken = null
         userId = null
+        tokenStore.clearTokens(id)
     }
 
     override suspend fun search(query: String): List<TrackEntry> {
