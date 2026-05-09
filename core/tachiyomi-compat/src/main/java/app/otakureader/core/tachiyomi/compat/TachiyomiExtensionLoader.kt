@@ -133,8 +133,19 @@ class TachiyomiExtensionLoader(
     private fun loadExtension(packageInfo: PackageInfo): LoadedExtension? {
         val packageName = packageInfo.packageName
 
-        // Return cached instance if already loaded
-        loadedExtensions[packageName]?.let { return it }
+        val incomingVersionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode.toLong()
+        }
+
+        // Return cached instance only when the version code hasn't changed.
+        // An updated APK with the same package name must be reloaded from disk.
+        loadedExtensions[packageName]?.let { cached ->
+            if (cached.versionCode == incomingVersionCode) return cached
+            loadedExtensions.remove(packageName)
+        }
 
         // Must declare the Tachiyomi extension feature flag
         val hasFeature = packageInfo.reqFeatures?.any { it.name == TACHIYOMI_EXTENSION_FEATURE } == true
@@ -177,12 +188,7 @@ class TachiyomiExtensionLoader(
             packageName = packageName,
             name = appInfo.loadLabel(packageManager).toString().substringAfter("Tachiyomi: "),
             versionName = packageInfo.versionName ?: "unknown",
-            versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            },
+            versionCode = incomingVersionCode,
             lang = lang,
             isNsfw = isNsfw,
             sources = sources.map { TachiyomiSourceAdapter(it, isNsfw) },

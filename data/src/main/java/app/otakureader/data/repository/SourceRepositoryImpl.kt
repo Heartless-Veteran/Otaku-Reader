@@ -366,10 +366,10 @@ class SourceRepositoryImpl @Inject constructor(
                 val extension = extensionLoader.loadExtensionFromApk(apkPath)
                     ?: return@withContext Result.failure(IllegalArgumentException("Failed to load extension from $apkPath"))
 
-                // Add the new sources to our list
                 val currentSources = _sources.value.toMutableList()
                 currentSources.addAll(extension.sources)
                 _sources.value = currentSources.distinctBy { it.id }
+                clearCaches()
 
                 Result.success(Unit)
             } catch (e: Exception) {
@@ -416,26 +416,24 @@ class SourceRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun refreshSources() {
-        withContext(Dispatchers.IO) {
-            // Resolve the local source outside try/catch so errors reading preferences
-            // don't get swallowed — and so the catch block can safely reference it.
+    override suspend fun refreshSources(): Result<Unit> {
+        return withContext(Dispatchers.IO) {
             val local = try {
                 currentLocalSource()
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Failed to resolve local source", e)
-                return@withContext
+                return@withContext Result.failure(e)
             }
             try {
-                // Load all installed Tachiyomi extensions
                 val extensions = extensionLoader.loadAllExtensions()
                 val extensionSources = extensions.flatMap { it.sources }
-                // Always prepend the built-in local source
                 _sources.value = (listOf(local) + extensionSources).distinctBy { it.id }
+                clearCaches()
+                Result.success(Unit)
             } catch (e: Exception) {
-                // Log error but don't crash; still expose the local source
                 android.util.Log.w(TAG, "Failed to load extensions, falling back to local source", e)
                 _sources.value = listOf(local)
+                Result.failure(e)
             }
         }
     }

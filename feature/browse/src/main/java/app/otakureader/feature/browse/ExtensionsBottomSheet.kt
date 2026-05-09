@@ -40,6 +40,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -50,8 +52,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -86,6 +88,16 @@ fun ExtensionsBottomSheet(
         skipPartiallyExpanded = false
     )
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is ExtensionsEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+            }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -95,6 +107,7 @@ fun ExtensionsBottomSheet(
         ExtensionsContent(
             state = state,
             onEvent = viewModel::onEvent,
+            snackbarHostState = snackbarHostState,
             onClose = {
                 scope.launch {
                     sheetState.hide()
@@ -111,10 +124,11 @@ fun ExtensionsBottomSheet(
 private fun ExtensionsContent(
     state: ExtensionsState,
     onEvent: (ExtensionsEvent) -> Unit,
+    snackbarHostState: SnackbarHostState,
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    val selectedTab = state.selectedTab
     val tabs = listOf("Installed", "Available", "Updates")
 
     Scaffold(
@@ -135,7 +149,8 @@ private fun ExtensionsContent(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -183,7 +198,7 @@ private fun ExtensionsContent(
                 tabs.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
+                        onClick = { onEvent(ExtensionsEvent.SelectTab(index)) },
                         text = {
                             when (index) {
                                 2 -> if (state.updateCount > 0) {

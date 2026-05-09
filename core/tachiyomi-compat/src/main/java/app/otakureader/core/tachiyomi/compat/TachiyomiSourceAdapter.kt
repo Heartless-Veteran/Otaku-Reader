@@ -262,8 +262,3 @@ class TachiyomiSourceAdapter(
         return (mangaUrl + chapterUrl).hashCode().toLong()
     }
 }
-
-/**
- * Extension function to convert RxJava Observable to blocking first
- */
-private fun <T> Observable<T>.toBlocking(): Observable<T> = this

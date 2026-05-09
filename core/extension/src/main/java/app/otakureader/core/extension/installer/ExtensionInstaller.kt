@@ -194,8 +194,10 @@ class ExtensionInstaller(
                     result
                 }
                 is ExtensionLoadResult.Untrusted -> {
-                    // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
-                    // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
+                    // Unreachable in this path: loadExtension() is always called with isShared=false
+                    // (an APK file on disk, not a system package), so the signature trust check
+                    // in loadFromPackageInfo() is bypassed. Untrusted is only returned by
+                    // loadExtensionFromPkgName() for system-installed shared extensions.
                     _installationState.value = InstallationState.Error(
                         "Extension is not trusted. Please verify its signature before installing.",
                         null
@@ -281,8 +283,10 @@ class ExtensionInstaller(
                         result
                     }
                     is ExtensionLoadResult.Untrusted -> {
-                        // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
-                        // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
+                        // Unreachable in this path: loadExtension() is always called with isShared=false
+                        // (an APK file on disk, not a system package), so the signature trust check
+                        // in loadFromPackageInfo() is bypassed. Untrusted is only returned by
+                        // loadExtensionFromPkgName() for system-installed shared extensions.
                         _installationState.value = InstallationState.Error(
                             "Extension is not trusted. Please verify its signature before updating.",
                             null
