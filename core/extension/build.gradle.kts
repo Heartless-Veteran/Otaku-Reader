@@ -21,6 +21,7 @@ dependencies {
     implementation(projects.sourceApi)
     implementation(projects.core.tachiyomiCompat)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.security.crypto)
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp.core)

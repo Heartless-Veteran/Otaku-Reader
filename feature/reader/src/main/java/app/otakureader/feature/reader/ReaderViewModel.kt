@@ -418,7 +418,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleAction(event: ReaderEvent.ActionEvent) {
         when (event) {
             ReaderEvent.ToggleBookmark -> toggleBookmark()
-            ReaderEvent.SharePage -> Unit
+            ReaderEvent.SharePage -> sharePage()
             ReaderEvent.DismissError -> dismissError()
             ReaderEvent.Retry -> loadChapter()
         }
@@ -697,6 +697,10 @@ class ReaderViewModel @Inject constructor(
      * Schedule auto-save of reading progress with debouncing to prevent excessive database writes.
      * Multiple rapid page changes will only trigger one save after the delay period.
      */
+    private fun sharePage() {
+        // Implementation for sharing current page
+    }
+
     private fun scheduleProgressSave() {
         autoSaveJob?.cancel()
         autoSaveJob = viewModelScope.launch {
