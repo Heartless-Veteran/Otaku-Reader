@@ -47,11 +47,11 @@ class MangaCategoryDaoTest {
  mangaDao.insert(manga)
  categoryDao.insert(category)
 
- mangaCategoryDao.insert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
+ mangaCategoryDao.upsert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
 
- val categories = mangaCategoryDao.getCategoriesForManga(1L).first()
- assertEquals(1, categories.size)
- assertEquals(1L, categories[0].categoryId)
+ val categoryIds = categoryDao.getCategoryIdsForManga(1L).first()
+ assertEquals(1, categoryIds.size)
+ assertEquals(1L, categoryIds[0])
  }
 
  @Test
@@ -62,15 +62,15 @@ class MangaCategoryDaoTest {
  categoryDao.insert(category)
 
  val link = MangaCategoryEntity(mangaId = 1L, categoryId = 1L)
- mangaCategoryDao.insert(link)
- mangaCategoryDao.delete(link)
+ mangaCategoryDao.upsert(link)
+ mangaCategoryDao.delete(1L, 1L)
 
- val categories = mangaCategoryDao.getCategoriesForManga(1L).first()
- assertTrue(categories.isEmpty())
+ val categoryIds = categoryDao.getCategoryIdsForManga(1L).first()
+ assertTrue(categoryIds.isEmpty())
  }
 
  @Test
- fun getMangaForCategory_returnsOnlyLinked() = runBlocking {
+ fun getMangaIdsForCategory_returnsOnlyLinked() = runBlocking {
  // Insert 2 manga
  val manga1 = MangaEntity(id = 1L, title = "Manga 1", sourceId = 1L, url = "url1", favorite = true)
  val manga2 = MangaEntity(id = 2L, title = "Manga 2", sourceId = 1L, url = "url2", favorite = true)
@@ -84,16 +84,16 @@ class MangaCategoryDaoTest {
  categoryDao.insert(cat2)
 
  // Link: manga1->cat1, manga2->cat2
- mangaCategoryDao.insert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
- mangaCategoryDao.insert(MangaCategoryEntity(mangaId = 2L, categoryId = 2L))
+ mangaCategoryDao.upsert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
+ mangaCategoryDao.upsert(MangaCategoryEntity(mangaId = 2L, categoryId = 2L))
 
- val readingManga = mangaCategoryDao.getMangaForCategory(1L).first()
- assertEquals(1, readingManga.size)
- assertEquals("Manga 1", readingManga[0].title)
+ val readingMangaIds = categoryDao.getMangaIdsByCategoryId(1L).first()
+ assertEquals(1, readingMangaIds.size)
+ assertEquals(1L, readingMangaIds[0])
 
- val completedManga = mangaCategoryDao.getMangaForCategory(2L).first()
- assertEquals(1, completedManga.size)
- assertEquals("Manga 2", completedManga[0].title)
+ val completedMangaIds = categoryDao.getMangaIdsByCategoryId(2L).first()
+ assertEquals(1, completedMangaIds.size)
+ assertEquals(2L, completedMangaIds[0])
  }
 
  @Test
@@ -102,17 +102,17 @@ class MangaCategoryDaoTest {
  val category = CategoryEntity(id = 1L, name = "Reading", order = 0)
  mangaDao.insert(manga)
  categoryDao.insert(category)
- mangaCategoryDao.insert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
+ mangaCategoryDao.upsert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
 
  // Verify link exists
- val linksBefore = mangaCategoryDao.getCategoriesForManga(1L).first()
+ val linksBefore = categoryDao.getCategoryIdsForManga(1L).first()
  assertEquals(1, linksBefore.size)
 
  // Delete manga (should cascade)
  mangaDao.deleteById(1L)
 
  // Link should be gone
- val linksAfter = mangaCategoryDao.getCategoriesForManga(1L).first()
+ val linksAfter = categoryDao.getCategoryIdsForManga(1L).first()
  assertTrue(linksAfter.isEmpty())
  }
 
@@ -124,10 +124,10 @@ class MangaCategoryDaoTest {
  categoryDao.insert(category)
 
  val link = MangaCategoryEntity(mangaId = 1L, categoryId = 1L)
- mangaCategoryDao.insert(link)
- mangaCategoryDao.insert(link) // Duplicate
+ mangaCategoryDao.upsert(link)
+ mangaCategoryDao.upsert(link) // Duplicate
 
- val categories = mangaCategoryDao.getCategoriesForManga(1L).first()
- assertEquals(1, categories.size)
+ val categoryIds = categoryDao.getCategoryIdsForManga(1L).first()
+ assertEquals(1, categoryIds.size)
  }
 }

@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -188,7 +190,7 @@ class MangaDaoTest {
  mangaDao.insert(MangaEntity(id = 2L, title = "2", sourceId = 1L, url = "url2", favorite = true))
  mangaDao.insert(MangaEntity(id = 3L, title = "3", sourceId = 1L, url = "url3", favorite = false))
 
- val count = mangaDao.getFavoriteMangaCount().first()
+ val count = mangaDao.countFavorites().first()
  assertEquals(2, count)
  }
 

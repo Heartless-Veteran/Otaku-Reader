@@ -61,7 +61,7 @@ class CategoryDaoTest {
  )
  categories.forEach { categoryDao.insert(it) }
 
- val all = categoryDao.getAllCategories().first()
+ val all = categoryDao.getCategories().first()
  assertEquals(3, all.size)
  assertEquals("Reading", all[0].name)
  assertEquals("Completed", all[1].name)
@@ -90,7 +90,7 @@ class CategoryDaoTest {
  }
 
  @Test
- fun getCategoriesForManga_returnsOnlyLinked() = runBlocking {
+ fun getCategoryIdsForManga_returnsOnlyLinked() = runBlocking {
  // Insert manga
  val manga = MangaEntity(id = 1L, title = "Test Manga", sourceId = 1L, url = "url", favorite = true)
  mangaDao.insert(manga)
@@ -102,11 +102,11 @@ class CategoryDaoTest {
  categoryDao.insert(cat2)
 
  // Link manga to only first category
- mangaCategoryDao.insert(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
+ categoryDao.insertMangaCategory(MangaCategoryEntity(mangaId = 1L, categoryId = 1L))
 
- val mangaCategories = categoryDao.getCategoriesForManga(1L).first()
- assertEquals(1, mangaCategories.size)
- assertEquals("Reading", mangaCategories[0].name)
+ val mangaCategoryIds = categoryDao.getCategoryIdsForManga(1L).first()
+ assertEquals(1, mangaCategoryIds.size)
+ assertEquals(1L, mangaCategoryIds[0])
  }
 
  @Test
@@ -114,7 +114,7 @@ class CategoryDaoTest {
  val cat1 = CategoryEntity(id = 1L, name = "Reading", order = 0)
  categoryDao.insert(cat1)
 
- val default = categoryDao.getDefaultCategory()
+ val default = categoryDao.getCategories().first().firstOrNull()
  assertNotNull(default)
  assertEquals("Reading", default?.name)
  }
@@ -130,7 +130,7 @@ class CategoryDaoTest {
  categoryDao.update(cat1.copy(order = 1))
  categoryDao.update(cat2.copy(order = 0))
 
- val all = categoryDao.getAllCategories().first()
+ val all = categoryDao.getCategories().first()
  assertEquals("Completed", all[0].name)
  assertEquals("Reading", all[1].name)
  }

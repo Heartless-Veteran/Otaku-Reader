@@ -78,25 +78,68 @@ class LibraryViewModel @Inject constructor(
 
     fun onEvent(event: LibraryEvent) {
         when (event) {
+            is LibraryEvent.Refresh,
+            is LibraryEvent.OnMangaClick,
+            is LibraryEvent.OnMangaLongClick,
+            is LibraryEvent.ContinueReadingClick -> handleNavigationEvent(event)
+            is LibraryEvent.OnSearchQueryChange,
+            is LibraryEvent.ToggleSearchBar,
+            is LibraryEvent.OnCategorySelected,
+            is LibraryEvent.ClearSelection -> handleUiStateEvent(event)
+            is LibraryEvent.FilterHasNotes,
+            is LibraryEvent.SetSortMode,
+            is LibraryEvent.SetFilterMode,
+            is LibraryEvent.SetFilterSource,
+            is LibraryEvent.ToggleNsfw,
+            is LibraryEvent.SetFilterReadingList -> handleFilterSortEvent(event)
+            is LibraryEvent.ToggleFavorite,
+            is LibraryEvent.MarkSelectedAsRead,
+            is LibraryEvent.MarkSelectedAsUnread,
+            is LibraryEvent.RemoveSelectedFromLibrary,
+            is LibraryEvent.DownloadSelected -> handleActionEvent(event)
+        }
+    }
+
+    private fun handleNavigationEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.Refresh -> onRefresh()
             is LibraryEvent.OnMangaClick -> onMangaClick(event.mangaId)
             is LibraryEvent.OnMangaLongClick -> onMangaLongClick(event.mangaId)
+            is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId, event.chapterId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleUiStateEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.OnSearchQueryChange -> onSearchQueryChange(event.query)
             is LibraryEvent.ToggleSearchBar -> toggleSearchBar()
             is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
             is LibraryEvent.ClearSelection -> clearSelection()
-            is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleFilterSortEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.FilterHasNotes -> onFilterHasNotes(event.enabled)
             is LibraryEvent.SetSortMode -> onSetSortMode(event.mode)
             is LibraryEvent.SetFilterMode -> onSetFilterMode(event.mode)
             is LibraryEvent.SetFilterSource -> onSetFilterSource(event.sourceId)
             is LibraryEvent.ToggleNsfw -> onToggleNsfw(event.show)
+            is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleActionEvent(event: LibraryEvent) {
+        when (event) {
+            is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
             is LibraryEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is LibraryEvent.MarkSelectedAsUnread -> markSelectedAsUnread()
             is LibraryEvent.RemoveSelectedFromLibrary -> removeSelectedFromLibrary()
             is LibraryEvent.DownloadSelected -> downloadSelected()
-            is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId, event.chapterId)
-            is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
+            else -> Unit // unreachable due to outer when
         }
     }
 
@@ -281,60 +324,76 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
-        var filtered = items
+        val filtered = items
+            .let { applyCategoryFilter(it, params) }
+            .let { applyNsfwFilter(it, params) }
+            .let { applySearchFilter(it, params) }
+            .let { applyHasNotesFilter(it, params) }
+            .let { applySourceFilter(it, params) }
+            .let { applyReadingListFilter(it, params) }
+            .let { applyFilterMode(it, params.filterMode) }
+        return applySort(filtered, params.sortMode)
+    }
 
-        // Category filter
-        if (params.selectedCategory != null) {
-            filtered = filtered.filter { mangaItem ->
-                mangaItem.id in params.categoryMangaIds
-            }
+    private fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.selectedCategory != null) {
+            items.filter { it.id in params.categoryMangaIds }
+        } else {
+            items
         }
+    }
 
-        // NSFW filter
-        if (!params.showNsfw) {
-            filtered = filtered.filter { !it.isNsfw }
+    private fun applyNsfwFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (!params.showNsfw) items.filter { !it.isNsfw } else items
+    }
+
+    private fun applySearchFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.query.isNotBlank()) {
+            items.filter { it.title.contains(params.query, ignoreCase = true) }
+        } else {
+            items
         }
+    }
 
-        // Search filter
-        if (params.query.isNotBlank()) {
-            filtered = filtered.filter {
-                it.title.contains(params.query, ignoreCase = true)
-            }
+    private fun applyHasNotesFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterHasNotes) items.filter { it.hasNote } else items
+    }
+
+    private fun applySourceFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterSourceId != null) {
+            items.filter { it.sourceId == params.filterSourceId }
+        } else {
+            items
         }
+    }
 
-        // Has notes filter
-        if (params.filterHasNotes) {
-            filtered = filtered.filter { it.hasNote }
+    private fun applyReadingListFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterReadingListId != null) {
+            items.filter { it.id in params.readingListMangaIds }
+        } else {
+            items
         }
+    }
 
-        // Filter by source
-        if (params.filterSourceId != null) {
-            filtered = filtered.filter { it.sourceId == params.filterSourceId }
+    private fun applyFilterMode(items: List<LibraryMangaItem>, filterMode: LibraryFilterMode): List<LibraryMangaItem> {
+        return when (filterMode) {
+            LibraryFilterMode.DOWNLOADED -> items.filter { it.isDownloaded }
+            LibraryFilterMode.UNREAD -> items.filter { it.unreadCount > 0 }
+            LibraryFilterMode.COMPLETED -> items.filter { it.userCompleted }
+            LibraryFilterMode.DROPPED -> items.filter { it.userDropped }
+            LibraryFilterMode.TRACKING -> items.filter { it.hasTracking }
+            LibraryFilterMode.READING_LIST -> items
+            LibraryFilterMode.ALL -> items
         }
+    }
 
-        // Reading list filter (applied independently of filterMode to avoid DataStore conflicts)
-        if (params.filterReadingListId != null) {
-            filtered = filtered.filter { it.id in params.readingListMangaIds }
-        }
-
-        // Filter mode
-        filtered = when (params.filterMode) {
-            LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
-            LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
-            LibraryFilterMode.COMPLETED -> filtered.filter { it.userCompleted }
-            LibraryFilterMode.DROPPED -> filtered.filter { it.userDropped }
-            LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
-            LibraryFilterMode.READING_LIST -> filtered
-            LibraryFilterMode.ALL -> filtered
-        }
-
-        // Sort
-        return when (params.sortMode) {
-            LibrarySortMode.ALPHABETICAL -> filtered.sortedBy { it.title }
-            LibrarySortMode.LAST_READ -> filtered.sortedByDescending { it.lastRead ?: 0L }
-            LibrarySortMode.DATE_ADDED -> filtered.sortedByDescending { it.dateAdded }
-            LibrarySortMode.UNREAD_COUNT -> filtered.sortedByDescending { it.unreadCount }
-            LibrarySortMode.SOURCE -> filtered.sortedBy { it.sourceId }
+    private fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode): List<LibraryMangaItem> {
+        return when (sortMode) {
+            LibrarySortMode.ALPHABETICAL -> items.sortedBy { it.title }
+            LibrarySortMode.LAST_READ -> items.sortedByDescending { it.lastRead ?: 0L }
+            LibrarySortMode.DATE_ADDED -> items.sortedByDescending { it.dateAdded }
+            LibrarySortMode.UNREAD_COUNT -> items.sortedByDescending { it.unreadCount }
+            LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         }
     }
 
