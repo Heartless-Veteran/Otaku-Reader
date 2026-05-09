@@ -309,11 +309,12 @@ class ExtensionLoader(
 
         val extension = buildExtension(apkPath, packageInfo, sources, isNsfw, isShared)
 
-        // Signature trust check: private extensions are verified at install time; shared
-        // extensions (installed via system package manager) must be in the user-approved set.
-        // Fail closed: if the signature hash cannot be computed, treat the extension as untrusted.
+        // Signature trust check — applied to ALL extensions regardless of origin.
+        // Private extensions are auto-trusted at install time via installPrivateExtensionFile(),
+        // but the trust store is the authoritative gate at load time.
+        // Fail closed: if the hash cannot be computed, treat the extension as untrusted.
         val sigHash = extension.signatureHash
-        if (isShared && (sigHash == null || !signatureVerifier.isTrusted(sigHash))) {
+        if (sigHash == null || !signatureVerifier.isTrusted(sigHash)) {
             return ExtensionLoadResult.Untrusted(extension)
         }
 

@@ -1,7 +1,10 @@
 package app.otakureader.core.extension.loader
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.core.content.edit
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,11 +19,25 @@ import javax.inject.Singleton
  * installation time (their signature is verified against the existing file at that point).
  *
  * Hashes are SHA-256 of the DER-encoded signing certificate, hex-lower-case encoded.
+ *
+ * The backing store is [EncryptedSharedPreferences] so the trust list cannot be tampered
+ * with via ADB or root without also compromising the Android Keystore.
  */
 @Singleton
 class TrustedSignatureStore @Inject constructor(@ApplicationContext context: Context) {
 
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences by lazy {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        EncryptedSharedPreferences.create(
+            context,
+            PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
 
     fun isTrusted(signatureHash: String): Boolean =
         prefs.getStringSet(KEY_TRUSTED_HASHES, emptySet())?.contains(signatureHash) == true

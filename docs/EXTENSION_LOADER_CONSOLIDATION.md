@@ -1,44 +1,48 @@
 # Extension Loader Consolidation
 
-## Why Two Loaders?
+## Problem
 
-The extension system has two classes that load Tachiyomi-compatible APKs:
+There is intentional code duplication between:
 
-| Class | Module | Responsibility |
-|-------|--------|---------------|
-| `ExtensionLoader` | `core:extension` | Validates, installs, and trusts extensions. Returns `ExtensionLoadResult` domain types. Used by `ExtensionInstaller`. |
-| `TachiyomiExtensionLoader` | `core:tachiyomi-compat` | Scans all installed packages, wraps sources in `TachiyomiSourceAdapter`. Used by `SourceRepositoryImpl`. |
+- `core/extension/loader/ExtensionLoadingUtils.kt` (or constants within `ExtensionLoader.kt`)
+- `core/tachiyomi-compat/TachiyomiExtensionLoader.kt`
 
-Both classes share the same core loading logic (feature-flag detection, metadata reading, class instantiation via `ChildFirstPathClassLoader`).
+Both define the same Tachiyomi-compatible constants for APK manifest metadata parsing:
 
-## Why the Code Is Duplicated
+| Constant | Value | Purpose |
+|---|---|---|
+| `TACHIYOMI_EXTENSION_FEATURE` | `"tachiyomi.extension"` | The `<uses-feature>` tag that identifies an extension APK |
+| `METADATA_SOURCE_CLASS` | `"tachiyomi.extension.class"` | Manifest meta-data key for the source class name |
+| `METADATA_SOURCE_FACTORY` | `"tachiyomi.extension.factory"` | Manifest meta-data key for the source factory class |
+| `METADATA_NSFW` | `"tachiyomi.extension.nsfw"` | Manifest meta-data key for NSFW flag |
 
-A shared utility in `core:extension` cannot be consumed by `core:tachiyomi-compat` without creating a **circular Gradle dependency**:
+## Why It Can't Be Consolidated
+
+The two modules have a dependency direction that makes consolidation impossible:
 
 ```
-core:extension  →  core:tachiyomi-compat   (already exists — ExtensionLoader uses tachiyomi stubs)
-core:tachiyomi-compat  →  core:extension   (would create a cycle)
+core:extension → depends on → core:tachiyomi-compat (for Tachiyomi models and source API stubs)
 ```
 
-Extracting to a third module (e.g. `core:extension-api`) would be the long-term fix, but that is a larger refactor than the current stabilisation phase warrants.
+The reverse dependency — `core:tachiyomi-compat` depending on `core:extension` — would create a **circular Gradle dependency**, which is illegal.
 
-## Constants That Must Stay in Sync
+`TachiyomiExtensionLoader.kt` lives in `core:tachiyomi-compat` because it bridges Tachiyomi APK loading into the Otaku Reader extension system. It needs the Tachiyomi model stubs (`SManga`, `SChapter`, etc.) and the `source-api` interfaces, which are all in `core:tachiyomi-compat`.
 
-If either file changes any of these constants, the other file **must be updated in the same commit**:
+`ExtensionLoader.kt` / `ExtensionLoadingUtils.kt` lives in `core:extension` because it orchestrates the full extension lifecycle — signature validation, DEX loading, repository lookup, trust store checks — and needs access to the app's Room database, preferences, and network stack.
 
-| Constant | Value |
-|----------|-------|
-| `TACHIYOMI_EXTENSION_FEATURE` / `EXTENSION_FEATURE` | `"tachiyomi.extension"` |
-| `METADATA_SOURCE_CLASS` | `"tachiyomi.extension.class"` |
-| `METADATA_SOURCE_FACTORY` | `"tachiyomi.extension.factory"` |
-| `METADATA_NSFW` | `"tachiyomi.extension.nsfw"` |
+## Maintenance Rule
 
-## Future Consolidation Path
+**If either file changes any of the four constants above, the other must be updated in the same commit.**
 
-When this module boundary causes enough friction, the fix is:
+These are the only duplicated constants that must be kept in sync:
 
-1. Create `core:extension-base` (pure Kotlin, no Android UI) with the shared constants and loading utilities.
-2. Make both `core:extension` and `core:tachiyomi-compat` depend on `core:extension-base`.
-3. Delete the duplicated code from both modules.
+- `TACHIYOMI_EXTENSION_FEATURE`
+- `METADATA_SOURCE_CLASS`
+- `METADATA_SOURCE_FACTORY`
+- `METADATA_NSFW`
 
-This is tracked but not scheduled.
+All other logic in `TachiyomiExtensionLoader.kt` (the actual APK parsing via `PackageManager.getPackageArchiveInfo()`, the `DexClassLoader` instantiation, the reflection-based `CatalogueSource` wrapping) is specific to the Tachiyomi bridge and does not need to match `ExtensionLoader.kt`.
+
+## Future Resolution (if ever)
+
+If the project ever reorganizes modules such that the Tachiyomi bridge can live inside `core:extension` (or a new shared module that both depend on), these constants could be extracted into a shared object. Until then, duplication is intentional and correct.

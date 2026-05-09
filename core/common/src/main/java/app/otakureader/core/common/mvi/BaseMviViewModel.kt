@@ -12,28 +12,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Base ViewModel for MVI pattern.
+ * Optional base ViewModel for the MVI pattern.
+ *
+ * Existing ViewModels extend [androidx.lifecycle.ViewModel] directly, but new ViewModels
+ * may extend this class to avoid boilerplate for the state/effect/event wiring.
  *
  * @param S UI state type (immutable data class)
  * @param E UI event type (sealed interface of user actions)
  * @param F UI effect type (sealed interface of one-shot side effects)
- *
- * Usage:
- * ```
- * class LibraryViewModel @Inject constructor(
- *     private val getLibraryManga: GetLibraryMangaUseCase
- * ) : BaseMviViewModel<LibraryUiState, LibraryUiEvent, LibraryUiEffect>(
- *     initialState = LibraryUiState()
- * ) {
- *     override fun processEvent(event: LibraryUiEvent) {
- *         when (event) {
- *             is LibraryUiEvent.Refresh -> loadManga(force = event.force)
- *             is LibraryUiEvent.Search -> search(event.query)
- *         }
- *     }
- * }
- * ```
  */
+@Suppress("unused")
 abstract class BaseMviViewModel<S : UiState, E : UiEvent, F : UiEffect>(
     initialState: S,
 ) : ViewModel() {

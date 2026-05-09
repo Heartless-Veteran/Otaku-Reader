@@ -15,9 +15,17 @@ sealed class DeepLinkResult {
         val mangaUrl: String,
         val title: String? = null
     ) : DeepLinkResult()
-    
+
     data class SearchQuery(
         val query: String
+    ) : DeepLinkResult()
+
+    /** OAuth callback for tracker login. */
+    data class TrackerOAuth(
+        val tracker: String,
+        val code: String,
+        /** CSRF state token returned by the provider; null if the provider omitted it. */
+        val state: String? = null,
     ) : DeepLinkResult()
 
     /** Navigate directly to the Library screen. */
@@ -31,7 +39,7 @@ sealed class DeepLinkResult {
         val mangaId: Long,
         val chapterId: Long
     ) : DeepLinkResult()
-    
+
     object Invalid : DeepLinkResult()
 }
 
@@ -42,13 +50,13 @@ object DeepLinkHandler {
 
     private val UUID_REGEX =
         Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-    
+
     /**
      * Parse an intent to extract deep link information.
      */
     fun parseIntent(intent: Intent?): DeepLinkResult {
         if (intent == null) return DeepLinkResult.Invalid
-        
+
         return when (intent.action) {
             Intent.ACTION_VIEW -> parseViewIntent(intent)
             Intent.ACTION_SEND -> parseSendIntent(intent)
@@ -58,23 +66,29 @@ object DeepLinkHandler {
             else -> DeepLinkResult.Invalid
         }
     }
-    
+
     /**
      * Parse a VIEW intent (deep link from browser, Discord, etc.)
      */
     private fun parseViewIntent(intent: Intent): DeepLinkResult {
         val data: Uri = intent.data ?: return DeepLinkResult.Invalid
+        val scheme = data.scheme?.lowercase() ?: return DeepLinkResult.Invalid
         val host = data.host?.lowercase() ?: return DeepLinkResult.Invalid
-        
+
+        // Handle OAuth callbacks first (custom scheme)
+        if (scheme == "app.otakureader") {
+            return parseOAuthCallback(data, host)
+        }
+
         // Handle MangaDex URLs - allow the main domain and its subdomains
         if (host == "mangadex.org" || host.endsWith(".mangadex.org")) {
             return parseMangaDexUrl(data)
         }
-        
+
         // Handle generic manga URLs
         return parseGenericMangaUrl(data, host)
     }
-    
+
     /**
      * Parse a SEND intent (share from other apps)
      */
@@ -100,7 +114,27 @@ object DeepLinkHandler {
         // If no supported URL was found, treat the entire shared text as a search query (already trimmed)
         return DeepLinkResult.SearchQuery(sharedText)
     }
-    
+
+    /**
+     * Parse OAuth callback URLs from tracker services.
+     *
+     * Supported hosts:
+     * - `kitsu-oauth` → Kitsu
+     * - `mal-oauth` → MyAnimeList
+     * - `shikimori-oauth` → Shikimori
+     */
+    private fun parseOAuthCallback(uri: Uri, host: String): DeepLinkResult {
+        val code = uri.getQueryParameter("code") ?: return DeepLinkResult.Invalid
+        val tracker = when (host) {
+            "kitsu-oauth" -> "kitsu"
+            "mal-oauth" -> "mal"
+            "shikimori-oauth" -> "shikimori"
+            else -> return DeepLinkResult.Invalid
+        }
+        val state = uri.getQueryParameter("state")
+        return DeepLinkResult.TrackerOAuth(tracker = tracker, code = code, state = state)
+    }
+
     /**
      * Parse MangaDex-specific URLs.
      * Validates that the manga ID is a well-formed UUID to prevent deep link hijacking
@@ -121,7 +155,7 @@ object DeepLinkHandler {
 
         return DeepLinkResult.Invalid
     }
-    
+
     /**
      * Parse generic manga URLs from various sources
      */
@@ -137,7 +171,7 @@ object DeepLinkHandler {
                     title = null
                 )
             }
-            
+
             host == "webtoons.com" || host.endsWith(".webtoons.com") -> {
                 DeepLinkResult.MangaUrl(
                     baseUrl = "${uri.scheme ?: "https"}://$host",
@@ -145,18 +179,18 @@ object DeepLinkHandler {
                     title = null
                 )
             }
-            
+
             else -> DeepLinkResult.Invalid
         }
     }
-    
+
     /**
      * Check if the given URL is a supported manga URL
      */
     fun isSupportedUrl(url: String): Boolean {
         val uri = Uri.parse(url)
         val host = uri.host?.lowercase() ?: return false
-        
+
         return when {
             host == "mangadex.org" || host.endsWith(".mangadex.org") -> true
             host == "mangakakalot.com" || host.endsWith(".mangakakalot.com") -> true

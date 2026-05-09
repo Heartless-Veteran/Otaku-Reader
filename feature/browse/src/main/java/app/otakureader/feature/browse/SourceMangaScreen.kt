@@ -132,7 +132,7 @@ fun SourceMangaScreen(
         when {
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(paddingValues))
             state.error != null -> ErrorScreen(
-                message = state.error ?: "Unknown error",
+                message = state.error ?: stringResource(R.string.browse_unknown_error),
                 onRetry = { viewModel.onEvent(SourceMangaEvent.Refresh) },
                 modifier = Modifier.padding(paddingValues)
             )
@@ -168,12 +168,12 @@ private fun EmptyMangaView(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "No manga found",
+                text = stringResource(R.string.browse_no_manga_found),
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Pull to refresh or try again",
+                text = stringResource(R.string.browse_pull_to_refresh),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -231,7 +231,7 @@ private fun MangaGrid(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Load more",
+                        text = stringResource(R.string.browse_load_more),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )

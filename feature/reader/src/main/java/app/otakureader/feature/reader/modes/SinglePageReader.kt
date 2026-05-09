@@ -62,6 +62,7 @@ fun SinglePageReader(
     
     HorizontalPager(
         state = pagerState,
+        beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { pageIndex ->
         Box(

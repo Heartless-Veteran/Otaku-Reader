@@ -120,8 +120,10 @@ class ExtensionInstaller(
                 }
             }
 
-            // Register the extension inside the app
-            val result = install(downloadFile)
+            // Register the extension inside the app, passing the repo-verified hash so the
+            // universal trust gate inside ExtensionLoader can be satisfied without a separate
+            // user confirmation step.
+            val result = install(downloadFile, trustedHash = extension.signatureHash)
 
             result.onSuccess { installed ->
                 installed.apkPath?.let { path ->
@@ -141,13 +143,24 @@ class ExtensionInstaller(
 
     /**
      * Install an extension from a downloaded APK file.
-     * @param apkFile The downloaded APK file
-     * @return Result containing the installed Extension
+     *
+     * @param apkFile The downloaded APK file.
+     * @param trustedHash When non-null this hash was already verified by the caller against
+     *   a repository-sourced expected hash. The extension is added to the trust store before
+     *   loading so the universal trust gate inside [ExtensionLoader] passes.  When null (e.g.
+     *   user-sideloaded APK), the extension must already be trusted or [ExtensionLoadResult.Untrusted]
+     *   is returned and the caller must present a user-facing trust confirmation dialog.
      */
-    suspend fun install(apkFile: File): Result<Extension> = withContext(Dispatchers.IO) {
+    suspend fun install(apkFile: File, trustedHash: String? = null): Result<Extension> =
+        withContext(Dispatchers.IO) {
         try {
             _installationState.value = InstallationState.Verifying
-            
+
+            // Pre-trust when the caller has already verified the hash against a known-good source.
+            if (trustedHash != null) {
+                loader.trustExtension(trustedHash)
+            }
+
             // Load and verify the extension
             val loadResult = loader.loadExtension(apkFile.absolutePath)
             
@@ -194,10 +207,9 @@ class ExtensionInstaller(
                     result
                 }
                 is ExtensionLoadResult.Untrusted -> {
-                    // Unreachable in this path: loadExtension() is always called with isShared=false
-                    // (an APK file on disk, not a system package), so the signature trust check
-                    // in loadFromPackageInfo() is bypassed. Untrusted is only returned by
-                    // loadExtensionFromPkgName() for system-installed shared extensions.
+                    // The extension's signer is not in TrustedSignatureStore.
+                    // For sideloaded APKs (trustedHash == null) this is expected — the caller
+                    // should prompt the user and call loader.trustExtension() before retrying.
                     _installationState.value = InstallationState.Error(
                         "Extension is not trusted. Please verify its signature before installing.",
                         null
@@ -254,10 +266,23 @@ class ExtensionInstaller(
                             )
                         }
 
+                        // Signer continuity: fail closed if a different certificate signs the update.
+                        // A compromised repository could replace a trusted extension with one signed
+                        // by a different certificate — reject the update unless hashes match.
+                        val oldExtension = repository.getExtension(pkgName)
+                        val existingHash = oldExtension?.signatureHash
+                        val newHash = extension.signatureHash
+                        if (existingHash != null && newHash != existingHash) {
+                            return@withContext Result.failure(
+                                SecurityException(
+                                    "Extension update rejected: signing certificate changed for $pkgName"
+                                )
+                            )
+                        }
+
                         _installationState.value = InstallationState.Installing
 
                         // Remove old APK
-                        val oldExtension = repository.getExtension(pkgName)
                         oldExtension?.apkPath?.let { oldPath ->
                             File(oldPath).delete()
                         }
@@ -283,10 +308,10 @@ class ExtensionInstaller(
                         result
                     }
                     is ExtensionLoadResult.Untrusted -> {
-                        // Unreachable in this path: loadExtension() is always called with isShared=false
-                        // (an APK file on disk, not a system package), so the signature trust check
-                        // in loadFromPackageInfo() is bypassed. Untrusted is only returned by
-                        // loadExtensionFromPkgName() for system-installed shared extensions.
+                        // The update APK's signing certificate is not in TrustedSignatureStore.
+                        // This is the expected path when a signer-changed APK is presented —
+                        // ExtensionLoader.loadFromPackageInfo() now gates ALL extensions through
+                        // the trust store, so an unknown signer produces Untrusted here.
                         _installationState.value = InstallationState.Error(
                             "Extension is not trusted. Please verify its signature before updating.",
                             null

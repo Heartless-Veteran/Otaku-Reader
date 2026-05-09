@@ -47,6 +47,8 @@
     <string name="details_notify_title">Notify for new chapters</string>
     <string name="details_notify_enabled">You will be notified when new chapters are found</string>
     <string name="details_notify_disabled">Notifications are muted for this manga</string>
+    <string name="details_notify_icon_on">Notifications on</string>
+    <string name="details_notify_icon_off">Notifications off</string>
 
     <!-- Reader settings -->
     <string name="details_reader_settings">Reader Settings</string>
@@ -111,7 +113,13 @@
     <string name="details_chapter_remove_bookmark">Remove bookmark</string>
     <string name="details_chapter_mark_previous_as_read">Mark previous as read</string>
     <string name="details_chapter_download">Download chapter</string>
+    <string name="details_chapter_downloading">Downloading</string>
     <string name="details_chapter_delete_download">Delete download</string>
+    <string name="details_chapter_thumbnail_cd">Chapter thumbnail</string>
+    <string name="details_chapter_load_preview">Load\npreview</string>
+    <string name="details_chapter_reading_progress">Page %1$d / %2$d</string>
+    <string name="details_chapter_read_time">~%1$s read</string>
+    <string name="details_chapter_number_format">Chapter %1$d%2$s</string>
     <string name="details_chapter_export_cbz">Export as CBZ</string>
 
     <!-- Stepper control -->

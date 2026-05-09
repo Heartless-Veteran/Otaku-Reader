@@ -57,4 +57,12 @@
     <!-- Update Errors -->
     <string name="more_update_errors">Update Errors</string>
     <string name="more_update_errors_desc">Review and clear update failures</string>
+
+    <!-- ShareLibraryScreen -->
+    <string name="more_share_library_title">Share Library</string>
+    <string name="more_share_library_hint">Show this QR code to a friend to share your library</string>
+    <string name="more_share_library_qr_cd">QR code containing library data</string>
+    <string name="more_share_library_scan_button">Scan Someone Else\'s Library</string>
+    <string name="more_share_library_encode_error">Failed to encode library: %1$s</string>
+    <string name="more_share_library_qr_error">Failed to generate QR code</string>
 </resources>

@@ -881,7 +881,7 @@ private fun NotificationOption(
         leadingContent = {
             Icon(
                 imageVector = if (notifyEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                contentDescription = "Cover image",
+                contentDescription = if (notifyEnabled) stringResource(R.string.details_notify_icon_on) else stringResource(R.string.details_notify_icon_off),
                 tint = if (notifyEnabled) MaterialTheme.colorScheme.primary
                        else MaterialTheme.colorScheme.onSurfaceVariant
             )

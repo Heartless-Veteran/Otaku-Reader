@@ -39,6 +39,7 @@ import app.otakureader.core.common.qr.generateQrCode
 import app.otakureader.domain.model.ShareableLibrary
 import app.otakureader.domain.model.ShareableManga
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.feature.more.R
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -61,28 +62,31 @@ fun ShareLibraryScreen(
     var qrBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    val encodeErrorFormat = stringResource(R.string.more_share_library_encode_error)
+    val qrError = stringResource(R.string.more_share_library_qr_error)
+
     LaunchedEffect(mangaList) {
         val library = ShareableLibrary(manga = mangaList)
         val json = try {
             Json.encodeToString(library)
         } catch (e: Exception) {
-            error = "Failed to encode library: ${e.message}"
+            error = encodeErrorFormat.format(e.message ?: "")
             return@LaunchedEffect
         }
         // ZXing can handle ~2-3KB reliably at medium ECC level
         qrBitmap = generateQrCode(json, size = 512)
         if (qrBitmap == null) {
-            error = "Failed to generate QR code"
+            error = qrError
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Share Library") },
+                title = { Text(stringResource(R.string.more_share_library_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(app.otakureader.feature.more.R.string.more_back))
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.more_back))
                     }
                 }
             )
@@ -97,28 +101,30 @@ fun ShareLibraryScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Show this QR code to a friend to share your library",
+                text = stringResource(R.string.more_share_library_hint),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val currentError = error
+            val currentBitmap = qrBitmap
             when {
-                error != null -> {
+                currentError != null -> {
                     Text(
-                        text = error!!,
+                        text = currentError,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                qrBitmap == null -> {
+                currentBitmap == null -> {
                     CircularProgressIndicator()
                 }
                 else -> {
                     Image(
-                        bitmap = qrBitmap!!.asImageBitmap(),
-                        contentDescription = "QR code containing library data",
+                        bitmap = currentBitmap.asImageBitmap(),
+                        contentDescription = stringResource(R.string.more_share_library_qr_cd),
                         modifier = Modifier.size(280.dp)
                     )
                 }
@@ -136,7 +142,7 @@ fun ShareLibraryScreen(
                 onClick = onScanLibrary,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Scan Someone Else's Library")
+                Text(stringResource(R.string.more_share_library_scan_button))
             }
         }
     }

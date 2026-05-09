@@ -33,6 +33,7 @@ import app.otakureader.feature.opds.navigation.opdsScreen
 import app.otakureader.feature.reader.navigation.readerScreen
 import app.otakureader.feature.settings.navigation.settingsScreen
 import app.otakureader.feature.statistics.navigation.statisticsScreen
+import app.otakureader.feature.tracking.navigation.trackerOAuthScreen
 import app.otakureader.feature.tracking.navigation.trackingScreen
 import app.otakureader.feature.updates.navigation.downloadsScreen
 import app.otakureader.feature.updates.navigation.updatesScreen
@@ -77,6 +78,14 @@ fun OtakuReaderNavHost(
             is DeepLinkResult.ContinueReading -> {
                 navController.navigate(
                     Route.Reader(deepLinkResult.mangaId, deepLinkResult.chapterId)
+                ) {
+                    launchSingleTop = true
+                }
+                onDeepLinkConsumed()
+            }
+            is DeepLinkResult.TrackerOAuth -> {
+                navController.navigate(
+                    Route.TrackerOAuth(deepLinkResult.tracker, deepLinkResult.code, deepLinkResult.state)
                 ) {
                     launchSingleTop = true
                 }
@@ -329,6 +338,13 @@ fun OtakuReaderNavHost(
 
         // Tracking
         trackingScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
+        )
+
+        // Tracker OAuth callback
+        trackerOAuthScreen(
             onNavigateBack = {
                 navController.popBackStack()
             }

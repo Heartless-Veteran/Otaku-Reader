@@ -29,7 +29,7 @@ class OtakuReaderNavigator(
         @Composable get() = when {
             currentDestination == null -> false
             else -> topLevelRoutes.any { route ->
-                currentDestination!!.hasRoute(route::class)
+                currentDestination?.hasRoute(route::class) == true
             }
         }
 

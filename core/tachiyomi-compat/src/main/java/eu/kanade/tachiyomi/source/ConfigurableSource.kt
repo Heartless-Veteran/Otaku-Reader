@@ -1,15 +1,31 @@
 package eu.kanade.tachiyomi.source
 
+import android.content.SharedPreferences
+import eu.kanade.tachiyomi.source.model.FilterList
+
 /**
- * Stub interface for Tachiyomi extensions that expose per-source user preferences.
+ * Minimal stub for Tachiyomi extension compatibility.
  *
- * Extensions from Keiyoushi and Komikku may declare `implements ConfigurableSource`
- * so the host app can detect and surface source-level settings. Without this stub,
- * the class loader would throw NoClassDefFoundError when instantiating such extensions,
- * because the interface must exist in the host's class path for the `is ConfigurableSource`
- * check to succeed.
+ * Extensions from Keiyoushi/Komikku that implement [ConfigurableSource] require
+ * this interface in the host classloader so the app can detect and use it via
+ * `is ConfigurableSource` checks. The app does not call [setupPreferenceScreen] —
+ * it just needs the type to exist to prevent [NoClassDefFoundError] at load time.
  *
- * The app does not currently render source preferences, but recognising the interface
- * prevents load failures for the ~200 extensions that implement it.
+ * @see ExtensionLoader for the load-time type-check
  */
-interface ConfigurableSource
+interface ConfigurableSource : Source {
+
+    /**
+     * Returns the readable name of the extension configuration.
+     *
+     * Not used by Otaku Reader — kept for API parity with Tachiyomi extensions.
+     */
+    fun getPreferenceScreen(): String
+
+    /**
+     * Sets up the extension's preference screen.
+     *
+     * Not invoked by Otaku Reader — kept for API parity with Tachiyomi extensions.
+     */
+    fun setupPreferenceScreen(screen: Any)
+}

@@ -121,6 +121,7 @@ fun DualPageReader(
 
     HorizontalPager(
         state = pagerState,
+        beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { groupIndex ->
         val group = spreadGroups.getOrNull(groupIndex) ?: return@HorizontalPager

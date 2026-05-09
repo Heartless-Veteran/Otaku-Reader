@@ -91,6 +91,7 @@ fun ExtensionInstallScreen(
     val errorFileNotFile = stringResource(R.string.extensions_install_error_file_not_file)
     val errorFileNotApk = stringResource(R.string.extensions_install_error_file_not_apk)
     val successMessage = stringResource(R.string.extensions_install_success)
+    val unknownFallback = stringResource(R.string.extensions_install_unknown_fallback)
 
     Scaffold(
         modifier = modifier,
@@ -157,7 +158,7 @@ fun ExtensionInstallScreen(
                             snackbarHostState.showSnackbar(successMessage)
                             urlText = ""
                         }.onFailure { error ->
-                            val errorMsg = context.getString(R.string.extensions_install_error, error.message ?: "Unknown")
+                            val errorMsg = context.getString(R.string.extensions_install_error, error.message ?: unknownFallback)
                             installResultState = InstallResultState.Error(errorMsg)
                             snackbarHostState.showSnackbar(errorMsg)
                         }
@@ -172,7 +173,7 @@ fun ExtensionInstallScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.Download, contentDescription = "Download")
+                    Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install_download_cd))
                     Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                     Text(stringResource(R.string.extensions_install_from_url))
                 }
@@ -223,7 +224,7 @@ fun ExtensionInstallScreen(
                             snackbarHostState.showSnackbar(successMessage)
                             filePath = ""
                         }.onFailure { error ->
-                            val errorMsg = context.getString(R.string.extensions_install_error, error.message ?: "Unknown")
+                            val errorMsg = context.getString(R.string.extensions_install_error, error.message ?: unknownFallback)
                             installResultState = InstallResultState.Error(errorMsg)
                             snackbarHostState.showSnackbar(errorMsg)
                         }
@@ -238,7 +239,7 @@ fun ExtensionInstallScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Icon(Icons.Default.FileOpen, contentDescription = "Open file")
+                    Icon(Icons.Default.FileOpen, contentDescription = stringResource(R.string.extensions_install_file_open_cd))
                     Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                     Text(stringResource(R.string.extensions_install_from_file))
                 }
@@ -270,17 +271,12 @@ fun ExtensionInstallScreen(
 
             // Instructions
             Text(
-                text = "Instructions",
+                text = stringResource(R.string.extensions_install_instructions),
                 style = MaterialTheme.typography.titleMedium
             )
 
             Text(
-                text = "1. To install a Tachiyomi extension, you need the APK file.\n\n" +
-                        "2. You can download extensions from:\n" +
-                        "   • Suwayomi repository\n" +
-                        "   • Tachiyomi extensions archive\n\n" +
-                        "3. Enter the URL or local file path above.\n\n" +
-                        "4. The extension will be loaded and its sources will appear in Browse.",
+                text = stringResource(R.string.extensions_install_instructions_body),
                 style = MaterialTheme.typography.bodyMedium
             )
         }

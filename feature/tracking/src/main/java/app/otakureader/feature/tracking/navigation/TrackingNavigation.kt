@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.tracking.TrackingScreen
+import app.otakureader.feature.tracking.TrackerOAuthScreen
 
 fun NavController.navigateToTracking(
     mangaId: Long,
@@ -31,6 +32,20 @@ fun NavGraphBuilder.trackingScreen(
         TrackingScreen(
             mangaId = route.mangaId,
             mangaTitle = route.mangaTitle,
+            onNavigateBack = onNavigateBack
+        )
+    }
+}
+
+fun NavGraphBuilder.trackerOAuthScreen(
+    onNavigateBack: () -> Unit
+) {
+    composable<Route.TrackerOAuth> { backStackEntry ->
+        val route = backStackEntry.toRoute<Route.TrackerOAuth>()
+        TrackerOAuthScreen(
+            tracker = route.tracker,
+            code = route.code,
+            callbackState = route.state,
             onNavigateBack = onNavigateBack
         )
     }

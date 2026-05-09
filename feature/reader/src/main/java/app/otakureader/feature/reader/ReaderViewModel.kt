@@ -87,7 +87,6 @@ class ReaderViewModel @Inject constructor(
 
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null
-    private var hasTriggeredDeletion = false
 
     private var autoSaveJob: Job? = null
 
@@ -220,7 +219,6 @@ class ReaderViewModel @Inject constructor(
                 is ReaderChapterLoaderDelegate.Result.Success -> {
                     currentManga = result.manga
                     currentChapter = result.chapter
-                    hasTriggeredDeletion = false
 
                     val pages = result.pages
                     val initialPage = result.chapter.lastPageRead
@@ -483,10 +481,6 @@ class ReaderViewModel @Inject constructor(
                 discordDelegate.updatePresence(manga.title, chapter.name, pages.size, validPage + 1)
             }
 
-            if (pages.isNotEmpty() && validPage == pages.lastIndex) {
-                maybeDeleteAfterReading()
-            }
-
             // Trigger download-ahead when user is near end of chapter
             downloadAheadDelegate.maybeDownloadNextChapter(
                 scope = viewModelScope,
@@ -699,15 +693,14 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private fun sharePage() {
-        // Implementation for sharing current page
-    }
-
-
     /**
      * Schedule auto-save of reading progress with debouncing to prevent excessive database writes.
      * Multiple rapid page changes will only trigger one save after the delay period.
      */
+    private fun sharePage() {
+        // Implementation for sharing current page
+    }
+
     private fun scheduleProgressSave() {
         autoSaveJob?.cancel()
         autoSaveJob = viewModelScope.launch {
@@ -777,14 +770,6 @@ class ReaderViewModel @Inject constructor(
         changePage(page)
         _state.update { it.copy(isGalleryOpen = false) }
     }
-
-    private fun maybeDeleteAfterReading() {
-        // Delete-after-reading feature has been removed. This method is kept as a placeholder
-        // for potential future implementation but currently does nothing.
-        if (hasTriggeredDeletion) return
-        hasTriggeredDeletion = true
-    }
-
 
     override fun onCleared() {
         super.onCleared()

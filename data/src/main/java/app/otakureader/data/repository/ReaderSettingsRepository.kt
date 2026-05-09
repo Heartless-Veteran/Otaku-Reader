@@ -54,7 +54,7 @@ class ReaderSettingsRepository @Inject constructor(
             // any non-I/O runtime errors are not silently swallowed.
             safeEdit { prefs ->
                 if (prefs[Keys.IMAGE_QUALITY] == null && prefs[Keys.IMAGE_QUALITY_LEGACY] != null) {
-                    val ordinal = prefs[Keys.IMAGE_QUALITY_LEGACY]!!
+                    val ordinal = prefs[Keys.IMAGE_QUALITY_LEGACY] ?: return@safeEdit
                     val quality = ImageQuality.entries.getOrNull(ordinal) ?: ImageQuality.ORIGINAL
                     prefs[Keys.IMAGE_QUALITY] = quality.name
                     prefs.remove(Keys.IMAGE_QUALITY_LEGACY)
