@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.Room
 import app.otakureader.core.database.BuildConfig
 import app.otakureader.core.database.OtakuReaderDatabase
+import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.migrations.ALL_MIGRATIONS
 import dagger.Module
 import dagger.Provides
@@ -73,4 +74,7 @@ object DatabaseModule {
 
     @Provides
     fun providePageBookmarkDao(database: OtakuReaderDatabase) = database.pageBookmarkDao()
+
+    @Provides
+    fun provideDownloadQueueDao(database: OtakuReaderDatabase): DownloadQueueDao = database.downloadQueueDao()
 }

@@ -210,11 +210,31 @@ internal val MIGRATION_20_21 = object : Migration(20, 21) {
     }
 }
 
+internal val MIGRATION_21_22 = object : Migration(21, 22) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `download_queue` (
+                `chapter_id` INTEGER PRIMARY KEY NOT NULL,
+                `manga_id` INTEGER NOT NULL,
+                `manga_title` TEXT NOT NULL,
+                `chapter_title` TEXT NOT NULL,
+                `source_name` TEXT NOT NULL,
+                `page_urls_json` TEXT NOT NULL,
+                `priority` INTEGER NOT NULL DEFAULT 1,
+                `status` TEXT NOT NULL DEFAULT 'QUEUED',
+                `added_at` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
     MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
     MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
-    MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21
+    MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22
 )

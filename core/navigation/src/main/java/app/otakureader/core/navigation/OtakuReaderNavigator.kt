@@ -26,10 +26,10 @@ class OtakuReaderNavigator(
 
     /** True when the current screen is a top-level tab (shows bottom bar). */
     val isTopLevelDestination: Boolean
-        @Composable get() = when {
-            currentDestination == null -> false
-            else -> topLevelRoutes.any { route ->
-                currentDestination?.hasRoute(route::class) == true
+        @Composable get() {
+            val dest = currentDestination
+            return dest != null && topLevelRoutes.any { route ->
+                dest.hasRoute(route::class)
             }
         }
 
