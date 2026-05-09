@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.paging.runtime)
     implementation(libs.workmanager.ktx)
     implementation(libs.hilt.work)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.coil.compose)
     ksp(libs.hilt.compiler)

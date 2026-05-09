@@ -108,6 +108,7 @@ fun ShareLibraryScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Capture vars into local vals before the when block so Kotlin can smart-cast.
             val currentError = error
             val currentBitmap = qrBitmap
             when {

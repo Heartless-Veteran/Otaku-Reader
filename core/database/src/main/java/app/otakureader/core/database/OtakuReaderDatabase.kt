@@ -5,6 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
@@ -16,6 +17,7 @@ import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
+import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.database.entity.FeedItemEntity
 import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
@@ -51,8 +53,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Reading lists
         ReadingListEntity::class,
         ReadingListItemEntity::class,
+        // Download queue persistence
+        DownloadQueueEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -70,6 +74,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun feedDao(): FeedDao
     abstract fun trackerSyncDao(): TrackerSyncDao
     abstract fun readingListDao(): ReadingListDao
+    abstract fun downloadQueueDao(): DownloadQueueDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

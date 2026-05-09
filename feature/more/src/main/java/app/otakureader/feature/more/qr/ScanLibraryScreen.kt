@@ -144,15 +144,17 @@ fun ScanLibraryScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Capture vars into local vals before the when block so Kotlin can smart-cast.
+            val localError = error
+            val localLibrary = scannedLibrary
             when {
                 isScanning -> {
                     CircularProgressIndicator()
                     Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_opening_camera), style = MaterialTheme.typography.bodyMedium)
                 }
-                error != null -> {
-                    val message = error ?: return@Column
+                localError != null -> {
                     Text(
-                        text = message,
+                        text = localError,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
@@ -165,8 +167,7 @@ fun ScanLibraryScreen(
                         Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_try_again))
                     }
                 }
-                scannedLibrary != null -> {
-                    val library = scannedLibrary ?: return@Column
+                localLibrary != null -> {
                     when (val state = importState) {
                         is ScanLibraryViewModel.ImportState.Importing -> {
                             CircularProgressIndicator()
@@ -196,7 +197,7 @@ fun ScanLibraryScreen(
                             Spacer(modifier = Modifier.height(16.dp))
                             // importLibrary() transitions to Importing before re-running,
                             // so the UI correctly reflects the new attempt.
-                            Button(onClick = { viewModel.importLibrary(library) }) {
+                            Button(onClick = { viewModel.importLibrary(localLibrary) }) {
                                 Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_retry))
                             }
                         }
@@ -206,13 +207,13 @@ fun ScanLibraryScreen(
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_ready_to_import, library.manga.size),
+                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_ready_to_import, localLibrary.manga.size),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             Button(
-                                onClick = { viewModel.importLibrary(library) },
+                                onClick = { viewModel.importLibrary(localLibrary) },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_add_to_library))
