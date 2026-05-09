@@ -35,3 +35,14 @@ dist/
 # Server environment files
 server/.env
 .env
+
+# Ruflo / Claude orchestration runtime files
+.claude-flow/
+.claude/agents/
+.claude/commands/
+.claude/helpers/
+.claude/memory.db
+.claude/settings.json
+.mcp.json
+.swarm/
+ruvector.db

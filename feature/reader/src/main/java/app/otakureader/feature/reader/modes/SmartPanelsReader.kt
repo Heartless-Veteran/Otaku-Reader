@@ -64,6 +64,7 @@ fun SmartPanelsReader(
     
     HorizontalPager(
         state = pagerState,
+        beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { pageIndex ->
         val page = pages[pageIndex]

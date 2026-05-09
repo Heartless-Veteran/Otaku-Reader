@@ -222,7 +222,7 @@ private fun SourceSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No results",
+                        text = stringResource(R.string.browse_no_results),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

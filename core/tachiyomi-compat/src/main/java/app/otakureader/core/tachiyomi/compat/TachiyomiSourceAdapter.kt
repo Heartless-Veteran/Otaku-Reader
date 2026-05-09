@@ -253,17 +253,4 @@ class TachiyomiSourceAdapter(
         return map
     }
 
-    /**
-     * Generate a unique chapter ID based on URL and manga URL.
-     * Provides deterministic IDs; kept for future improvements to chapter ID generation.
-     */
-    @Suppress("UnusedPrivateMember")
-    private fun generateChapterId(chapterUrl: String, mangaUrl: String): Long {
-        return (mangaUrl + chapterUrl).hashCode().toLong()
-    }
 }
-
-/**
- * Extension function to convert RxJava Observable to blocking first
- */
-private fun <T> Observable<T>.toBlocking(): Observable<T> = this

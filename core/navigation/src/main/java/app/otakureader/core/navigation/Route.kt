@@ -200,10 +200,12 @@ sealed interface Route {
      * OAuth callback for tracker login.
      * @param tracker Tracker ID (e.g., "anilist", "mal", "kitsu").
      * @param code OAuth authorization code.
+     * @param state CSRF state token returned by the provider, or null if omitted.
      */
     @Serializable
     data class TrackerOAuth(
         val tracker: String,
         val code: String,
+        val state: String? = null,
     ) : Route
 }

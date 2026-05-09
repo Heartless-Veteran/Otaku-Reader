@@ -26,6 +26,7 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 import kotlinx.serialization.json.Json
 import app.otakureader.core.network.di.TrackerOkHttp
+import app.otakureader.core.preferences.TrackerTokenStore
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -200,12 +201,14 @@ object TrackingNetworkModule {
     @IntoSet
     fun provideKitsuTracker(
         oauthApi: KitsuOAuthApi,
-        api: KitsuApi
+        api: KitsuApi,
+        tokenStore: TrackerTokenStore,
     ): Tracker = KitsuTracker(
         oauthApi = oauthApi,
         api = api,
         clientId = TrackerCredentials.KITSU_CLIENT_ID,
-        redirectUri = TrackerCredentials.KITSU_REDIRECT_URI
+        redirectUri = TrackerCredentials.KITSU_REDIRECT_URI,
+        tokenStore = tokenStore,
     )
 
     @Provides
@@ -219,13 +222,15 @@ object TrackingNetworkModule {
     @IntoSet
     fun provideShikimoriTracker(
         oauthApi: ShikimoriOAuthApi,
-        api: ShikimoriApi
+        api: ShikimoriApi,
+        tokenStore: TrackerTokenStore,
     ): Tracker = ShikimoriTracker(
         oauthApi = oauthApi,
         api = api,
         clientId = TrackerCredentials.SHIKIMORI_CLIENT_ID,
         clientSecret = TrackerCredentials.SHIKIMORI_CLIENT_SECRET,
-        redirectUri = TrackerCredentials.SHIKIMORI_REDIRECT_URI
+        redirectUri = TrackerCredentials.SHIKIMORI_REDIRECT_URI,
+        tokenStore = tokenStore,
     )
 
     @Provides
@@ -233,18 +238,23 @@ object TrackingNetworkModule {
     @IntoSet
     fun provideMyAnimeListTracker(
         oauthApi: MyAnimeListOAuthApi,
-        api: MyAnimeListApi
+        api: MyAnimeListApi,
+        tokenStore: TrackerTokenStore,
     ): Tracker = MyAnimeListTracker(
         oauthApi = oauthApi,
         api = api,
         clientId = TrackerCredentials.MAL_CLIENT_ID,
-        redirectUri = TrackerCredentials.MAL_REDIRECT_URI
+        redirectUri = TrackerCredentials.MAL_REDIRECT_URI,
+        tokenStore = tokenStore,
     )
 
     @Provides
     @Singleton
     @IntoSet
-    fun provideAniListTracker(api: AniListApi): Tracker = AniListTracker(api)
+    fun provideAniListTracker(
+        api: AniListApi,
+        tokenStore: TrackerTokenStore,
+    ): Tracker = AniListTracker(api = api, tokenStore = tokenStore)
 }
 
 @Module

@@ -17,6 +17,9 @@
     <string name="browse_select_source">Select a source to browse manga</string>
     <string name="browse_load_more">Load more</string>
     <string name="browse_no_results">No results found</string>
+    <string name="browse_no_manga_found">No manga found</string>
+    <string name="browse_pull_to_refresh">Pull to refresh or try again</string>
+    <string name="browse_unknown_error">Unknown error</string>
     <string name="browse_no_sources_title">No sources installed</string>
     <string name="browse_no_sources_message">Tap + to install a Tachiyomi extension</string>
     <string name="browse_opds_catalogs">OPDS Catalogs</string>
@@ -74,6 +77,11 @@
     <!-- ExtensionInstallScreen result messages -->
     <string name="extensions_install_success">Extension installed successfully!</string>
     <string name="extensions_install_error">Error: %s</string>
+    <string name="extensions_install_unknown_fallback">unknown</string>
+    <string name="extensions_install_download_cd">Download</string>
+    <string name="extensions_install_file_open_cd">Open file</string>
+    <string name="extensions_install_instructions">Instructions</string>
+    <string name="extensions_install_instructions_body">1. To install a Tachiyomi extension, you need the APK file.\n\n2. You can download extensions from:\n   • Suwayomi repository\n   • Tachiyomi extensions archive\n\n3. Enter the URL or local file path above.\n\n4. The extension will be loaded and its sources will appear in Browse.</string>
 
     <!-- SourceFilterSheet -->
     <string name="browse_filters_reset">Reset</string>
@@ -96,6 +104,12 @@
     <string name="extensions_set_active">Set Active</string>
     <string name="extensions_repo_url_placeholder">https://.../repo</string>
     <string name="extensions_add_repository">Add repository</string>
+    <string name="extensions_repositories_title">Repositories</string>
+    <string name="extensions_search_cd">Search</string>
+    <string name="extensions_icon_cd">Extension icon</string>
+    <string name="extensions_language_cd">Language</string>
+    <string name="extensions_installed_cd">Installed</string>
+    <string name="extensions_language_flag_cd">Extension language</string>
 
     <!-- Source Intelligence -->
     <string name="browse_source_intel_label">✨ Source Intelligence</string>

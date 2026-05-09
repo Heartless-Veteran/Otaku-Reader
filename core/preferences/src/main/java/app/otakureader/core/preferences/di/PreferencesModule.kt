@@ -10,6 +10,8 @@ import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.EncryptedOpdsCredentialStore
+import app.otakureader.core.preferences.PendingOAuthStore
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
@@ -131,4 +133,16 @@ object PreferencesModule {
     fun provideEncryptedOpdsCredentialStore(
         @ApplicationContext context: Context
     ): EncryptedOpdsCredentialStore = EncryptedOpdsCredentialStore(context)
+
+    @Provides
+    @Singleton
+    fun providePendingOAuthStore(
+        @ApplicationContext context: Context
+    ): PendingOAuthStore = PendingOAuthStore(context)
+
+    @Provides
+    @Singleton
+    fun provideTrackerTokenStore(
+        @ApplicationContext context: Context
+    ): TrackerTokenStore = TrackerTokenStore(context)
 }

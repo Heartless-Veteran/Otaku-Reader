@@ -31,9 +31,12 @@ class TrackManager @Inject constructor(
      *
      * @param trackerId Tracker string ID (e.g., "anilist", "mal", "kitsu", "shikimori").
      * @param code OAuth authorization code or token.
+     * @param codeVerifier PKCE code verifier generated before the browser was opened.
+     *   For MAL this is passed as [Tracker.login]'s `username` parameter per the PKCE spec.
+     *   Must not be empty for PKCE-based trackers (MAL).
      * @return `true` on success.
      */
-    suspend fun login(trackerId: String, code: String): Boolean {
+    suspend fun login(trackerId: String, code: String, codeVerifier: String): Boolean {
         val tracker = when (trackerId.lowercase()) {
             "anilist" -> get(app.otakureader.domain.model.TrackerType.ANILIST)
             "mal" -> get(app.otakureader.domain.model.TrackerType.MY_ANIME_LIST)
@@ -42,6 +45,6 @@ class TrackManager @Inject constructor(
             "mangaupdates" -> get(app.otakureader.domain.model.TrackerType.MANGA_UPDATES)
             else -> null
         }
-        return tracker?.login("", code) ?: false
+        return tracker?.login(codeVerifier, code) ?: false
     }
 }

@@ -45,6 +45,7 @@ fun NavGraphBuilder.trackerOAuthScreen(
         TrackerOAuthScreen(
             tracker = route.tracker,
             code = route.code,
+            callbackState = route.state,
             onNavigateBack = onNavigateBack
         )
     }

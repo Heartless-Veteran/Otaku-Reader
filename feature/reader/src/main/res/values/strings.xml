@@ -71,6 +71,9 @@
     <!-- Gallery -->
     <string name="reader_close_gallery">Close gallery</string>
     <string name="reader_page_number">Page %1$d</string>
+    <string name="reader_page_image">Page image</string>
+    <string name="reader_current_page_label">CURRENT</string>
+    <string name="reader_strip_expand">Expand</string>
 
     <!-- Reader page descriptions -->
     <string name="reader_page_content">Page %1$d</string>
