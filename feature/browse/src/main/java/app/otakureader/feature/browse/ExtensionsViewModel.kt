@@ -34,7 +34,8 @@ data class ExtensionsState(
     val error: String? = null,
     val showNsfw: Boolean = false,
     val sortMode: SortMode = SortMode.NAME,
-    val isUpdatingAll: Boolean = false
+    val isUpdatingAll: Boolean = false,
+    val selectedTab: Int = 0
 ) : UiState
 
 enum class SortMode {
@@ -56,6 +57,7 @@ sealed interface ExtensionsEvent : UiEvent {
     data object UpdateAllExtensions : ExtensionsEvent
     data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
     data class SetSortMode(val mode: SortMode) : ExtensionsEvent
+    data class SelectTab(val tab: Int) : ExtensionsEvent
 }
 
 sealed interface ExtensionsEffect : UiEffect {
@@ -156,6 +158,7 @@ class ExtensionsViewModel @Inject constructor(
                 generalPreferences.setShowNsfwContent(event.show)
             }
             is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
+            is ExtensionsEvent.SelectTab -> _state.update { it.copy(selectedTab = event.tab) }
         }
     }
 
@@ -249,6 +252,7 @@ class ExtensionsViewModel @Inject constructor(
             try {
                 extensionRepository.setExtensionEnabled(extension.pkgName, enabled)
                 extensionManagementRepository.refreshSources()
+                    .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update extension: ${e.message}"))
             }
@@ -281,13 +285,26 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun installExtension(extension: Extension) {
         viewModelScope.launch {
+            // Show loading spinner immediately before the download starts
+            _state.update { s ->
+                s.copy(availableExtensions = s.availableExtensions.map {
+                    if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.INSTALLING) else it
+                })
+            }
             try {
-                // Use the installer's download and install method
                 val result = extensionInstaller.downloadAndInstall(extension)
                 result.onSuccess {
-                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension installed: ${extension.name}"))
+                    // Refresh sources first so the source is available before the snackbar fires
                     extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
+                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension installed: ${extension.name}"))
                 }.onFailure { error ->
+                    // Revert the optimistic status on failure
+                    _state.update { s ->
+                        s.copy(availableExtensions = s.availableExtensions.map {
+                            if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.AVAILABLE) else it
+                        })
+                    }
                     _effect.send(ExtensionsEffect.ShowError("Failed to install: ${error.message}"))
                 }
             } catch (e: Exception) {
@@ -298,11 +315,17 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun uninstallExtension(extension: Extension) {
         viewModelScope.launch {
+            _state.update { s ->
+                s.copy(installedExtensions = s.installedExtensions.map {
+                    if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.UNINSTALLING) else it
+                })
+            }
             try {
                 val result = extensionInstaller.uninstall(extension.pkgName)
                 result.onSuccess {
-                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension uninstalled: ${extension.name}"))
                     extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
+                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension uninstalled: ${extension.name}"))
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to uninstall: ${error.message}"))
                 }
@@ -314,11 +337,21 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun updateExtension(extension: Extension) {
         viewModelScope.launch {
+            _state.update { s ->
+                val updatedStatus = { ext: Extension ->
+                    if (ext.pkgName == extension.pkgName) ext.copy(status = InstallStatus.UPDATING) else ext
+                }
+                s.copy(
+                    installedExtensions = s.installedExtensions.map(updatedStatus),
+                    extensionsWithUpdates = s.extensionsWithUpdates.map(updatedStatus),
+                )
+            }
             try {
                 val result = extensionInstaller.downloadAndInstall(extension)
                 result.onSuccess {
-                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
                     extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
+                    _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to update: ${error.message}"))
                 }
@@ -345,6 +378,7 @@ class ExtensionsViewModel @Inject constructor(
 
             _state.update { it.copy(isUpdatingAll = false) }
             extensionManagementRepository.refreshSources()
+                .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
 
             when {
                 failCount == 0 -> _effect.send(ExtensionsEffect.ShowSnackbar("All $successCount extensions updated"))

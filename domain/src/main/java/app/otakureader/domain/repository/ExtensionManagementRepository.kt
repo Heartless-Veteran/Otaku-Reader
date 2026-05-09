@@ -15,5 +15,5 @@ interface ExtensionManagementRepository {
     suspend fun loadExtensionFromUrl(url: String): Result<Unit>
 
     /** Reload all installed extensions and refresh the available-sources list. */
-    suspend fun refreshSources()
+    suspend fun refreshSources(): Result<Unit>
 }
