@@ -213,7 +213,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: 📋 Generate Dependency License Report
-        run: ./gradlew :app:generateLicenseReport --no-daemon --no-configuration-cache
+        run: ./gradlew :app:generateLicenseReport --no-daemon
         env:
           CI: true
 

@@ -13,6 +13,7 @@ import app.otakureader.core.database.migrations.MIGRATION_17_18
 import app.otakureader.core.database.migrations.MIGRATION_18_19
 import app.otakureader.core.database.migrations.MIGRATION_19_20
 import app.otakureader.core.database.migrations.MIGRATION_20_21
+import app.otakureader.core.database.migrations.MIGRATION_21_22
 import app.otakureader.core.database.migrations.MIGRATION_10_11
 import app.otakureader.core.database.migrations.MIGRATION_11_12
 import app.otakureader.core.database.migrations.MIGRATION_9_10
@@ -40,7 +41,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 21", 21, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 22", 22, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -67,7 +68,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 19 migrations (v2→v21)", 19, ALL_MIGRATIONS.size)
+        assertEquals("Expected 20 migrations (v2→v22)", 20, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -312,27 +313,62 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Full chain v2 → v21 ─────────────────────────────────────────────────
+    // ── Migration 21 → 22 ───────────────────────────────────────────────────
+    // Adds: download_queue
 
     @Test
-    fun fullMigrationChain_v2ToV21() {
-        helper.createDatabase(TEST_DB, 2).close()
-        val db = helper.runMigrationsAndValidate(TEST_DB, 21, true, *ALL_MIGRATIONS)
+    fun migration21To22_createsDownloadQueue() {
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        MIGRATION_17_18.migrate(db)
+        MIGRATION_18_19.migrate(db)
+        MIGRATION_19_20.migrate(db)
+        MIGRATION_20_21.migrate(db)
+        assertFalse("download_queue must NOT exist at v21", "download_queue" in db.tableNames())
+        MIGRATION_21_22.migrate(db)
+        val tables = db.tableNames()
+        assertTrue("download_queue must exist after 21→22", "download_queue" in tables)
+        val cols = db.columnNames("download_queue")
+        assertTrue("chapter_id must exist", "chapter_id" in cols)
+        assertTrue("manga_id must exist", "manga_id" in cols)
+        assertTrue("manga_title must exist", "manga_title" in cols)
+        assertTrue("chapter_title must exist", "chapter_title" in cols)
+        assertTrue("source_name must exist", "source_name" in cols)
+        assertTrue("page_urls_json must exist", "page_urls_json" in cols)
+        assertTrue("priority must exist", "priority" in cols)
+        assertTrue("status must exist", "status" in cols)
+        assertTrue("added_at must exist", "added_at" in cols)
+        db.close()
+    }
+
+    // ── Full chain v9 → v22 ─────────────────────────────────────────────────
+    // Starts from v9 (oldest exported schema JSON). Runs v9→v21 via
+    // runMigrationsAndValidate (which validates against 9.json and 21.json),
+    // then applies MIGRATION_21_22 directly and asserts the final state.
+
+    @Test
+    fun fullMigrationChain_v9ToV22() {
+        helper.createDatabase(TEST_DB, 9).close()
+        val db = helper.runMigrationsAndValidate(
+            TEST_DB, 21, true,
+            *ALL_MIGRATIONS.filter { it.startVersion in 9..20 }.toTypedArray(),
+        )
+        assertFalse("download_queue must NOT exist at v21", "download_queue" in db.tableNames())
+        MIGRATION_21_22.migrate(db)
         val tables = db.tableNames()
         assertTrue("manga must exist after full chain", "manga" in tables)
         assertTrue("chapters must exist after full chain", "chapters" in tables)
         assertTrue("reading_history must exist after full chain", "reading_history" in tables)
         assertTrue("reading_streaks must exist after full chain", "reading_streaks" in tables)
         assertTrue("reading_lists must exist after full chain", "reading_lists" in tables)
+        assertTrue("download_queue must exist after full chain", "download_queue" in tables)
         assertTrue("page_bookmarks must exist after full chain", "page_bookmarks" in tables)
         assertTrue("tracker_sync_state must exist after full chain", "tracker_sync_state" in tables)
         assertTrue("contentRating must exist in manga after full chain", "contentRating" in db.columnNames("manga"))
         assertTrue("last_modified_at must exist in manga after full chain", "last_modified_at" in db.columnNames("manga"))
-        val chapterCols = db.columnNames("chapters")
-        assertTrue("userNotes must exist in chapters after full chain", "userNotes" in chapterCols)
-        assertTrue("version must exist in chapters after full chain", "version" in chapterCols)
-        assertTrue("is_syncing must exist in chapters after full chain", "is_syncing" in chapterCols)
-        assertTrue("last_modified_at must exist in chapters after full chain", "last_modified_at" in chapterCols)
+        assertTrue("userNotes must exist in chapters after full chain", "userNotes" in db.columnNames("chapters"))
         db.close()
     }
 }

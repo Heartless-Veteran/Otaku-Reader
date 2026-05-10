@@ -46,7 +46,7 @@ jobs:
           build-mode: manual
 
       - name: Build Java/Kotlin database
-        run: ./gradlew assembleDebug --no-daemon --no-configuration-cache
+        run: ./gradlew assembleDebug --no-daemon
         env:
           CI: true
 
