@@ -69,6 +69,13 @@ jobs:
       - name: 🐘 Set up Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
 
+      - name: 📱 Install Android SDK components
+        run: |
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;35.0.0"
+
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -110,6 +117,13 @@ jobs:
       - name: 🐘 Set up Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
 
+      - name: 📱 Install Android SDK components
+        run: |
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;35.0.0"
+
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -150,6 +164,13 @@ jobs:
 
       - name: 🐘 Set up Gradle
         uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+
+      - name: 📱 Install Android SDK components
+        run: |
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;35.0.0"
 
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
