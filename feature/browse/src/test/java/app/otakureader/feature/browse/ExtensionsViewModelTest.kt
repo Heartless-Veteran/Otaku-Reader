@@ -34,6 +34,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@Suppress("LargeClass", "TooGenericExceptionThrown")
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExtensionsViewModelTest {
 

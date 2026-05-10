@@ -47,7 +47,8 @@ class TrackerSyncSettingsDelegate @Inject constructor(
     }
 
     fun refreshTrackers() {
-        updateState { it.copy(tracking = it.tracking.copy(trackers = trackManager.all.map { t -> TrackerInfo(t.id, t.name, t.isLoggedIn) })) }
+        val trackerInfos = trackManager.all.map { t -> TrackerInfo(t.id, t.name, t.isLoggedIn) }
+        updateState { it.copy(tracking = it.tracking.copy(trackers = trackerInfos)) }
     }
 
     suspend fun handleEvent(

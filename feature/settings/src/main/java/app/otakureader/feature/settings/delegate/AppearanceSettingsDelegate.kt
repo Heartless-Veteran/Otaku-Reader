@@ -17,6 +17,7 @@ class AppearanceSettingsDelegate @Inject constructor(
     private val discordRpcService: DiscordRpcService,
 ) {
 
+    @Suppress("LongMethod")
     fun startObserving(
         scope: CoroutineScope,
         updateState: ((SettingsState) -> SettingsState) -> Unit,

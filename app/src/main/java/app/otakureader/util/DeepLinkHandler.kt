@@ -219,13 +219,7 @@ object DeepLinkHandler {
             host == "webtoons.com" || host.endsWith(".webtoons.com") ->
                 DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
 
-            host == "mangasee123.com" -> {
-                // Require /manga/{slug} path
-                if (pathSegments.size < 2 || pathSegments[0] != "manga") return DeepLinkResult.Invalid
-                DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
-            }
-
-            host == "mangafire.to" -> {
+            host == "mangasee123.com" || host == "mangafire.to" -> {
                 // Require /manga/{slug} path
                 if (pathSegments.size < 2 || pathSegments[0] != "manga") return DeepLinkResult.Invalid
                 DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())

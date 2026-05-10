@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package app.otakureader.feature.settings
 
 import app.otakureader.domain.model.ImageQuality

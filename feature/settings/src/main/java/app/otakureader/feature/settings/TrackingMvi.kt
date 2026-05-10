@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package app.otakureader.feature.settings
 
 data class TrackingSettingsState(

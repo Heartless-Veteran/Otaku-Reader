@@ -155,9 +155,6 @@ class SourceRepositoryImplTest {
 
     @Test
     fun getSources_deduplicatesById() = runTest {
-        val sourceA = makeFakeSource(id = "dup", name = "A")
-        val sourceB = makeFakeSource(id = "dup", name = "B")
-
         // After refresh, only one source with id "dup" should remain.
         // (This requires a small refactor in refreshSources to feed the mock
         // extensions; shown here conceptually.)
@@ -443,6 +440,7 @@ class SourceRepositoryImplTest {
      * Mocks the [LocalSourcePreferences] so that [currentLocalSource]
      * resolves to a predictable fake local source.
      */
+    @Suppress("UnusedParameter")
     private fun mockLocalSource(localSource: MangaSource) {
         // LocalSourcePreferences is injected; we can control its flow.
         // However currentLocalSource() constructs a real LocalSource with
