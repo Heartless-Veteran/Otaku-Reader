@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -58,6 +59,7 @@ class ContinueReadingWidget : GlanceAppWidget() {
                 .take(3)
                 .map { manga ->
                     ReadingItem(
+                        mangaId = manga.id,
                         title = manga.title,
                         subtitle = if (manga.unreadCount > 0) {
                             context.getString(R.string.widget_chapters_remaining, manga.unreadCount)
@@ -87,6 +89,7 @@ class ContinueReadingWidget : GlanceAppWidget() {
 }
 
 private data class ReadingItem(
+    val mangaId: Long,
     val title: String,
     val subtitle: String
 )
@@ -141,7 +144,11 @@ private fun ReadingItemWidget(item: ReadingItem) {
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .clickable(actionStartActivity<MainActivity>())
+            .clickable(
+                actionStartActivity<MainActivity>(
+                    parameters = actionParametersOf(WidgetKeys.MANGA_ID_KEY to item.mangaId)
+                )
+            )
     ) {
         Text(
             text = item.title,

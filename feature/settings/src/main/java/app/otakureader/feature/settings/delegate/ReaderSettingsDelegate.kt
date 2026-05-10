@@ -31,13 +31,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.showContentInCutout,
                 readerPreferences.showPageNumber,
             ) { readerMode, keepScreenOn, fullscreen, showCutout, showPageNum ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     readerMode = readerMode,
                     keepScreenOn = keepScreenOn,
                     fullscreen = fullscreen,
                     showContentInCutout = showCutout,
                     showPageNumber = showPageNum,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -48,13 +48,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.showTapZonesOverlay,
                 readerPreferences.readerScale,
             ) { bgColor, animate, showMode, showZones, scale ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     backgroundColor = bgColor,
                     animatePageTransitions = animate,
                     showReadingModeOverlay = showMode,
                     showTapZonesOverlay = showZones,
                     readerScale = scale,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -65,13 +65,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.volumeKeysEnabled,
                 readerPreferences.volumeKeysInverted,
             ) { autoZoom, tapConfig, invertZones, volKeys, volInvert ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     autoZoomWideImages = autoZoom,
                     tapZoneConfig = tapConfig,
                     invertTapZones = invertZones,
                     volumeKeysEnabled = volKeys,
                     volumeKeysInverted = volInvert,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -82,13 +82,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.webtoonSidePadding,
                 readerPreferences.webtoonMenuHideSensitivity,
             ) { animSpeed, longTap, separateFolders, sidePadding, menuSensitivity ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     doubleTapAnimationSpeed = animSpeed,
                     showActionsOnLongTap = longTap,
                     savePagesToSeparateFolders = separateFolders,
                     webtoonSidePadding = sidePadding,
                     webtoonMenuHideSensitivity = menuSensitivity,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -99,13 +99,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.einkBlackAndWhite,
                 readerPreferences.skipReadChapters,
             ) { dtZoom, disableZoomOut, einkFlash, einkBw, skipRead ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     webtoonDoubleTapZoom = dtZoom,
                     webtoonDisableZoomOut = disableZoomOut,
                     einkFlashOnPageChange = einkFlash,
                     einkBlackAndWhite = einkBw,
                     skipReadChapters = skipRead,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -116,13 +116,13 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerSettingsRepository.incognitoMode,
                 readerSettingsRepository.preloadPagesBefore,
             ) { skipFiltered, skipDupes, showTransition, incognito, preloadBefore ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     skipFilteredChapters = skipFiltered,
                     skipDuplicateChapters = skipDupes,
                     alwaysShowChapterTransition = showTransition,
                     incognitoMode = incognito,
                     preloadPagesBefore = preloadBefore,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -132,12 +132,12 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerSettingsRepository.imageQuality,
                 readerSettingsRepository.dataSaverEnabled,
             ) { preloadAfter, cropBorders, imageQuality, dataSaver ->
-                updateState { it.copy(
+                updateState { it.copy(reader = it.reader.copy(
                     preloadPagesAfter = preloadAfter,
                     cropBordersEnabled = cropBorders,
                     imageQuality = imageQuality.name,
                     dataSaverEnabled = dataSaver,
-                ) }
+                )) }
             }.collect { }
         }
     }

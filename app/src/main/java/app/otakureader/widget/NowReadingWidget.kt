@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -57,6 +58,8 @@ class NowReadingWidget : GlanceAppWidget() {
                 .firstOrNull()
                 ?.let { entry ->
                     NowReadingInfo(
+                        mangaId = entry.chapter.mangaId,
+                        chapterId = entry.chapter.id,
                         mangaTitle = entry.mangaTitle ?: entry.chapter.name,
                         chapterName = entry.chapter.name,
                         chapterNumber = entry.chapter.chapterNumber,
@@ -82,6 +85,8 @@ class NowReadingWidget : GlanceAppWidget() {
 }
 
 private data class NowReadingInfo(
+    val mangaId: Long,
+    val chapterId: Long,
     val mangaTitle: String,
     val chapterName: String,
     val chapterNumber: Float,
@@ -98,7 +103,18 @@ private fun NowReadingContent(
             .fillMaxSize()
             .background(GlanceTheme.colors.surface)
             .padding(16.dp)
-            .clickable(actionStartActivity<MainActivity>())
+            .clickable(
+                if (info != null) {
+                    actionStartActivity<MainActivity>(
+                        parameters = actionParametersOf(
+                            WidgetKeys.MANGA_ID_KEY to info.mangaId,
+                            WidgetKeys.CHAPTER_ID_KEY to info.chapterId
+                        )
+                    )
+                } else {
+                    actionStartActivity<MainActivity>()
+                }
+            )
     ) {
         Column(
             modifier = GlanceModifier.fillMaxWidth(),

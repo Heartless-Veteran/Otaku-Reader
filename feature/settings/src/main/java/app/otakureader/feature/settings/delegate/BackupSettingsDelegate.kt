@@ -39,11 +39,11 @@ class BackupSettingsDelegate @Inject constructor(
                 backupPreferences.autoBackupIntervalHours,
                 backupPreferences.autoBackupMaxCount,
             ) { autoBackup, backupInterval, backupMax ->
-                updateState { it.copy(
+                updateState { it.copy(backup = it.backup.copy(
                     autoBackupEnabled = autoBackup,
                     autoBackupIntervalHours = backupInterval,
                     autoBackupMaxCount = backupMax,
-                ) }
+                )) }
             }.collect { }
         }
     }
@@ -57,7 +57,7 @@ class BackupSettingsDelegate @Inject constructor(
         SettingsEvent.OnRestoreBackup -> { sendEffect(SettingsEffect.ShowRestorePicker); true }
         SettingsEvent.OnImportTachiyomiBackup -> { sendEffect(SettingsEffect.ShowTachiyomiImportPicker); true }
         is SettingsEvent.ImportTachiyomiBackupFromUri -> {
-            updateState { it.copy(isRestoreInProgress = true) }
+            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true)) }
             try {
                 val json = context.contentResolver.openInputStream(event.uri)?.use { it.readBytes().decodeToString() }
                     ?: error("Failed to read backup file")
@@ -69,12 +69,12 @@ class BackupSettingsDelegate @Inject constructor(
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
             } finally {
-                updateState { it.copy(isRestoreInProgress = false) }
+                updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
             }
             true
         }
         is SettingsEvent.CreateBackupWithUri -> {
-            updateState { it.copy(isBackupInProgress = true) }
+            updateState { it.copy(backup = it.backup.copy(isBackupInProgress = true)) }
             try {
                 backupRepository.createBackup(event.uri)
                 sendEffect(SettingsEffect.ShowSnackbar("Backup created successfully"))
@@ -82,12 +82,12 @@ class BackupSettingsDelegate @Inject constructor(
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to create backup: ${e.message}"))
             } finally {
-                updateState { it.copy(isBackupInProgress = false) }
+                updateState { it.copy(backup = it.backup.copy(isBackupInProgress = false)) }
             }
             true
         }
         is SettingsEvent.RestoreBackupFromUri -> {
-            updateState { it.copy(isRestoreInProgress = true) }
+            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true)) }
             try {
                 backupRepository.restoreBackup(event.uri)
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
@@ -95,7 +95,7 @@ class BackupSettingsDelegate @Inject constructor(
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
             } finally {
-                updateState { it.copy(isRestoreInProgress = false) }
+                updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
             }
             true
         }
@@ -104,11 +104,11 @@ class BackupSettingsDelegate @Inject constructor(
         is SettingsEvent.SetAutoBackupMaxCount -> { backupPreferences.setAutoBackupMaxCount(event.count); true }
         SettingsEvent.RefreshLocalBackups -> {
             val files = backupRepository.listLocalBackups().map { it.name }
-            updateState { it.copy(localBackupFiles = files) }
+            updateState { it.copy(backup = it.backup.copy(localBackupFiles = files)) }
             true
         }
         is SettingsEvent.RestoreLocalBackup -> {
-            updateState { it.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName) }
+            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName)) }
             try {
                 val allFiles = backupRepository.listLocalBackups()
                 val file = allFiles.firstOrNull { it.name == event.fileName }
@@ -119,7 +119,7 @@ class BackupSettingsDelegate @Inject constructor(
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
             } finally {
-                updateState { it.copy(isRestoreInProgress = false, restoringBackupFileName = null) }
+                updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false, restoringBackupFileName = null)) }
             }
             true
         }

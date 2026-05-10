@@ -30,11 +30,13 @@ class AppearanceSettingsDelegate @Inject constructor(
                 generalPreferences.colorScheme,
             ) { themeMode, useDynamicColor, pureBlack, highContrast, colorScheme ->
                 updateState { it.copy(
-                    themeMode = themeMode,
-                    useDynamicColor = useDynamicColor,
-                    usePureBlackDarkMode = pureBlack,
-                    useHighContrast = highContrast,
-                    colorScheme = colorScheme,
+                    appearance = it.appearance.copy(
+                        themeMode = themeMode,
+                        useDynamicColor = useDynamicColor,
+                        usePureBlackDarkMode = pureBlack,
+                        useHighContrast = highContrast,
+                        colorScheme = colorScheme,
+                    )
                 ) }
             }.collect { }
         }
@@ -47,8 +49,10 @@ class AppearanceSettingsDelegate @Inject constructor(
                 generalPreferences.showNsfwContent,
             ) { accent, locale, notifications, updateInterval, showNsfw ->
                 updateState { it.copy(
-                    customAccentColor = accent,
-                    locale = locale,
+                    appearance = it.appearance.copy(
+                        customAccentColor = accent,
+                        locale = locale,
+                    ),
                     notificationsEnabled = notifications,
                     updateCheckInterval = updateInterval,
                     showNsfwContent = showNsfw,
@@ -62,7 +66,7 @@ class AppearanceSettingsDelegate @Inject constructor(
         }
         scope.launch {
             generalPreferences.autoThemeColor.collect { autoTheme ->
-                updateState { it.copy(autoThemeColor = autoTheme) }
+                updateState { it.copy(appearance = it.appearance.copy(autoThemeColor = autoTheme)) }
             }
         }
         scope.launch {
