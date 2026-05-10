@@ -3,6 +3,7 @@ package app.otakureader.feature.settings
 import android.content.Context
 import app.cash.turbine.test
 import app.otakureader.core.preferences.AppPreferences
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.data.worker.ReadingReminderScheduler
@@ -46,6 +47,7 @@ class SettingsViewModelTest {
     private lateinit var localSourcePreferences: LocalSourcePreferences
     private lateinit var appPreferences: AppPreferences
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
+    private lateinit var generalPreferences: GeneralPreferences
     private lateinit var readingReminderScheduler: ReadingReminderScheduler
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var context: Context
@@ -81,6 +83,9 @@ class SettingsViewModelTest {
             every { remindersEnabled } returns flowOf(false)
             every { reminderHour } returns flowOf(20)
         }
+        generalPreferences = mockk(relaxed = true) {
+            every { coilDiskCacheSizeMb } returns flowOf(512)
+        }
         readingReminderScheduler = mockk(relaxed = true)
         chapterRepository = mockk(relaxed = true)
         context = mockk(relaxed = true) {
@@ -105,6 +110,7 @@ class SettingsViewModelTest {
         localSourcePreferences = localSourcePreferences,
         appPreferences = appPreferences,
         readingGoalPreferences = readingGoalPreferences,
+        generalPreferences = generalPreferences,
         readingReminderScheduler = readingReminderScheduler,
         chapterRepository = chapterRepository,
         context = context,
