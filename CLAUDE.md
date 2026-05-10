@@ -44,43 +44,117 @@ feature/*/       Compose screens + HiltViewModels per feature.
 ```
 
 Shared infrastructure lives in `core/` sub-modules:
-- `core/common` — utilities, `Result<T>`, `ReadTimeEstimator`
+- `core/common` — utilities, `Result<T>`, `ReadTimeEstimator`, MVI base classes
 - `core/database` — Room v21 with explicit migrations (v2→v21)
 - `core/preferences` — DataStore wrappers (`GeneralPreferences`, `ReaderPreferences`, `DownloadPreferences`, `PendingOAuthStore`, `EncryptedOpdsCredentialStore`, etc.)
-- `core/ui` — Material 3 design system, dynamic color from cover art
+- `core/ui` — Material 3 design system, dynamic color from cover art, MVI effect collector
 - `core/navigation` — type-safe Compose Navigation routes
 - `core/extension` — `ExtensionLoader`, `TrustedSignatureStore` (EncryptedSharedPreferences-backed)
 - `core/tachiyomi-compat` — bridges Tachiyomi APKs to `source-api` interfaces
 - `source-api` — pure Kotlin contract (`Source`, `HttpSource`, `SManga`, `SChapter`, `Page`, `MangasPage`, `Filter`). No Android deps.
 
-Dependency rule: `domain` has zero deps. `data` depends on `domain` + `core/*`. `feature/*` depends on `domain` + `core/*`. No feature module may depend on another feature module.
+### Module Conventions
+
+- **Feature modules** — `feature/<name>/`, apply `otakureader.android.feature` convention plugin. Each feature is self-contained with its own Screen, ViewModel, and MVI contract.
+- **Core modules** — `core/<name>/`, shared infrastructure. Each core module has its own DI module in `<module>/di/*Module.kt`.
+- **Domain module** — `domain/`, pure Kotlin library (no Android plugin). Use cases, repository interfaces, and domain models only.
+- **Data module** — `data/`, repository implementations and data sources. Binds interfaces to implementations here.
+
+### Dependency Rules
+
+- `domain` has **zero** external deps (only Kotlin stdlib, coroutines, and `javax.inject`).
+- `data` depends on `domain` + `core/*`.
+- `feature/*` depends on `domain` + `core/*`.
+- **No feature module may depend on another feature module.** Navigation is via `core/navigation` routes only.
+- `app/` module depends on all feature modules and core modules, wires the nav graph.
 
 ## MVI Pattern
 
-Every feature uses Model-View-Intent:
+Every feature uses Model-View-Intent. There are two patterns in the codebase:
 
-- **State** — immutable `data class`, one per screen
-- **Event** — `sealed class`/`sealed interface` representing user or system actions
-- **Effect** — one-shot `SharedFlow` for navigation, snackbars
-- **ViewModel** — `@HiltViewModel`, exposes `StateFlow<UiState>`, processes events via `onEvent()`
+### Legacy Pattern (most existing features)
+ViewModel extends `ViewModel` directly and wires state/effect manually:
 
 ```kotlin
-// ViewModel template
 @HiltViewModel
-class LibraryViewModel @Inject constructor(
-    private val getLibraryManga: GetLibraryMangaUseCase,
-) : ViewModel() {
-    private val _state = MutableStateFlow(LibraryUiState())
-    val state: StateFlow<LibraryUiState> = _state.asStateFlow()
+class LibraryViewModel @Inject constructor(...) : ViewModel() {
+    private val _state = MutableStateFlow(LibraryState())
+    val state: StateFlow<LibraryState> = _state.asStateFlow()
+
+    private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
+    val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
 
     fun onEvent(event: LibraryEvent) { ... }
 }
+```
 
-// Screen: always collectAsStateWithLifecycle, never collectAsState
+### Modern Pattern (newer features — Details, OPDS, Tracking)
+Uses `BaseMviViewModel<S, E, F>` from `core/common` with contract objects:
+
+```kotlin
+// MVI contract file: DetailsMvi.kt
+object DetailsContract {
+    data class State(...) : UiState
+    sealed interface Event : UiEvent { ... }
+    sealed interface Effect : UiEffect { ... }
+}
+
+// ViewModel
+@HiltViewModel
+class DetailsViewModel @Inject constructor(...)
+    : BaseMviViewModel<DetailsContract.State, DetailsContract.Event, DetailsContract.Effect>(
+        initialState = DetailsContract.State()
+    ) {
+    override fun processEvent(event: DetailsContract.Event) { ... }
+}
+```
+
+### Screen: always collectAsStateWithLifecycle, never collectAsState
+
+```kotlin
 val state by viewModel.state.collectAsStateWithLifecycle()
 ```
 
-Never mutate state directly. Never use `LiveData`. Never use `GlobalScope`.
+Collect effects with `CollectAsEffect` from `core/ui`:
+
+```kotlin
+CollectAsEffect(viewModel.effect) { effect ->
+    when (effect) {
+        is LibraryEffect.NavigateToManga -> navigator.navigate(...)
+    }
+}
+```
+
+Never mutate state directly (use `_state.update { it.copy(...) }`). Never use `LiveData`. Never use `GlobalScope`.
+
+## Naming Conventions
+
+### Composables
+- **Screen** — `<Feature>Screen.kt` (top-level route composable, e.g., `LibraryScreen()`)
+- **Content** — `<Feature>Content()` (stateless body, used by Screen after collecting state)
+- **Components** — Descriptive names: `MangaCard()`, `ChapterListItem()`, `FilterBottomSheet()`
+
+### ViewModels
+- `<Feature>ViewModel.kt` — always annotated `@HiltViewModel`
+- State class: `<Feature>State` (or `DetailsContract.State` for modern MVI)
+- Event sealed class: `<Feature>Event` (or `DetailsContract.Event`)
+- Effect sealed class: `<Feature>Effect` (or `DetailsContract.Effect`)
+- Entry point: `fun onEvent(event: <Feature>Event)`
+
+### Use Cases
+- `<Verb><Noun>UseCase.kt` — e.g., `GetLibraryMangaUseCase`, `ToggleFavoriteMangaUseCase`
+- Single public method: `operator fun invoke(...)`
+- Located in `domain/usecase/` (or `domain/usecase/<subpackage>/` for grouped use cases like OPDS)
+
+### Repositories
+- Interface: `<Noun>Repository` in `domain/repository/`
+- Implementation: `<Noun>RepositoryImpl` in `data/repository/` (or `data/<feature>/repository/`)
+
+### DI Modules
+- Repository bindings: `data/di/RepositoryModule.kt` (`@Module @InstallIn(SingletonComponent::class)`)
+- Use case providers: `data/di/UseCaseModule.kt` (`@Module @InstallIn(SingletonComponent::class)`)
+- Feature-specific: `data/<feature>/di/<Feature>Module.kt` (e.g., `data/tracking/di/TrackingModule.kt`)
+- Core modules: each has its own `<core>/<name>/di/<Name>Module.kt`
 
 ## Hilt DI Rules
 
@@ -93,6 +167,37 @@ Never mutate state directly. Never use `LiveData`. Never use `GlobalScope`.
 **Resolved (as of latest audit):**
 - `TrackerSyncRepository` → implemented by `TrackerSyncRepositoryImpl` at `data/tracking/repository/TrackerSyncRepositoryImpl.kt`, bound via `data/tracking/di/TrackingModule.kt`
 - `ExtensionManagementRepository` → bound to `SourceRepositoryImpl` in `data/di/RepositoryModule.kt` (line 106)
+
+## Testing Conventions
+
+### Framework & Libraries
+- **JUnit 4** with `runTest { }` for coroutines
+- **MockK** for mocking (not Mockito)
+- **Turbine** (`app.cash.turbine`) for Flow assertions
+- **StandardTestDispatcher** + `@OptIn(ExperimentalCoroutinesApi::class)` for coroutine testing
+
+### ViewModel Tests
+- Mock all dependencies with `mockk { every { prop } returns flowOf(...) }` for DataStore preferences
+- Use `Dispatchers.setMain(testDispatcher)` in `@Before`, `Dispatchers.resetMain()` in `@After`
+- Assert state changes via `viewModel.state.test { ... }` or direct property access after `advanceUntilIdle()`
+- Test both success and error paths
+
+### Use Case Tests
+- Mock the repository interface, verify `invoke()` delegates correctly
+- Test empty/success/error cases with Turbine
+
+### Domain Architecture Tests
+- `domain/src/test/java/app/otakureader/domain/ArchitectureTest.kt` enforces:
+  - No Android imports in domain layer (banned: `android.`, `androidx.`, `com.google.android.`)
+  - Domain data classes must live in `domain/model/`
+  - Domain repository package contains only interfaces
+  - Use cases must exist in `domain/usecase/`
+  - Domain build file uses Kotlin library plugin (not Android)
+
+### Coverage Gates
+- `:domain` — ≥60% (enforced by `domain:koverVerify`)
+- `:data` — ≥60% (enforced by `data:koverVerifyDebug`)
+- Migration tests: `core/database` only (use `./gradlew :core:database:test`)
 
 ## Room Database Rules
 

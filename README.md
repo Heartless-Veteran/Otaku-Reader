@@ -7,7 +7,7 @@
 
   [![Build](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml)
   [![CI](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml)
-  [![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+  [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-8.0+-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-0877d2?style=flat)](LICENSE)
   [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
@@ -39,7 +39,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - **One app, one job:** Read manga. Nothing else.
 - **Zero accounts required:** No Google, no Firebase, no sign-up. Ever.
 - **No AI in core:** No ML models, no data mining. Just manga.
-- **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachiyomi backup → reading immediately.
+- **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachikomi backup → reading immediately.
 
 ### Built From Scratch
 This is not a fork. Otaku Reader was written from the ground up by a single developer — the core app, UI, and architecture are original work. The only third-party component is the extension system, which enables compatibility with existing source repositories. Everything else is homegrown. Bugs and rough edges are expected; this is a work in progress.
@@ -55,6 +55,7 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - 🔍 **Fuzzy search** — Find manga instantly instead of scrolling
 - 📂 **Reading list collections** — Create custom lists beyond categories: "Summer Binge", "Re-read Later", "Hidden Gems"
 - 📝 **Chapter notes** — Add personal notes to any chapter
+- 📱 **Widget navigation** — Home screen widgets for continue reading, now reading, and recent updates with deep-link navigation
 - 📂 **QR library sharing** — Scan a friend's phone, get their manga list instantly (local, no server)
 
 ### Reading Experience
@@ -76,13 +77,15 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - 🔍 **Global search** — Search across all installed sources simultaneously
 - 🕐 **Search history** — Recent queries as quick-tap chips — no more re-typing
 - 📰 **Feed** — New chapter updates from your sources in one place
+- 🔗 **Deep links** — Open manga and chapters directly from external links (extension URLs, tracker links)
 
 ### Tracking & Stats
 - 📊 **Reading streaks** — Consecutive-day counter with 30-day heatmap
 - 🏆 **Reading goals** — Daily/weekly chapter targets with progress
 - 📈 **Statistics dashboard** — Time read, chapters completed, genre breakdown
 - 📤 **Statistics sharing** — Generate a beautiful shareable card of your reading stats
-- 🔗 **Tracker sync** — AniList, MAL, Kitsu (opt-in, local-only API keys)
+- 🔗 **Tracker sync** — AniList, MyAnimeList (MAL), Kitsu, MangaUpdates, Shikimori (opt-in, local-only API keys)
+- 🎮 **Discord Rich Presence** — Share what you're reading with Discord status integration
 
 ### Backup & Migration
 - 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device
@@ -109,6 +112,9 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 | Chapter notes | ✅ Per-chapter annotations | ❌ Not available |
 | Reading list collections | ✅ Custom lists beyond categories | ❌ Not available |
 | Statistics sharing | ✅ Social-ready cards | ❌ Not available |
+| Home screen widgets | ✅ Continue reading + recent updates | ❌ Not available |
+| Deep link support | ✅ Open manga from external URLs | ❌ Not available |
+| Discord Rich Presence | ✅ Live reading status | ❌ Not available |
 
 **Reading Modes:** Paged · Webtoon · Continuous Scroll · Dual-Page · Smart Panels
 
@@ -174,7 +180,7 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - [x] Smart download rules (auto-queue at reading threshold)
 
 ### ✅ Phase 3: Trackers, Backup, Polish (DONE)
-- [x] Tracker integration (AniList/MAL/Kitsu)
+- [x] Tracker integration (AniList/MAL/Kitsu/MangaUpdates/Shikimori)
 - [x] Backup/restore (human-readable JSON in ZIP)
 - [x] Source-to-source migration
 - [x] Update check via GitHub Releases
@@ -192,6 +198,9 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - [x] Auto-backup scheduling
 - [x] Smart notification batching
 - [x] Search history
+- [x] Home screen widgets
+- [x] Deep link handling
+- [x] Discord Rich Presence
 
 ### ✅ Phase 4: Quality Gates & Release (DONE)
 - [x] 60%+ domain/data test coverage
@@ -228,58 +237,70 @@ See [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) for 
 
 | Layer | Technology |
 |-------|------------|
-| Language | Kotlin 2.3 |
+| Language | Kotlin 2.3.21 |
 | UI | Jetpack Compose 100% — no XML layouts |
 | Architecture | Clean Architecture + MVI |
-| Dependency Injection | Hilt |
-| Database | Room + KSP |
+| Dependency Injection | Hilt 2.59.2 |
+| Database | Room 2.8.4 + KSP |
 | Preferences | DataStore |
-| Networking | OkHttp + Coil |
-| Background Work | WorkManager |
+| Networking | OkHttp 4.12.0 + Coil 3.4.0 |
+| Background Work | WorkManager 2.11.2 |
 | Build | Gradle 9.5.0 + convention plugins + version catalogs + signed release APKs |
 
 ---
 
 ## 🏗️ Architecture
 
+Otaku Reader follows **Clean Architecture** with three horizontal layers and feature-based vertical modules:
+
 ```
-app/                    — Application module (DI wiring, manifest)
+app/                    — Application module (DI wiring, manifest, widgets, deep links)
 ├── core/
 │   ├── common/         — Shared utilities, Result type, ReadTimeEstimator
 │   ├── ui/             — Compose design system, theme, dynamic color extraction
 │   ├── navigation/     — Type-safe navigation graph
-│   ├── preferences/    — DataStore wrappers (General, Reader, Download, Goals)
-│   ├── database/       — Room entities, DAOs, migrations
-│   └── discord/        — Discord RPC (optional)
-├── domain/             — Use cases, repository interfaces, models
+│   ├── preferences/    — DataStore wrappers (General, Reader, Download, Goals, OAuth)
+│   ├── database/       — Room entities, DAOs, migrations (v21)
+│   ├── network/        — OkHttp interceptors, certificate pinning, network DI
+│   ├── extension/      — ExtensionLoader, TrustedSignatureStore
+│   ├── tachiyomi-compat/ — Bridges Tachiyomi APKs to source-api interfaces
+│   └── discord/        — Discord Rich Presence service
+├── domain/             — Pure Kotlin: use cases, repository interfaces, models. Zero Android deps.
 ├── data/               — Repository implementations, workers, network
-│   ├── backup/         — Backup/restore logic
+│   ├── backup/         — Backup/restore logic (human-readable JSON in ZIP)
 │   ├── download/       — Download manager, CBZ export
-│   ├── tracking/       — Tracker sync implementations
+│   ├── tracking/       — Tracker sync (AniList, MAL, Kitsu, MangaUpdates, Shikimori)
 │   └── opds/           — OPDS client/server
-├── source-api/         — Extension SDK (source interface + loader)
+├── source-api/         — Extension SDK contract (Source, HttpSource, SManga, etc.). No Android deps.
 └── feature/
     ├── library/        — Library grid, categories, filters, completed/dropped
-    ├── browse/         — Sources, extensions, global search
+    ├── browse/         — Sources, extensions, global search, search history
     ├── details/        — Manga info, chapters, read time estimates
     ├── reader/         — All reading modes + page bookmarks + smart download trigger
     ├── history/        — Reading history
-    ├── updates/        — New chapter feed + smart notification batching
+    ├── updates/        — New chapter notifications + smart batching
     ├── tracking/       — Tracker settings + sync
     ├── settings/       — App preferences
-    ├── migration/      — Source-to-source + Tachiyomi import
+    ├── migration/      — Source-to-source + Tachiyomi/Mihon/Komikku import
     ├── onboarding/     — First-launch setup wizard
     ├── about/          — Credits, licenses, updates
     ├── statistics/     — Reading stats + streaks + heatmap + shareable cards
-    ├── feed/           — OPDS / external catalogs
-    └── opds/           — OPDS server mode
+    ├── feed/           — New chapter updates feed from sources
+    ├── opds/           — OPDS client/server mode
+    └── more/           — QR library sharing, additional tools
 ```
+
+### Module Dependency Rules
+
+- **`domain`** — Pure Kotlin, zero dependencies. Contains use cases, repository interfaces, and models.
+- **`data`** — Depends on `domain` + `core/*`. Contains repository implementations, Room DAOs, WorkManager workers.
+- **`feature/*`** — Depends on `domain` + `core/*`. Each feature is self-contained. **No feature module may depend on another feature module.**
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Quick Start
 
