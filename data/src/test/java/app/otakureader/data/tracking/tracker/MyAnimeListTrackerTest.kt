@@ -50,7 +50,7 @@ class MyAnimeListTrackerTest {
         oauthApi = mockk()
         api = mockk()
         tokenStore = mockk(relaxed = true)
-        tracker = MyAnimeListTracker(oauthApi, api, tokenStore, clientId, redirectUri)
+        tracker = MyAnimeListTracker(oauthApi, api, clientId, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

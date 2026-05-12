@@ -54,7 +54,7 @@ class KitsuTrackerTest {
         oauthApi = mockk()
         api = mockk()
         tokenStore = mockk(relaxed = true)
-        tracker = KitsuTracker(oauthApi, api, tokenStore, clientId, redirectUri)
+        tracker = KitsuTracker(oauthApi, api, clientId, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

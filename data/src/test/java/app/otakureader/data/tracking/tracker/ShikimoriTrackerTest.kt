@@ -51,7 +51,7 @@ class ShikimoriTrackerTest {
         oauthApi = mockk()
         api = mockk()
         tokenStore = mockk(relaxed = true)
-        tracker = ShikimoriTracker(oauthApi, api, tokenStore, clientId, clientSecret, redirectUri)
+        tracker = ShikimoriTracker(oauthApi, api, clientId, clientSecret, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
