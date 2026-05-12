@@ -183,6 +183,14 @@ class ExtensionRemoteDataSourceImpl(
         private const val REPO_INDEX_PATH = "/index.json"
         private const val REPO_INDEX_MIN_PATH = "/index.min.json"
 
+        /** Strip trailing index.json or index.min.json if the user pasted the full URL. */
+        fun normalizeRepoUrl(url: String): String {
+            return url.trimEnd('/')
+                .removeSuffix(REPO_INDEX_PATH)
+                .removeSuffix(REPO_INDEX_MIN_PATH)
+                .trimEnd('/')
+        }
+
         fun createDefaultClient(): OkHttpClient {
             return OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -200,7 +208,8 @@ class ExtensionRemoteDataSourceImpl(
 
                 val extensions = mutableListOf<Extension>()
 
-                repositories.forEach { baseUrl ->
+                repositories.forEach { rawUrl ->
+                    val baseUrl = normalizeRepoUrl(rawUrl)
                     val repoExtensions = fetchFromRepository(baseUrl)
                     extensions.addAll(repoExtensions)
                 }

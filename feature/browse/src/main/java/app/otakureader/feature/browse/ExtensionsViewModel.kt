@@ -232,11 +232,22 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun refreshExtensions() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, error = null) }
             try {
-                extensionRepository.refreshAvailableExtensions()
-                extensionRepository.checkForUpdates()
-                _state.update { it.copy(isLoading = false) }
+                val availableResult = extensionRepository.refreshAvailableExtensions()
+                availableResult
+                    .onSuccess {
+                        extensionRepository.checkForUpdates()
+                        _state.update { it.copy(isLoading = false) }
+                    }
+                    .onFailure { error ->
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Failed to refresh extensions: ${error.message ?: "Unknown error"}"
+                            )
+                        }
+                    }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
