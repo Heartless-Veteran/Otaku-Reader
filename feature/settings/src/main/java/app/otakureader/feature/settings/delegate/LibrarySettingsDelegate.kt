@@ -37,18 +37,18 @@ class LibrarySettingsDelegate @Inject constructor(
                 libraryPreferences.autoRefreshOnStart,
             ) { gridSize, showBadges, updateOnWifi, updatePinned, autoRefresh ->
                 latestUpdateOnlyOnWifi = updateOnWifi
-                updateState { it.copy(
+                updateState { it.copy(library = it.library.copy(
                     libraryGridSize = gridSize,
                     showBadges = showBadges,
                     updateOnlyOnWifi = updateOnWifi,
                     updateOnlyPinnedCategories = updatePinned,
                     autoRefreshOnStart = autoRefresh,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
             libraryPreferences.showUpdateProgress.collect { showProgress ->
-                updateState { it.copy(showUpdateProgress = showProgress) }
+                updateState { it.copy(library = it.library.copy(showUpdateProgress = showProgress)) }
             }
         }
         scope.launch {

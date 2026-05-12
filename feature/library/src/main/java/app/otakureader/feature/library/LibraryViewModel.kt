@@ -16,9 +16,12 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
 import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +46,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
+    private val searchLibraryManga: SearchLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
     private val libraryPreferences: LibraryPreferences,
     private val generalPreferences: GeneralPreferences,
@@ -64,6 +68,10 @@ class LibraryViewModel @Inject constructor(
 
     /** Holds the full, unfiltered library items for reactive filtering. */
     private val _allItems = MutableStateFlow<List<LibraryMangaItem>>(emptyList())
+
+    /** IDs of manga matching the current search query; null when no search is active. */
+    private val _searchMatchingIds = MutableStateFlow<Set<Long>?>(null)
+    private var searchJob: Job? = null
 
     init {
         loadLibrary()
@@ -257,6 +265,7 @@ class LibraryViewModel @Inject constructor(
     /** Encapsulates all filter/sort parameters derived from state for use in the filtered-items combine. */
     private data class FilterSortParams(
         val query: String,
+        val searchMatchingIds: Set<Long>?,
         val filterHasNotes: Boolean,
         val sortMode: LibrarySortMode,
         val filterMode: LibraryFilterMode,
@@ -297,12 +306,14 @@ class LibraryViewModel @Inject constructor(
             .onEach { ids -> _state.update { it.copy(readingListMangaIds = ids) } }
             .launchIn(viewModelScope)
 
-        // Combine all items with filter params (now including category and reading list manga IDs from state)
+        // Combine all items with filter params (now including category, reading list, and search result IDs from state)
         combine(
             _allItems,
+            _searchMatchingIds,
             _state.map {
                 FilterSortParams(
                     query = it.searchQuery,
+                    searchMatchingIds = null, // populated by combine below
                     filterHasNotes = it.filterHasNotes,
                     sortMode = it.sortMode,
                     filterMode = it.filterMode,
@@ -314,8 +325,8 @@ class LibraryViewModel @Inject constructor(
                     readingListMangaIds = it.readingListMangaIds
                 )
             }.distinctUntilChanged()
-        ) { items, params ->
-            applyFiltersAndSort(items, params)
+        ) { items, matchingIds, params ->
+            applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds))
         }
             .onEach { filtered ->
                 _state.update { it.copy(mangaList = filtered) }
@@ -348,11 +359,8 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun applySearchFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
-        return if (params.query.isNotBlank()) {
-            items.filter { it.title.contains(params.query, ignoreCase = true) }
-        } else {
-            items
-        }
+        val matchingIds = params.searchMatchingIds ?: return items
+        return items.filter { it.id in matchingIds }
     }
 
     private fun applyHasNotesFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
@@ -425,12 +433,26 @@ class LibraryViewModel @Inject constructor(
 
     private fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            _searchMatchingIds.value = null
+            return
+        }
+        _searchMatchingIds.value = emptySet()
+        searchJob = viewModelScope.launch {
+            delay(300L)
+            searchLibraryManga(query).collect { mangas ->
+                _searchMatchingIds.value = mangas.map { it.id }.toSet()
+            }
+        }
     }
 
     private fun toggleSearchBar() {
         _state.update { state ->
             if (state.showSearchBar) {
                 // Closing: also clear the query
+                searchJob?.cancel()
+                _searchMatchingIds.value = null
                 state.copy(showSearchBar = false, searchQuery = "")
             } else {
                 state.copy(showSearchBar = true)

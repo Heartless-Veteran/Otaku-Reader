@@ -30,11 +30,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -84,6 +87,12 @@ class ReaderViewModel @Inject constructor(
 
     private val _effect = Channel<ReaderEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
+
+    private val sharing = SharingStarted.WhileSubscribed(5_000L)
+    val pageState: StateFlow<PageState> = state.map { it.pageState }.stateIn(viewModelScope, sharing, ReaderState().pageState)
+    val overlayState: StateFlow<OverlayState> = state.map { it.overlayState }.stateIn(viewModelScope, sharing, ReaderState().overlayState)
+    val displayState: StateFlow<DisplayState> = state.map { it.displayState }.stateIn(viewModelScope, sharing, ReaderState().displayState)
+    val webtoonState: StateFlow<WebtoonState> = state.map { it.webtoonState }.stateIn(viewModelScope, sharing, ReaderState().webtoonState)
 
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null

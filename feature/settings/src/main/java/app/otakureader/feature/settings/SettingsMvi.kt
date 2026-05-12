@@ -5,7 +5,6 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.preferences.LocalSourcePreferences
-import app.otakureader.domain.model.ImageQuality
 
 data class TrackerInfo(
     val id: Int,
@@ -13,87 +12,18 @@ data class TrackerInfo(
     val isLoggedIn: Boolean
 )
 
+/**
+ * Root settings state composed from focused per-section sub-states.
+ * Screens that only need one section can collect [appearance], [reader], [library], etc.
+ * independently to avoid recomposing on unrelated changes.
+ */
 data class SettingsState(
-    // --- Appearance ---
-    val themeMode: Int = 0,            // 0=system, 1=light, 2=dark
-    val useDynamicColor: Boolean = true,
-    val usePureBlackDarkMode: Boolean = false,
-    val useHighContrast: Boolean = false,
-    val colorScheme: Int = 0,
-    val customAccentColor: Long = 0xFF1976D2L,
-    val locale: String = "",
-    val autoThemeColor: Boolean = false,
-
-    // --- Reader - Display ---
-    val readerMode: Int = 0,
-    val keepScreenOn: Boolean = true,
-    val fullscreen: Boolean = true,
-    val showContentInCutout: Boolean = true,
-    val showPageNumber: Boolean = true,
-    val backgroundColor: Int = 0,      // 0=Black, 1=White, 2=Gray, 3=Auto
-    val animatePageTransitions: Boolean = true,
-    val showReadingModeOverlay: Boolean = true,
-    val showTapZonesOverlay: Boolean = false,
-
-    // --- Reader - Scale ---
-    val readerScale: Int = 0,          // 0=Fit Screen, 1=Fit Width, 2=Fit Height, 3=Original, 4=Smart Fit
-    val autoZoomWideImages: Boolean = true,
-
-    // --- Reader - Tap Zones ---
-    val tapZoneConfig: Int = 0,        // 0=Default, 1=Left-handed, 2=Kindle, 3=Edge
-    val invertTapZones: Boolean = false,
-
-    // --- Reader - Volume Keys ---
-    val volumeKeysEnabled: Boolean = false,
-    val volumeKeysInverted: Boolean = false,
-
-    // --- Reader - Interaction ---
-    val doubleTapAnimationSpeed: Int = 1,  // 0=Slow, 1=Normal, 2=Fast
-    val showActionsOnLongTap: Boolean = true,
-    val savePagesToSeparateFolders: Boolean = false,
-
-    // --- Reader - Webtoon ---
-    val webtoonSidePadding: Int = 0,   // 0=None, 1=Small, 2=Medium, 3=Large
-    val webtoonMenuHideSensitivity: Int = 0,  // 0=Low, 1=Medium, 2=High
-    val webtoonDoubleTapZoom: Boolean = true,
-    val webtoonDisableZoomOut: Boolean = false,
-
-    // --- Reader - E-ink ---
-    val einkFlashOnPageChange: Boolean = false,
-    val einkBlackAndWhite: Boolean = false,
-
-    // --- Reader - Behavior ---
-    val skipReadChapters: Boolean = false,
-    val skipFilteredChapters: Boolean = true,
-    val skipDuplicateChapters: Boolean = false,
-    val alwaysShowChapterTransition: Boolean = true,
-
-    // --- Reader - Preload ---
-    val preloadPagesBefore: Int = 2,
-    val preloadPagesAfter: Int = 3,
-    val cropBordersEnabled: Boolean = false,
-    val imageQuality: String = ImageQuality.ORIGINAL.name,
-    val dataSaverEnabled: Boolean = false,
-    val incognitoMode: Boolean = false,
-
-    // --- Library ---
-    val libraryGridSize: Int = 3,
-    val showBadges: Boolean = true,
-    val updateOnlyOnWifi: Boolean = false,
-    val updateOnlyPinnedCategories: Boolean = false,
-    val autoRefreshOnStart: Boolean = false,
-    val showUpdateProgress: Boolean = true,
-
-    // --- Downloads ---
-    val deleteAfterReading: Boolean = false,
-    val saveAsCbz: Boolean = false,
-    val autoDownloadEnabled: Boolean = false,
-    val downloadOnlyOnWifi: Boolean = true,
-    val autoDownloadLimit: Int = 3,
-    val concurrentDownloads: Int = 2,
-    val downloadAheadWhileReading: Int = 0,
-    val downloadAheadOnlyOnWifi: Boolean = true,
-    val downloadLocation: String? = null,
+    val appearance: AppearanceState = AppearanceState(),
+    val reader: ReaderSettingsState = ReaderSettingsState(),
+    val library: LibrarySettingsState = LibrarySettingsState(),
+    val downloads: DownloadSettingsState = DownloadSettingsState(),
+    val backup: BackupSettingsState = BackupSettingsState(),
+    val tracking: TrackingSettingsState = TrackingSettingsState(),
 
     // --- Local Source ---
     val localSourceDirectory: String = LocalSourcePreferences.defaultDirectory(),
@@ -101,19 +31,6 @@ data class SettingsState(
     // --- Notifications ---
     val notificationsEnabled: Boolean = true,
     val updateCheckInterval: Int = 12,
-
-    // --- Backup ---
-    val isBackupInProgress: Boolean = false,
-    val isRestoreInProgress: Boolean = false,
-    val restoringBackupFileName: String? = null,
-    val autoBackupEnabled: Boolean = false,
-    val autoBackupIntervalHours: Int = 24,
-    val autoBackupMaxCount: Int = 5,
-    val localBackupFiles: List<String> = emptyList(),
-
-    // --- Tracking ---
-    val trackers: List<TrackerInfo> = emptyList(),
-    val trackingLoginInProgress: Boolean = false,
 
     // --- Migration ---
     val migrationSimilarityThreshold: Float = 0.7f,
@@ -132,18 +49,93 @@ data class SettingsState(
     val readingRemindersEnabled: Boolean = false,
     val readingReminderHour: Int = 20,
 
-    // --- Cloud Sync ---
-    // Removed: cloud sync (Google Drive / Dropbox / WebDAV / self-hosted) was extracted
-    // to a sibling repository. Local backup/restore stays in :data and remains exposed
-    // via the Backup section of this state.
-
     // App Update Checker
     val appUpdateCheckEnabled: Boolean = true,
     val lastAppUpdateCheck: Long = 0L,
 
     // Image Cache
     val coilDiskCacheSizeMb: Int = app.otakureader.core.preferences.GeneralPreferences.DEFAULT_COIL_DISK_CACHE_MB,
-) : UiState
+) : UiState {
+
+    // Convenience accessors kept for backward compatibility with existing screen composables.
+    // --- Appearance ---
+    val themeMode get() = appearance.themeMode
+    val useDynamicColor get() = appearance.useDynamicColor
+    val usePureBlackDarkMode get() = appearance.usePureBlackDarkMode
+    val useHighContrast get() = appearance.useHighContrast
+    val colorScheme get() = appearance.colorScheme
+    val customAccentColor get() = appearance.customAccentColor
+    val locale get() = appearance.locale
+    val autoThemeColor get() = appearance.autoThemeColor
+
+    // --- Reader ---
+    val readerMode get() = reader.readerMode
+    val keepScreenOn get() = reader.keepScreenOn
+    val fullscreen get() = reader.fullscreen
+    val showContentInCutout get() = reader.showContentInCutout
+    val showPageNumber get() = reader.showPageNumber
+    val backgroundColor get() = reader.backgroundColor
+    val animatePageTransitions get() = reader.animatePageTransitions
+    val showReadingModeOverlay get() = reader.showReadingModeOverlay
+    val showTapZonesOverlay get() = reader.showTapZonesOverlay
+    val readerScale get() = reader.readerScale
+    val autoZoomWideImages get() = reader.autoZoomWideImages
+    val tapZoneConfig get() = reader.tapZoneConfig
+    val invertTapZones get() = reader.invertTapZones
+    val volumeKeysEnabled get() = reader.volumeKeysEnabled
+    val volumeKeysInverted get() = reader.volumeKeysInverted
+    val doubleTapAnimationSpeed get() = reader.doubleTapAnimationSpeed
+    val showActionsOnLongTap get() = reader.showActionsOnLongTap
+    val savePagesToSeparateFolders get() = reader.savePagesToSeparateFolders
+    val webtoonSidePadding get() = reader.webtoonSidePadding
+    val webtoonMenuHideSensitivity get() = reader.webtoonMenuHideSensitivity
+    val webtoonDoubleTapZoom get() = reader.webtoonDoubleTapZoom
+    val webtoonDisableZoomOut get() = reader.webtoonDisableZoomOut
+    val einkFlashOnPageChange get() = reader.einkFlashOnPageChange
+    val einkBlackAndWhite get() = reader.einkBlackAndWhite
+    val skipReadChapters get() = reader.skipReadChapters
+    val skipFilteredChapters get() = reader.skipFilteredChapters
+    val skipDuplicateChapters get() = reader.skipDuplicateChapters
+    val alwaysShowChapterTransition get() = reader.alwaysShowChapterTransition
+    val preloadPagesBefore get() = reader.preloadPagesBefore
+    val preloadPagesAfter get() = reader.preloadPagesAfter
+    val cropBordersEnabled get() = reader.cropBordersEnabled
+    val imageQuality get() = reader.imageQuality
+    val dataSaverEnabled get() = reader.dataSaverEnabled
+    val incognitoMode get() = reader.incognitoMode
+
+    // --- Library ---
+    val libraryGridSize get() = library.libraryGridSize
+    val showBadges get() = library.showBadges
+    val updateOnlyOnWifi get() = library.updateOnlyOnWifi
+    val updateOnlyPinnedCategories get() = library.updateOnlyPinnedCategories
+    val autoRefreshOnStart get() = library.autoRefreshOnStart
+    val showUpdateProgress get() = library.showUpdateProgress
+
+    // --- Downloads ---
+    val deleteAfterReading get() = downloads.deleteAfterReading
+    val saveAsCbz get() = downloads.saveAsCbz
+    val autoDownloadEnabled get() = downloads.autoDownloadEnabled
+    val downloadOnlyOnWifi get() = downloads.downloadOnlyOnWifi
+    val autoDownloadLimit get() = downloads.autoDownloadLimit
+    val concurrentDownloads get() = downloads.concurrentDownloads
+    val downloadAheadWhileReading get() = downloads.downloadAheadWhileReading
+    val downloadAheadOnlyOnWifi get() = downloads.downloadAheadOnlyOnWifi
+    val downloadLocation get() = downloads.downloadLocation
+
+    // --- Backup ---
+    val isBackupInProgress get() = backup.isBackupInProgress
+    val isRestoreInProgress get() = backup.isRestoreInProgress
+    val restoringBackupFileName get() = backup.restoringBackupFileName
+    val autoBackupEnabled get() = backup.autoBackupEnabled
+    val autoBackupIntervalHours get() = backup.autoBackupIntervalHours
+    val autoBackupMaxCount get() = backup.autoBackupMaxCount
+    val localBackupFiles get() = backup.localBackupFiles
+
+    // --- Tracking ---
+    val trackers get() = tracking.trackers
+    val trackingLoginInProgress get() = tracking.trackingLoginInProgress
+}
 
 sealed interface SettingsEvent : UiEvent {
     // Appearance

@@ -83,6 +83,12 @@ fun OtakuReaderNavHost(
                 }
                 onDeepLinkConsumed()
             }
+            is DeepLinkResult.NavigateToManga -> {
+                navController.navigate(Route.MangaDetails(deepLinkResult.mangaId)) {
+                    launchSingleTop = true
+                }
+                onDeepLinkConsumed()
+            }
             is DeepLinkResult.TrackerOAuth -> {
                 navController.navigate(
                     Route.TrackerOAuth(deepLinkResult.tracker, deepLinkResult.code, deepLinkResult.state)

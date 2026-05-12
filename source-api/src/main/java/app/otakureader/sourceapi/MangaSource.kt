@@ -67,9 +67,12 @@ data class SourceManga(
     val description: String? = null,
     val author: String? = null,
     val artist: String? = null,
+    /** Comma-separated genre string. Maps to [SManga.genres] via TachiyomiModelsAdapter. */
     val genre: String? = null,
     val status: Int = 0,
-    val initialized: Boolean = false
+    val initialized: Boolean = false,
+    /** Content rating from the source. Uses [SManga] constants (CONTENT_SAFE=0, CONTENT_SUGGESTIVE=1, etc.). */
+    val contentRating: Int? = null,
 )
 
 /** Chapter data as returned by a remote source. */

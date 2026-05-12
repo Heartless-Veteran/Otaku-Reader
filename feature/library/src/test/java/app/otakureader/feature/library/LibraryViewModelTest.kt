@@ -17,6 +17,7 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
 import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.cash.turbine.test
 import io.mockk.coEvery
@@ -44,6 +45,7 @@ class LibraryViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getLibraryManga: GetLibraryMangaUseCase
+    private lateinit var searchLibraryManga: SearchLibraryMangaUseCase
     private lateinit var toggleFavoriteManga: ToggleFavoriteMangaUseCase
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var generalPreferences: GeneralPreferences
@@ -66,6 +68,7 @@ class LibraryViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         getLibraryManga = mockk()
+        searchLibraryManga = mockk(relaxed = true)
         toggleFavoriteManga = mockk()
         libraryPreferences = mockk {
             every { gridSize } returns flowOf(3)
@@ -118,6 +121,7 @@ class LibraryViewModelTest {
     private fun createViewModel(): LibraryViewModel {
         return LibraryViewModel(
             getLibraryManga,
+            searchLibraryManga,
             toggleFavoriteManga,
             libraryPreferences,
             generalPreferences,

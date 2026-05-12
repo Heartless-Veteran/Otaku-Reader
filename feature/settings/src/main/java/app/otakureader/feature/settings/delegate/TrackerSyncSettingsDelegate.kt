@@ -47,7 +47,8 @@ class TrackerSyncSettingsDelegate @Inject constructor(
     }
 
     fun refreshTrackers() {
-        updateState { it.copy(trackers = trackManager.all.map { t -> TrackerInfo(t.id, t.name, t.isLoggedIn) }) }
+        val trackerInfos = trackManager.all.map { t -> TrackerInfo(t.id, t.name, t.isLoggedIn) }
+        updateState { it.copy(tracking = it.tracking.copy(trackers = trackerInfos)) }
     }
 
     suspend fun handleEvent(
@@ -67,7 +68,7 @@ class TrackerSyncSettingsDelegate @Inject constructor(
         password: String,
         sendEffect: suspend (SettingsEffect) -> Unit,
     ) {
-        updateState { it.copy(trackingLoginInProgress = true) }
+        updateState { it.copy(tracking = it.tracking.copy(trackingLoginInProgress = true)) }
         try {
             val tracker = trackManager.get(trackerId)
             if (tracker != null) {
@@ -84,7 +85,7 @@ class TrackerSyncSettingsDelegate @Inject constructor(
         } catch (e: Exception) {
             sendEffect(SettingsEffect.ShowSnackbar("Error: ${e.message}"))
         } finally {
-            updateState { it.copy(trackingLoginInProgress = false) }
+            updateState { it.copy(tracking = it.tracking.copy(trackingLoginInProgress = false)) }
         }
     }
 

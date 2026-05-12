@@ -28,13 +28,13 @@ class DownloadSettingsDelegate @Inject constructor(
                 downloadPreferences.downloadOnlyOnWifi,
                 downloadPreferences.autoDownloadLimit,
             ) { deleteAfter, saveCbz, autoDownload, dlWifi, dlLimit ->
-                updateState { it.copy(
+                updateState { it.copy(downloads = it.downloads.copy(
                     deleteAfterReading = deleteAfter,
                     saveAsCbz = saveCbz,
                     autoDownloadEnabled = autoDownload,
                     downloadOnlyOnWifi = dlWifi,
                     autoDownloadLimit = dlLimit,
-                ) }
+                )) }
             }.collect { }
         }
         scope.launch {
@@ -44,12 +44,12 @@ class DownloadSettingsDelegate @Inject constructor(
                 downloadPreferences.downloadAheadOnlyOnWifi,
                 downloadPreferences.downloadLocation,
             ) { concurrent, dlAhead, dlAheadWifi, dlLocation ->
-                updateState { it.copy(
+                updateState { it.copy(downloads = it.downloads.copy(
                     concurrentDownloads = concurrent,
                     downloadAheadWhileReading = dlAhead,
                     downloadAheadOnlyOnWifi = dlAheadWifi,
                     downloadLocation = dlLocation,
-                ) }
+                )) }
             }.collect { }
         }
     }

@@ -40,6 +40,9 @@ sealed class DeepLinkResult {
         val chapterId: Long
     ) : DeepLinkResult()
 
+    /** Navigate directly to manga details (e.g. from a widget tap with no chapter context). */
+    data class NavigateToManga(val mangaId: Long) : DeepLinkResult()
+
     object Invalid : DeepLinkResult()
 }
 
@@ -51,11 +54,27 @@ object DeepLinkHandler {
     private val UUID_REGEX =
         Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
+    private val NUMERIC_ID_REGEX = Regex("^\\d+$")
+
+    const val EXTRA_MANGA_ID = "manga_id"
+    const val EXTRA_CHAPTER_ID = "chapter_id"
+
     /**
      * Parse an intent to extract deep link information.
      */
     fun parseIntent(intent: Intent?): DeepLinkResult {
         if (intent == null) return DeepLinkResult.Invalid
+
+        // Widget navigation extras take priority — Glance passes these when a widget item is tapped.
+        if (intent.hasExtra(EXTRA_MANGA_ID)) {
+            val mangaId = intent.getLongExtra(EXTRA_MANGA_ID, -1L)
+            val chapterId = intent.getLongExtra(EXTRA_CHAPTER_ID, -1L)
+            return when {
+                mangaId != -1L && chapterId != -1L -> DeepLinkResult.ContinueReading(mangaId, chapterId)
+                mangaId != -1L -> DeepLinkResult.NavigateToManga(mangaId)
+                else -> DeepLinkResult.Invalid
+            }
+        }
 
         return when (intent.action) {
             Intent.ACTION_VIEW -> parseViewIntent(intent)
@@ -83,6 +102,11 @@ object DeepLinkHandler {
         // Handle MangaDex URLs - allow the main domain and its subdomains
         if (host == "mangadex.org" || host.endsWith(".mangadex.org")) {
             return parseMangaDexUrl(data)
+        }
+
+        // Handle MangaPlus URLs separately (numeric ID validation)
+        if (host == "mangaplus.shueisha.co.jp") {
+            return parseMangaPlusUrl(data)
         }
 
         // Handle generic manga URLs
@@ -137,47 +161,75 @@ object DeepLinkHandler {
 
     /**
      * Parse MangaDex-specific URLs.
-     * Validates that the manga ID is a well-formed UUID to prevent deep link hijacking
-     * that could navigate to unintended destinations.
+     * Validates that the ID is a well-formed UUID to prevent deep link hijacking.
+     * Handles both /title/{uuid} and /chapter/{uuid} paths.
      */
     private fun parseMangaDexUrl(uri: Uri): DeepLinkResult {
         val pathSegments = uri.pathSegments
+        if (pathSegments.size < 2) return DeepLinkResult.Invalid
 
-        if (pathSegments.size >= 2 && pathSegments[0] == "title") {
-            val mangaId = pathSegments[1]
-            if (!UUID_REGEX.matches(mangaId)) return DeepLinkResult.Invalid
-            return DeepLinkResult.MangaUrl(
+        val id = pathSegments[1]
+        if (!UUID_REGEX.matches(id)) return DeepLinkResult.Invalid
+
+        return when (pathSegments[0]) {
+            "title" -> DeepLinkResult.MangaUrl(
                 baseUrl = "https://mangadex.org",
-                mangaUrl = "https://mangadex.org/title/$mangaId",
+                mangaUrl = "https://mangadex.org/title/$id",
                 title = null
             )
+            "chapter" -> DeepLinkResult.MangaUrl(
+                baseUrl = "https://mangadex.org",
+                mangaUrl = "https://mangadex.org/chapter/$id",
+                title = null
+            )
+            else -> DeepLinkResult.Invalid
         }
-
-        return DeepLinkResult.Invalid
     }
 
     /**
-     * Parse generic manga URLs from various sources
+     * Parse MangaPlus URLs. Validates that the title ID is numeric to prevent hijacking.
+     * Expected path: /titles/{numericId}
+     */
+    private fun parseMangaPlusUrl(uri: Uri): DeepLinkResult {
+        val pathSegments = uri.pathSegments
+        if (pathSegments.size < 2 || pathSegments[0] != "titles") return DeepLinkResult.Invalid
+        val titleId = pathSegments[1]
+        if (!NUMERIC_ID_REGEX.matches(titleId)) return DeepLinkResult.Invalid
+        return DeepLinkResult.MangaUrl(
+            baseUrl = "https://mangaplus.shueisha.co.jp",
+            mangaUrl = uri.toString(),
+            title = null
+        )
+    }
+
+    /**
+     * Parse generic manga URLs from various sources.
+     * Uses exact host or strict suffix matching to prevent subdomain hijacking.
      */
     private fun parseGenericMangaUrl(uri: Uri, host: String): DeepLinkResult {
+        val scheme = uri.scheme ?: "https"
+        val baseUrl = "$scheme://$host"
+        val pathSegments = uri.pathSegments
         return when {
-            // Use exact host matching or strict suffix checks for security
             host == "mangakakalot.com" || host.endsWith(".mangakakalot.com") ||
             host == "manganato.com" || host.endsWith(".manganato.com") ||
-            host == "manganelo.com" || host.endsWith(".manganelo.com") -> {
-                DeepLinkResult.MangaUrl(
-                    baseUrl = "${uri.scheme ?: "https"}://$host",
-                    mangaUrl = uri.toString(),
-                    title = null
-                )
+            host == "manganelo.com" || host.endsWith(".manganelo.com") ->
+                DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
+
+            host == "webtoons.com" || host.endsWith(".webtoons.com") ->
+                DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
+
+            host == "mangasee123.com" || host == "mangafire.to" -> {
+                // Require /manga/{slug} path
+                if (pathSegments.size < 2 || pathSegments[0] != "manga") return DeepLinkResult.Invalid
+                DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
             }
 
-            host == "webtoons.com" || host.endsWith(".webtoons.com") -> {
-                DeepLinkResult.MangaUrl(
-                    baseUrl = "${uri.scheme ?: "https"}://$host",
-                    mangaUrl = uri.toString(),
-                    title = null
-                )
+            host == "bato.to" -> {
+                // Require /title/{id} or /series/{id} path
+                if (pathSegments.size < 2 || pathSegments[0] !in setOf("title", "series"))
+                    return DeepLinkResult.Invalid
+                DeepLinkResult.MangaUrl(baseUrl = baseUrl, mangaUrl = uri.toString())
             }
 
             else -> DeepLinkResult.Invalid
@@ -197,6 +249,10 @@ object DeepLinkHandler {
             host == "manganato.com" || host.endsWith(".manganato.com") -> true
             host == "manganelo.com" || host.endsWith(".manganelo.com") -> true
             host == "webtoons.com" || host.endsWith(".webtoons.com") -> true
+            host == "mangasee123.com" -> true
+            host == "mangafire.to" -> true
+            host == "bato.to" -> true
+            host == "mangaplus.shueisha.co.jp" -> true
             else -> false
         }
     }

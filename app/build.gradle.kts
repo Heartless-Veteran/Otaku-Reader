@@ -71,8 +71,12 @@ tasks.register("generateLicenseReport") {
     group = "reporting"
     description = "Generates docs/DEPENDENCY_LICENSES.md from the release dependency graph"
 
-    val output = rootProject.file("docs/DEPENDENCY_LICENSES.md")
-    outputs.file(output)
+    // Configuration resolution happens at execution time (allComponents is lazy), so this
+    // task cannot participate in the Gradle configuration cache.
+    notCompatibleWithConfigurationCache("resolves configurations at execution time")
+
+    val outputFile = rootProject.layout.projectDirectory.file("docs/DEPENDENCY_LICENSES.md")
+    outputs.file(outputFile)
 
     doLast {
         val components = configurations.getByName("releaseRuntimeClasspath")
@@ -84,6 +88,7 @@ tasks.register("generateLicenseReport") {
             .sortedBy { "${it.group}:${it.name}" }
             .distinctBy { "${it.group}:${it.name}" }
 
+        val output = outputFile.asFile
         val md = buildString {
             appendLine("# Otaku Reader — Dependency Licenses")
             appendLine()
@@ -100,7 +105,7 @@ tasks.register("generateLicenseReport") {
         }
         output.parentFile.mkdirs()
         output.writeText(md)
-        logger.lifecycle("License report written to ${output.relativeTo(rootProject.projectDir)}")
+        logger.lifecycle("License report written to docs/DEPENDENCY_LICENSES.md")
     }
 }
 
