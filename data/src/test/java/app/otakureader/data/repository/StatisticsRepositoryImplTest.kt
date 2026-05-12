@@ -2,7 +2,6 @@ package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
-import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.entity.ReadingHistoryEntity
 import app.cash.turbine.test
 import io.mockk.every
@@ -19,7 +18,6 @@ import java.time.ZoneId
 class StatisticsRepositoryImplTest {
 
     private lateinit var readingHistoryDao: ReadingHistoryDao
-    private lateinit var readingStreakDao: ReadingStreakDao
     private lateinit var mangaDao: MangaDao
     private lateinit var repository: StatisticsRepositoryImpl
 
@@ -34,9 +32,8 @@ class StatisticsRepositoryImplTest {
     @Before
     fun setUp() {
         readingHistoryDao = mockk()
-        readingStreakDao = mockk()
         mangaDao = mockk()
-        repository = StatisticsRepositoryImpl(readingHistoryDao, readingStreakDao, mangaDao)
+        repository = StatisticsRepositoryImpl(readingHistoryDao, mangaDao)
 
         // Default stub
         every { readingHistoryDao.observeHistory() } returns flowOf(emptyList())

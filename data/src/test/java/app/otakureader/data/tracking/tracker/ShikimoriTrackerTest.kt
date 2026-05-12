@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.ShikimoriApi
 import app.otakureader.data.tracking.api.ShikimoriManga
 import app.otakureader.data.tracking.api.ShikimoriOAuthApi
@@ -29,6 +30,7 @@ class ShikimoriTrackerTest {
 
     private lateinit var oauthApi: ShikimoriOAuthApi
     private lateinit var api: ShikimoriApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: ShikimoriTracker
 
     private val clientId = "shikimori-client-id"
@@ -48,7 +50,8 @@ class ShikimoriTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = ShikimoriTracker(oauthApi, api, clientId, clientSecret, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        tracker = ShikimoriTracker(oauthApi, api, tokenStore, clientId, clientSecret, redirectUri)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

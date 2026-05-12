@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.KitsuApi
 import app.otakureader.data.tracking.api.KitsuAttributes
 import app.otakureader.data.tracking.api.KitsuLibraryEntryResponse
@@ -31,6 +32,7 @@ class KitsuTrackerTest {
 
     private lateinit var oauthApi: KitsuOAuthApi
     private lateinit var api: KitsuApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: KitsuTracker
 
     private val clientId = "kitsu-client-id"
@@ -51,7 +53,8 @@ class KitsuTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = KitsuTracker(oauthApi, api, clientId, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        tracker = KitsuTracker(oauthApi, api, tokenStore, clientId, redirectUri)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

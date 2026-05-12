@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.MalListStatus
 import app.otakureader.data.tracking.api.MalManga
 import app.otakureader.data.tracking.api.MalSearchItem
@@ -31,6 +32,7 @@ class MyAnimeListTrackerTest {
 
     private lateinit var oauthApi: MyAnimeListOAuthApi
     private lateinit var api: MyAnimeListApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: MyAnimeListTracker
 
     private val clientId = "test-client-id"
@@ -47,7 +49,8 @@ class MyAnimeListTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = MyAnimeListTracker(oauthApi, api, clientId, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        tracker = MyAnimeListTracker(oauthApi, api, tokenStore, clientId, redirectUri)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

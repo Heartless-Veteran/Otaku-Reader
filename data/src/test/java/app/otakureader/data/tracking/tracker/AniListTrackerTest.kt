@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.AniListApi
 import app.otakureader.data.tracking.api.AniListCoverImage
 import app.otakureader.data.tracking.api.AniListData
@@ -32,12 +33,14 @@ import org.junit.Test
 class AniListTrackerTest {
 
     private lateinit var api: AniListApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: AniListTracker
 
     @Before
     fun setUp() {
         api = mockk()
-        tracker = AniListTracker(api)
+        tokenStore = mockk(relaxed = true)
+        tracker = AniListTracker(api, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

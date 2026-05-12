@@ -59,7 +59,13 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences, TestScope(testDispatcher))
+        downloadManager = DownloadManager(
+            context,
+            downloader,
+            downloadPreferences,
+            mockk(relaxed = true),
+            TestScope(testDispatcher)
+        )
     }
 
     // -------------------------------------------------------------------------
