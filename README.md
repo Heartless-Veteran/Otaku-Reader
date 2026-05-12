@@ -25,7 +25,7 @@
 
 | Build | Description | Status |
 |-------|-------------|--------|
-| **Otaku Reader** | Single flat build — open-source core, no proprietary SDKs. Optional AI features ship as a separate companion APK from [Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI). | 🔨 Build from source or watch for releases |
+| **Otaku Reader** | Single flat build — open-source core, no proprietary SDKs, no AI. | 🔨 Build from source or watch for releases |
 
 **Minimum Requirements:** Android 8.0 (API 26) · target APK < 10 MB
 
@@ -156,7 +156,7 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 ## 🗺️ Roadmap
 
 ### ✅ Phase 0: Clean Slate
-- [x] Remove AI module from core repo → [Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI)
+- [x] Remove AI module from core repo (moved to separate repo, on hold)
 - [x] Remove cloud sync and self-hosted server modules → [Otaku-Reader-Sync](https://github.com/Heartless-Veteran/Otaku-Reader-Sync)
 - [x] Flat single-product build (no `full`/`foss` flavors)
 
@@ -216,19 +216,6 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - [ ] Per-source rate limiting with visible queue
 - [ ] Optional ActivityPub federation for read-status
 - [ ] Double-page spread auto-detection
-
----
-
-## 🤖 AI Companion (Optional)
-
-AI-powered features — OCR translation, semantic recommendations, auto-tagging, cover upscaling — are being developed in a **separate repository** and will ship as an optional add-on APK.
-
-> **Why separate?** The AI stack adds significant build complexity, binary size, and dependency fragility. Keeping it out of core means Otaku Reader stays small, stable, and always builds on CI.
-
-- **Core repo (this):** manga reader, < 10 MB, zero proprietary SDKs
-- **AI repo:** companion APK, optional install, full AI feature set
-
-See [Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI) for progress.
 
 ---
 
@@ -322,7 +309,6 @@ See [docs/contributing/ci.md](docs/contributing/ci.md) for the full CI command r
 
 ## 🔗 See Also
 
-- **[Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI)** — The companion AI extension module (Gemini-powered summaries, OCR translation, SFX translation, reading insights, smart search, and recommendations).
 - **[Otaku-Reader-Sync](https://github.com/Heartless-Veteran/Otaku-Reader-Sync)** — Optional cloud sync server for cross-device library sync.
 
 ---
