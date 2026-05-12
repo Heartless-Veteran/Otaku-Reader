@@ -5,9 +5,9 @@
 
   <p><em>A modern, manga-only Android reader — no AI, no cloud, no ads, no tracking.</em></p>
 
-  [![Build](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/build.yml)
-  [![CI](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/HeartlessVeteran2/Otaku-Reader/actions/workflows/ci.yml)
-  [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+  [![Build](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/build.yml)
+  [![CI](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml)
+  [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-8.0+-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
   [![License](https://img.shields.io/badge/License-Apache%202.0-0877d2?style=flat)](LICENSE)
   [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
@@ -23,9 +23,9 @@
 
 ## 📥 Download
 
-| Build | Description | Download |
-|-------|-------------|----------|
-| **Otaku Reader** | Single flat build — open-source core, no proprietary SDKs. Optional AI features ship as a separate companion APK from [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI). | [Latest Release](https://github.com/HeartlessVeteran2/Otaku-Reader/releases/latest) |
+| Build | Description | Status |
+|-------|-------------|--------|
+| **Otaku Reader** | Single flat build — open-source core, no proprietary SDKs, no AI. | 🔨 Build from source or watch for releases |
 
 **Minimum Requirements:** Android 8.0 (API 26) · target APK < 10 MB
 
@@ -42,7 +42,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachikomi backup → reading immediately.
 
 ### Built From Scratch
-This is not a fork. Otaku Reader was written from the ground up by a single developer — the core app, UI, and architecture are original work. The only third-party component is the extension system, which enables compatibility with existing source repositories. Everything else is homegrown. Bugs and rough edges are expected; this is a work in progress.
+This is not a fork. Otaku Reader was written from the ground up — the core app, UI, and architecture are original work. The extension system enables compatibility with existing source repositories (Keiyoushi, Komikku). Everything else is homegrown.
 
 ---
 
@@ -155,19 +155,19 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 
 ## 🗺️ Roadmap
 
-### ✅ Phase 0: Clean Slate (DONE)
-- [x] Remove AI module from core repo → [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI)
-- [x] Remove cloud sync and self-hosted server modules → [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)
+### ✅ Phase 0: Clean Slate
+- [x] Remove AI module from core repo (moved to separate repo, on hold)
+- [x] Remove cloud sync and self-hosted server modules → [Otaku-Reader-Sync](https://github.com/Heartless-Veteran/Otaku-Reader-Sync)
 - [x] Flat single-product build (no `full`/`foss` flavors)
 
-### ✅ Phase 1: Core App Wiring (DONE)
+### ✅ Phase 1: Core App Wiring
 - [x] Hilt DI audit — no cycles, all bindings present
 - [x] Single Compose navigation graph with type-safe routes
 - [x] Material3 theme (light / dark / dynamic)
 - [x] DataStore settings backbone
 - [x] Base MVI pattern for every screen
 
-### ✅ Phase 2: Manga Core Loop (DONE)
+### ✅ Phase 2: Manga Core Loop
 - [x] Room database: Manga, Chapter, History, Category, Feed, OPDS
 - [x] Source API (Komikku/Keiyoushi compatible)
 - [x] Extension system: install, verify, configure index
@@ -179,7 +179,7 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - [x] History, updates, search, settings
 - [x] Smart download rules (auto-queue at reading threshold)
 
-### ✅ Phase 3: Trackers, Backup, Polish (DONE)
+### ✅ Phase 3: Trackers, Backup, Polish
 - [x] Tracker integration (AniList/MAL/Kitsu/MangaUpdates/Shikimori)
 - [x] Backup/restore (human-readable JSON in ZIP)
 - [x] Source-to-source migration
@@ -202,8 +202,7 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - [x] Deep link handling
 - [x] Discord Rich Presence
 
-### ✅ Phase 4: Quality Gates & Release (DONE)
-- [x] 60%+ domain/data test coverage
+### 🚧 Phase 4: Quality Gates & Release
 - [x] Critical Compose UI tests (library, reader) — Robolectric-based
 - [x] Green CI: ktlint, unit tests, signed APK on every `v*` tag
 - [x] Keystore signing via GitHub Secrets — release builds are installable
@@ -212,7 +211,7 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 - [ ] F-Droid metadata + reproducible builds
 - [ ] Macrobenchmark module to prevent regressions
 
-### Future Differentiators (see [#711](https://github.com/HeartlessVeteran2/Otaku-Reader/issues/711))
+### Future Differentiators
 - [ ] Curated default extension index (opt-out)
 - [ ] Per-source rate limiting with visible queue
 - [ ] Optional ActivityPub federation for read-status
@@ -220,32 +219,19 @@ This is not a fork. Otaku Reader was written from the ground up by a single deve
 
 ---
 
-## 🤖 AI Companion (Optional)
-
-AI-powered features — OCR translation, semantic recommendations, auto-tagging, cover upscaling — are being developed in a **separate repository** and will ship as an optional add-on APK.
-
-> **Why separate?** The AI stack adds significant build complexity, binary size, and dependency fragility. Keeping it out of core means Otaku Reader stays small, stable, and always builds on CI.
-
-- **Core repo (this):** manga reader, < 10 MB, zero proprietary SDKs
-- **AI repo:** companion APK, optional install, full AI feature set
-
-See [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) for progress.
-
----
-
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Language | Kotlin 2.3.21 |
+| Language | Kotlin 2.1.10 |
 | UI | Jetpack Compose 100% — no XML layouts |
 | Architecture | Clean Architecture + MVI |
-| Dependency Injection | Hilt 2.59.2 |
-| Database | Room 2.8.4 + KSP |
+| Dependency Injection | Hilt 2.55 |
+| Database | Room 2.7.0 + KSP |
 | Preferences | DataStore |
-| Networking | OkHttp 4.12.0 + Coil 3.4.0 |
-| Background Work | WorkManager 2.11.2 |
-| Build | Gradle 9.5.0 + convention plugins + version catalogs + signed release APKs |
+| Networking | OkHttp 4.12.0 + Coil 3.1.0 |
+| Background Work | WorkManager 2.10.0 |
+| Build | Gradle 8.7 + convention plugins + version catalogs + signed release APKs |
 
 ---
 
@@ -306,7 +292,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ```bash
 # Clone
-git clone https://github.com/HeartlessVeteran2/Otaku-Reader.git
+git clone https://github.com/Heartless-Veteran/Otaku-Reader.git
 cd Otaku-Reader
 
 # Build debug APK
@@ -323,8 +309,7 @@ See [docs/contributing/ci.md](docs/contributing/ci.md) for the full CI command r
 
 ## 🔗 See Also
 
-- **[Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI)** — The companion AI extension module (Gemini-powered summaries, OCR translation, SFX translation, reading insights, smart search, and recommendations).
-- **[Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync)** — Optional cloud sync server for cross-device library sync.
+- **[Otaku-Reader-Sync](https://github.com/Heartless-Veteran/Otaku-Reader-Sync)** — Optional cloud sync server for cross-device library sync.
 
 ---
 
