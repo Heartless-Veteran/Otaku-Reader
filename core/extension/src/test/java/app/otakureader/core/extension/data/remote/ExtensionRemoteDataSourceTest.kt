@@ -97,8 +97,8 @@ class ExtensionRemoteDataSourceTest {
         assertEquals(false, extension.isNsfw)
         assertEquals(1, extension.sources.size)
 
-        // Verify APK URL is resolved correctly
-        val expectedApkUrl = "$baseUrl/tachiyomi-en.mangadex-v1.2.3.apk"
+        // Verify APK URL is resolved correctly (with /apks/ prefix from resolveApkUrl)
+        val expectedApkUrl = "$baseUrl/apks/tachiyomi-en.mangadex-v1.2.3.apk"
         assertEquals(expectedApkUrl, extension.apkUrl)
 
         // Verify icon URL is resolved correctly

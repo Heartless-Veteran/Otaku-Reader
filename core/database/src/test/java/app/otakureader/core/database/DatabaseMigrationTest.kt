@@ -32,7 +32,7 @@ class DatabaseMigrationTest {
     @get:Rule
     val helper: MigrationTestHelper = MigrationTestHelper(
         InstrumentationRegistry.getInstrumentation(),
-        OtakuReaderDatabase::class.java,
+        "app.otakureader.core.database.OtakuReaderDatabase",
     )
 
     // ── Chain integrity ──────────────────────────────────────────────────────
