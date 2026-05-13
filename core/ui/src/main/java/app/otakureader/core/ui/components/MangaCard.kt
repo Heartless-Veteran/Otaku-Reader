@@ -1,5 +1,6 @@
 package app.otakureader.core.ui.components
 
+import app.otakureader.core.ui.R
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
