@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import app.otakureader.domain.repository.ExtensionManagementRepository
@@ -70,6 +71,7 @@ fun ExtensionInstallScreen(
     modifier: Modifier = Modifier,
     viewModel: ExtensionInstallViewModel = hiltViewModel()
 ) {
+    val otaku = LocalOtakuColors.current
     val context = androidx.compose.ui.platform.LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -254,14 +256,14 @@ fun ExtensionInstallScreen(
                         Text(
                             text = successMessage,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = otaku.accent
                         )
                     }
                     is InstallResultState.Error -> {
                         Text(
                             text = state.message,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
+                            color = otaku.danger
                         )
                     }
                 }

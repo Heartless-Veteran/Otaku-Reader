@@ -1,11 +1,13 @@
 package app.otakureader.feature.reader.ui
 
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +53,7 @@ fun PageThumbnailStrip(
     modifier: Modifier = Modifier,
     isVisible: Boolean = true
 ) {
+    val otaku = LocalOtakuColors.current
     AnimatedVisibility(
         visible = isVisible,
         enter = slideInVertically { it } + fadeIn(),
@@ -58,54 +61,64 @@ fun PageThumbnailStrip(
         modifier = modifier
     ) {
         Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            color = otaku.surface1.copy(alpha = 0.95f),
             tonalElevation = 8.dp,
             shadowElevation = 8.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 8.dp)
+                    .padding(vertical = 12.dp)
             ) {
-                // Header with expand button
+                // Progress line + page counter
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
+                    // Thin progress track
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(otaku.surface3)
+                            .align(Alignment.Center)
+                    )
+                    // Progress fill
+                    val progress = if (pages.isNotEmpty()) {
+                        (currentPage.toFloat() / pages.size.toFloat()).coerceIn(0f, 1f)
+                    } else 0f
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(2.dp)
+                            .background(otaku.accent)
+                            .align(Alignment.CenterStart)
+                    )
+
                     Text(
                         text = "${currentPage + 1} / ${pages.size}",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = otaku.fgMuted,
                         modifier = Modifier.align(Alignment.Center)
                     )
-                    
-                    Text(
-                        text = stringResource(R.string.reader_strip_expand),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .clickable(onClick = onExpandClick)
-                            .padding(4.dp)
-                    )
                 }
-                
+
                 // Thumbnail row
                 val listState = rememberLazyListState()
-                
+
                 LaunchedEffect(currentPage) {
                     listState.animateScrollToItem(
                         index = currentPage.coerceIn(0, pages.size - 1),
-                        scrollOffset = -100
+                        scrollOffset = -120
                     )
                 }
-                
+
                 LazyRow(
                     state = listState,
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     itemsIndexed(
                         items = pages,
@@ -133,15 +146,16 @@ private fun PageThumbnailItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.width(60.dp)
+        modifier = modifier.width(90.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(width = 60.dp, height = 80.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .size(width = 90.dp, height = 120.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(otaku.surface2)
                 .clickable(onClick = onClick)
         ) {
             AsyncImage(
@@ -150,28 +164,33 @@ private fun PageThumbnailItem(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxWidth()
             )
-            
-            // Selection indicator
+
+            // Selection indicator — accent border instead of overlay
             if (isSelected) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        .padding(3.dp)
+                        .border(
+                            width = 3.dp,
+                            color = otaku.accent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
                 )
             }
         }
-        
+
         // Page number
         Text(
             text = pageNumber.toString(),
             style = MaterialTheme.typography.labelSmall,
             color = if (isSelected) {
-                MaterialTheme.colorScheme.primary
+                otaku.accent
             } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+                otaku.fgMuted
             },
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 6.dp)
         )
     }
 }

@@ -56,6 +56,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.isActive
@@ -76,6 +77,7 @@ fun BrowseScreen(
     onNavigateToLibrary: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -288,7 +290,7 @@ private fun BrowseContent(
             ) {
                 Text(
                     text = error,
-                    color = MaterialTheme.colorScheme.error,
+                    color = otaku.danger,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -410,7 +412,7 @@ private fun MangaGrid(
                         Text(
                             text = stringResource(R.string.browse_load_more),
                             modifier = Modifier.clickable { onLoadMore() },
-                            color = MaterialTheme.colorScheme.primary
+                            color = otaku.accent
                         )
                     }
                 }
