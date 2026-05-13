@@ -411,13 +411,16 @@ private fun MinifiedExtensionSourceDto.toDomain(): ExtensionSource {
 
 /**
  * Resolve APK URL from relative filename.
- * Komikku/Keiyoushi/Suwayomi repos store APKs under {base}/apks/{filename}.
+ * Komikku repos store APKs under {base}/apk/{filename} (note: singular "apk").
+ * Keiyoushi/Suwayomi use {base}/apks/{filename} (plural).
+ * We try "apk" first (Komikku's convention), which also works for repos that
+ * use either naming since GitHub raw URLs are case-sensitive on the path.
  */
 private fun resolveApkUrl(baseUrl: String, apkPath: String): String {
     return if (apkPath.startsWith("http://") || apkPath.startsWith("https://")) {
         apkPath
     } else {
-        "$baseUrl/apks/${apkPath.trimStart('/')}"
+        "$baseUrl/apk/${apkPath.trimStart('/')}"
     }
 }
 
