@@ -42,6 +42,7 @@ interface ReaderSettingsRepository {
     val readerScale: Flow<Int>
     val autoZoomWideImages: Flow<Boolean>
     val invertTapZones: Flow<Boolean>
+    val tapZoneConfig: Flow<TapZoneConfig>
     val webtoonSidePadding: Flow<Int>
     val webtoonGapDp: Flow<Int>
     val webtoonMenuHideSensitivity: Flow<Int>

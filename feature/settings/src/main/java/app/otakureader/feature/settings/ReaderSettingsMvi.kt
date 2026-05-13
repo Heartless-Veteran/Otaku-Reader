@@ -26,7 +26,6 @@ data class ReaderSettingsState(
     val volumeKeysEnabled: Boolean = false,
     val volumeKeysInverted: Boolean = false,
     // Interaction
-    val doubleTapAnimationSpeed: Int = 1,
     val showActionsOnLongTap: Boolean = true,
     val savePagesToSeparateFolders: Boolean = false,
     // Webtoon

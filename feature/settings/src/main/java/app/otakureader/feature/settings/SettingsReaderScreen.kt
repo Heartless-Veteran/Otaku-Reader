@@ -473,35 +473,6 @@ private fun ReaderContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
     SectionHeader(title = stringResource(R.string.settings_reader_interaction))
 
     ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_double_tap_speed)) },
-        supportingContent = {
-            Column(modifier = Modifier.selectableGroup()) {
-                val speeds = listOf(
-                    stringResource(R.string.settings_speed_slow) to 0,
-                    stringResource(R.string.settings_speed_normal) to 1,
-                    stringResource(R.string.settings_speed_fast) to 2,
-                )
-                speeds.forEach { (label, value) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectable(
-                                selected = state.doubleTapAnimationSpeed == value,
-                                onClick = { onEvent(SettingsEvent.SetDoubleTapAnimationSpeed(value)) },
-                                role = Role.RadioButton,
-                            )
-                            .padding(vertical = 4.dp),
-                    ) {
-                        RadioButton(selected = state.doubleTapAnimationSpeed == value, onClick = null)
-                        Text(text = label, modifier = Modifier.padding(start = 8.dp))
-                    }
-                }
-            }
-        },
-    )
-
-    ListItem(
         headlineContent = { Text(stringResource(R.string.settings_long_tap_actions)) },
         supportingContent = { Text(stringResource(R.string.settings_long_tap_actions_description)) },
         trailingContent = {

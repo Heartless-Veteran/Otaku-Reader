@@ -130,6 +130,12 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val readerScaleD = async { settingsRepository.readerScale.first() }
         val autoZoomWideImagesD = async { settingsRepository.autoZoomWideImages.first() }
         val invertTapZonesD = async { settingsRepository.invertTapZones.first() }
+        val tapZoneConfigD = async {
+            try { settingsRepository.tapZoneConfig.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                app.otakureader.domain.model.TapZoneConfig()
+            }
+        }
         val webtoonSidePaddingD = async { settingsRepository.webtoonSidePadding.first() }
         val webtoonGapDpD = async { settingsRepository.webtoonGapDp.first() }
         val webtoonMenuHideSensitivityD = async { settingsRepository.webtoonMenuHideSensitivity.first() }
@@ -196,6 +202,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             readerScale = readerScaleD.await(),
             autoZoomWideImages = autoZoomWideImagesD.await(),
             invertTapZones = invertTapZonesD.await(),
+            tapZoneConfig = tapZoneConfigD.await(),
             webtoonSidePadding = webtoonSidePaddingD.await(),
             webtoonGapDp = webtoonGapDpD.await(),
             webtoonMenuHideSensitivity = webtoonMenuHideSensitivityD.await(),

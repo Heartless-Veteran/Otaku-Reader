@@ -78,14 +78,12 @@ class ReaderSettingsDelegate @Inject constructor(
         }
         scope.launch {
             combine(
-                readerPreferences.doubleTapAnimationSpeed,
                 readerPreferences.showActionsOnLongTap,
                 readerPreferences.savePagesToSeparateFolders,
                 readerPreferences.webtoonSidePadding,
                 readerPreferences.webtoonMenuHideSensitivity,
-            ) { animSpeed, longTap, separateFolders, sidePadding, menuSensitivity ->
+            ) { longTap, separateFolders, sidePadding, menuSensitivity ->
                 updateState { it.copy(reader = it.reader.copy(
-                    doubleTapAnimationSpeed = animSpeed,
                     showActionsOnLongTap = longTap,
                     savePagesToSeparateFolders = separateFolders,
                     webtoonSidePadding = sidePadding,
@@ -165,7 +163,6 @@ class ReaderSettingsDelegate @Inject constructor(
         is SettingsEvent.SetInvertTapZones -> { readerPreferences.setInvertTapZones(event.enabled); true }
         is SettingsEvent.SetVolumeKeysEnabled -> { readerPreferences.setVolumeKeysEnabled(event.enabled); true }
         is SettingsEvent.SetVolumeKeysInverted -> { readerPreferences.setVolumeKeysInverted(event.enabled); true }
-        is SettingsEvent.SetDoubleTapAnimationSpeed -> { readerPreferences.setDoubleTapAnimationSpeed(event.speed); true }
         is SettingsEvent.SetShowActionsOnLongTap -> { readerPreferences.setShowActionsOnLongTap(event.enabled); true }
         is SettingsEvent.SetSavePagesToSeparateFolders -> { readerPreferences.setSavePagesToSeparateFolders(event.enabled); true }
         is SettingsEvent.SetWebtoonSidePadding -> { readerPreferences.setWebtoonSidePadding(event.padding); true }

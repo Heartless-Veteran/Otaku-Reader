@@ -138,6 +138,8 @@ data class ReaderState(
     val autoZoomWideImages: Boolean = true,
 
     // --- Tap Zone Settings ---
+    /** Tap zone configuration: Default, Left-handed, Kindle, Edge */
+    val tapZoneConfig: TapZoneConfig = TapZoneConfig(),
     /** Invert tap zone actions (swap prev/next) */
     val invertTapZones: Boolean = false,
 
@@ -578,12 +580,7 @@ enum class ReaderSetting {
     VOLUME_KEY_NAVIGATION,
     VOLUME_KEYS_INVERTED,
     INCOGNITO_MODE,
-    CROP_BORDERS,
-    SHOW_CLOCK,
-    SHOW_BATTERY,
-    INVERT_COLORS,
-    GRAYSCALE,
-    SEPIA_MODE
+    CROP_BORDERS
 }
 
 /**

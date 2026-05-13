@@ -11,6 +11,7 @@ import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
 import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
@@ -46,6 +47,7 @@ class DetailsViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val sourceRepository: SourceRepository,
     private val downloadPreferences: DownloadPreferences,
+    private val generalPreferences: GeneralPreferences,
     private val readerPreferences: ReaderPreferences,
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
@@ -289,7 +291,7 @@ class DetailsViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        readerPreferences.autoThemeColor
+        generalPreferences.autoThemeColor
             .onEach { enabled ->
                 _state.update { it.copy(autoThemeEnabled = enabled) }
             }
