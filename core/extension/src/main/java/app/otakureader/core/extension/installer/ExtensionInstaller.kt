@@ -184,6 +184,9 @@ class ExtensionInstaller(
                     val destFile = File(extensionsDir, "${extension.pkgName}.ext")
                     apkFile.copyTo(destFile, overwrite = true)
 
+                    // Make the APK read-only so the system installer accepts it.
+                    destFile.setReadOnly()
+
                     // Update extension with final path
                     val finalExtension = extension.copy(apkPath = destFile.absolutePath)
 
@@ -480,6 +483,9 @@ class ExtensionInstaller(
             )
             return
         }
+
+        // Make the file read-only so the system installer accepts it.
+        apkFile.setReadOnly()
 
         val uri = FileProvider.getUriForFile(
             context,
