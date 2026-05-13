@@ -58,7 +58,7 @@ class ExtensionInstaller(
     }
     
     private val downloadsDir: File by lazy {
-        File(context.cacheDir, DOWNLOADS_DIR).apply { mkdirs() }
+        File(context.filesDir, DOWNLOADS_DIR).apply { mkdirs() }
     }
 
     /**
