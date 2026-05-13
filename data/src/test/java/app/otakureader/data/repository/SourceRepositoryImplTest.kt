@@ -1,20 +1,23 @@
 package app.otakureader.data.repository
 
 import android.content.Context
+import app.otakureader.core.extension.domain.model.Extension
+import app.otakureader.core.extension.domain.model.InstallStatus
+import app.otakureader.core.extension.loader.ExtensionLoader
+import app.otakureader.core.extension.loader.ExtensionLoadResult
 import app.otakureader.core.preferences.LocalSourcePreferences
-import app.otakureader.core.tachiyomi.compat.TachiyomiExtensionLoader
 import app.otakureader.core.tachiyomi.health.SourceHealthMonitor
 import app.otakureader.core.tachiyomi.local.LocalSource
 import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import eu.kanade.tachiyomi.source.CatalogueSource
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import io.mockk.runs
 import io.mockk.unmockkAll
@@ -40,7 +43,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Unit tests for [SourceRepositoryImpl].
+ * Unit tests for [SourceRepositoryImpl] using the new [ExtensionLoader] API.
  *
  * Coverage goals:
  *  - getSources() emits the correct source list (local + extension sources)
@@ -49,18 +52,6 @@ import org.junit.Test
  *  - Errors during refresh are propagated as Result.failure() (not swallowed)
  *  - getPopularManga / getLatestUpdates / searchManga delegate to the correct source
  *    and use caches appropriately
- *
- * ## Current compilation notes
- * - [SourceRepositoryImpl.refreshSources] currently returns **Unit**, not
- *   **Result<Unit>**.  The tests below assert the *desired* contract
- *   (Result.success / Result.failure).  Updating the production method
- *   signature to `suspend fun refreshSources(): Result<Unit>` makes every
- *   test here compile and pass conceptually.
- * - [SourceRepositoryImpl] currently instantiates [TachiyomiExtensionLoader]
- *   internally via a `private val … by lazy`.  For pure unit tests the
- *   loader should be constructor-injected (or the class refactored to accept
- *   it in the test-visible secondary constructor).  Until then the tests that
- *   exercise extension loading rely on MockK static/constructor mocking.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SourceRepositoryImplTest {
@@ -72,7 +63,7 @@ class SourceRepositoryImplTest {
     private lateinit var localSourcePreferences: LocalSourcePreferences
     private lateinit var healthMonitor: SourceHealthMonitor
     private lateinit var httpClient: OkHttpClient
-    private lateinit var extensionLoader: TachiyomiExtensionLoader
+    private lateinit var extensionLoader: ExtensionLoader
 
     private lateinit var repository: SourceRepositoryImpl
 
@@ -87,11 +78,10 @@ class SourceRepositoryImplTest {
         httpClient = mockk(relaxed = true)
         extensionLoader = mockk(relaxed = true)
 
-        // Prevent the lazy init from creating a real TachiyomiExtensionLoader.
-        // In a fully refactored impl the loader would be a constructor arg.
-        mockkConstructor(TachiyomiExtensionLoader::class)
-        every { anyConstructed<TachiyomiExtensionLoader>().loadAllExtensions() } returns emptyList()
-        every { anyConstructed<TachiyomiExtensionLoader>().loadExtensionFromApk(any()) } returns null
+        // Default: no extensions loaded
+        every { extensionLoader.loadAllExtensions() } returns emptyList()
+        every { extensionLoader.loadExtension(any()) } returns
+            ExtensionLoadResult.Error("Not mocked")
 
         // Health monitor defaults – everything healthy
         every { healthMonitor.isSourceHealthy(any()) } returns true
@@ -101,6 +91,7 @@ class SourceRepositoryImplTest {
             localSourcePreferences = localSourcePreferences,
             healthMonitor = healthMonitor,
             httpClient = httpClient,
+            extensionLoader = extensionLoader,
             scope = testScope.backgroundScope,
         )
     }
@@ -124,23 +115,15 @@ class SourceRepositoryImplTest {
     @Test
     fun getSources_afterRefresh_containsLocalAndExtensionSources() = runTest {
         val localSource = makeFakeSource(id = "local", name = "Local")
-        val extSource = makeFakeSource(id = "en.mangadex", name = "MangaDex")
+        val extSource = makeFakeCatalogueSource(id = 12345L, name = "MangaDex")
 
-        // Simulate a refresh that populates the internal _sources flow.
-        // Because refreshSources() is currently Unit-returning, we call it
-        // directly and then assert on the Flow.
         mockLocalSource(localSource)
-        every { anyConstructed<TachiyomiExtensionLoader>().loadAllExtensions() } returns listOf(
-            TachiyomiExtensionLoader.LoadedExtension(
-                packageName = "eu.kanade.tachiyomi.extension.en.mangadex",
+        every { extensionLoader.loadAllExtensions() } returns listOf(
+            makeSuccessResult(
+                pkgName = "eu.kanade.tachiyomi.extension.en.mangadex",
                 name = "MangaDex",
-                versionName = "1.0",
-                versionCode = 1L,
-                lang = "en",
+                sources = listOf(extSource),
                 isNsfw = false,
-                sources = listOf(extSource as app.otakureader.core.tachiyomi.compat.TachiyomiSourceAdapter),
-                apkPath = "/tmp/fake.apk",
-                classLoader = this.javaClass.classLoader!!,
             )
         )
 
@@ -150,14 +133,30 @@ class SourceRepositoryImplTest {
         val sources = repository.getSources().first()
         assertEquals(2, sources.size)
         assertTrue(sources.any { it.id == "local" })
-        assertTrue(sources.any { it.id == "en.mangadex" })
+        assertTrue(sources.any { it.id == "12345" })
     }
 
     @Test
     fun getSources_deduplicatesById() = runTest {
         // After refresh, only one source with id "dup" should remain.
-        // (This requires a small refactor in refreshSources to feed the mock
-        // extensions; shown here conceptually.)
+        val localSource = makeFakeSource(id = "local", name = "Local")
+        val dupSource1 = makeFakeCatalogueSource(id = 999L, name = "Dup1")
+        val dupSource2 = makeFakeCatalogueSource(id = 999L, name = "Dup2")
+
+        mockLocalSource(localSource)
+        every { extensionLoader.loadAllExtensions() } returns listOf(
+            makeSuccessResult(
+                pkgName = "pkg1",
+                name = "Ext1",
+                sources = listOf(dupSource1),
+            ),
+            makeSuccessResult(
+                pkgName = "pkg2",
+                name = "Ext2",
+                sources = listOf(dupSource2),
+            ),
+        )
+
         repository.refreshSources()
         advanceUntilIdle()
 
@@ -171,14 +170,11 @@ class SourceRepositoryImplTest {
 
     @Test
     fun refreshSources_returnsSuccessOnHappyPath() = runTest {
-        // Desired behavior: refreshSources() → Result.success(Unit)
         mockLocalSource(makeFakeSource(id = "local", name = "Local"))
-        every { anyConstructed<TachiyomiExtensionLoader>().loadAllExtensions() } returns emptyList()
+        every { extensionLoader.loadAllExtensions() } returns emptyList()
 
         val result = repository.refreshSources()
 
-        // This assertion compiles only after changing refreshSources()
-        // signature to return Result<Unit>.
         assertTrue(result.isSuccess)
     }
 
@@ -186,7 +182,7 @@ class SourceRepositoryImplTest {
     fun refreshSources_returnsFailureWhenExtensionLoaderThrows() = runTest {
         val error = RuntimeException("Extension loader exploded")
         mockLocalSource(makeFakeSource(id = "local", name = "Local"))
-        every { anyConstructed<TachiyomiExtensionLoader>().loadAllExtensions() } throws error
+        every { extensionLoader.loadAllExtensions() } throws error
 
         val result = repository.refreshSources()
 
@@ -202,7 +198,6 @@ class SourceRepositoryImplTest {
         every { healthMonitor.isSourceHealthy("en.mangadex") } returns true
 
         // Inject the source into the repository so getSource() finds it.
-        // (Requires getSource() to resolve from the flow; we simulate by refreshing.)
         repository.refreshSources()
         advanceUntilIdle()
 
@@ -229,46 +224,30 @@ class SourceRepositoryImplTest {
 
     @Test
     fun loadExtension_addsNewSourcesToList() = runTest {
-        val newSource = makeFakeSource(id = "en.nepnep", name = "NepNep")
-        val loadedExt = TachiyomiExtensionLoader.LoadedExtension(
-            packageName = "eu.kanade.tachiyomi.extension.en.nepnep",
-            name = "NepNep",
-            versionName = "1.0",
-            versionCode = 1L,
-            lang = "en",
-            isNsfw = false,
-            sources = listOf(newSource as app.otakureader.core.tachiyomi.compat.TachiyomiSourceAdapter),
-            apkPath = "/tmp/nepnep.apk",
-            classLoader = this.javaClass.classLoader!!,
-        )
-        every { anyConstructed<TachiyomiExtensionLoader>().loadExtensionFromApk("/tmp/nepnep.apk") } returns loadedExt
+        val newSource = makeFakeCatalogueSource(id = 67890L, name = "NepNep")
+        every { extensionLoader.loadExtension("/tmp/nepnep.apk") } returns
+            makeSuccessResult(
+                pkgName = "eu.kanade.tachiyomi.extension.en.nepnep",
+                name = "NepNep",
+                sources = listOf(newSource),
+            )
 
         val result = repository.loadExtension("/tmp/nepnep.apk")
 
         assertTrue(result.isSuccess)
         val sources = repository.getSources().first()
-        assertTrue(sources.any { it.id == "en.nepnep" })
+        assertTrue(sources.any { it.id == "67890" })
     }
 
     @Test
     fun loadExtension_clearsCachesBeforeAddingSources() = runTest {
-        // Seed cache, then load extension, assert cache is gone.
-        // This currently requires a production-code change: loadExtension()
-        // should invoke clearCaches() (or clearSourceCache) before mutating
-        // the source list.
-        val newSource = makeFakeSource(id = "en.nepnep", name = "NepNep")
-        val loadedExt = TachiyomiExtensionLoader.LoadedExtension(
-            packageName = "eu.kanade.tachiyomi.extension.en.nepnep",
-            name = "NepNep",
-            versionName = "1.0",
-            versionCode = 1L,
-            lang = "en",
-            isNsfw = false,
-            sources = listOf(newSource as app.otakureader.core.tachiyomi.compat.TachiyomiSourceAdapter),
-            apkPath = "/tmp/nepnep.apk",
-            classLoader = this.javaClass.classLoader!!,
-        )
-        every { anyConstructed<TachiyomiExtensionLoader>().loadExtensionFromApk(any()) } returns loadedExt
+        val newSource = makeFakeCatalogueSource(id = 67890L, name = "NepNep")
+        every { extensionLoader.loadExtension(any()) } returns
+            makeSuccessResult(
+                pkgName = "eu.kanade.tachiyomi.extension.en.nepnep",
+                name = "NepNep",
+                sources = listOf(newSource),
+            )
 
         repository.loadExtension("/tmp/nepnep.apk")
 
@@ -279,7 +258,8 @@ class SourceRepositoryImplTest {
 
     @Test
     fun loadExtension_returnsFailureWhenApkCannotBeLoaded() = runTest {
-        every { anyConstructed<TachiyomiExtensionLoader>().loadExtensionFromApk("/bad.apk") } returns null
+        every { extensionLoader.loadExtension("/bad.apk") } returns
+            ExtensionLoadResult.Error("APK not found")
 
         val result = repository.loadExtension("/bad.apk")
 
@@ -434,6 +414,60 @@ class SourceRepositoryImplTest {
         every { source.supportsLatest } returns true
         every { source.isNsfw } returns false
         return source
+    }
+
+    /**
+     * Creates a fake [CatalogueSource] for use in [ExtensionLoadResult.Success].
+     */
+    private fun makeFakeCatalogueSource(
+        id: Long,
+        name: String,
+        lang: String = "en",
+        baseUrl: String = "https://example.com",
+    ): CatalogueSource {
+        val source = mockk<CatalogueSource>(relaxed = true)
+        every { source.id } returns id
+        every { source.name } returns name
+        every { source.lang } returns lang
+        every { source.baseUrl } returns baseUrl
+        every { source.supportsLatest } returns true
+        return source
+    }
+
+    /**
+     * Builds an [ExtensionLoadResult.Success] with the supplied sources.
+     */
+    private fun makeSuccessResult(
+        pkgName: String,
+        name: String,
+        sources: List<CatalogueSource>,
+        isNsfw: Boolean = false,
+    ): ExtensionLoadResult.Success {
+        val extension = Extension(
+            id = pkgName.hashCode().toLong().and(0xFFFFFFFFL),
+            pkgName = pkgName,
+            name = name,
+            versionCode = 1,
+            versionName = "1.0.0",
+            sources = sources.map {
+                app.otakureader.core.extension.domain.model.ExtensionSource(
+                    id = it.id.hashCode().toLong().and(0xFFFFFFFFL),
+                    name = it.name,
+                    lang = it.lang,
+                    baseUrl = it.baseUrl,
+                )
+            },
+            status = InstallStatus.INSTALLED,
+            apkPath = "/tmp/fake.apk",
+            iconUrl = null,
+            lang = sources.firstOrNull()?.lang ?: "en",
+            isNsfw = isNsfw,
+            installDate = System.currentTimeMillis(),
+            signatureHash = "trusted",
+            isShared = true,
+            isEnabled = true,
+        )
+        return ExtensionLoadResult.Success(extension, sources)
     }
 
     /**

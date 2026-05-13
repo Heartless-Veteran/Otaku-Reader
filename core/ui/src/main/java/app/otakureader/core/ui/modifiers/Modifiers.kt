@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,10 +41,11 @@ fun Modifier.shimmer(
     targetValue: Float = 2f,
     durationMillis: Int = 1500
 ): Modifier = composed {
+    val otaku = LocalOtakuColors.current
     val shimmerColors = listOf(
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        otaku.surface3.copy(alpha = 0.6f),
+        otaku.surface3.copy(alpha = 0.3f),
+        otaku.surface3.copy(alpha = 0.6f),
     )
 
     val transition = rememberInfiniteTransition(label = "shimmer")

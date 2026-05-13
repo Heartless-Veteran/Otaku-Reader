@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -120,9 +121,10 @@ class ExtensionsViewModelTest {
         every { generalPreferences.showNsfwContent } returns showNsfwFlow
         every { extensionRepoRepository.getRepositories() } returns repositoriesFlow
         coEvery { extensionRepoRepository.getActiveRepository() } returns null
+        coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel = ExtensionsViewModel(
             extensionRepository = extensionRepository,
@@ -201,6 +203,7 @@ class ExtensionsViewModelTest {
         every { extensionRepository.getInstalledExtensions() } returns flow {
             throw RuntimeException("Network error")
         }
+        coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val vm = ExtensionsViewModel(
             extensionRepository = extensionRepository,
@@ -286,8 +289,6 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `toggle NSFW updates preference`() = runTest {
-        coEvery { generalPreferences.setShowNsfwContent(true) } just runs
-
         viewModel.onEvent(ExtensionsEvent.ToggleNsfw(true))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -424,7 +425,7 @@ class ExtensionsViewModelTest {
         val ext = createExtension(id = 1L, name = "New Ext", apkUrl = "https://example.com/ext.apk")
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } returns Result.success(ext)
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.InstallExtension(ext))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -474,7 +475,7 @@ class ExtensionsViewModelTest {
         val ext = createExtension(id = 1L, pkgName = "app.ext1", name = "Remove Me")
 
         coEvery { extensionInstaller.uninstall("app.ext1") } returns Result.success(Unit)
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.UninstallExtension(ext))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -510,7 +511,7 @@ class ExtensionsViewModelTest {
         val ext = createExtension(id = 1L, name = "Update Me", apkUrl = "https://example.com/update.apk")
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } returns Result.success(ext)
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.UpdateExtension(ext))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -559,7 +560,7 @@ class ExtensionsViewModelTest {
 
         coEvery { extensionInstaller.downloadAndInstall(ext1) } returns Result.success(ext1)
         coEvery { extensionInstaller.downloadAndInstall(ext2) } returns Result.success(ext2)
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.UpdateAllExtensions)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -581,7 +582,7 @@ class ExtensionsViewModelTest {
 
         coEvery { extensionInstaller.downloadAndInstall(ext1) } returns Result.success(ext1)
         coEvery { extensionInstaller.downloadAndInstall(ext2) } returns Result.failure(RuntimeException("Fail"))
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.UpdateAllExtensions)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -620,7 +621,7 @@ class ExtensionsViewModelTest {
             kotlinx.coroutines.delay(100)
             Result.success(ext)
         }
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.UpdateAllExtensions)
         testDispatcher.scheduler.advanceTimeBy(50)
@@ -640,7 +641,7 @@ class ExtensionsViewModelTest {
         val ext = createExtension(id = 1L, pkgName = "app.ext1", name = "Toggle Me")
 
         coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } just runs
-        coEvery { extensionManagementRepository.refreshSources() } just runs
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, false))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -738,6 +739,7 @@ class ExtensionsViewModelTest {
         every { extensionRepository.getAvailableExtensions() } returns flow {
             throw RuntimeException("Available stream error")
         }
+        coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val vm = ExtensionsViewModel(
             extensionRepository = extensionRepository,
@@ -757,6 +759,7 @@ class ExtensionsViewModelTest {
         every { extensionRepository.getExtensionsWithUpdates() } returns flow {
             throw RuntimeException("Updates stream error")
         }
+        coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val vm = ExtensionsViewModel(
             extensionRepository = extensionRepository,
@@ -824,6 +827,7 @@ class ExtensionsViewModelTest {
             refreshCalled = true
             // Small delay to ensure ordering is observable
             kotlinx.coroutines.delay(10)
+            Result.success(Unit)
         }
 
         viewModel.onEvent(ExtensionsEvent.InstallExtension(ext))
@@ -844,6 +848,7 @@ class ExtensionsViewModelTest {
         coEvery { extensionManagementRepository.refreshSources() } coAnswers {
             refreshCalled = true
             kotlinx.coroutines.delay(10)
+            Result.success(Unit)
         }
 
         viewModel.onEvent(ExtensionsEvent.UninstallExtension(ext))
@@ -863,6 +868,7 @@ class ExtensionsViewModelTest {
         coEvery { extensionManagementRepository.refreshSources() } coAnswers {
             refreshCalled = true
             kotlinx.coroutines.delay(10)
+            Result.success(Unit)
         }
 
         viewModel.onEvent(ExtensionsEvent.UpdateExtension(ext))
@@ -986,6 +992,7 @@ class ExtensionsViewModelTest {
     fun `repository stream error does not block installed extensions`() = runTest {
         every { extensionRepoRepository.getRepositories() } returns emptyFlow()
         coEvery { extensionRepoRepository.getActiveRepository() } throws RuntimeException("Repo error")
+        coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val ext = createExtension(id = 1L, name = "Still Works")
         installedExtensionsFlow.value = listOf(ext)

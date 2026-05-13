@@ -58,6 +58,7 @@ dependencies {
     implementation(projects.core.database)
     implementation(projects.core.preferences)
     implementation(projects.core.tachiyomiCompat)
+    implementation(projects.core.extension)
     implementation(projects.domain)
     implementation(projects.sourceApi)
 

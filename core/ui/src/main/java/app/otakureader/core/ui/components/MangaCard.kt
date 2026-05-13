@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import app.otakureader.core.ui.R
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.modifiers.bottomGradientScrim
 
 /**
@@ -63,6 +63,8 @@ fun MangaCard(
     onLongClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+
+    val otaku = LocalOtakuColors.current
 
     Card(
         modifier = modifier.combinedClickable(
@@ -130,7 +132,7 @@ fun MangaCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(2f / 3f)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.38f)),
+                        .background(otaku.accent.copy(alpha = 0.38f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -150,8 +152,8 @@ fun MangaCard(
                         .fillMaxWidth()
                         .height(3.dp)
                         .align(Alignment.BottomCenter),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    color = otaku.accent,
+                    trackColor = otaku.surface3.copy(alpha = 0.5f),
                 )
             }
         }
@@ -160,17 +162,18 @@ fun MangaCard(
 
 @Composable
 private fun MangaCardError() {
+    val otaku = LocalOtakuColors.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(2f / 3f)
-            .background(MaterialTheme.colorScheme.errorContainer),
+            .background(otaku.danger.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "?",
             style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onErrorContainer
+            color = otaku.danger
         )
     }
 }

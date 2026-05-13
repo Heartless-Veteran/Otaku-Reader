@@ -21,6 +21,9 @@ class ExtensionRepoRepositoryImpl(
     companion object {
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
         private val ACTIVE_REPOSITORY_KEY = stringPreferencesKey("active_extension_repository")
+
+        /** Default extension repository — Keiyoushi (most popular community repo). */
+        const val DEFAULT_REPOSITORY = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
     }
 
     override fun getRepositories(): Flow<List<String>> {
@@ -67,6 +70,17 @@ class ExtensionRepoRepositoryImpl(
             val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
             currentRepos.add(url)
             preferences[REPOSITORIES_KEY] = currentRepos
+        }
+    }
+
+    override suspend fun ensureDefaultRepository() {
+        dataStore.edit { preferences ->
+            val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
+            if (currentRepos.isEmpty()) {
+                currentRepos.add(DEFAULT_REPOSITORY)
+                preferences[REPOSITORIES_KEY] = currentRepos
+                preferences[ACTIVE_REPOSITORY_KEY] = DEFAULT_REPOSITORY
+            }
         }
     }
 

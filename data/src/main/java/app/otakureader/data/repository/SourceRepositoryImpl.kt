@@ -2,8 +2,10 @@ package app.otakureader.data.repository
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import app.otakureader.core.extension.loader.ExtensionLoader
+import app.otakureader.core.extension.loader.ExtensionLoadResult
 import app.otakureader.core.preferences.LocalSourcePreferences
-import app.otakureader.core.tachiyomi.compat.TachiyomiExtensionLoader
+import app.otakureader.core.tachiyomi.compat.TachiyomiSourceAdapter
 import app.otakureader.core.tachiyomi.health.SourceHealthMonitor
 import app.otakureader.core.tachiyomi.local.LocalSource
 import app.otakureader.domain.repository.ExtensionManagementRepository
@@ -26,6 +28,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import eu.kanade.tachiyomi.source.CatalogueSource
 import java.io.File
 import java.io.InterruptedIOException
 import java.util.concurrent.ConcurrentHashMap
@@ -45,6 +48,7 @@ class SourceRepositoryImpl @Inject constructor(
     private val localSourcePreferences: LocalSourcePreferences,
     private val healthMonitor: SourceHealthMonitor,
     private val httpClient: OkHttpClient,
+    private val extensionLoader: ExtensionLoader,
     @ApplicationScope private val scope: CoroutineScope,
 ) : SourceRepository, ExtensionManagementRepository {
 
@@ -65,12 +69,14 @@ class SourceRepositoryImpl @Inject constructor(
         localDirectory: String,
         healthMonitor: SourceHealthMonitor,
         httpClient: OkHttpClient,
+        extensionLoader: ExtensionLoader,
         scope: CoroutineScope,
     ) : this(
         context,
         LocalSourcePreferences.ofDirectory(localDirectory),
         healthMonitor,
         httpClient,
+        extensionLoader,
         scope,
     )
 
@@ -90,10 +96,6 @@ class SourceRepositoryImpl @Inject constructor(
     private val popularMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
     private val latestMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
     private val searchCache = ConcurrentHashMap<String, ConcurrentHashMap<Pair<String, Int>, MangaPage>>()
-
-    private val extensionLoader by lazy {
-        TachiyomiExtensionLoader(context.packageManager)
-    }
 
     init {
         // Load all installed extensions on initialization
@@ -363,15 +365,34 @@ class SourceRepositoryImpl @Inject constructor(
     override suspend fun loadExtension(apkPath: String): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                val extension = extensionLoader.loadExtensionFromApk(apkPath)
-                    ?: return@withContext Result.failure(IllegalArgumentException("Failed to load extension from $apkPath"))
+                val result = extensionLoader.loadExtension(apkPath)
+                when (result) {
+                    is ExtensionLoadResult.Success -> {
+                        val newSources = result.sources
+                            .filterIsInstance<CatalogueSource>()
+                            .map { TachiyomiSourceAdapter(it, result.extension.isNsfw) }
 
-                val currentSources = _sources.value.toMutableList()
-                currentSources.addAll(extension.sources)
-                _sources.value = currentSources.distinctBy { it.id }
-                clearCaches()
+                        val currentSources = _sources.value.toMutableList()
+                        currentSources.addAll(newSources)
+                        _sources.value = currentSources.distinctBy { it.id }
+                        clearCaches()
 
-                Result.success(Unit)
+                        Result.success(Unit)
+                    }
+                    is ExtensionLoadResult.Untrusted -> {
+                        Result.failure(
+                            SecurityException(
+                                "Extension is not trusted: ${result.extension.name}. " +
+                                    "Please add it to a trusted repository or enable sideloading."
+                            )
+                        )
+                    }
+                    is ExtensionLoadResult.Error -> {
+                        Result.failure(
+                            result.throwable ?: IllegalStateException(result.message)
+                        )
+                    }
+                }
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -405,7 +426,8 @@ class SourceRepositoryImpl @Inject constructor(
                     }
                 }
 
-                // Load the extension from the downloaded file
+                // Load the extension from the downloaded file through ExtensionLoader
+                // (includes signature verification and private extension handling)
                 loadExtension(tempFile.absolutePath)
             } catch (e: Exception) {
                 Result.failure(e)
@@ -425,8 +447,14 @@ class SourceRepositoryImpl @Inject constructor(
                 return@withContext Result.failure(e)
             }
             try {
-                val extensions = extensionLoader.loadAllExtensions()
-                val extensionSources = extensions.flatMap { it.sources }
+                val results = extensionLoader.loadAllExtensions()
+                val extensionSources = results
+                    .filterIsInstance<ExtensionLoadResult.Success>()
+                    .flatMap { success ->
+                        success.sources
+                            .filterIsInstance<CatalogueSource>()
+                            .map { TachiyomiSourceAdapter(it, success.extension.isNsfw) }
+                    }
                 _sources.value = (listOf(local) + extensionSources).distinctBy { it.id }
                 clearCaches()
                 Result.success(Unit)

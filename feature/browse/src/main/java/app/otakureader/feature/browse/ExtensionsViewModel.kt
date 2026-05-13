@@ -138,9 +138,12 @@ class ExtensionsViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
-        loadExtensions()
-        observeRepositories()
-        refreshExtensions()
+        viewModelScope.launch {
+            extensionRepoRepository.ensureDefaultRepository()
+            loadExtensions()
+            observeRepositories()
+            refreshExtensions()
+        }
     }
 
     fun onEvent(event: ExtensionsEvent) {
