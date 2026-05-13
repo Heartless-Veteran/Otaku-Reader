@@ -46,6 +46,29 @@ class PageLoader @Inject constructor(
             chapterName,
             pageIndex
         )
-        return if (localFile.exists()) "file://${localFile.absolutePath}" else pageUrl
+        if (localFile.exists()) {
+            return "file://${localFile.absolutePath}"
+        }
+
+        // Fall back to CBZ extraction if the chapter was archived.
+        val cbzFile = DownloadProvider.getCbzFile(
+            context,
+            sourceName,
+            mangaTitle,
+            chapterName
+        )
+        if (cbzFile.exists()) {
+            val pageUris = DownloadProvider.getDownloadedPageUris(
+                context,
+                sourceName,
+                mangaTitle,
+                chapterName
+            )
+            if (pageIndex < pageUris.size) {
+                return pageUris[pageIndex]
+            }
+        }
+
+        return pageUrl
     }
 }

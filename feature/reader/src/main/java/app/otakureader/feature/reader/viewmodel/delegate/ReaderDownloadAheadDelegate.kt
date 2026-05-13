@@ -46,43 +46,50 @@ class ReaderDownloadAheadDelegate @Inject constructor(
             val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
             val currentIndex = chapters.indexOfFirst { it.id == chapterId }
             if (currentIndex == -1 || currentIndex >= chapters.size - 1) return@launch
-            val nextChapter = chapters[currentIndex + 1]
-
-            val existingDownload = downloadRepository.observeDownloads().first().find { it.chapterId == nextChapter.id }
-            if (existingDownload != null) return@launch
 
             val manga = getCurrentManga() ?: mangaRepository.getMangaById(mangaId) ?: return@launch
             val sourceName = manga.sourceId.toString()
-            if (downloadRepository.isChapterDownloaded(sourceName, manga.title, nextChapter.name)) return@launch
+            val existingDownloads = downloadRepository.observeDownloads().first()
 
-            val sourceChapter = SourceChapter(
-                url = nextChapter.url,
-                name = nextChapter.name,
-                dateUpload = nextChapter.dateUpload,
-                chapterNumber = nextChapter.chapterNumber,
-                scanlator = nextChapter.scanlator,
-            )
-            val pageListResult = sourceRepository.getPageList(sourceName, sourceChapter)
-            pageListResult.onFailure { throwable ->
-                runCatching {
-                    Log.w(TAG, "Failed to fetch page list for download-ahead " +
-                        "(mangaId=${manga.id}, chapterId=${nextChapter.id})", throwable)
+            // Download up to downloadAheadChapters ahead, respecting user preference.
+            val endIndex = minOf(currentIndex + downloadAheadChapters, chapters.size - 1)
+            for (i in currentIndex + 1..endIndex) {
+                val nextChapter = chapters[i]
+
+                val alreadyDownloading = existingDownloads.find { it.chapterId == nextChapter.id }
+                if (alreadyDownloading != null) continue
+
+                if (downloadRepository.isChapterDownloaded(sourceName, manga.title, nextChapter.name)) continue
+
+                val sourceChapter = SourceChapter(
+                    url = nextChapter.url,
+                    name = nextChapter.name,
+                    dateUpload = nextChapter.dateUpload,
+                    chapterNumber = nextChapter.chapterNumber,
+                    scanlator = nextChapter.scanlator,
+                )
+                val pageListResult = sourceRepository.getPageList(sourceName, sourceChapter)
+                pageListResult.onFailure { throwable ->
+                    runCatching {
+                        Log.w(TAG, "Failed to fetch page list for download-ahead " +
+                            "(mangaId=${manga.id}, chapterId=${nextChapter.id})", throwable)
+                    }
                 }
+
+                val pageUrls = pageListResult.getOrNull()
+                    ?.mapNotNull { page -> page.effectiveUrl() }
+                    .orEmpty()
+                if (pageUrls.isEmpty()) continue
+
+                downloadRepository.enqueueChapter(
+                    mangaId = manga.id,
+                    chapterId = nextChapter.id,
+                    sourceName = sourceName,
+                    mangaTitle = manga.title,
+                    chapterTitle = nextChapter.name,
+                    pageUrls = pageUrls,
+                )
             }
-
-            val pageUrls = pageListResult.getOrNull()
-                ?.mapNotNull { page -> page.effectiveUrl() }
-                .orEmpty()
-            if (pageUrls.isEmpty()) return@launch
-
-            downloadRepository.enqueueChapter(
-                mangaId = manga.id,
-                chapterId = nextChapter.id,
-                sourceName = sourceName,
-                mangaTitle = manga.title,
-                chapterTitle = nextChapter.name,
-                pageUrls = pageUrls,
-            )
         }
     }
 

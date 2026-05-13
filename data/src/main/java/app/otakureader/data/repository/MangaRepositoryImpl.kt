@@ -229,7 +229,7 @@ class MangaRepositoryImpl @Inject constructor(
         author = author,
         artist = artist,
         description = description,
-        genre = genre.joinToString(","),
+        genre = genre.joinToString("|||"),
         status = status.ordinal,
         favorite = favorite,
         initialized = initialized,
