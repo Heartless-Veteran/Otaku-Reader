@@ -272,13 +272,13 @@ fun ReaderScreen(
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) }
         )
         
-        // Bottom thumbnail strip
+        // Bottom thumbnail strip — shows alongside menu/controls
         PageThumbnailStrip(
             pages = state.pages,
             currentPage = state.currentPage,
             onPageClick = { viewModel.jumpToPage(it) },
             onExpandClick = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
-            isVisible = state.showPageThumbnailStrip && !state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+            isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
         
