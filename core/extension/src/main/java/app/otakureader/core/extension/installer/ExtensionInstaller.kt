@@ -161,8 +161,26 @@ class ExtensionInstaller(
                 loader.trustExtension(trustedHash)
             }
 
-            // Load and verify the extension
-            val loadResult = loader.loadExtension(apkFile.absolutePath)
+            // Parse the APK first to get package info before moving it
+            val packageInfo = context.packageManager.getPackageArchiveInfo(
+                apkFile.absolutePath,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+                } else {
+                    @Suppress("DEPRECATION")
+                    PackageManager.GET_SIGNATURES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+                }
+            ) ?: return@withContext Result.failure(
+                IllegalStateException("Failed to parse APK: ${apkFile.absolutePath}")
+            )
+
+            // Move APK to permanent location FIRST (Android 14+ requires read-only in filesDir)
+            val destFile = File(extensionsDir, "${packageInfo.packageName}.ext")
+            apkFile.copyTo(destFile, overwrite = true)
+            destFile.setReadOnly()
+
+            // Now load from the read-only permanent location
+            val loadResult = loader.loadExtension(destFile.absolutePath)
             
             when (loadResult) {
                 is ExtensionLoadResult.Error -> {
@@ -179,13 +197,6 @@ class ExtensionInstaller(
                     val extension = loadResult.extension
 
                     _installationState.value = InstallationState.Installing
-
-                    // Move APK to permanent location
-                    val destFile = File(extensionsDir, "${extension.pkgName}.ext")
-                    apkFile.copyTo(destFile, overwrite = true)
-
-                    // Make the APK read-only so the system installer accepts it.
-                    destFile.setReadOnly()
 
                     // Update extension with final path
                     val finalExtension = extension.copy(apkPath = destFile.absolutePath)
@@ -210,9 +221,6 @@ class ExtensionInstaller(
                     result
                 }
                 is ExtensionLoadResult.Untrusted -> {
-                    // The extension's signer is not in TrustedSignatureStore.
-                    // For sideloaded APKs (trustedHash == null) this is expected — the caller
-                    // should prompt the user and call loader.trustExtension() before retrying.
                     _installationState.value = InstallationState.Error(
                         "Extension is not trusted. Please verify its signature before installing.",
                         null
@@ -243,8 +251,35 @@ class ExtensionInstaller(
             try {
                 _installationState.value = InstallationState.Verifying
                 
-                // Verify the new APK
-                val loadResult = loader.loadExtension(newApkFile.absolutePath)
+                // Parse the new APK first to verify it's valid before moving
+                val newPackageInfo = context.packageManager.getPackageArchiveInfo(
+                    newApkFile.absolutePath,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+                    } else {
+                        @Suppress("DEPRECATION")
+                        PackageManager.GET_SIGNATURES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+                    }
+                ) ?: return@withContext Result.failure(
+                    IllegalStateException("Failed to parse update APK: ${newApkFile.absolutePath}")
+                )
+
+                // Verify package name matches
+                if (newPackageInfo.packageName != pkgName) {
+                    return@withContext Result.failure(
+                        IllegalArgumentException(
+                            "Package name mismatch: expected $pkgName, got ${newPackageInfo.packageName}"
+                        )
+                    )
+                }
+
+                // Move new APK to permanent location FIRST (Android 14+ requires read-only in filesDir)
+                val destFile = File(extensionsDir, "$pkgName.ext")
+                newApkFile.copyTo(destFile, overwrite = true)
+                destFile.setReadOnly()
+
+                // Now load from the read-only permanent location
+                val loadResult = loader.loadExtension(destFile.absolutePath)
                 
                 when (loadResult) {
                     is ExtensionLoadResult.Error -> {
@@ -259,15 +294,6 @@ class ExtensionInstaller(
                     }
                     is ExtensionLoadResult.Success -> {
                         val extension = loadResult.extension
-
-                        // Verify package name matches
-                        if (extension.pkgName != pkgName) {
-                            return@withContext Result.failure(
-                                IllegalArgumentException(
-                                    "Package name mismatch: expected $pkgName, got ${extension.pkgName}"
-                                )
-                            )
-                        }
 
                         // Signer continuity: fail closed if a different certificate signs the update.
                         // A compromised repository could replace a trusted extension with one signed
@@ -290,10 +316,6 @@ class ExtensionInstaller(
                             File(oldPath).delete()
                         }
 
-                        // Move new APK to permanent location
-                        val destFile = File(extensionsDir, "$pkgName.ext")
-                        newApkFile.copyTo(destFile, overwrite = true)
-
                         // Update repository
                         val result = repository.updateExtension(pkgName, destFile.absolutePath)
 
@@ -311,10 +333,6 @@ class ExtensionInstaller(
                         result
                     }
                     is ExtensionLoadResult.Untrusted -> {
-                        // The update APK's signing certificate is not in TrustedSignatureStore.
-                        // This is the expected path when a signer-changed APK is presented —
-                        // ExtensionLoader.loadFromPackageInfo() now gates ALL extensions through
-                        // the trust store, so an unknown signer produces Untrusted here.
                         _installationState.value = InstallationState.Error(
                             "Extension is not trusted. Please verify its signature before updating.",
                             null
