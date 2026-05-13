@@ -30,13 +30,15 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerPreferences.fullscreen,
                 readerPreferences.showContentInCutout,
                 readerPreferences.showPageNumber,
-            ) { readerMode, keepScreenOn, fullscreen, showCutout, showPageNum ->
+                readerPreferences.showPageThumbnailStrip,
+            ) { readerMode, keepScreenOn, fullscreen, showCutout, showPageNum, showThumbStrip ->
                 updateState { it.copy(reader = it.reader.copy(
                     readerMode = readerMode,
                     keepScreenOn = keepScreenOn,
                     fullscreen = fullscreen,
                     showContentInCutout = showCutout,
                     showPageNumber = showPageNum,
+                    showPageThumbnailStrip = showThumbStrip,
                 )) }
             }.collect { }
         }
@@ -152,6 +154,7 @@ class ReaderSettingsDelegate @Inject constructor(
         is SettingsEvent.SetFullscreen -> { readerPreferences.setFullscreen(event.enabled); true }
         is SettingsEvent.SetShowContentInCutout -> { readerPreferences.setShowContentInCutout(event.enabled); true }
         is SettingsEvent.SetShowPageNumber -> { readerPreferences.setShowPageNumber(event.enabled); true }
+        is SettingsEvent.SetShowPageThumbnailStrip -> { readerPreferences.setShowPageThumbnailStrip(event.enabled); true }
         is SettingsEvent.SetBackgroundColor -> { readerPreferences.setBackgroundColor(event.color); true }
         is SettingsEvent.SetAnimatePageTransitions -> { readerPreferences.setAnimatePageTransitions(event.enabled); true }
         is SettingsEvent.SetShowReadingModeOverlay -> { readerPreferences.setShowReadingModeOverlay(event.enabled); true }

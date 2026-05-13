@@ -55,6 +55,7 @@ interface ReaderSettingsRepository {
     val alwaysShowChapterTransition: Flow<Boolean>
     val showActionsOnLongTap: Flow<Boolean>
     val savePagesToSeparateFolders: Flow<Boolean>
+    val showPageThumbnailStrip: Flow<Boolean>
 
     suspend fun setReaderMode(mode: ReaderMode)
     suspend fun setBrightness(brightness: Float)
@@ -71,6 +72,7 @@ interface ReaderSettingsRepository {
     suspend fun setColorFilterMode(mode: ColorFilterMode)
     suspend fun setCustomTintColor(color: Long)
     suspend fun setCropBordersEnabled(enabled: Boolean)
+    suspend fun setShowPageThumbnailStrip(enabled: Boolean)
 
     companion object {
         const val DEFAULT_PRELOAD_PAGES = 3

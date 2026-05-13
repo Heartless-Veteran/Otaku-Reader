@@ -80,6 +80,10 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
     val volumeKeysInverted: Flow<Boolean> = dataStore.data.map { it[Keys.VOLUME_KEYS_INVERTED] ?: false }
     suspend fun setVolumeKeysInverted(inverted: Boolean) = dataStore.edit { it[Keys.VOLUME_KEYS_INVERTED] = inverted }
 
+    // --- Page Thumbnail Strip ---
+    val showPageThumbnailStrip: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] ?: true }
+    suspend fun setShowPageThumbnailStrip(value: Boolean) = dataStore.edit { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] = value }
+
     // --- Auto Webtoon Detection ---
 
     /** Automatically detect webtoon/long-strip manga and switch to webtoon mode */
@@ -183,6 +187,7 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         val INVERT_TAP_ZONES = booleanPreferencesKey("reader_invert_tap_zones")
         val VOLUME_KEYS_ENABLED = booleanPreferencesKey("reader_volume_keys_enabled")
         val VOLUME_KEYS_INVERTED = booleanPreferencesKey("reader_volume_keys_inverted")
+        val SHOW_PAGE_THUMBNAIL_STRIP = booleanPreferencesKey("reader_show_page_thumbnail_strip")
         val AUTO_WEBTOON_DETECTION = booleanPreferencesKey("reader_auto_webtoon_detection")
         val WEBTOON_THRESHOLD = intPreferencesKey("reader_webtoon_threshold")
         val PRELOAD_PAGES_BEFORE = intPreferencesKey("reader_preload_pages_before")

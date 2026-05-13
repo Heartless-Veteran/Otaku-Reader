@@ -142,6 +142,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val skipDuplicateChaptersD = async { settingsRepository.skipDuplicateChapters.first() }
         val alwaysShowChapterTransitionD = async { settingsRepository.alwaysShowChapterTransition.first() }
         val showActionsOnLongTapD = async { settingsRepository.showActionsOnLongTap.first() }
+        val showPageThumbnailStripD = async { settingsRepository.showPageThumbnailStrip.first() }
         val savePagesToSeparateFoldersD = async { settingsRepository.savePagesToSeparateFolders.first() }
 
         val mode = modeD.await()
@@ -207,6 +208,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             skipDuplicateChapters = skipDuplicateChaptersD.await(),
             alwaysShowChapterTransition = alwaysShowChapterTransitionD.await(),
             showActionsOnLongTap = showActionsOnLongTapD.await(),
+            showPageThumbnailStrip = showPageThumbnailStripD.await(),
             savePagesToSeparateFolders = savePagesToSeparateFoldersD.await(),
         )
     }

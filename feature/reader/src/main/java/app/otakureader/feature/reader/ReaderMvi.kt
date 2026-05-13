@@ -174,6 +174,8 @@ data class ReaderState(
     val showActionsOnLongTap: Boolean = true,
     /** Save pages to separate folders by manga title */
     val savePagesToSeparateFolders: Boolean = false,
+    /** Show thumbnail strip at bottom of reader */
+    val showPageThumbnailStrip: Boolean = true,
     /** Whether the current page is bookmarked */
     val isCurrentPageBookmarked: Boolean = false,
 ) {

@@ -285,6 +285,14 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.PREFETCH_ONLY_ON_WIFI] = enabled }
     }
 
+    override val showPageThumbnailStrip: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SHOW_PAGE_THUMBNAIL_STRIP] ?: true
+    }
+
+    suspend fun setShowPageThumbnailStrip(enabled: Boolean) {
+        safeEdit { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] = enabled }
+    }
+
     // ==================== Crop Borders ====================
 
     /** Whether automatic border cropping is enabled during image decoding. */
@@ -638,6 +646,7 @@ class ReaderSettingsRepository @Inject constructor(
         // --- Actions ---
         val SHOW_ACTIONS_ON_LONG_TAP = booleanPreferencesKey("reader_show_actions_on_long_tap")
         val SAVE_PAGES_TO_SEPARATE_FOLDERS = booleanPreferencesKey("reader_save_pages_to_separate_folders")
+        val SHOW_PAGE_THUMBNAIL_STRIP = booleanPreferencesKey("reader_show_page_thumbnail_strip")
     }
     
     companion object {

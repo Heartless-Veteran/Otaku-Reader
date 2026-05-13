@@ -275,6 +275,17 @@ private fun ReaderContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
         },
     )
 
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_show_page_thumbnail_strip)) },
+        supportingContent = { Text(stringResource(R.string.settings_show_page_thumbnail_strip_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.showPageThumbnailStrip,
+                onCheckedChange = { onEvent(SettingsEvent.SetShowPageThumbnailStrip(it)) },
+            )
+        },
+    )
+
     // Background color
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_background_color)) },

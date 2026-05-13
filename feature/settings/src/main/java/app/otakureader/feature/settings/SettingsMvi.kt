@@ -154,6 +154,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetFullscreen(val enabled: Boolean) : SettingsEvent
     data class SetShowContentInCutout(val enabled: Boolean) : SettingsEvent
     data class SetShowPageNumber(val enabled: Boolean) : SettingsEvent
+    data class SetShowPageThumbnailStrip(val enabled: Boolean) : SettingsEvent
     data class SetBackgroundColor(val color: Int) : SettingsEvent
     data class SetAnimatePageTransitions(val enabled: Boolean) : SettingsEvent
     data class SetShowReadingModeOverlay(val enabled: Boolean) : SettingsEvent

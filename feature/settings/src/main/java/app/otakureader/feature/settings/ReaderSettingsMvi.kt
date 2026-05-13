@@ -11,6 +11,7 @@ data class ReaderSettingsState(
     val fullscreen: Boolean = true,
     val showContentInCutout: Boolean = true,
     val showPageNumber: Boolean = true,
+    val showPageThumbnailStrip: Boolean = true,
     val backgroundColor: Int = 0,
     val animatePageTransitions: Boolean = true,
     val showReadingModeOverlay: Boolean = true,

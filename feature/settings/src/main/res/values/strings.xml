@@ -259,6 +259,9 @@
     <string name="settings_show_tap_zones">Show Tap Zones Overlay</string>
     <string name="settings_show_tap_zones_description">Display tap zone boundaries for learning</string>
 
+    <string name="settings_show_page_thumbnail_strip">Show Page Thumbnail Strip</string>
+    <string name="settings_show_page_thumbnail_strip_description">Display a scrollable thumbnail strip with progress bar while reading</string>
+
     <!-- Reader Scale -->
     <string name="settings_reader_scale">Reader Scale</string>
     <string name="settings_scale_type">Scale Type</string>
