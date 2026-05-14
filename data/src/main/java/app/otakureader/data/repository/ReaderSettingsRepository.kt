@@ -175,7 +175,7 @@ class ReaderSettingsRepository @Inject constructor(
     
     // ==================== Tap Zone Configuration ====================
 
-    val tapZoneConfig: Flow<TapZoneConfig> = dataStore.data.map { prefs ->
+    override val tapZoneConfig: Flow<TapZoneConfig> = dataStore.data.map { prefs ->
         TapZoneConfig(
             leftZoneWidth = prefs[Keys.TAP_ZONE_LEFT] ?: 0.25f,
             centerZoneWidth = prefs[Keys.TAP_ZONE_CENTER] ?: 0.5f,
@@ -289,7 +289,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SHOW_PAGE_THUMBNAIL_STRIP] ?: true
     }
 
-    suspend fun setShowPageThumbnailStrip(enabled: Boolean) {
+    override suspend fun setShowPageThumbnailStrip(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] = enabled }
     }
 
