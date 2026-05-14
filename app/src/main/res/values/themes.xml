@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.OtakuReaderBase" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- SplashScreen: window background must be opaque (white) -->
-        <item name="android:windowBackground">#FFFFFF</item>
+        <!-- SplashScreen: window background must be opaque (indigo) -->
+        <item name="android:windowBackground">#0f172a</item>
     </style>
 
     <!-- SplashScreen theme for cold start -->
     <style name="Theme.OtakuReaderSplash" parent="Theme.SplashScreen">
-        <!-- Window background (white) -->
-        <item name="windowSplashScreenBackground">#FFFFFF</item>
+        <!-- Window background (indigo - original) -->
+        <item name="windowSplashScreenBackground">#0f172a</item>
 
         <!-- Animated icon: use the foreground vector (required for splash) -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
 
-        <!-- Icon background tint (white) -->
-        <item name="windowSplashScreenIconBackgroundColor">#FFFFFF</item>
+        <!-- Icon background tint (indigo - original) -->
+        <item name="windowSplashScreenIconBackgroundColor">#0f172a</item>
 
         <!-- Animation duration (max 1000ms per Android guidelines) -->
         <item name="windowSplashScreenAnimationDuration">300</item>
