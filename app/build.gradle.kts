@@ -173,6 +173,9 @@ dependencies {
     // ProfileInstaller — enables on-device baseline profile installation
     implementation(libs.profileinstaller)
 
+    // SplashScreen — branded launch experience on all API levels
+    implementation(libs.splashscreen)
+
     // Debug tools (LeakCanary — no-op in release builds)
     debugImplementation(libs.leakcanary)
 

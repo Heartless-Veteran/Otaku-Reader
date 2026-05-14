@@ -68,6 +68,9 @@ glance = "1.1.1"
 # ProfileInstaller
 profileinstaller = "1.4.0"
 
+# Splash Screen
+splashscreen = "1.0.1"
+
 # QR / Barcode
 zxing-core = "3.5.3"
 zxing-android-embedded = "4.3.0"
@@ -222,6 +225,8 @@ compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compile
 # Debug tools
 leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
 profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+# Splash Screen (branded launch experience on all API levels)
+splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # QR / Barcode
 zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
