@@ -74,6 +74,7 @@ data class SettingsState(
     val fullscreen get() = reader.fullscreen
     val showContentInCutout get() = reader.showContentInCutout
     val showPageNumber get() = reader.showPageNumber
+    val showPageThumbnailStrip get() = reader.showPageThumbnailStrip
     val backgroundColor get() = reader.backgroundColor
     val animatePageTransitions get() = reader.animatePageTransitions
     val showReadingModeOverlay get() = reader.showReadingModeOverlay

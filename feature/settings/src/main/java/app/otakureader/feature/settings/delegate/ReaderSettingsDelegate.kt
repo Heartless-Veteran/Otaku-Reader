@@ -24,7 +24,7 @@ class ReaderSettingsDelegate @Inject constructor(
         updateState: ((SettingsState) -> SettingsState) -> Unit,
     ) {
         scope.launch {
-            combine(
+            combine<Int, Boolean, Boolean, Boolean, Boolean, Boolean, Unit>(
                 readerPreferences.readerMode,
                 readerPreferences.keepScreenOn,
                 readerPreferences.fullscreen,
