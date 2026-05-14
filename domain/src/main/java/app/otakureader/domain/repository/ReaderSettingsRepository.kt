@@ -48,6 +48,9 @@ interface ReaderSettingsRepository {
     val webtoonMenuHideSensitivity: Flow<Int>
     val webtoonDoubleTapZoom: Flow<Boolean>
     val webtoonDisableZoomOut: Flow<Boolean>
+    // ==================== Auto-Scroll Speed ====================
+    val autoScrollSpeed: Flow<Float>
+    
     val einkFlashOnPageChange: Flow<Boolean>
     val einkBlackAndWhite: Flow<Boolean>
     val skipReadChapters: Flow<Boolean>

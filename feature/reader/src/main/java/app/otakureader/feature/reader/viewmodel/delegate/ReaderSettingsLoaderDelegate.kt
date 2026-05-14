@@ -150,6 +150,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val showActionsOnLongTapD = async { settingsRepository.showActionsOnLongTap.first() }
         val showPageThumbnailStripD = async { settingsRepository.showPageThumbnailStrip.first() }
         val savePagesToSeparateFoldersD = async { settingsRepository.savePagesToSeparateFolders.first() }
+        val autoScrollSpeedD = async { settingsRepository.autoScrollSpeed.first() }
 
         val mode = modeD.await()
         val direction = directionD.await()
@@ -217,6 +218,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             showActionsOnLongTap = showActionsOnLongTapD.await(),
             showPageThumbnailStrip = showPageThumbnailStripD.await(),
             savePagesToSeparateFolders = savePagesToSeparateFoldersD.await(),
+            autoScrollSpeed = autoScrollSpeedD.await(),
         )
     }
 }
