@@ -172,6 +172,7 @@ private fun BrowseContent(
     onEvent: (BrowseEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     Column(modifier = modifier.fillMaxSize()) {
         // Search bar with filter button
         Row(
@@ -385,6 +386,7 @@ private fun MangaGrid(
     hasNextPage: Boolean,
     isLoading: Boolean
 ) {
+    val otaku = LocalOtakuColors.current
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
         contentPadding = PaddingValues(16.dp),
