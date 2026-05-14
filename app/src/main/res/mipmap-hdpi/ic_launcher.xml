@@ -9,12 +9,12 @@
 
     <!-- Background: Deep Indigo -->
     <path
-        android:fillColor="#0f172a"
+        android:fillColor="#FFFFFF"
         android:pathData="M0,0h108v108H0z" />
 
     <!-- Cherry Blossom Glow -->
     <path
-        android:fillColor="#1e1b4b"
+        android:fillColor="#F5F5F5"
         android:pathData="M54,10 C70,10 85,25 90,45 C95,65 80,85 60,95 C45,102 25,90 18,70 C12,50 20,25 40,15 C46,12 50,10 54,10Z" />
 
     <!-- Cherry Blossom Petals -->
