@@ -9,8 +9,8 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
@@ -31,7 +31,8 @@ object CrashLogExporter {
     suspend fun export(context: Context): Intent? {
         val report = CrashHandler.getAndClearCrashReport(context) ?: return null
 
-        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+        val timestamp = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss", Locale.US))
         val filename = "otaku_reader_crash_$timestamp.txt"
         
         // Write to a subdirectory that FileProvider is configured to expose

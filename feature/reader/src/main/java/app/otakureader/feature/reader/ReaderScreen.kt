@@ -277,7 +277,6 @@ fun ReaderScreen(
             pages = state.pages,
             currentPage = state.currentPage,
             onPageClick = { viewModel.jumpToPage(it) },
-            onExpandClick = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
             isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
