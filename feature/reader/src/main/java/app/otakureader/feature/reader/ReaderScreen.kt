@@ -51,12 +51,14 @@ import app.otakureader.feature.reader.modes.DualPageReader
 import app.otakureader.feature.reader.modes.SinglePageReader
 import app.otakureader.feature.reader.modes.SmartPanelsReader
 import app.otakureader.feature.reader.modes.WebtoonReader
+import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.FullPageGallery
 import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
 import app.otakureader.feature.reader.ui.ReadingTimerOverlay
+import app.otakureader.feature.reader.ui.ReaderContentOverlay
 import app.otakureader.feature.reader.ui.ReaderMenuOverlay
 import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
@@ -244,6 +246,37 @@ fun ReaderScreen(
             )
         }
         
+        // Content-type-aware reader overlay shown at the top of the screen.
+        // TODO: detect ContentType from sourceId once ReaderState exposes manga.sourceId
+        //       (see issue #581 — Reader God ViewModel decomposition). For now defaults to MANGA.
+        ReaderContentOverlay(
+            title = state.chapterTitle,
+            chapterTitle = state.chapterTitle,
+            currentPage = state.displayPageNumber,
+            totalPages = state.totalPages,
+            isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+            contentType = ContentType.MANGA,
+            // TODO: wire to GeneralPreferences.visualEffectsEnabled once preference is
+            //       collected from the reader settings. Defaulting to true so ink/neon
+            //       effects are always active. The preference already controls the
+            //       Settings screen toggle — this wiring is the only missing piece.
+            visualEffectsEnabled = true,
+            onDismiss = onNavigateBack,
+            onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+            onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
+            onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
+            onPageSliderChange = { fraction ->
+                val targetPage = (fraction * state.totalPages)
+                    .toInt()
+                    .coerceIn(0, (state.totalPages - 1).coerceAtLeast(0))
+                viewModel.onEvent(ReaderEvent.OnPageChange(targetPage))
+            },
+            onThumbnailClick = { page ->
+                viewModel.jumpToPage(page - 1)
+            },
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+
         // Menu overlay
         ReaderMenuOverlay(
             isVisible = state.isMenuVisible,
