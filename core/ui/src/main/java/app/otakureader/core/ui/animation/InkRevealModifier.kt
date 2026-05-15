@@ -1,6 +1,5 @@
 package app.otakureader.core.ui.animation
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -10,10 +9,12 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.GenericShape
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
@@ -57,14 +58,4 @@ fun Modifier.inkReveal(
     clip(shape)
 }
 
-@Preview
-@Composable
-private fun InkRevealPreview() {
-    androidx.compose.foundation.layout.Box(
-        modifier = Modifier
-            .size(200.dp)
-            .inkReveal(0.8f)
-    ) {
-        androidx.compose.foundation.background(androidx.compose.ui.graphics.Color.Red)
-    }
-}
+

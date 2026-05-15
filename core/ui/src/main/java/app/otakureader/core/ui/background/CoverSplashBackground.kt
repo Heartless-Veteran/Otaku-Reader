@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -53,36 +52,4 @@ private fun MangaSplashBackground(dominant: Color, vibrant: Color) {
         modifier = Modifier.fillMaxSize(),
         tint = vibrant.copy(alpha = 0.05f)
     )
-}
-
-@Composable
-private fun ManhwaSplashBackground(dominant: Color, vibrant: Color) {
-    GradientMeshOrbs(
-        colors = listOf(
-            vibrant.copy(alpha = 0.4f),
-            dominant.copy(alpha = 0.6f * 0.3f),
-            vibrant.copy(alpha = 0.3f),
-            Color(0xFF00D2D3).copy(alpha = 0.2f)
-        ),
-        modifier = Modifier.fillMaxSize()
-    )
-
-    ScanlineBackground(
-        modifier = Modifier.fillMaxSize(),
-        opacity = 0.03f
-    )
-
-    // Cover glow overlay
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    vibrant.copy(alpha = 0.15f),
-                    Color.Transparent
-                ),
-                center = Offset(size.width * 0.5f, size.height * 0.3f),
-                radius = size.width * 0.6f
-            )
-        )
-    }
 }
