@@ -34,6 +34,8 @@ data class LibraryState(
     val selectedCategory: Long? = null,
     val gridSize: Int = 3,
     val showBadges: Boolean = true,
+    val isStaggeredGrid: Boolean = false,
+    val visualEffectsEnabled: Boolean = true,
     val filterHasNotes: Boolean = false,
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
     val filterMode: LibraryFilterMode = LibraryFilterMode.ALL,

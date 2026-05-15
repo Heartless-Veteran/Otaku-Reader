@@ -183,6 +183,12 @@ class LibraryViewModel @Inject constructor(
         generalPreferences.showNsfwContent
             .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
             .launchIn(viewModelScope)
+        libraryPreferences.isStaggeredGrid
+            .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
+            .launchIn(viewModelScope)
+        generalPreferences.visualEffectsEnabled
+            .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
+            .launchIn(viewModelScope)
     }
 
     private fun observeNewUpdatesCount() {
