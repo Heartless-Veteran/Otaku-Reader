@@ -24,6 +24,7 @@ class ReaderDownloadAheadDelegate @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val mangaRepository: MangaRepository,
 ) {
+    @Suppress("CognitiveComplexMethod", "LoopWithTooManyJumpStatements")
     fun maybeDownloadNextChapter(
         scope: CoroutineScope,
         currentPage: Int,

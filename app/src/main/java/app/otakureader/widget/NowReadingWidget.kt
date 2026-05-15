@@ -62,7 +62,6 @@ class NowReadingWidget : GlanceAppWidget() {
                         chapterId = entry.chapter.id,
                         mangaTitle = entry.mangaTitle ?: entry.chapter.name,
                         chapterName = entry.chapter.name,
-                        chapterNumber = entry.chapter.chapterNumber,
                     )
                 }
         } catch (_: Exception) {
@@ -89,7 +88,6 @@ private data class NowReadingInfo(
     val chapterId: Long,
     val mangaTitle: String,
     val chapterName: String,
-    val chapterNumber: Float,
 )
 
 @Composable

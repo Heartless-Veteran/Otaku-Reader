@@ -151,6 +151,7 @@ class ExtensionInstaller(
      *   user-sideloaded APK), the extension must already be trusted or [ExtensionLoadResult.Untrusted]
      *   is returned and the caller must present a user-facing trust confirmation dialog.
      */
+    @Suppress("LongMethod")
     suspend fun install(apkFile: File, trustedHash: String? = null): Result<Extension> =
         withContext(Dispatchers.IO) {
         try {

@@ -30,3 +30,8 @@
 
 # NOTE: Firebase/Firestore rules were removed — Firebase is not a project dependency.
 # If Firebase is added in the future, re-add the appropriate keep rules.
+
+# Keep Glance widget entry points and AppWidget subclasses
+-keep class * extends androidx.glance.appwidget.GlanceAppWidget { *; }
+-keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver { *; }
+-keep @dagger.hilt.EntryPoint interface * { *; }

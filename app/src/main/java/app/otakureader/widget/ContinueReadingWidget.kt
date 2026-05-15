@@ -127,7 +127,7 @@ private fun ContinueReadingContent(
 
             Spacer(modifier = GlanceModifier.height(12.dp))
 
-            items.take(3).forEach { item ->
+            items.forEach { item ->
                 ReadingItemWidget(item)
                 Spacer(modifier = GlanceModifier.height(8.dp))
             }

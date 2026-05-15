@@ -9,9 +9,6 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Exports the locally captured crash report as a text file that can be shared
@@ -31,7 +28,8 @@ object CrashLogExporter {
     suspend fun export(context: Context): Intent? {
         val report = CrashHandler.getAndClearCrashReport(context) ?: return null
 
-        val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(Date())
+        val timestamp = java.time.LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
         val filename = "otaku_reader_crash_$timestamp.txt"
         
         // Write to a subdirectory that FileProvider is configured to expose

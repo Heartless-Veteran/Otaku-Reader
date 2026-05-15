@@ -237,27 +237,6 @@ object DeepLinkHandler {
     }
 
     /**
-     * Check if the given URL is a supported manga URL
-     */
-    fun isSupportedUrl(url: String): Boolean {
-        val uri = Uri.parse(url)
-        val host = uri.host?.lowercase() ?: return false
-
-        return when {
-            host == "mangadex.org" || host.endsWith(".mangadex.org") -> true
-            host == "mangakakalot.com" || host.endsWith(".mangakakalot.com") -> true
-            host == "manganato.com" || host.endsWith(".manganato.com") -> true
-            host == "manganelo.com" || host.endsWith(".manganelo.com") -> true
-            host == "webtoons.com" || host.endsWith(".webtoons.com") -> true
-            host == "mangasee123.com" -> true
-            host == "mangafire.to" -> true
-            host == "bato.to" -> true
-            host == "mangaplus.shueisha.co.jp" -> true
-            else -> false
-        }
-    }
-
-    /**
      * Parse a "Continue Reading" shortcut intent to extract manga/chapter IDs.
      */
     private fun parseContinueReadingIntent(intent: Intent): DeepLinkResult {

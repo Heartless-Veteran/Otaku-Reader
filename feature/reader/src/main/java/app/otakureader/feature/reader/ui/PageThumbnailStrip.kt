@@ -44,6 +44,7 @@ import coil3.compose.AsyncImage
  * Bottom thumbnail strip for quick page navigation.
  * Shows a horizontal scrollable row of page thumbnails.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun PageThumbnailStrip(
     pages: List<ReaderPage>,
