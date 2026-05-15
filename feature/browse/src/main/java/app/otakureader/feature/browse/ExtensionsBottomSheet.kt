@@ -369,7 +369,11 @@ private fun ExtensionItem(
                 Text(
                     text = if (extension.signatureHash != null) "Trusted" else "Unverified",
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (extension.signatureHash != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (extension.signatureHash != null) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
             }
 
@@ -393,13 +397,21 @@ private fun ExtensionItem(
                             onCheckedChange = onToggleEnabled
                         )
                         IconButton(onClick = onUpdate) {
-                            Icon(Icons.Default.Update, contentDescription = stringResource(R.string.extensions_update), tint = MaterialTheme.colorScheme.primary)
+                            Icon(
+                                Icons.Default.Update,
+                                contentDescription = stringResource(R.string.extensions_update),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
                 InstallStatus.AVAILABLE -> {
                     IconButton(onClick = onInstall) {
-                        Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install), tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = stringResource(R.string.extensions_install),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
                 InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
@@ -559,7 +571,11 @@ private fun UpdateAllButton(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = if (isUpdating) stringResource(R.string.extensions_updating_all) else stringResource(R.string.extensions_update_all),
+                        text = if (isUpdating) {
+                            stringResource(R.string.extensions_updating_all)
+                        } else {
+                            stringResource(R.string.extensions_update_all)
+                        },
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
