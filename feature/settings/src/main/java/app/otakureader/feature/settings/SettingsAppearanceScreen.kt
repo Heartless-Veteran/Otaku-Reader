@@ -166,6 +166,18 @@ private fun AppearanceContent(state: SettingsState, onEvent: (SettingsEvent) -> 
         },
     )
 
+    // Visual Effects toggle
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_visual_effects)) },
+        supportingContent = { Text(stringResource(R.string.settings_visual_effects_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.visualEffectsEnabled,
+                onCheckedChange = { onEvent(SettingsEvent.SetVisualEffectsEnabled(it)) },
+            )
+        },
+    )
+
     // Color scheme picker
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_color_scheme)) },
