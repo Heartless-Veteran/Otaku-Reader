@@ -127,9 +127,11 @@ class FeedViewModelTest {
             viewModel.onEvent(FeedEvent.Refresh)
             testDispatcher.scheduler.advanceUntilIdle()
 
-            // Expect loading=true, then error state
+            // refresh() emits: (1) loading=true/error=null, (2) loading=true/error=msg, (3) loading=false/error=msg
             val loading = awaitItem()
             assertTrue(loading.isLoading)
+
+            awaitItem() // intermediate: loading=true, error set (finally not yet run)
 
             val error = awaitItem()
             assertFalse(error.isLoading)
