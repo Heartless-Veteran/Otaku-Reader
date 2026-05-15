@@ -138,7 +138,6 @@ private const val INFO_PANE_WEIGHT = 0.55f
 private const val CHAPTER_PANE_WEIGHT = 0.45f
 
 // Parallax hero constants
-private val HERO_HEIGHT = 300.dp
 private const val HERO_TOP_BAR_FADE_RANGE = 600f
 private const val HERO_BG_PARALLAX_FACTOR = 0.4f
 private const val HERO_FG_PARALLAX_FACTOR = 0.15f

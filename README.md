@@ -1,16 +1,17 @@
 # Otaku Reader
 
 <div align="center">
-  <img src="./.github/logo.jpg" alt="Otaku Reader" width="200"/>
+  <img src="./.github/logo.png" alt="Otaku Reader" width="200"/>
 
   <p><em>A modern, manga-only Android reader — no AI, no cloud, no ads, no tracking.</em></p>
 
   [![Build](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/build.yml/badge.svg)](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/build.yml)
   [![CI](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml/badge.svg)](https://github.com/Heartless-Veteran/Otaku-Reader/actions/workflows/ci.yml)
-  [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+  [![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-FF4757?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
   [![Android](https://img.shields.io/badge/Android-8.0+-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
-  [![License](https://img.shields.io/badge/License-Apache%202.0-0877d2?style=flat)](LICENSE)
-  [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-4285F4?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+  [![License](https://img.shields.io/badge/License-Apache%202.0-fbbf24?style=flat)](LICENSE)
+  [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-FF4757?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+  [![GitHub Stars](https://img.shields.io/github/stars/Heartless-Veteran/Otaku-Reader?color=FF4757&style=flat&logo=github)](https://github.com/Heartless-Veteran/Otaku-Reader/stargazers)
 
 </div>
 
@@ -18,6 +19,35 @@
 
 > **Privacy First:** All data stays on your device. No accounts, no tracking, no cloud, no AI. Ever.
 > <br>**Local-first, never lock-in.**
+
+---
+
+## 📋 Contents
+
+- [Quick Start](#-quick-start)
+- [Download](#-download)
+- [What Makes It Different](#-what-makes-it-different)
+- [Features](#-features)
+- [Reader Comparison](#-reader-comparison)
+- [Privacy & Security](#-privacy--security)
+- [Screenshots](#-screenshots)
+- [Roadmap](#-roadmap)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Contributing](#-contributing)
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# Clone & build in 30 seconds
+git clone https://github.com/Heartless-Veteran/Otaku-Reader.git
+cd Otaku-Reader
+./gradlew assembleDebug
+```
+
+Or grab a [release APK](https://github.com/Heartless-Veteran/Otaku-Reader/releases) — no accounts, no setup.
 
 ---
 
@@ -48,7 +78,9 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 ## 🚀 Features
 
-### Library & Organization
+<details open>
+<summary>📚 Library & Organization</summary>
+
 - 📚 **Smart library** — Grid/list views, categories, sorting, filtering, unread badges
 - ✅ **Completed series** — Mark manga as finished, dimmed covers + checkmark badge, dedicated filter tab
 - ❌ **Dropped series** — Mark abandoned manga, red cancel badge, "Dropped" filter — never re-click a manga you hated
@@ -58,20 +90,32 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - 📱 **Widget navigation** — Home screen widgets for continue reading, now reading, and recent updates with deep-link navigation
 - 📂 **QR library sharing** — Scan a friend's phone, get their manga list instantly (local, no server)
 
-### Reading Experience
+</details>
+
+<details open>
+<summary>📖 Reading Experience</summary>
+
 - 📖 **All reader modes** — Paged, webtoon, continuous scroll, dual-page, smart panels
 - 🎨 **Per-manga dynamic theme** — Material You palette extracted from cover art, every manga gets its own color scheme
 - 🔖 **Page bookmarks** — Bookmark any page within a chapter, revisit favorite artwork/scenes instantly
 - ⏱️ **Read time estimation** — "~5 min read" on chapter lists, powered by your actual reading speed
 - 📱 **Adaptive layouts** — Optimized for phones, foldables, tablets, and DeX
 
-### Downloads & Offline
+</details>
+
+<details open>
+<summary>⬇️ Downloads & Offline</summary>
+
 - ⬇️ **Smart download rules** — Auto-download next chapters when you hit 80% reading progress
 - 📦 **CBZ export** — Archive downloaded chapters for backup or transfer
 - 📁 **Local source import** — CBZ/CBR/folder browsing without extensions
 - 🔔 **Smart notification batching** — Grouped chapter update alerts with quiet hours, cooldown, and digest mode — never spam
 
-### Discovery & Sources
+</details>
+
+<details open>
+<summary>🔌 Discovery & Sources</summary>
+
 - 🔌 **Extension system** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
 - 🌐 **OPDS client** — Browse Komga, Kavita, Calibre-Web libraries
 - 🔍 **Global search** — Search across all installed sources simultaneously
@@ -79,7 +123,11 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - 📰 **Feed** — New chapter updates from your sources in one place
 - 🔗 **Deep links** — Open manga and chapters directly from external links (extension URLs, tracker links)
 
-### Tracking & Stats
+</details>
+
+<details open>
+<summary>📊 Tracking & Stats</summary>
+
 - 📊 **Reading streaks** — Consecutive-day counter with 30-day heatmap
 - 🏆 **Reading goals** — Daily/weekly chapter targets with progress
 - 📈 **Statistics dashboard** — Time read, chapters completed, genre breakdown
@@ -87,11 +135,17 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - 🔗 **Tracker sync** — AniList, MyAnimeList (MAL), Kitsu, MangaUpdates, Shikimori (opt-in, local-only API keys)
 - 🎮 **Discord Rich Presence** — Share what you're reading with Discord status integration
 
-### Backup & Migration
+</details>
+
+<details open>
+<summary>💾 Backup & Migration</summary>
+
 - 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device
 - 🔄 **Auto-backup scheduling** — Periodic automatic backups with configurable interval and retention
 - 📲 **Tachiyomi/Mihon/Komikku import** — Bring your entire library from any fork
 - 🔄 **Source-to-source migration** — Move manga between sources without losing progress
+
+</details>
 
 ---
 
@@ -211,6 +265,23 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - [ ] F-Droid metadata + reproducible builds
 - [ ] Macrobenchmark module to prevent regressions
 
+### 🔍 Phase 5: Pre-Release Audit (In Progress)
+**Status:** Extension system functional, certification pending. Full audit completed 2026-05-16.
+
+- [x] Extension loading pipeline verified (DexClassLoader + signature verification)
+- [x] TachiyomiSourceAdapter IO dispatch confirmed safe
+- [x] ChildFirstPathClassLoader Java 17 compatible
+- [ ] Extension system certified (pending: fix DI binding, add tests)
+- [ ] Real content in placeholder screens (History, Tracking, OPDS, Migration)
+- [ ] `ExtensionManagementRepository` bound to correct implementation
+- [ ] Unit tests for `data/` and `domain/` layers
+- [ ] `<queries>` element in manifest for Android 11+ package visibility
+- [ ] WorkManager `PendingIntent` mutability flags for API 31+
+
+**Blocking Issues:**
+- 5 P0 items (placeholder screens, wrong repository binding, missing manifest queries)
+- 7 P1 items (test coverage, visual polish, minor DI fixes)
+
 ### Future Differentiators
 - [ ] Curated default extension index (opt-out)
 - [ ] Per-source rate limiting with visible queue
@@ -223,15 +294,15 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 | Layer | Technology |
 |-------|------------|
-| Language | Kotlin 2.1.10 |
+| Language | Kotlin 2.3.21 |
 | UI | Jetpack Compose 100% — no XML layouts |
 | Architecture | Clean Architecture + MVI |
-| Dependency Injection | Hilt 2.55 |
-| Database | Room 2.7.0 + KSP |
+| Dependency Injection | Hilt 2.59.2 |
+| Database | Room 2.8.4 + KSP |
 | Preferences | DataStore |
 | Networking | OkHttp 4.12.0 + Coil 3.1.0 |
-| Background Work | WorkManager 2.10.0 |
-| Build | Gradle 8.7 + convention plugins + version catalogs + signed release APKs |
+| Background Work | WorkManager 2.11.2 |
+| Build | Gradle 8.11 + convention plugins + version catalogs + signed release APKs |
 
 ---
 
