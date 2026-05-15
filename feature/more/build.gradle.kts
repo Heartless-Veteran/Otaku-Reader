@@ -5,6 +5,10 @@ plugins {
 
 android {
     namespace = "app.otakureader.feature.more"
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
