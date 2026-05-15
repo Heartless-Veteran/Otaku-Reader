@@ -67,6 +67,7 @@ data class SettingsState(
     val customAccentColor get() = appearance.customAccentColor
     val locale get() = appearance.locale
     val autoThemeColor get() = appearance.autoThemeColor
+    val visualEffectsEnabled get() = appearance.visualEffectsEnabled
 
     // --- Reader ---
     val readerMode get() = reader.readerMode
@@ -106,6 +107,7 @@ data class SettingsState(
 
     // --- Library ---
     val libraryGridSize get() = library.libraryGridSize
+    val isStaggeredGrid get() = library.isStaggeredGrid
     val showBadges get() = library.showBadges
     val updateOnlyOnWifi get() = library.updateOnlyOnWifi
     val updateOnlyPinnedCategories get() = library.updateOnlyPinnedCategories
@@ -147,6 +149,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetCustomAccentColor(val color: Long) : SettingsEvent
     data class SetLocale(val locale: String) : SettingsEvent
     data class SetAutoThemeColor(val enabled: Boolean) : SettingsEvent
+    data class SetVisualEffectsEnabled(val enabled: Boolean) : SettingsEvent
 
     // Reader - Display
     data class SetReaderMode(val mode: Int) : SettingsEvent
@@ -202,6 +205,7 @@ sealed interface SettingsEvent : UiEvent {
 
     // Library
     data class SetLibraryGridSize(val size: Int) : SettingsEvent
+    data class SetStaggeredGrid(val staggered: Boolean) : SettingsEvent
     data class SetShowBadges(val enabled: Boolean) : SettingsEvent
     data class SetUpdateOnlyOnWifi(val enabled: Boolean) : SettingsEvent
     data class SetUpdateOnlyPinnedCategories(val enabled: Boolean) : SettingsEvent

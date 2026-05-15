@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -105,6 +106,33 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val autoThemeColor: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_THEME_COLOR] ?: false }
     suspend fun setAutoThemeColor(value: Boolean) = dataStore.edit { it[Keys.AUTO_THEME_COLOR] = value }
 
+    // --- Visual Effects ---
+
+    /**
+     * Whether visual effects (screentone patterns, glassmorphism, neon glows) are enabled.
+     * Default: true (effects on).
+     */
+    val visualEffectsEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.VISUAL_EFFECTS_ENABLED] ?: true }
+    suspend fun setVisualEffectsEnabled(value: Boolean) = dataStore.edit { it[Keys.VISUAL_EFFECTS_ENABLED] = value }
+
+    // --- Per-Title Content Type Override ---
+
+    /**
+     * Returns true when the given manga ID has been overridden to MANHWA (webtoon) content type.
+     * Default: false (MANGA).
+     */
+    fun getMangaContentType(mangaId: Long): Flow<Boolean> = dataStore.data.map { prefs ->
+        val ids = prefs[Keys.MANHWA_OVERRIDE_IDS] ?: emptySet()
+        mangaId.toString() in ids  // true = MANHWA override, false = MANGA (default)
+    }
+
+    /** Adds or removes the given manga ID from the MANHWA override set. */
+    suspend fun toggleMangaContentTypeOverride(mangaId: Long, setManhwa: Boolean) = dataStore.edit { prefs ->
+        val current = prefs[Keys.MANHWA_OVERRIDE_IDS]?.toMutableSet() ?: mutableSetOf()
+        if (setManhwa) current.add(mangaId.toString()) else current.remove(mangaId.toString())
+        prefs[Keys.MANHWA_OVERRIDE_IDS] = current
+    }
+
     // --- Saved Searches ---
 
     /**
@@ -197,6 +225,8 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DISCORD_RPC_ENABLED = booleanPreferencesKey("discord_rpc_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_THEME_COLOR = booleanPreferencesKey("auto_theme_color")
+        val VISUAL_EFFECTS_ENABLED = booleanPreferencesKey("visual_effects_enabled")
+        val MANHWA_OVERRIDE_IDS = stringSetPreferencesKey("manhwa_override_ids")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches")
         val APP_UPDATE_CHECK_ENABLED = booleanPreferencesKey("app_update_check_enabled")
         val LAST_APP_UPDATE_CHECK = longPreferencesKey("last_app_update_check")

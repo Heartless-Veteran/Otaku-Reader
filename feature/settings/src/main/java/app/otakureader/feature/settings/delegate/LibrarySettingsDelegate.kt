@@ -47,6 +47,11 @@ class LibrarySettingsDelegate @Inject constructor(
             }.collect { }
         }
         scope.launch {
+            libraryPreferences.isStaggeredGrid.collect { staggered ->
+                updateState { it.copy(library = it.library.copy(isStaggeredGrid = staggered)) }
+            }
+        }
+        scope.launch {
             libraryPreferences.showUpdateProgress.collect { showProgress ->
                 updateState { it.copy(library = it.library.copy(showUpdateProgress = showProgress)) }
             }
@@ -64,6 +69,7 @@ class LibrarySettingsDelegate @Inject constructor(
         sendEffect: suspend (SettingsEffect) -> Unit,
     ): Boolean = when (event) {
         is SettingsEvent.SetLibraryGridSize -> { libraryPreferences.setGridSize(event.size); true }
+        is SettingsEvent.SetStaggeredGrid -> { libraryPreferences.setStaggeredGrid(event.staggered); true }
         is SettingsEvent.SetShowBadges -> { libraryPreferences.setShowBadges(event.enabled); true }
         is SettingsEvent.SetUpdateOnlyOnWifi -> {
             libraryPreferences.setUpdateOnlyOnWifi(event.enabled)

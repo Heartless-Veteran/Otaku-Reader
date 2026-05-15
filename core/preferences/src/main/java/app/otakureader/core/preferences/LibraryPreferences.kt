@@ -22,6 +22,10 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val gridSize: Flow<Int> = dataStore.data.map { it[Keys.GRID_SIZE] ?: 3 }
     suspend fun setGridSize(value: Int) = dataStore.edit { it[Keys.GRID_SIZE] = value }
 
+    /** Whether to use a staggered (waterfall) grid layout instead of a uniform grid. */
+    val isStaggeredGrid: Flow<Boolean> = dataStore.data.map { it[Keys.IS_STAGGERED_GRID] ?: false }
+    suspend fun setStaggeredGrid(value: Boolean) = dataStore.edit { it[Keys.IS_STAGGERED_GRID] = value }
+
     // --- Badges ---
 
     /** Whether to show unread-count badges on library covers. */
@@ -92,6 +96,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
+        val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
         val LIBRARY_SORT_MODE = intPreferencesKey("library_sort_mode")
         val LIBRARY_DISPLAY_MODE = intPreferencesKey("library_display_mode")

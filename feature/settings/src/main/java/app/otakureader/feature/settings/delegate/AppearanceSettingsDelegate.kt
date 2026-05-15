@@ -71,6 +71,11 @@ class AppearanceSettingsDelegate @Inject constructor(
             }
         }
         scope.launch {
+            generalPreferences.visualEffectsEnabled.collect { enabled ->
+                updateState { it.copy(appearance = it.appearance.copy(visualEffectsEnabled = enabled)) }
+            }
+        }
+        scope.launch {
             combine(
                 generalPreferences.appUpdateCheckEnabled,
                 generalPreferences.lastAppUpdateCheck,
@@ -96,6 +101,7 @@ class AppearanceSettingsDelegate @Inject constructor(
         is SettingsEvent.SetCustomAccentColor -> { generalPreferences.setCustomAccentColor(event.color); true }
         is SettingsEvent.SetLocale -> { generalPreferences.setLocale(event.locale); true }
         is SettingsEvent.SetAutoThemeColor -> { generalPreferences.setAutoThemeColor(event.enabled); true }
+        is SettingsEvent.SetVisualEffectsEnabled -> { generalPreferences.setVisualEffectsEnabled(event.enabled); true }
         is SettingsEvent.SetDiscordRpcEnabled -> { handleSetDiscordRpcEnabled(event.enabled); true }
         is SettingsEvent.SetNotificationsEnabled -> { generalPreferences.setNotificationsEnabled(event.enabled); true }
         is SettingsEvent.SetShowNsfwContent -> { generalPreferences.setShowNsfwContent(event.enabled); true }
