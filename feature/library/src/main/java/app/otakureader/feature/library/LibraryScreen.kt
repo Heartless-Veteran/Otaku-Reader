@@ -347,6 +347,13 @@ private fun LibraryContent(
     }
 }
 
+/** Returns true when a manga item belongs to the manhwa/webtoon content type. */
+private fun isManhwa(manga: LibraryMangaItem): Boolean {
+    val src = manga.sourceId.toString().lowercase()
+    return src.contains("manhwa") || src.contains("webtoon") ||
+        src.contains("korean") || src.contains("toon") || src.contains("naver")
+}
+
 @Composable
 private fun MangaGrid(
     state: LibraryState,
@@ -355,92 +362,204 @@ private fun MangaGrid(
     onMangaSelect: ((LibraryMangaItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(adaptiveColumns),
-        contentPadding = PaddingValues(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Daily reading goal banner (full-width span, only shown when a goal is set)
+    var selectedContentFilter by remember { mutableIntStateOf(0) }
+    val contentTabs = listOf("All", "Manga", "Manhwa")
+
+    val displayedManga = when (selectedContentFilter) {
+        1 -> state.mangaList.filter { !isManhwa(it) }
+        2 -> state.mangaList.filter { isManhwa(it) }
+        else -> state.mangaList
+    }
+
+    // Header items shared by both grid variants
+    val headerContent: @Composable () -> Unit = {
+        // Daily reading goal banner
         if (state.readingGoal.dailyGoal > 0) {
-            item(
-                span = { GridItemSpan(maxLineSpan) },
-                contentType = "daily_goal_banner"
-            ) {
-                DailyGoalBanner(readingGoal = state.readingGoal)
-            }
+            DailyGoalBanner(readingGoal = state.readingGoal)
         }
 
-        // Continue Reading (full-width span, only shown when there are items)
+        // Continue Reading section
         if (state.continueReadingItems.isNotEmpty()) {
-            item(
-                span = { GridItemSpan(maxLineSpan) },
-                contentType = "continue_reading_section"
-            ) {
-                ContinueReadingSection(
-                    items = state.continueReadingItems,
-                    onItemClick = { mangaId, chapterId ->
-                        onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
-                    }
-                )
-            }
-        }
-
-        // Category filter chips (full-width span)
-        item(
-            span = { GridItemSpan(maxLineSpan) },
-            contentType = "category_filter_section"
-        ) {
-            CategoryFilterChips(
-                categories = state.categories,
-                selectedCategory = state.selectedCategory,
-                onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-                modifier = Modifier.padding(vertical = 8.dp)
+            ContinueReadingSection(
+                items = state.continueReadingItems,
+                onItemClick = { mangaId, chapterId ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
+                }
             )
         }
 
-        // Reading list filter chips (full-width span, only shown when reading lists exist)
+        // Category filter chips
+        CategoryFilterChips(
+            categories = state.categories,
+            selectedCategory = state.selectedCategory,
+            onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        // Reading list filter chips
         if (state.readingLists.isNotEmpty()) {
-            item(
-                span = { GridItemSpan(maxLineSpan) },
-                contentType = "reading_list_filter_section"
-            ) {
-                ReadingListFilterChips(
-                    readingLists = state.readingLists,
-                    selectedListId = state.filterReadingListId,
-                    onListSelected = { onEvent(LibraryEvent.SetFilterReadingList(it)) },
-                    modifier = Modifier.padding(bottom = 8.dp)
+            ReadingListFilterChips(
+                readingLists = state.readingLists,
+                selectedListId = state.filterReadingListId,
+                onListSelected = { onEvent(LibraryEvent.SetFilterReadingList(it)) },
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Content-type filter tabs
+        TabRow(
+            selectedTabIndex = selectedContentFilter,
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            indicator = { tabPositions ->
+                if (selectedContentFilter < tabPositions.size) {
+                    val indicatorColor = when (selectedContentFilter) {
+                        1 -> Color(0xFFFF4757)
+                        2 -> Color(0xFF9B59B6)
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                    Box(
+                        modifier = Modifier
+                            .tabIndicatorOffset(tabPositions[selectedContentFilter])
+                            .height(3.dp)
+                            .background(indicatorColor, RoundedCornerShape(2.dp))
+                    )
+                }
+            }
+        ) {
+            contentTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedContentFilter == index,
+                    onClick = { selectedContentFilter = index },
+                    text = { Text(title) }
                 )
             }
         }
+    }
 
-        // Manga grid items
-        gridItems(
-            items = state.mangaList,
-            key = { it.id },
-            contentType = { "manga_card" }
-        ) { manga ->
-            val readProgress = if (manga.totalChapterCount > 0) {
-                (manga.totalChapterCount - manga.unreadCount)
-                    .coerceAtLeast(0)
-                    .toFloat() / manga.totalChapterCount
-            } else null
-            MangaCard(
-                title = manga.title,
-                coverUrl = manga.thumbnailUrl,
-                onClick = {
-                    if (onMangaSelect != null) onMangaSelect(manga)
-                    else onEvent(LibraryEvent.OnMangaClick(manga.id))
-                },
-                onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
-                isSelected = manga.id in state.selectedManga,
-                readProgress = readProgress,
-                badge = if (state.showBadges && manga.unreadCount > 0) {
-                    { UnreadBadge(count = manga.unreadCount) }
-                } else null,
-                modifier = Modifier.fillMaxWidth()
-            )
+    if (state.isStaggeredGrid) {
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(130.dp),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalItemSpacing = 8.dp,
+            modifier = modifier.fillMaxSize()
+        ) {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                headerContent()
+            }
+
+            staggeredItems(
+                items = displayedManga,
+                key = { it.id },
+                contentType = { "manga_card" }
+            ) { manga ->
+                val cardContent: @Composable () -> Unit = {
+                    if (isManhwa(manga)) {
+                        ManhwaCard(
+                            coverUrl = manga.thumbnailUrl ?: "",
+                            title = manga.title,
+                            unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                            onClick = {
+                                if (onMangaSelect != null) onMangaSelect(manga)
+                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        val readProgress = if (manga.totalChapterCount > 0) {
+                            (manga.totalChapterCount - manga.unreadCount)
+                                .coerceAtLeast(0)
+                                .toFloat() / manga.totalChapterCount
+                        } else null
+                        MangaCard(
+                            title = manga.title,
+                            coverUrl = manga.thumbnailUrl,
+                            onClick = {
+                                if (onMangaSelect != null) onMangaSelect(manga)
+                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                            },
+                            onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                            isSelected = manga.id in state.selectedManga,
+                            readProgress = readProgress,
+                            badge = if (state.showBadges && manga.unreadCount > 0) {
+                                { UnreadBadge(count = manga.unreadCount) }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                if (state.visualEffectsEnabled) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(300)) + scaleIn(
+                            initialScale = 0.92f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                        )
+                    ) {
+                        cardContent()
+                    }
+                } else {
+                    cardContent()
+                }
+            }
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(adaptiveColumns),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = modifier.fillMaxSize()
+        ) {
+            item(
+                span = { GridItemSpan(maxLineSpan) },
+                contentType = "header_section"
+            ) {
+                headerContent()
+            }
+
+            gridItems(
+                items = displayedManga,
+                key = { it.id },
+                contentType = { "manga_card" }
+            ) { manga ->
+                val readProgress = if (manga.totalChapterCount > 0) {
+                    (manga.totalChapterCount - manga.unreadCount)
+                        .coerceAtLeast(0)
+                        .toFloat() / manga.totalChapterCount
+                } else null
+                val cardContent: @Composable () -> Unit = {
+                    MangaCard(
+                        title = manga.title,
+                        coverUrl = manga.thumbnailUrl,
+                        onClick = {
+                            if (onMangaSelect != null) onMangaSelect(manga)
+                            else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                        },
+                        onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                        isSelected = manga.id in state.selectedManga,
+                        readProgress = readProgress,
+                        badge = if (state.showBadges && manga.unreadCount > 0) {
+                            { UnreadBadge(count = manga.unreadCount) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (state.visualEffectsEnabled) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(300)) + scaleIn(
+                            initialScale = 0.92f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                        )
+                    ) {
+                        cardContent()
+                    }
+                } else {
+                    cardContent()
+                }
+            }
         }
     }
 }
