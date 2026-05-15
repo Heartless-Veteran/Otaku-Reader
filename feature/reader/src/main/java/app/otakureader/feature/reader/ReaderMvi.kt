@@ -180,6 +180,12 @@ data class ReaderState(
     val showPageThumbnailStrip: Boolean = true,
     /** Whether the current page is bookmarked */
     val isCurrentPageBookmarked: Boolean = false,
+
+    /** True when this manga is detected/overridden as manhwa/webtoon content */
+    val isManhwaContent: Boolean = false,
+
+    /** Whether screentone/glassmorphism/neon visual effects are enabled globally */
+    val visualEffectsEnabled: Boolean = true,
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size

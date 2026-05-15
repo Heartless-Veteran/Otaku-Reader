@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PageNavigationEvent
@@ -69,6 +70,7 @@ class ReaderViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val pageBookmarkRepository: PageBookmarkRepository,
     private val settingsRepository: ReaderSettingsRepository,
+    private val generalPreferences: GeneralPreferences,
     private val behaviorTracker: ReadingBehaviorTracker,
     private val settingsLoaderDelegate: ReaderSettingsLoaderDelegate,
     private val chapterLoaderDelegate: ReaderChapterLoaderDelegate,
@@ -122,6 +124,7 @@ class ReaderViewModel @Inject constructor(
         loadSettings()
         loadChapter()
         observePageBookmarks()
+        observeVisualEffects()
         discordDelegate.startObserving(
             scope = viewModelScope,
             getCurrentManga = { currentManga },
@@ -228,6 +231,7 @@ class ReaderViewModel @Inject constructor(
                 is ReaderChapterLoaderDelegate.Result.Success -> {
                     currentManga = result.manga
                     currentChapter = result.chapter
+                    observeContentType(result.manga)
 
                     val pages = result.pages
                     val initialPage = result.chapter.lastPageRead
@@ -825,6 +829,22 @@ class ReaderViewModel @Inject constructor(
         const val ZOOM_INCREMENT = 0.25f
         const val BRIGHTNESS_INCREMENT = 0.1f
         const val AUTO_SCROLL_INCREMENT = 50f
+    }
+
+    private fun observeVisualEffects() {
+        generalPreferences.visualEffectsEnabled
+            .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeContentType(manga: Manga) {
+        val genreText = manga.genre.joinToString(" ").lowercase()
+        val isManhwaByGenre = "manhwa" in genreText || "webtoon" in genreText || "korean" in genreText
+        generalPreferences.getMangaContentType(mangaId)
+            .onEach { userSetsManhwa ->
+                _state.update { it.copy(isManhwaContent = userSetsManhwa || isManhwaByGenre) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun observeSettingsWriteFailures() {

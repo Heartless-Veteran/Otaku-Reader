@@ -247,20 +247,14 @@ fun ReaderScreen(
         }
         
         // Content-type-aware reader overlay shown at the top of the screen.
-        // TODO: detect ContentType from sourceId once ReaderState exposes manga.sourceId
-        //       (see issue #581 — Reader God ViewModel decomposition). For now defaults to MANGA.
         ReaderContentOverlay(
             title = state.chapterTitle,
             chapterTitle = state.chapterTitle,
             currentPage = state.displayPageNumber,
             totalPages = state.totalPages,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
-            contentType = ContentType.MANGA,
-            // TODO: wire to GeneralPreferences.visualEffectsEnabled once preference is
-            //       collected from the reader settings. Defaulting to true so ink/neon
-            //       effects are always active. The preference already controls the
-            //       Settings screen toggle — this wiring is the only missing piece.
-            visualEffectsEnabled = true,
+            contentType = if (state.isManhwaContent) ContentType.MANHWA else ContentType.MANGA,
+            visualEffectsEnabled = state.visualEffectsEnabled,
             onDismiss = onNavigateBack,
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
             onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
