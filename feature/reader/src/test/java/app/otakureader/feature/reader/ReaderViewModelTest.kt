@@ -9,6 +9,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.preferences.GeneralPreferences
@@ -80,6 +81,7 @@ class ReaderViewModelTest {
     private lateinit var downloadPreferences: DownloadPreferences
     private lateinit var discordRpcService: DiscordRpcService
     private lateinit var generalPreferences: GeneralPreferences
+    private lateinit var pageBookmarkRepository: PageBookmarkRepository
     private lateinit var behaviorTracker: ReadingBehaviorTracker
     private lateinit var smartPrefetchManager: SmartPrefetchManager
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
@@ -102,12 +104,16 @@ class ReaderViewModelTest {
         downloadPreferences = mockk()
         discordRpcService = mockk(relaxed = true)
         generalPreferences = mockk()
+        pageBookmarkRepository = mockk()
         behaviorTracker = mockk(relaxed = true)
         smartPrefetchManager = mockk(relaxed = true)
         chapterPrefetcher = mockk(relaxed = true)
         panelDetectionService = mockk()
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
+        every { generalPreferences.visualEffectsEnabled } returns flowOf(true)
+        every { generalPreferences.getMangaContentType(any()) } returns flowOf(false)
+        every { pageBookmarkRepository.isPageBookmarked(any(), any()) } returns flowOf(false)
 
         // Default settings stubs so loadSettings() succeeds.
         every { settingsRepository.readerMode } returns flowOf(ReaderMode.SINGLE_PAGE)
@@ -161,6 +167,9 @@ class ReaderViewModelTest {
         every { settingsRepository.alwaysShowChapterTransition } returns flowOf(false)
         every { settingsRepository.savePagesToSeparateFolders } returns flowOf(false)
         every { settingsRepository.showActionsOnLongTap } returns flowOf(true)
+        every { settingsRepository.showPageThumbnailStrip } returns flowOf(true)
+        every { settingsRepository.autoScrollSpeed } returns flowOf(100f)
+        every { settingsRepository.tapZoneConfig } returns flowOf(app.otakureader.domain.model.TapZoneConfig())
         every { settingsRepository.writeFailureEvents } returns emptyFlow()
 
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
@@ -186,10 +195,11 @@ class ReaderViewModelTest {
             imageLoader = imageLoader,
         )
         return ReaderViewModel(
-            context = context,
             mangaRepository = mangaRepository,
             chapterRepository = chapterRepository,
+            pageBookmarkRepository = pageBookmarkRepository,
             settingsRepository = settingsRepository,
+            generalPreferences = generalPreferences,
             behaviorTracker = behaviorTracker,
             settingsLoaderDelegate = ReaderSettingsLoaderDelegate(
                 settingsRepository = settingsRepository,

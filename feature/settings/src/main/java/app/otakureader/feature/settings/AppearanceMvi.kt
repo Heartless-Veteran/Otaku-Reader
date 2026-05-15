@@ -11,4 +11,5 @@ data class AppearanceState(
     val customAccentColor: Long = 0xFF1976D2L,
     val locale: String = "",
     val autoThemeColor: Boolean = false,
+    val visualEffectsEnabled: Boolean = true,
 )

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -51,11 +52,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.Filter
@@ -319,6 +322,16 @@ private fun FilterButton(
 private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int {
     return filters.filters.count { filter -> filter.isActive() }
 }
+
+/** Returns true when a source ID string suggests manhwa/webtoon content. */
+private fun isManhwaSource(sourceId: String): Boolean {
+    val normalized = sourceId.lowercase()
+    return normalized.contains("manhwa") || normalized.contains("webtoon") ||
+        normalized.contains("korean") || normalized.contains("toon") ||
+        normalized.contains("naver") || normalized.contains("kakao") ||
+        normalized.contains("lezhin")
+}
+
 @Composable
 private fun SourcesContent(
     sources: List<String>,
@@ -330,7 +343,31 @@ private fun SourcesContent(
     hasNextPage: Boolean,
     isLoading: Boolean,
 ) {
+    // Determine if the currently selected source is manga or manhwa for the accent bar
+    val isMangaSection = currentSourceId == null || !isManhwaSource(currentSourceId)
+
     Column {
+        // Section header with colored accent bar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .background(
+                        color = if (isMangaSection) Color(0xFFFF4757) else Color(0xFF9B59B6),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+            Text(
+                text = stringResource(R.string.browse_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
         // Source filter chips
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -372,7 +409,8 @@ private fun SourcesContent(
                 onMangaClick = onMangaClick,
                 onLoadMore = onLoadMore,
                 hasNextPage = hasNextPage,
-                isLoading = isLoading
+                isLoading = isLoading,
+                currentSourceId = currentSourceId
             )
         }
     }
@@ -384,7 +422,8 @@ private fun MangaGrid(
     onMangaClick: (SourceManga) -> Unit,
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
-    isLoading: Boolean
+    isLoading: Boolean,
+    currentSourceId: String? = null
 ) {
     val otaku = LocalOtakuColors.current
     LazyVerticalGrid(
@@ -396,7 +435,8 @@ private fun MangaGrid(
         items(manga, key = { it.url }) { mangaItem ->
             MangaCard(
                 manga = mangaItem,
-                onClick = { onMangaClick(mangaItem) }
+                onClick = { onMangaClick(mangaItem) },
+                currentSourceId = currentSourceId
             )
         }
 
@@ -426,23 +466,48 @@ private fun MangaGrid(
 @Composable
 private fun MangaCard(
     manga: SourceManga,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    currentSourceId: String? = null
 ) {
+    val isManga = currentSourceId == null || !isManhwaSource(currentSourceId)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
         Column {
-            // Manga cover
-            AsyncImage(
-                model = manga.thumbnailUrl,
-                contentDescription = manga.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.7f),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                // Manga cover
+                AsyncImage(
+                    model = manga.thumbnailUrl,
+                    contentDescription = manga.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.7f),
+                    contentScale = ContentScale.Crop
+                )
+
+                // Content-type badge pill
+                if (currentSourceId != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(
+                                color = if (isManga) Color(0xFFFF4757).copy(alpha = 0.15f)
+                                        else Color(0xFF9B59B6).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (isManga) "MANGA" else "MANHWA",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6)
+                        )
+                    }
+                }
+            }
 
             // Manga title
             Text(

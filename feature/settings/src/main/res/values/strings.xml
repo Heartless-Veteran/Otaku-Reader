@@ -31,6 +31,10 @@
     <string name="settings_auto_theme_color">Auto theme from cover</string>
     <string name="settings_auto_theme_color_description">Extract colors from manga cover for dynamic theming</string>
 
+    <!-- Visual Effects -->
+    <string name="settings_visual_effects">Visual Effects</string>
+    <string name="settings_visual_effects_description">Screentone patterns, glassmorphism &amp; neon glows</string>
+
     <!-- Accessibility -->
     <string name="settings_high_contrast">High Contrast</string>
     <string name="settings_high_contrast_description">Increase text and icon contrast for improved readability</string>
@@ -43,6 +47,9 @@
     <!-- Library -->
     <string name="settings_library">Library</string>
     <string name="settings_grid_columns">Grid Columns: %1$d</string>
+    <string name="settings_grid_layout">Grid Layout</string>
+    <string name="settings_grid_layout_standard">Standard</string>
+    <string name="settings_grid_layout_staggered">Staggered</string>
     <string name="settings_show_unread_badges">Show Unread Badges</string>
     <string name="settings_show_unread_badges_description">Display unread chapter count on covers</string>
 
