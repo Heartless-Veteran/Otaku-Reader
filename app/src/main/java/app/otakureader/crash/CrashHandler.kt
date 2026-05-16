@@ -50,7 +50,7 @@ object CrashHandler {
      * Returns `null` when no crash was recorded.
      */
     fun getAndClearCrashReport(context: Context): String? {
-        val prefs = prefs(context)
+        val prefs = try { prefs(context) } catch (_: Throwable) { return null }
         val report = prefs.getString(KEY_CRASH_REPORT, null) ?: return null
 
         // commit() instead of apply() is intentional: the clear must complete
