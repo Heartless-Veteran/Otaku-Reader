@@ -178,7 +178,7 @@ Build variants: `fullDebug`, `fullRelease`, `fossDebug`, `fossRelease`. The `fos
 ./gradlew :app:assembleFossDebug
 
 # Run all unit tests
-./gradlew testFossDebugUnitTest
+./gradlew test
 
 # Run Detekt static analysis
 ./gradlew detekt
