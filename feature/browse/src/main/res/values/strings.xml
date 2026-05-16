@@ -12,7 +12,7 @@
     <string name="browse_save_search">Save search</string>
     <string name="browse_delete_saved_search">Delete saved search</string>
     <string name="browse_install_extension">Install Extension</string>
-    <string name="browse_search_placeholder">Search manga…</string>
+    <string name="browse_search_placeholder">Search manga&#8230;</string>
     <string name="browse_filters">Filters</string>
     <string name="browse_select_source">Select a source to browse manga</string>
     <string name="browse_load_more">Load more</string>
@@ -47,7 +47,7 @@
 
     <!-- Update All button -->
     <string name="extensions_update_all">Update All</string>
-    <string name="extensions_updating_all">Updating all\u2026</string>
+    <string name="extensions_updating_all">Updating all…</string>
     <plurals name="extensions_updates_available">
         <item quantity="one">%d update available</item>
         <item quantity="other">%d updates available</item>
@@ -81,7 +81,7 @@
     <string name="extensions_install_download_cd">Download</string>
     <string name="extensions_install_file_open_cd">Open file</string>
     <string name="extensions_install_instructions">Instructions</string>
-    <string name="extensions_install_instructions_body">1. To install a Tachiyomi extension, you need the APK file.\n\n2. You can download extensions from:\n   • Suwayomi repository\n   • Tachiyomi extensions archive\n\n3. Enter the URL or local file path above.\n\n4. The extension will be loaded and its sources will appear in Browse.</string>
+    <string name="extensions_install_instructions_body">1. To install a Tachiyomi extension, you need the APK file.\n\n2. You can download extensions from:\n   &#8226; Suwayomi repository\n   &#8226; Tachiyomi extensions archive\n\n3. Enter the URL or local file path above.\n\n4. The extension will be loaded and its sources will appear in Browse.</string>
 
     <!-- SourceFilterSheet -->
     <string name="browse_filters_reset">Reset</string>
@@ -95,13 +95,12 @@
     <string name="browse_group_expand">Expand</string>
 
     <!-- GlobalSearchScreen -->
-    <string name="browse_global_search_placeholder">Search all sources…</string>
+    <string name="browse_global_search_placeholder">Search all sources&#8230;</string>
     <string name="browse_global_search_idle_hint">Enter a query to search all sources</string>
 
     <!-- ExtensionsBottomSheet -->
     <string name="extensions_sheet_title">Extensions</string>
     <string name="extensions_search_placeholder">Search extensions...</string>
-    <string name="extensions_set_active">Set Active</string>
     <string name="extensions_repo_url_placeholder">https://.../repo</string>
     <string name="extensions_add_repository">Add repository</string>
     <string name="extensions_repositories_title">Repositories</string>
@@ -112,8 +111,8 @@
     <string name="extensions_language_flag_cd">Extension language</string>
 
     <!-- Source Intelligence -->
-    <string name="browse_source_intel_label">✨ Source Intelligence</string>
-    <string name="browse_source_intel_analyzing">Analyzing source…</string>
+    <string name="browse_source_intel_label">&#10024; Source Intelligence</string>
+    <string name="browse_source_intel_analyzing">Analyzing source&#8230;</string>
     
     <!-- Bulk favorite -->
     <string name="browse_add_to_library">Add to Library</string>
