@@ -101,17 +101,19 @@ object CrashHandler {
         prefs(context).edit().putString(KEY_CRASH_REPORT, report).commit()
     }
 
-    private var cachedPrefs: SharedPreferences? = null
+    @Volatile private var cachedPrefs: SharedPreferences? = null
 
     private fun prefs(context: Context): SharedPreferences {
-        return cachedPrefs ?: EncryptedSharedPreferences.create(
-            context.applicationContext,
-            PREFS_NAME,
-            MasterKey.Builder(context.applicationContext)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        ).also { cachedPrefs = it }
+        return cachedPrefs ?: synchronized(this) {
+            cachedPrefs ?: EncryptedSharedPreferences.create(
+                context.applicationContext,
+                PREFS_NAME,
+                MasterKey.Builder(context.applicationContext)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build(),
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            ).also { cachedPrefs = it }
+        }
     }
 }

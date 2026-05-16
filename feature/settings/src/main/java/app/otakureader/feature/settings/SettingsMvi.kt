@@ -202,6 +202,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetCropBordersEnabled(val enabled: Boolean) : SettingsEvent
     data class SetImageQuality(val quality: String) : SettingsEvent
     data class SetDataSaverEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetSecureScreen(val enabled: Boolean) : SettingsEvent
 
     // Library
     data class SetLibraryGridSize(val size: Int) : SettingsEvent

@@ -131,12 +131,14 @@ class ReaderSettingsDelegate @Inject constructor(
                 readerSettingsRepository.cropBordersEnabled,
                 readerSettingsRepository.imageQuality,
                 readerSettingsRepository.dataSaverEnabled,
-            ) { preloadAfter, cropBorders, imageQuality, dataSaver ->
+                readerSettingsRepository.secureScreen,
+            ) { preloadAfter, cropBorders, imageQuality, dataSaver, secureScreen ->
                 updateState { it.copy(reader = it.reader.copy(
                     preloadPagesAfter = preloadAfter,
                     cropBordersEnabled = cropBorders,
                     imageQuality = imageQuality.name,
                     dataSaverEnabled = dataSaver,
+                    secureScreen = secureScreen,
                 )) }
             }.collect { }
         }
@@ -188,6 +190,7 @@ class ReaderSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.SetDataSaverEnabled -> { readerSettingsRepository.setDataSaverEnabled(event.enabled); true }
+        is SettingsEvent.SetSecureScreen -> { readerSettingsRepository.setSecureScreen(event.enabled); true }
         else -> false
     }
 }

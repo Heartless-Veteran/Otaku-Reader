@@ -57,10 +57,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 private const val CRASH_REPORT_CLIP_LABEL = "crash_report"
-
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -268,7 +267,6 @@ private fun CrashReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -309,11 +307,13 @@ private fun CrashReportDialog(
                     clipboard.setPrimaryClip(
                         ClipData.newPlainText(CRASH_REPORT_CLIP_LABEL, report)
                     )
-                    scope.launch {
+                    (context as? ComponentActivity)?.lifecycleScope?.launch {
                         delay(15_000)
                         if (clipboard.primaryClipDescription?.label == CRASH_REPORT_CLIP_LABEL) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                                 clipboard.clearPrimaryClip()
+                            } else {
+                                clipboard.setPrimaryClip(ClipData.newPlainText("", ""))
                             }
                         }
                     }
