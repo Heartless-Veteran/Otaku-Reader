@@ -3,16 +3,14 @@ package app.otakureader.core.extension.data.repository
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
  * Implementation of ExtensionRepoRepository using DataStore.
- * Stores repository URLs as a set and tracks the active repository.
+ * All stored repository URLs are simultaneously active — there is no single "active" repo concept.
  */
 class ExtensionRepoRepositoryImpl(
     private val dataStore: DataStore<Preferences>
@@ -20,7 +18,6 @@ class ExtensionRepoRepositoryImpl(
 
     companion object {
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
-        private val ACTIVE_REPOSITORY_KEY = stringPreferencesKey("active_extension_repository")
     }
 
     override fun getRepositories(): Flow<List<String>> {
@@ -34,11 +31,6 @@ class ExtensionRepoRepositoryImpl(
             val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
             currentRepos.add(url)
             preferences[REPOSITORIES_KEY] = currentRepos
-
-            // If this is the first repository, set it as active
-            if (!preferences.contains(ACTIVE_REPOSITORY_KEY)) {
-                preferences[ACTIVE_REPOSITORY_KEY] = url
-            }
         }
     }
 
@@ -46,26 +38,6 @@ class ExtensionRepoRepositoryImpl(
         dataStore.edit { preferences ->
             val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
             currentRepos.remove(url)
-            preferences[REPOSITORIES_KEY] = currentRepos
-
-            // If removing the active repository, clear it
-            if (preferences[ACTIVE_REPOSITORY_KEY] == url) {
-                preferences.remove(ACTIVE_REPOSITORY_KEY)
-            }
-        }
-    }
-
-    override suspend fun getActiveRepository(): String? {
-        return dataStore.data.first()[ACTIVE_REPOSITORY_KEY]
-    }
-
-    override suspend fun setActiveRepository(url: String) {
-        dataStore.edit { preferences ->
-            preferences[ACTIVE_REPOSITORY_KEY] = url
-
-            // Ensure the URL is in the repositories list
-            val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
-            currentRepos.add(url)
             preferences[REPOSITORIES_KEY] = currentRepos
         }
     }
@@ -78,7 +50,6 @@ class ExtensionRepoRepositoryImpl(
     override suspend fun clearRepositories() {
         dataStore.edit { preferences ->
             preferences.remove(REPOSITORIES_KEY)
-            preferences.remove(ACTIVE_REPOSITORY_KEY)
         }
     }
 }
