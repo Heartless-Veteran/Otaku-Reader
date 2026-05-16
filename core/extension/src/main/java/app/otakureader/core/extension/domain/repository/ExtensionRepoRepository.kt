@@ -42,6 +42,10 @@ interface ExtensionRepoRepository {
     /**
      * No-op. Retained for interface compatibility.
      */
+    @Deprecated(
+        message = "No longer used as there is no default repository. Users must add their own.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun ensureDefaultRepository()
 
     /**

@@ -139,6 +139,7 @@ class ExtensionsViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            @Suppress("DEPRECATION")
             extensionRepoRepository.ensureDefaultRepository()
             loadExtensions()
             observeRepositories()

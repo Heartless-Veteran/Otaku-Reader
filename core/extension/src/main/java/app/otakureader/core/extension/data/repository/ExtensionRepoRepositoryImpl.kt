@@ -70,6 +70,7 @@ class ExtensionRepoRepositoryImpl(
         }
     }
 
+    @Deprecated("No longer used as there is no default repository.")
     override suspend fun ensureDefaultRepository() {
         // No default — users add their own extension repositories via the Extensions screen.
     }
