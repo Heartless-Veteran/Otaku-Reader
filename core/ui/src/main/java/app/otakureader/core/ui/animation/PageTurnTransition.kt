@@ -6,8 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.plus
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearEasing
@@ -70,6 +69,7 @@ fun PageTurnTransition(
 
 @Composable
 fun <T> pageTurnSpec(): AnimatedContentTransitionScope<T>.() -> ContentTransform = {
-    (fadeIn(animationSpec = tween(300, delayMillis = 50)) + scaleIn(initialScale = 0.95f, animationSpec = tween(400))) with
-    (fadeOut(animationSpec = tween(200)) + scaleOut(targetScale = 1.05f, animationSpec = tween(300)))
+    (fadeIn(animationSpec = tween(300, delayMillis = 50)) + scaleIn(initialScale = 0.95f, animationSpec = tween(400))).togetherWith(
+        fadeOut(animationSpec = tween(200)) + scaleOut(targetScale = 1.05f, animationSpec = tween(300))
+    )
 }

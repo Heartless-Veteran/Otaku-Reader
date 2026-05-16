@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import kotlin.random.Random
 
 @Composable
@@ -44,8 +46,8 @@ fun ScanlineBackground(
         val imageBitmap = bitmap.asImageBitmap()
         drawImage(
             image = imageBitmap,
-            dstOffset = androidx.compose.ui.geometry.IntOffset(0, 0),
-            dstSize = androidx.compose.ui.geometry.IntSize(size.width.toInt(), size.height.toInt())
+            dstOffset = IntOffset(0, 0),
+            dstSize = IntSize(size.width.toInt(), size.height.toInt())
         )
     }
 }

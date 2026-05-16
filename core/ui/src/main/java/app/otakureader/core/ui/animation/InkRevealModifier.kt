@@ -1,21 +1,15 @@
 package app.otakureader.core.ui.animation
 
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.GenericShape
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -49,13 +43,15 @@ private fun inkBlobPath(progress: Float, size: Size): Path {
     return path
 }
 
-fun Modifier.inkReveal(
-    progress: Float,
-    shape: Shape = GenericShape { size, _ ->
-        addPath(inkBlobPath(progress.coerceIn(0f, 1f), size))
-    }
-): Modifier = composed {
-    clip(shape)
+fun Modifier.inkReveal(progress: Float): Modifier = composed {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    clip(
+        object : Shape {
+            override fun createOutline(
+                size: Size,
+                layoutDirection: LayoutDirection,
+                density: Density,
+            ): Outline = Outline.Generic(inkBlobPath(clampedProgress, size))
+        }
+    )
 }
-
-
