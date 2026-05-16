@@ -119,6 +119,9 @@ data class ReaderState(
     /** Whether data saver mode is enabled to reduce image quality and bandwidth usage */
     val dataSaverEnabled: Boolean = false,
 
+    /** Prevent screenshots and screen recording (FLAG_SECURE) */
+    val secureScreen: Boolean = false,
+
     // --- Display Settings ---
     /** Show content in display cutout/notch area */
     val showContentInCutout: Boolean = true,

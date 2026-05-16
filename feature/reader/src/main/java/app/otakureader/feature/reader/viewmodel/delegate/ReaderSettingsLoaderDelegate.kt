@@ -151,6 +151,12 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val showPageThumbnailStripD = async { settingsRepository.showPageThumbnailStrip.first() }
         val savePagesToSeparateFoldersD = async { settingsRepository.savePagesToSeparateFolders.first() }
         val autoScrollSpeedD = async { settingsRepository.autoScrollSpeed.first() }
+        val secureScreenD = async {
+            try { settingsRepository.secureScreen.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                false
+            }
+        }
 
         val mode = modeD.await()
         val direction = directionD.await()
@@ -219,6 +225,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             showPageThumbnailStrip = showPageThumbnailStripD.await(),
             savePagesToSeparateFolders = savePagesToSeparateFoldersD.await(),
             autoScrollSpeed = autoScrollSpeedD.await(),
+            secureScreen = secureScreenD.await(),
         )
     }
 }

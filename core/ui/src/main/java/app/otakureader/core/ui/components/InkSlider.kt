@@ -127,13 +127,14 @@ fun InkSlider(
             // Thumb
             val thumbRadius = 10.dp.toPx()
             drawCircle(
+                color = Color(0xFFFF4757).copy(alpha = 0.3f),
+                radius = thumbRadius * 2.5f,
+                center = Offset(filledWidth, trackY)
+            )
+            drawCircle(
                 color = Color(0xFFFF4757),
                 radius = thumbRadius,
-                center = Offset(filledWidth, trackY),
-                shadow = Shadow(
-                    color = Color(0xFFFF4757).copy(alpha = 0.5f),
-                    blurRadius = 12f
-                )
+                center = Offset(filledWidth, trackY)
             )
             drawCircle(
                 color = Color.White,

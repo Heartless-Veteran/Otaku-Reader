@@ -131,6 +131,19 @@ fun ReaderScreen(
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
+
+    // Prevent screenshots when secure mode is enabled (user-opt-in)
+    DisposableEffect(state.secureScreen) {
+        val activity = context as? Activity
+        if (state.secureScreen) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
     
     // Handle zoom indicator visibility
     LaunchedEffect(state.zoomLevel) {

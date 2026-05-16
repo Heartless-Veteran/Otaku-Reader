@@ -554,6 +554,14 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] = enabled }
     }
 
+    override val secureScreen: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SECURE_SCREEN] ?: false
+    }
+
+    override suspend fun setSecureScreen(enabled: Boolean) {
+        safeEdit { it[Keys.SECURE_SCREEN] = enabled }
+    }
+
 
     /**
      * Wrapper around [DataStore.edit] that catches [java.io.IOException] so that a
@@ -647,6 +655,7 @@ class ReaderSettingsRepository @Inject constructor(
         val SHOW_ACTIONS_ON_LONG_TAP = booleanPreferencesKey("reader_show_actions_on_long_tap")
         val SAVE_PAGES_TO_SEPARATE_FOLDERS = booleanPreferencesKey("reader_save_pages_to_separate_folders")
         val SHOW_PAGE_THUMBNAIL_STRIP = booleanPreferencesKey("reader_show_page_thumbnail_strip")
+        val SECURE_SCREEN = booleanPreferencesKey("reader_secure_screen")
     }
     
     companion object {

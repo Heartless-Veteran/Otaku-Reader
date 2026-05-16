@@ -48,4 +48,5 @@ data class ReaderSettingsState(
     val imageQuality: String = ImageQuality.ORIGINAL.name,
     val dataSaverEnabled: Boolean = false,
     val incognitoMode: Boolean = false,
+    val secureScreen: Boolean = false,
 )

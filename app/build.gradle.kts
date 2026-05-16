@@ -176,6 +176,9 @@ dependencies {
     // SplashScreen — branded launch experience on all API levels
     implementation(libs.splashscreen)
 
+    // Encrypted SharedPreferences for crash log storage
+    implementation(libs.androidx.security.crypto)
+
     // Debug tools (LeakCanary — no-op in release builds)
     debugImplementation(libs.leakcanary)
 

@@ -136,6 +136,17 @@ private fun ReaderContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
     )
 
     ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_secure_screen)) },
+        supportingContent = { Text(stringResource(R.string.settings_secure_screen_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.secureScreen,
+                onCheckedChange = { onEvent(SettingsEvent.SetSecureScreen(it)) },
+            )
+        },
+    )
+
+    ListItem(
         headlineContent = { Text(stringResource(R.string.settings_incognito_mode)) },
         supportingContent = { Text(stringResource(R.string.settings_incognito_mode_description)) },
         trailingContent = {
