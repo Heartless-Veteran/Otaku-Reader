@@ -473,8 +473,12 @@ style:
     maxLineLength: 140
     excludePackageStatements: true
     excludeImportStatements: true
-    excludeCommentStatements: false
+    excludeCommentStatements: true
     excludeRawStrings: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/migrations/**'
   MayBeConst:
     active: true
   ModifierOrder:
@@ -611,3 +615,5 @@ style:
       - 'androidx.compose.material3.*'
       - 'androidx.compose.foundation.layout.*'
       - 'androidx.compose.ui.*'
+      - 'androidx.compose.ui.graphics.*'
+      - 'androidx.compose.runtime.*'

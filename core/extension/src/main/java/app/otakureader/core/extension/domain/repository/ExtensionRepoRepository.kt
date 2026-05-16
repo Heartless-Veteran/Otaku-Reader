@@ -40,9 +40,12 @@ interface ExtensionRepoRepository {
     suspend fun setActiveRepository(url: String)
 
     /**
-     * Ensure a default repository is present when the repo list is empty.
-     * Called on first launch so users don't see an empty extension catalog.
+     * No-op. Retained for interface compatibility.
      */
+    @Deprecated(
+        message = "No longer used as there is no default repository. Users must add their own.",
+        level = DeprecationLevel.WARNING
+    )
     suspend fun ensureDefaultRepository()
 
     /**

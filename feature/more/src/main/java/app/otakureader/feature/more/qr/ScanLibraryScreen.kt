@@ -130,7 +130,10 @@ fun ScanLibraryScreen(
                 title = { Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(app.otakureader.feature.more.R.string.more_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(app.otakureader.feature.more.R.string.more_back)
+                        )
                     }
                 }
             )
@@ -150,7 +153,10 @@ fun ScanLibraryScreen(
             when {
                 isScanning -> {
                     CircularProgressIndicator()
-                    Text(stringResource(app.otakureader.feature.more.R.string.more_scan_library_opening_camera), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        stringResource(app.otakureader.feature.more.R.string.more_scan_library_opening_camera),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
                 localError != null -> {
                     Text(
@@ -182,7 +188,11 @@ fun ScanLibraryScreen(
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_import_result, state.imported, state.skipped),
+                                text = stringResource(
+                                    app.otakureader.feature.more.R.string.more_scan_library_import_result,
+                                    state.imported,
+                                    state.skipped
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -207,7 +217,10 @@ fun ScanLibraryScreen(
                                 style = MaterialTheme.typography.headlineSmall
                             )
                             Text(
-                                text = stringResource(app.otakureader.feature.more.R.string.more_scan_library_ready_to_import, localLibrary.manga.size),
+                                text = stringResource(
+                                    app.otakureader.feature.more.R.string.more_scan_library_ready_to_import,
+                                    localLibrary.manga.size
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

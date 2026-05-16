@@ -58,6 +58,7 @@ class StatisticsRepositoryImpl @Inject constructor(
         )
     }
     
+    @Suppress("MaxLineLength")
     override fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal> = readingHistoryDao.observeHistory().map { history ->
         val today = LocalDate.now()
         val weekStart = today.minusDays(today.dayOfWeek.value.toLong() - 1)

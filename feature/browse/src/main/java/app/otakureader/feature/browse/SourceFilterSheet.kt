@@ -304,7 +304,11 @@ private fun SortFilter(filter: Filter.Sort, onUpdate: (Filter<*>) -> Unit) {
                             Icon(
                                 if (ascending) Icons.Default.KeyboardArrowUp
                                 else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (ascending) stringResource(R.string.browse_sort_ascending) else stringResource(R.string.browse_sort_descending)
+                                contentDescription = if (ascending) {
+                                    stringResource(R.string.browse_sort_ascending)
+                                } else {
+                                    stringResource(R.string.browse_sort_descending)
+                                }
                             )
                         }
                     } else null
@@ -334,7 +338,11 @@ private fun GroupFilter(filter: Filter.Group<*>, onUpdate: (Filter<*>) -> Unit) 
             )
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = if (expanded) stringResource(R.string.browse_group_collapse) else stringResource(R.string.browse_group_expand)
+                contentDescription = if (expanded) {
+                    stringResource(R.string.browse_group_collapse)
+                } else {
+                    stringResource(R.string.browse_group_expand)
+                }
             )
         }
 

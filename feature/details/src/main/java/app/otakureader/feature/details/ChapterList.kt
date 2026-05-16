@@ -461,7 +461,11 @@ fun ChapterListItem(
                             } else {
                                 Icons.Default.Circle
                             },
-                            contentDescription = if (chapter.read) stringResource(R.string.details_chapter_mark_as_unread) else stringResource(R.string.details_chapter_mark_as_read),
+                            contentDescription = if (chapter.read) {
+                                stringResource(R.string.details_chapter_mark_as_unread)
+                            } else {
+                                stringResource(R.string.details_chapter_mark_as_read)
+                            },
                             tint = if (chapter.read) {
                                 MaterialTheme.colorScheme.primary
                             } else {
@@ -478,7 +482,11 @@ fun ChapterListItem(
                             } else {
                                 Icons.Default.BookmarkBorder
                             },
-                            contentDescription = if (chapter.bookmark) stringResource(R.string.details_chapter_remove_bookmark) else stringResource(R.string.details_chapter_bookmark),
+                            contentDescription = if (chapter.bookmark) {
+                                stringResource(R.string.details_chapter_remove_bookmark)
+                            } else {
+                                stringResource(R.string.details_chapter_bookmark)
+                            },
                             tint = if (chapter.bookmark) {
                                 MaterialTheme.colorScheme.secondary
                             } else {
@@ -504,14 +512,22 @@ fun ChapterListItem(
         onDismissRequest = { showMenu = false }
     ) {
         DropdownMenuItem(
-            text = { Text(stringResource(if (chapter.read) R.string.details_chapter_mark_as_unread else R.string.details_chapter_mark_as_read)) },
+            text = {
+                val resId = if (chapter.read) R.string.details_chapter_mark_as_unread
+                    else R.string.details_chapter_mark_as_read
+                Text(stringResource(resId))
+            },
             onClick = {
                 onToggleRead()
                 showMenu = false
             }
         )
         DropdownMenuItem(
-            text = { Text(stringResource(if (chapter.bookmark) R.string.details_chapter_remove_bookmark else R.string.details_chapter_bookmark)) },
+            text = {
+                val resId = if (chapter.bookmark) R.string.details_chapter_remove_bookmark
+                    else R.string.details_chapter_bookmark
+                Text(stringResource(resId))
+            },
             onClick = {
                 onToggleBookmark()
                 showMenu = false
