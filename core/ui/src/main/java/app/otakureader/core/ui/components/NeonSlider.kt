@@ -130,13 +130,14 @@ fun NeonSlider(
                     val sparkleY = trackY - 10.dp.toPx() + sparkle.offset * 20.dp.toPx()
 
                     drawCircle(
+                        color = glowColor.copy(alpha = sparkleAlpha * 0.3f),
+                        radius = sparkle.size * 2.5f,
+                        center = Offset(sparkleX, sparkleY)
+                    )
+                    drawCircle(
                         color = Color(0xFF00D2D3).copy(alpha = sparkleAlpha),
                         radius = sparkle.size,
-                        center = Offset(sparkleX, sparkleY),
-                        shadow = Shadow(
-                            color = glowColor.copy(alpha = sparkleAlpha * 0.5f),
-                            blurRadius = sparkle.size * 2
-                        )
+                        center = Offset(sparkleX, sparkleY)
                     )
                 }
             }
@@ -155,13 +156,14 @@ fun NeonSlider(
                 style = Stroke(width = 2.dp.toPx())
             )
             drawCircle(
+                color = glowColor.copy(alpha = 0.3f),
+                radius = 4.dp.toPx() * 2.5f,
+                center = Offset(filledWidth, trackY)
+            )
+            drawCircle(
                 color = Color.White.copy(alpha = 0.9f),
                 radius = 4.dp.toPx(),
-                center = Offset(filledWidth, trackY),
-                shadow = Shadow(
-                    color = glowColor.copy(alpha = 0.8f),
-                    blurRadius = 8f
-                )
+                center = Offset(filledWidth, trackY)
             )
         }
     }
