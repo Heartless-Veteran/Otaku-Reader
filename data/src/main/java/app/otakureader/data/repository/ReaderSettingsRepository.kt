@@ -165,7 +165,7 @@ class ReaderSettingsRepository @Inject constructor(
     
     // ==================== Auto-Scroll Speed ====================
     
-    val autoScrollSpeed: Flow<Float> = dataStore.data.map { prefs ->
+    override val autoScrollSpeed: Flow<Float> = dataStore.data.map { prefs ->
         prefs[Keys.AUTO_SCROLL_SPEED] ?: DEFAULT_AUTO_SCROLL_SPEED
     }
     

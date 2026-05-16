@@ -24,18 +24,25 @@ class ReaderSettingsDelegate @Inject constructor(
         updateState: ((SettingsState) -> SettingsState) -> Unit,
     ) {
         scope.launch {
-            combine<Int, Boolean, Boolean, Boolean, Boolean, Boolean, Unit>(
+            combine(
                 readerPreferences.readerMode,
                 readerPreferences.keepScreenOn,
                 readerPreferences.fullscreen,
-                readerPreferences.showContentInCutout,
-                readerPreferences.showPageNumber,
-                readerPreferences.showPageThumbnailStrip,
-            ) { readerMode, keepScreenOn, fullscreen, showCutout, showPageNum, showThumbStrip ->
+            ) { readerMode: Int, keepScreenOn: Boolean, fullscreen: Boolean ->
                 updateState { it.copy(reader = it.reader.copy(
                     readerMode = readerMode,
                     keepScreenOn = keepScreenOn,
                     fullscreen = fullscreen,
+                )) }
+            }.collect { }
+        }
+        scope.launch {
+            combine(
+                readerPreferences.showContentInCutout,
+                readerPreferences.showPageNumber,
+                readerPreferences.showPageThumbnailStrip,
+            ) { showCutout: Boolean, showPageNum: Boolean, showThumbStrip: Boolean ->
+                updateState { it.copy(reader = it.reader.copy(
                     showContentInCutout = showCutout,
                     showPageNumber = showPageNum,
                     showPageThumbnailStrip = showThumbStrip,
