@@ -54,8 +54,11 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val CRASH_REPORT_CLIP_LABEL = "crash_report"
 
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
@@ -265,6 +268,7 @@ private fun CrashReportDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -303,8 +307,16 @@ private fun CrashReportDialog(
                     val clipboard =
                         context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                     clipboard.setPrimaryClip(
-                        ClipData.newPlainText("Crash Report", report)
+                        ClipData.newPlainText(CRASH_REPORT_CLIP_LABEL, report)
                     )
+                    scope.launch {
+                        delay(15_000)
+                        if (clipboard.primaryClipDescription?.label == CRASH_REPORT_CLIP_LABEL) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                clipboard.clearPrimaryClip()
+                            }
+                        }
+                    }
                     // Android 13+ shows its own "Copied" system notification; show a
                     // Toast only on older versions to avoid double feedback.
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {

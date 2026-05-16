@@ -202,6 +202,7 @@ class ReaderViewModel @Inject constructor(
                     alwaysShowChapterTransition = settingsState.alwaysShowChapterTransition,
                     showActionsOnLongTap = settingsState.showActionsOnLongTap,
                     savePagesToSeparateFolders = settingsState.savePagesToSeparateFolders,
+                    secureScreen = settingsState.secureScreen,
                 )
             }
         }

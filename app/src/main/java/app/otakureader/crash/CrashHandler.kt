@@ -2,6 +2,8 @@ package app.otakureader.crash
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 
 /**
  * Custom [Thread.UncaughtExceptionHandler] that captures fatal crashes, writes the
@@ -99,6 +101,17 @@ object CrashHandler {
         prefs(context).edit().putString(KEY_CRASH_REPORT, report).commit()
     }
 
-    private fun prefs(context: Context): SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private var cachedPrefs: SharedPreferences? = null
+
+    private fun prefs(context: Context): SharedPreferences {
+        return cachedPrefs ?: EncryptedSharedPreferences.create(
+            context.applicationContext,
+            PREFS_NAME,
+            MasterKey.Builder(context.applicationContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build(),
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        ).also { cachedPrefs = it }
+    }
 }
