@@ -161,7 +161,9 @@ fun ZoomableImage(
     ) {
         if (imageUrl != null) {
             val context = LocalContext.current
-            val imageModel = remember(imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize, decoderFactory, context) {
+            val imageModel = remember(
+                imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize, decoderFactory, context
+            ) {
                 val builder = ImageRequest.Builder(context).data(imageUrl)
                 // Determine the container's longest side in px (0 when not yet measured).
                 val containerMax = if (containerSize != IntSize.Zero)

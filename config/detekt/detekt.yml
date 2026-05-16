@@ -475,6 +475,10 @@ style:
     excludeImportStatements: true
     excludeCommentStatements: true
     excludeRawStrings: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/migrations/**'
   MayBeConst:
     active: true
   ModifierOrder:

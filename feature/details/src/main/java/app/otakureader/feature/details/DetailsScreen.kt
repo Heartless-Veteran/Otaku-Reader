@@ -284,7 +284,11 @@ fun DetailsScreen(
                     icon = { Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.details_continue_reading)) },
                     text = {
                         Text(
-                            if (state.hasUnreadChapters) stringResource(R.string.details_continue_reading) else stringResource(R.string.details_start_reading)
+                            if (state.hasUnreadChapters) {
+                                stringResource(R.string.details_continue_reading)
+                            } else {
+                                stringResource(R.string.details_start_reading)
+                            }
                         )
                     }
                 )
@@ -788,7 +792,11 @@ private fun MangaHeader(
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                        contentDescription = if (isFavorite) {
+                            stringResource(R.string.details_remove_from_library)
+                        } else {
+                            stringResource(R.string.details_add_to_library)
+                        }
                     )
                 }
             }
@@ -958,7 +966,11 @@ private fun DeleteAfterReadOption(
             supportingContent = {
                 Column(modifier = Modifier.selectableGroup()) {
                     val options = listOf(
-                        (if (globalEnabled) stringResource(R.string.details_delete_follow_global_on) else stringResource(R.string.details_delete_follow_global_off)) to DeleteAfterReadMode.INHERIT,
+                        (if (globalEnabled) {
+                            stringResource(R.string.details_delete_follow_global_on)
+                        } else {
+                            stringResource(R.string.details_delete_follow_global_off)
+                        }) to DeleteAfterReadMode.INHERIT,
                         stringResource(R.string.details_delete_on) to DeleteAfterReadMode.ENABLED,
                         stringResource(R.string.details_delete_off) to DeleteAfterReadMode.DISABLED
                     )
@@ -1007,7 +1019,11 @@ private fun NotificationOption(
         leadingContent = {
             Icon(
                 imageVector = if (notifyEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                contentDescription = if (notifyEnabled) stringResource(R.string.details_notify_icon_on) else stringResource(R.string.details_notify_icon_off),
+                contentDescription = if (notifyEnabled) {
+                    stringResource(R.string.details_notify_icon_on)
+                } else {
+                    stringResource(R.string.details_notify_icon_off)
+                },
                 tint = if (notifyEnabled) MaterialTheme.colorScheme.primary
                        else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1054,7 +1070,11 @@ private fun ReaderSettingsSection(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) stringResource(R.string.details_collapse) else stringResource(R.string.details_expand)
+                        contentDescription = if (expanded) {
+                            stringResource(R.string.details_collapse)
+                        } else {
+                            stringResource(R.string.details_expand)
+                        }
                     )
                 }
             }
