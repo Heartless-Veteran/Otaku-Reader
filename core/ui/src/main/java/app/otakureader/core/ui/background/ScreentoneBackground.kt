@@ -7,7 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
@@ -56,8 +57,8 @@ fun ScreentoneBackground(
         val canvasHeight = size.height
         drawImage(
             image = imageBitmap,
-            dstOffset = androidx.compose.ui.geometry.IntOffset(0, 0),
-            dstSize = androidx.compose.ui.geometry.IntSize(
+            dstOffset = IntOffset(0, 0),
+            dstSize = IntSize(
                 canvasWidth.toInt(),
                 canvasHeight.toInt()
             )
