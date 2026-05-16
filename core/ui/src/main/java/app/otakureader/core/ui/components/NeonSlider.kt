@@ -18,6 +18,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,7 @@ fun NeonSlider(
             Sparkle(
                 offset = sparkleRandom.nextFloat(),
                 size = 2f + sparkleRandom.nextFloat() * 3f,
-                phase = sparkleRandom.nextFloat() * 1000
+                phase = (sparkleRandom.nextFloat() * 1000).toLong()
             )
         }
     }
