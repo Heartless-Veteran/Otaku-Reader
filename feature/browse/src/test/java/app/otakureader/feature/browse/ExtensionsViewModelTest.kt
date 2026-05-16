@@ -120,7 +120,6 @@ class ExtensionsViewModelTest {
         every { extensionRepository.getExtensionsWithUpdates() } returns extensionsWithUpdatesFlow
         every { generalPreferences.showNsfwContent } returns showNsfwFlow
         every { extensionRepoRepository.getRepositories() } returns repositoriesFlow
-        coEvery { extensionRepoRepository.getActiveRepository() } returns null
         coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
@@ -388,32 +387,6 @@ class ExtensionsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { extensionRepoRepository.removeRepository("https://repo1.com") }
-    }
-
-    @Test
-    fun `set active repository updates state and refreshes`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://repo1.com") } just runs
-        coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
-        coEvery { extensionRepository.checkForUpdates() } returns 0
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://repo1.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals("https://repo1.com", viewModel.state.value.activeRepository)
-        coVerify { extensionRepoRepository.setActiveRepository("https://repo1.com") }
-        coVerify { extensionRepository.refreshAvailableExtensions() }
-    }
-
-    @Test
-    fun `set active repository with failure does not update state`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://bad.com") } throws RuntimeException("Bad repo")
-
-        val before = viewModel.state.value.activeRepository
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://bad.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals(before, viewModel.state.value.activeRepository)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -801,18 +774,6 @@ class ExtensionsViewModelTest {
         assertEquals("Naruto", viewModel.state.value.searchQuery)
     }
 
-    @Test
-    fun `active repository persists in state`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://repo.com") } just runs
-        coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
-        coEvery { extensionRepository.checkForUpdates() } returns 0
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://repo.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals("https://repo.com", viewModel.state.value.activeRepository)
-    }
-
     // ─────────────────────────────────────────────────────────────
     // 14. Install/Update/Uninstall — Race Condition: refreshSources before ShowSnackbar
     // ─────────────────────────────────────────────────────────────
@@ -991,7 +952,6 @@ class ExtensionsViewModelTest {
     @Test
     fun `repository stream error does not block installed extensions`() = runTest {
         every { extensionRepoRepository.getRepositories() } returns emptyFlow()
-        coEvery { extensionRepoRepository.getActiveRepository() } throws RuntimeException("Repo error")
         coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val ext = createExtension(id = 1L, name = "Still Works")
