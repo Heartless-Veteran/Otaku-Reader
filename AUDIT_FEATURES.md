@@ -65,7 +65,7 @@ Otaku-Reader is a feature-rich manga reader that meets or exceeds Tachiyomi/Miho
 
 ### Missing entirely
 
-**Text-to-Speech (TTS):** `ReaderMvi.kt` defines 100+ state fields and 50+ events — no TTS-related field, event, or service exists. This is the only major accessibility feature absent from an otherwise comprehensive reader. Adding TTS requires an Android `TextToSpeech` service integration and a new reader mode or overlay — estimated effort 10–15 days for production quality.
+**Text-to-Speech (TTS):** `ReaderMvi.kt` defines 100+ state fields and 50+ events — no TTS-related field, event, or service exists. This is a major accessibility gap in the reader; other accessibility gaps (UI semantics, touch-target compliance) are documented in `AUDIT_UI.md`. Adding TTS requires an Android `TextToSpeech` service integration and a new reader mode or overlay — estimated effort 10–15 days for production quality.
 
 ### Partial or unconfirmed
 

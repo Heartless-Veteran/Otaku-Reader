@@ -352,14 +352,14 @@ npx ruflo@latest memory stats                             # check DB health
 #### Phase 1: Architecture & Structural Mapping
 
 **Ruflo (with MCP registered):**
-```
+```bash
 /agent spawn architect-scout --role "Android Architecture Auditor" --tools file_read,git_log,dependency_analysis
 /swarm task --agent architect-scout --task "Map Otaku-Reader architecture and identify structural anti-patterns"
 /memory store --namespace otaku-reader --key architecture-map --value <output>
 ```
 
 **Native Claude Code fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   core/navigation/src/main/java/app/otakureader/core/navigation/Route.kt
   domain/src/main/java/app/otakureader/domain/repository/ (all *.kt)
@@ -373,14 +373,14 @@ Deliverable: `AUDIT_ARCHITECTURE.md`
 #### Phase 2: Code Quality & Static Analysis
 
 **Ruflo:**
-```
+```bash
 /agent spawn code-grunt --role "Kotlin Code Quality Auditor" --tools lint_runner,complexity_scanner
 /agent spawn smell-detector --role "Anti-Pattern Hunter" --tools static_analysis,git_blame
 /swarm task --agents code-grunt,smell-detector --parallel --task "Audit Otaku-Reader codebase for quality smells"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   feature/library/src/main/java/app/otakureader/feature/library/LibraryViewModel.kt
   feature/details/src/main/java/app/otakureader/feature/details/DetailsViewModel.kt
@@ -394,13 +394,13 @@ Deliverable: `AUDIT_CODE_SMELLS.md`
 #### Phase 3: UI/UX & Compose Audit
 
 **Ruflo:**
-```
+```bash
 /agent spawn ui-viper --role "Jetpack Compose UI Auditor" --tools compose_inspector,layout_analyzer
 /swarm task --agent ui-viper --task "Audit Otaku-Reader UI layer for Compose anti-patterns"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   feature/library/src/main/java/app/otakureader/feature/library/LibraryScreen.kt
   feature/details/src/main/java/app/otakureader/feature/details/DetailsScreen.kt
@@ -415,13 +415,13 @@ Deliverable: `AUDIT_UI.md`
 #### Phase 4: Performance & Memory
 
 **Ruflo:**
-```
+```bash
 /agent spawn perf-sniper --role "Android Performance Auditor" --tools profiler,heap_analyzer,apk_analyzer
 /swarm task --agent perf-sniper --task "Profile Otaku-Reader for memory leaks, image OOM risk, startup performance"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   core/database/src/main/java/app/otakureader/core/database/OtakuReaderDatabase.kt
   core/database/src/main/java/app/otakureader/core/database/dao/ (all DAOs)
@@ -436,13 +436,13 @@ Deliverable: `AUDIT_PERFORMANCE.md`
 #### Phase 5: Security Audit
 
 **Ruflo:**
-```
+```bash
 /agent spawn sec-watch --role "Android Security Auditor" --tools cve_scanner,secret_scanner,manifest_auditor
 /swarm task --agent sec-watch --task "Run full security audit on Otaku-Reader including CVE scan and secret detection"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   SECURITY_AUDIT.md (existing baseline)
   data/src/main/java/app/otakureader/data/tracking/ (OAuth token storage)
@@ -457,13 +457,13 @@ Deliverable: `AUDIT_SECURITY.md`
 #### Phase 6: Testing & Coverage
 
 **Ruflo:**
-```
+```bash
 /agent spawn qa-engineer --role "Test Coverage Auditor" --tools coverage_analyzer,test_generator
 /swarm task --agent qa-engineer --task "Analyze Otaku-Reader test coverage and generate missing test stubs"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="List all */src/test/java/ directories.
 Read 5 representative test files. Check .github/workflows/ci.yml for coverage gates.
 Identify untested critical paths (migrations, OAuth, backup import).
@@ -475,13 +475,13 @@ Deliverable: `AUDIT_TESTING.md`
 #### Phase 7: Feature Gap Analysis
 
 **Ruflo:**
-```
+```bash
 /agent spawn product-hunter --role "Product Feature Auditor" --tools feature_matrix,comparator
 /swarm task --agent product-hunter --task "Compare Otaku-Reader feature set against standard manga reader expectations"
 ```
 
 **Native fallback:**
-```
+```text
 Agent(subagent_type="Explore", prompt="Read:
   feature/reader/src/main/java/app/otakureader/feature/reader/ (reader modes and MVI)
   feature/settings/src/main/java/app/otakureader/feature/settings/ (reader settings)
@@ -495,7 +495,7 @@ Deliverable: `AUDIT_FEATURES.md`
 #### Phase 8: Master Synthesis
 
 **Ruflo:**
-```
+```bash
 /swarm consensus --agents architect-scout,code-grunt,smell-detector,ui-viper,perf-sniper,sec-watch,qa-engineer,product-hunter --output AUDIT_MASTER.md
 /swarm goal --name "Otaku-Reader 90-Day Improvement Plan" --output ROADMAP.md
 /swarm goal --name "P0 Patch Queue" --output PATCH_QUEUE.md

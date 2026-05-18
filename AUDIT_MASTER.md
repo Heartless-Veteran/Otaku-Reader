@@ -155,7 +155,7 @@ The 4 failing checks are pre-existing failures on the branch predating this audi
 
 ## 5. Impact × Effort Matrix
 
-```
+```text
 HIGH IMPACT
     │
     │  #2 TachiAdapter    #1 NeonSlider

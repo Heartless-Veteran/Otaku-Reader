@@ -199,7 +199,7 @@ The extension system uses `ExtensionLoader` → `ExtensionApkParser` → `Extens
 ### 7.3 APK URL Validation
 
 `ExtensionInstaller.downloadAndInstall()` already enforces HTTPS:
-```
+```kotlin
 if (!apkUrl.startsWith("https://")) {
     return@withContext Result.failure(SecurityException("Extension APK URL must use HTTPS. Insecure URL rejected: $apkUrl"))
 }
@@ -266,7 +266,7 @@ All database access goes through Room ORM with typed parameters. The prior audit
 **Current status: RESOLVED**
 
 `.gitignore` contains:
-```
+```gitignore
 keystore.properties
 *.jks
 *.keystore

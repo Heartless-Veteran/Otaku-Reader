@@ -50,7 +50,7 @@ Top three risks requiring immediate action:
 | Query | Issue | Severity |
 |-------|-------|----------|
 | `getFavoriteMangaWithUnreadCount()` | `LEFT JOIN chapters … GROUP BY m.id` with `COALESCE(SUM(CASE …))` — scans the entire `chapters` table for every library observation. A library of 200 manga with 5,000 total chapters causes a 200×chapters cross-product scan on every Flow emission | High |
-| `searchFavoriteManga(query)` | `LIKE :query || '%'` with a leading literal is prefix-range-safe, but `title` index is a full B-tree scan for the concat; consider a precomputed FTS5 virtual table for title search | Medium |
+| `searchFavoriteManga(query)` | `LIKE :query \|\| '%'` with a leading literal is prefix-range-safe, but `title` index is a full B-tree scan for the concat; consider a precomputed FTS5 virtual table for title search | Medium |
 | Multiple single-field UPDATE queries (`updateReaderDirection`, `updateReaderMode`, `updateReaderColorFilter`, `updateReaderCustomTintColor`, `updateReaderBackgroundColor`, `updatePreloadPagesBefore`, `updatePreloadPagesAfter`) | Seven separate UPDATE statements where one update of the full entity (or one query updating all reader-settings columns) would be 1 roundtrip instead of 7 | Low |
 | `getFavoriteMangaGenres()` | `SELECT genre FROM manga WHERE favorite = 1` returns one blob-encoded genre string per row; genre is a single TEXT column containing a comma-separated list. Parsing happens in Kotlin on every emission | Low |
 
@@ -112,7 +112,7 @@ A second N+1 risk is in `LibraryUpdateWorker.doWork()` — the manga loop calls 
 
 ### 3.1 Migration chain overview
 
-```
+```text
 v2 → v3 → v4 → v5 → v6 → v7 → v8 → v9 → v10 → v11 → v12 → v13 → v14
                                                   → v15 → v16 → v17 → v18 → v19 → v20 → v21 → v22
 ```
@@ -206,9 +206,9 @@ A single transient HTTP 503 or network blip marks the entire chapter download as
 
 ### 5.4 Concurrent request limits
 
-OkHttp's default dispatcher allows 64 simultaneous requests and 5 per host. The `DownloadManager` limits itself to `maxConcurrentDownloads` (1–5, default 2), but each download issues requests to its chapter's page CDN with no per-host cap override. During auto-download of 10 chapters from the same source, OkHttp can issue 50 simultaneous image requests to the same CDN host, which most CDNs will rate-limit or block.
+OkHttp's default dispatcher allows 64 simultaneous requests globally and **5 per hostname** (`maxRequestsPerHost`). The `DownloadManager` limits itself to `maxConcurrentDownloads` (1–5, default 2), but each download issues multiple image-page requests. When `maxConcurrentDownloads = 5` and pages are fetched from different CDN hostnames (common with multi-source setups), the global 64-request cap is the binding limit; OkHttp enforces the per-host cap of 5 regardless of hostname count. However, if all 10 chapters in a single-source queue share the same CDN hostname, OkHttp will hold at most 5 concurrent connections to that host — not 50. The real risk is CDN rate-limiting when all pages for multiple chapters are queued simultaneously against a single host at the maximum per-host concurrency.
 
-**Recommendation:** Set `Dispatcher().maxRequestsPerHost = 3` on the OkHttpClient used for downloads, or use a dedicated `OkHttpClient` with a restricted dispatcher for the `Downloader`.
+**Recommendation:** Set `Dispatcher().maxRequestsPerHost = 3` on the `OkHttpClient` used for downloads to reduce CDN rate-limiting risk, or use a dedicated `OkHttpClient` with a restricted dispatcher for the `Downloader`.
 
 ---
 

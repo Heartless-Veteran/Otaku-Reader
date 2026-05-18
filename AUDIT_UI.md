@@ -86,10 +86,10 @@ val sparkleAlpha = ((kotlin.math.sin(
 ) + 1) / 2).toFloat() * 0.8f * pulseAlpha
 ```
 
-This is the single most expensive recomposition bug in the codebase. The Canvas draw phase reads `System.currentTimeMillis()` meaning:
-- The draw lambda can never be skipped (its inputs never compare equal).
-- Compose schedules a new frame immediately after every draw, creating a busy-loop at the display frame rate.
-- Any parent composable that observes state near this slider will also be re-drawn.
+This is the most expensive rendering bug in the codebase. `System.currentTimeMillis()` is not a Compose `State` object — reading it inside a Canvas draw lambda does **not** trigger recomposition (the Composition phase is separate from the Draw phase). However, because it always returns a new value, the draw lambda can never be skipped by Compose's equality optimization. If anything external drives frame invalidation (an `Animatable`, a `LaunchedEffect` update loop, or a parent state change), the Canvas will redraw on every frame using a wall-clock value that was never meant to be a continuous animation driver. The practical effect:
+- Every animation tick or state update forces a full Canvas redraw instead of skipping unchanged frames.
+- The draw lambda allocates on every frame (new `Float` from `sin()`).
+- Any parent composable observing state near this slider participates in the continuous redraw cycle.
 
 **Fix:** Use `rememberInfiniteTransition` to drive the sparkle phase as a proper animated `Float` state:
 
@@ -510,12 +510,15 @@ IconButton(onClick = onTogglePanoramaCover) {
 ### 7.8 `NeonSlider` — No semantics for screen readers
 
 ```kotlin
-// Add to NeonSlider modifier
+// Add to NeonSlider modifier — use string resources for localization
 .semantics {
-    contentDescription = "Slider, ${(value * 100).toInt()}%"
+    contentDescription = stringResource(R.string.slider_description, (value * 100).toInt())
     progressBarRangeInfo = ProgressBarRangeInfo(value, 0f..1f)
-    stateDescription = "${(value * 100).toInt()}%"
+    stateDescription = stringResource(R.string.slider_state, (value * 100).toInt())
 }
+// Add to res/values/strings.xml:
+// <string name="slider_description">Slider, %d%%</string>
+// <string name="slider_state">%d%%</string>
 ```
 
 ---

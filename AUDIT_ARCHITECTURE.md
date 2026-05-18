@@ -11,7 +11,7 @@
 
 Otaku Reader is structurally sound at the macro level — Clean Architecture layer separation is respected by the build graph, MVI is consistently applied with named State/Intent/Effect contracts per feature, and the build-logic convention system enforces a uniform module shape across all fourteen feature modules. However five specific problems prevent a higher grade:
 
-1. Three presentation-layer **god objects** (DetailsScreen, DetailsViewModel, ReaderViewModel) have grown beyond any reasonable single-responsibility boundary and represent active maintenance and testability risk.
+1. Five presentation-layer **god objects** (DetailsScreen, DetailsViewModel, ReaderViewModel, LibraryScreen, LibraryViewModel) have grown beyond any reasonable single-responsibility boundary; the top three (DetailsScreen at 1,722 lines, DetailsViewModel at 949 lines, ReaderViewModel at 863 lines) are the most critical.
 2. **Ten import-level layer violations** where feature and app modules bypass the domain interface contract to import data-layer concretions directly.
 3. The tachiyomi-compat bridge uses **`Observable.toBlocking()`** on `Dispatchers.IO` across all seven source API call sites — silently exhausts the IO thread pool under concurrent source requests.
 4. **Six use cases** are declared in domain but are either unreferenced or only referenced in test scaffolding.

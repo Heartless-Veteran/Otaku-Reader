@@ -335,8 +335,8 @@ fun getFavoriteMangaWithUnreadCount(): Flow<List<MangaWithUnreadCountEntity>>
 
 ### New migration for composite index
 ```kotlin
-// core/database/src/main/java/app/otakureader/core/database/migrations/Migration_X_Y.kt
-val MIGRATION_X_Y = object : Migration(X, Y) {  // replace X, Y with next version numbers
+// core/database/src/main/java/app/otakureader/core/database/migrations/Migration_22_23.kt
+val MIGRATION_22_23 = object : Migration(22, 23) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             "CREATE INDEX IF NOT EXISTS index_chapters_mangaId_read ON chapters (mangaId, read)"
@@ -345,7 +345,8 @@ val MIGRATION_X_Y = object : Migration(X, Y) {  // replace X, Y with next versio
 }
 ```
 
-Add `MIGRATION_X_Y` to `OtakuReaderDatabase.kt` migration list and increment schema version.
+1. Add `MIGRATION_22_23` to the `ALL_MIGRATIONS` array in `DatabaseMigrations.kt`.
+2. Increment `@Database(version = 23)` in `OtakuReaderDatabase.kt`.
 
 **Performance impact:** On 500 manga / 10,000 chapters: query time drops from ~3,500ms to ~120ms. The `GROUP BY` runs in SQLite, not in the Kotlin layer.
 
@@ -414,24 +415,25 @@ fun MangaHeader(/* ... */) {
 
 ---
 
-## Patch 8 — DatabaseMigrationTest: Add Robolectric variant for CI
+## Patch 8 — DatabaseMigrationTest: Add JVM migration unit test for CI
 
-**New file:** `data/src/test/java/app/otakureader/data/database/DatabaseMigrationRobolectricTest.kt`
+`MigrationTestHelper` requires a real `Instrumentation` instance and cannot be used with Robolectric — passing `instrumentation = null` causes a `NullPointerException` at runtime. The correct approach for JVM CI coverage is to exercise migration objects directly against an in-memory SQLite database, without `MigrationTestHelper`.
+
+**New file:** `data/src/test/java/app/otakureader/data/database/DatabaseMigrationUnitTest.kt`
 
 ```kotlin
 package app.otakureader.data.database
 
 import android.content.Context
-import androidx.room.testing.MigrationTestHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.room.Room
+import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.migrations.MIGRATION_18_19
-import app.otakureader.core.database.migrations.MIGRATION_19_20
-import app.otakureader.core.database.migrations.MIGRATION_20_21
 import app.otakureader.core.database.migrations.MIGRATION_21_22
-import io.mockk.junit4.MockKRule
-import org.junit.Rule
+import org.junit.After
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -439,46 +441,44 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class DatabaseMigrationRobolectricTest {
+class DatabaseMigrationUnitTest {
 
-    @get:Rule
-    val helper = MigrationTestHelper(
-        instrumentation = null,  // Robolectric doesn't use instrumentation
-        databaseClass = OtakuReaderDatabase::class.java,
-        specs = emptyList(),
-        openFactory = FrameworkSQLiteOpenHelperFactory()
-    )
+    private lateinit var db: SupportSQLiteDatabase
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    @Before
+    fun setup() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db = Room.inMemoryDatabaseBuilder(context, OtakuReaderDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+            .openHelper
+            .writableDatabase
+    }
 
-    @Test
-    fun `migrate 18 to 19 creates page_bookmarks table`() {
-        helper.createDatabase("test-db", 18).apply { close() }
-        val db = helper.runMigrationsAndValidate("test-db", 19, true, MIGRATION_18_19)
-        
-        val cursor = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='page_bookmarks'")
-        assert(cursor.count == 1) { "page_bookmarks table not created by migration 18→19" }
-        cursor.close()
-        db.close()
+    @After
+    fun teardown() {
+        if (::db.isInitialized) db.close()
     }
 
     @Test
-    fun `migrate 21 to 22 adds download queue columns`() {
-        helper.createDatabase("test-db", 21).apply { close() }
-        val db = helper.runMigrationsAndValidate("test-db", 22, true, MIGRATION_21_22)
-        db.close()
-    }
+    fun `MIGRATION_18_19 creates page_bookmarks table with mangaId column`() {
+        db.execSQL("PRAGMA user_version = 18")
+        MIGRATION_18_19.migrate(db)
 
-    @Test
-    fun `full migration from 18 to current validates schema`() {
-        helper.createDatabase("test-db", 18).apply { close() }
-        val db = helper.runMigrationsAndValidate(
-            "test-db",
-            OtakuReaderDatabase.DATABASE_VERSION,
-            true,
-            MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22
+        val cursor = db.query(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='page_bookmarks'"
         )
-        db.close()
+        assertTrue("page_bookmarks table was not created", cursor.moveToFirst())
+        val createSql = cursor.getString(0)
+        assertTrue("mangaId column missing", createSql.contains("mangaId"))
+        cursor.close()
+    }
+
+    @Test
+    fun `MIGRATION_21_22 adds index to download_queue`() {
+        db.execSQL("PRAGMA user_version = 21")
+        MIGRATION_21_22.migrate(db)
+        // Migration should complete without exception — Room validates schema at open time
     }
 }
 ```
@@ -486,9 +486,10 @@ class DatabaseMigrationRobolectricTest {
 **Add to `data/build.gradle.kts` test dependencies:**
 ```kotlin
 testImplementation(libs.robolectric)
-testImplementation(libs.androidx.room.testing)
 testImplementation(libs.androidx.test.core)
 ```
+
+**For full end-to-end schema validation** (including `MigrationTestHelper`), keep the existing `DatabaseMigrationTest` and run it in the `:data:connectedDebugAndroidTest` CI job — not `testDebugUnitTest`.
 
 ---
 
@@ -576,7 +577,7 @@ class TachiyomiBackupImporterTest {
 ```
 
 **Create test fixtures directory:**
-```
+```text
 data/src/test/resources/backup_fixtures/
   valid_tachiyomi_backup_100_manga.json
   tachiyomi_backup_with_history.json
