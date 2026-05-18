@@ -132,7 +132,12 @@ fun NeonSlider(
             // Neon thumb
             val thumbRadius = 12.dp.toPx()
             drawCircle(color = Color(0xFF16161F), radius = thumbRadius, center = Offset(filledWidth, trackY))
-            drawCircle(color = glowColor, radius = thumbRadius - 2.dp.toPx(), center = Offset(filledWidth, trackY), style = Stroke(width = 2.dp.toPx()))
+            drawCircle(
+                color = glowColor,
+                radius = thumbRadius - 2.dp.toPx(),
+                center = Offset(filledWidth, trackY),
+                style = Stroke(width = 2.dp.toPx())
+            )
             drawCircle(color = glowColor.copy(alpha = 0.3f), radius = 4.dp.toPx() * 2.5f, center = Offset(filledWidth, trackY))
             drawCircle(color = Color.White.copy(alpha = 0.9f), radius = 4.dp.toPx(), center = Offset(filledWidth, trackY))
         }
