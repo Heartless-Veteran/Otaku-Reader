@@ -2,8 +2,10 @@ package app.otakureader.core.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -16,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
 private val LightColorScheme = lightColorScheme()
 private val DarkColorScheme = darkColorScheme()
@@ -132,6 +135,14 @@ fun sepiaOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     isDark = false,
 )
 
+val OtakuShapes = Shapes(
+    extraSmall = RoundedCornerShape(2.dp),
+    small = RoundedCornerShape(4.dp),
+    medium = RoundedCornerShape(8.dp),
+    large = RoundedCornerShape(12.dp),
+    extraLarge = RoundedCornerShape(16.dp),
+)
+
 /** Color scheme ID for the user-defined custom accent color. */
 const val COLOR_SCHEME_CUSTOM_ACCENT = 11
 
@@ -147,6 +158,7 @@ const val COLOR_SCHEME_CUSTOM_ACCENT = 11
  * @param useSepia Whether to apply the sepia warm-paper token set (reader mode)
  * @param useHighContrast Whether to boost contrast for improved accessibility
  * @param customAccentColor ARGB Long used when [colorScheme] == [COLOR_SCHEME_CUSTOM_ACCENT]
+ * @param contentType When non-null, overrides primary/secondary with canonical manga (red) or manhwa (purple) accents.
  */
 @Composable
 fun OtakuReaderTheme(
@@ -156,6 +168,7 @@ fun OtakuReaderTheme(
     useSepia: Boolean = false,
     useHighContrast: Boolean = false,
     customAccentColor: Long = 0xFF1976D2L,
+    contentType: ContentType? = null,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
@@ -230,16 +243,29 @@ fun OtakuReaderTheme(
         pureBlackScheme
     }
 
+    val contentTypeScheme = when (contentType) {
+        ContentType.MANGA -> finalColorScheme.copy(
+            primary = Color(0xFFFF4757),
+            secondary = Color(0xFFFFA502),
+        )
+        ContentType.MANHWA -> finalColorScheme.copy(
+            primary = Color(0xFF9B59B6),
+            secondary = Color(0xFF00D2D3),
+        )
+        null -> finalColorScheme
+    }
+
     val otakuColors = when {
-        usePureBlack && darkTheme -> oledOtakuColors(accent = finalColorScheme.primary)
-        darkTheme -> darkOtakuColors(accent = finalColorScheme.primary)
-        useSepia -> sepiaOtakuColors(accent = finalColorScheme.primary)
-        else -> lightOtakuColors(accent = finalColorScheme.primary)
+        usePureBlack && darkTheme -> oledOtakuColors(accent = contentTypeScheme.primary)
+        darkTheme -> darkOtakuColors(accent = contentTypeScheme.primary)
+        useSepia -> sepiaOtakuColors(accent = contentTypeScheme.primary)
+        else -> lightOtakuColors(accent = contentTypeScheme.primary)
     }
 
     CompositionLocalProvider(LocalOtakuColors provides otakuColors) {
         MaterialTheme(
-            colorScheme = finalColorScheme,
+            colorScheme = contentTypeScheme,
+            shapes = OtakuShapes,
             typography = OtakuReaderTypography,
             content = content
         )

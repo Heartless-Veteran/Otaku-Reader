@@ -1,7 +1,11 @@
 package app.otakureader.core.ui.components
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -10,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +25,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.random.Random
 
 @Composable
@@ -46,10 +51,18 @@ fun NeonSlider(
             Sparkle(
                 offset = sparkleRandom.nextFloat(),
                 size = 2f + sparkleRandom.nextFloat() * 3f,
-                phase = (sparkleRandom.nextFloat() * 1000).toLong()
+                phase = sparkleRandom.nextFloat() * (PI * 2).toFloat()
             )
         }
     }
+
+    val sparkleTransition = rememberInfiniteTransition(label = "sparkle")
+    val sparkleTime by sparkleTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (PI * 2).toFloat(),
+        animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)),
+        label = "sparkleTime"
+    )
 
     val pulseAlpha by animateFloatAsState(
         targetValue = if (isDragging) 1f else 0.7f,
@@ -123,9 +136,9 @@ fun NeonSlider(
             // Particle sparkles near thumb
             if (isDragging || animatedValue > 0.05f) {
                 sparkles.forEach { sparkle ->
-                    val sparkleAlpha = ((kotlin.math.sin(
-                        (System.currentTimeMillis() + sparkle.phase) * 0.005
-                    ) + 1) / 2).toFloat() * 0.8f * pulseAlpha
+                    val sparkleAlpha = ((sin(
+                        (sparkleTime + sparkle.phase).toDouble()
+                    ) + 1.0) / 2.0).toFloat() * 0.8f * pulseAlpha
 
                     val sparkleX = (filledWidth - 20.dp.toPx() + sparkle.offset * 40.dp.toPx())
                         .coerceIn(0f, size.width)
@@ -174,6 +187,6 @@ fun NeonSlider(
 private data class Sparkle(
     val offset: Float,
     val size: Float,
-    val phase: Long
+    val phase: Float
 )
 
