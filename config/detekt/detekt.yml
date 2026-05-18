@@ -612,6 +612,7 @@ style:
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.android.synthetic.*'
+      - 'androidx.compose.runtime.*'
       - 'androidx.compose.material3.*'
       - 'androidx.compose.foundation.layout.*'
       - 'androidx.compose.ui.*'
