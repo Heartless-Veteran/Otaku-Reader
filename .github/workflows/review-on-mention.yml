@@ -28,7 +28,7 @@ jobs:
       trigger: ${{ steps.parse.outputs.trigger }}
     steps:
       - id: parse
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const login = context.payload.comment.user.login;
@@ -55,9 +55,6 @@ jobs:
             const body = context.payload.comment.body.toLowerCase();
             const triggers = [];
 
-            if (body.includes('@ai-review') || body.includes('@gemini-review') || body.includes('@aura-review')) {
-              triggers.push('ai');
-            }
             if (body.includes('@security-review')) {
               triggers.push('security');
             }
@@ -109,14 +106,13 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Post Help Message
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const prNumber = context.issue.number;
             const helpTable = [
               '| Trigger | Description |',
               '|---------|-------------|',
-              '| `@ai-review` | AI-powered code review |',
               '| `@security-review` | Security vulnerability scan |',
               '| `@style-review` / `@lint-review` | Code style and formatting |',
               '| `@architecture-review` / `@arch-review` | Architecture compliance |',
@@ -131,33 +127,6 @@ jobs:
               body: `👋 **Review Bot Help** — Available triggers (requires write access):\n\n${helpTable}`
             });
 
-  ai-review:
-    needs: parse-mention
-    if: contains(needs.parse-mention.outputs.trigger, 'ai') || contains(needs.parse-mention.outputs.trigger, 'full')
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: Post AI Review Request
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        with:
-          script: |
-            const prNumber = context.issue.number;
-            const { data: files } = await github.rest.pulls.listFiles({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber
-            });
-            
-            const fileList = files.map(f => `- \`${f.filename}\` (${f.status}, +${f.additions}/-${f.deletions})`).join('\n');
-            
-            await github.rest.issues.createComment({
-              issue_number: prNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🤖 **AI Code Review Requested by @${context.payload.comment.user.login}**\n\nAnalyzing ${files.length} changed files...\n\n${fileList}\n\n---\n\n**Review Areas:**\n- 🏗️ Architecture & Design Patterns\n- 🐛 Potential Bugs & Edge Cases\n- ⚡ Performance Considerations\n- 📋 Best Practices & Conventions\n- 🔒 Security Implications`
-            });
-
   security-review:
     needs: parse-mention
     if: contains(needs.parse-mention.outputs.trigger, 'security') || contains(needs.parse-mention.outputs.trigger, 'full')
@@ -166,7 +135,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Security Scan
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const prNumber = context.issue.number;
@@ -188,19 +157,19 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - name: Run ktlint
+      - uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+      - name: Run ktlint via Gradle
         id: ktlint
         run: |
-          curl -sSLO https://github.com/pinterest/ktlint/releases/download/1.2.1/ktlint
-          chmod +x ktlint
-          # Truncate to first 50 violations to keep the PR comment size reasonable
-          output=$(./ktlint --relative 2>&1 | head -50 || true)
+          # Use the project's pinned ktlint version from the Gradle plugin (no curl-and-run).
+          # Truncate to first 50 violations to keep the PR comment size reasonable.
+          output=$(./gradlew ktlintCheck --no-daemon 2>&1 | grep -E "\.kt:[0-9]" | head -50 || true)
           echo "output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         continue-on-error: true
       - name: Post Style Review
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           KTLINT_OUTPUT: ${{ steps.ktlint.outputs.output }}
         with:
@@ -227,7 +196,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Architecture Review
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const prNumber = context.issue.number;
@@ -258,7 +227,7 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Test Review
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const prNumber = context.issue.number;

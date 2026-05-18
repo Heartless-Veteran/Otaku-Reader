@@ -106,6 +106,7 @@ class MigrationViewModel @Inject constructor(
         _state.update { it.copy(migrationMode = mode) }
     }
 
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     private fun startMigration() {
         val targetSourceId = _state.value.selectedTargetSourceId
         if (targetSourceId == null) {

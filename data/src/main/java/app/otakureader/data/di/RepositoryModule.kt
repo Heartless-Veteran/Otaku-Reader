@@ -1,28 +1,31 @@
 package app.otakureader.data.di
 
-import app.otakureader.domain.repository.CategorizationRepository
 import app.otakureader.domain.repository.CategoryRepository
-import app.otakureader.domain.repository.ChapterSummaryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
-import app.otakureader.domain.repository.SfxTranslationRepository
-import app.otakureader.domain.repository.SmartSearchCacheRepository
-import app.otakureader.domain.repository.SourceIntelligenceRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.domain.repository.ReadingListRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
-import app.otakureader.data.repository.CategorizationRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
-import app.otakureader.data.repository.ChapterSummaryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
 import app.otakureader.data.repository.FeedRepositoryImpl
 import app.otakureader.data.repository.MangaRepositoryImpl
-import app.otakureader.data.repository.SfxTranslationRepositoryImpl
-import app.otakureader.data.repository.SmartSearchCacheRepositoryImpl
-import app.otakureader.data.repository.SourceIntelligenceRepositoryImpl
+import app.otakureader.data.repository.ReaderSettingsRepository
+import app.otakureader.data.loader.PageLoader as PageLoaderImpl
+import app.otakureader.data.history.WorkManagerHistoryScheduler
+import app.otakureader.domain.history.ReadingHistoryScheduler
+import app.otakureader.domain.loader.PageLoader
+import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
+import app.otakureader.data.repository.PageBookmarkRepositoryImpl
+import app.otakureader.data.repository.ReadingListRepositoryImpl
+import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import dagger.Binds
 import dagger.Module
@@ -32,11 +35,8 @@ import dagger.hilt.components.SingletonComponent
 /**
  * Hilt module binding all non-AI repositories.
  *
- * The [AiRepository] binding is intentionally absent here — it lives in a
- * flavor-specific DI module so it can be swapped between the real Gemini
- * implementation (`full`) and the no-op stub (`foss`):
- *  - `full`: [app.otakureader.data.di.AiRepositoryModule] (data/src/full/...)
- *  - `foss`: [app.otakureader.core.ainoop.di.NoOpAiModule] (core/ai-noop)
+ * AI-related repositories were removed in Phase 0 (AI extraction).
+ * They now live in the companion Otaku-Reader-AI module.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -78,27 +78,37 @@ abstract class RepositoryModule {
     ): FeedRepository
 
     @Binds
-    abstract fun bindCategorizationRepository(
-        impl: CategorizationRepositoryImpl
-    ): CategorizationRepository
+    abstract fun bindReaderSettingsRepository(
+        impl: ReaderSettingsRepository
+    ): ReaderSettingsRepositoryInterface
 
     @Binds
-    abstract fun bindSfxTranslationRepository(
-        impl: SfxTranslationRepositoryImpl
-    ): SfxTranslationRepository
+    abstract fun bindPageLoader(
+        impl: PageLoaderImpl
+    ): PageLoader
 
     @Binds
-    abstract fun bindChapterSummaryRepository(
-        impl: ChapterSummaryRepositoryImpl
-    ): ChapterSummaryRepository
+    abstract fun bindReadingHistoryScheduler(
+        impl: WorkManagerHistoryScheduler
+    ): ReadingHistoryScheduler
 
     @Binds
-    abstract fun bindSourceIntelligenceRepository(
-        impl: SourceIntelligenceRepositoryImpl
-    ): SourceIntelligenceRepository
+    abstract fun bindPageBookmarkRepository(
+        impl: PageBookmarkRepositoryImpl
+    ): PageBookmarkRepository
 
     @Binds
-    abstract fun bindSmartSearchCacheRepository(
-        impl: SmartSearchCacheRepositoryImpl
-    ): SmartSearchCacheRepository
+    abstract fun bindSourceRepository(
+        impl: SourceRepositoryImpl
+    ): SourceRepository
+
+    @Binds
+    abstract fun bindExtensionManagementRepository(
+        impl: SourceRepositoryImpl
+    ): ExtensionManagementRepository
+
+    @Binds
+    abstract fun bindReadingListRepository(
+        impl: ReadingListRepositoryImpl
+    ): ReadingListRepository
 }

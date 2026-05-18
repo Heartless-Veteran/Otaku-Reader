@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.R
 import kotlinx.coroutines.delay
 
@@ -67,6 +68,8 @@ fun EnhancedEmptyState(
 ) {
     var visible by remember { mutableStateOf(false) }
 
+    val otaku = LocalOtakuColors.current
+
     LaunchedEffect(Unit) {
         delay(100) // Small delay for entrance animation
         visible = true
@@ -92,7 +95,7 @@ fun EnhancedEmptyState(
                 modifier = Modifier
                     .size(80.dp)
                     .alpha(0.6f),
-                tint = MaterialTheme.colorScheme.primary
+                tint = otaku.accent
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -101,7 +104,7 @@ fun EnhancedEmptyState(
             Text(
                 text = title,
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = otaku.fg,
                 textAlign = TextAlign.Center
             )
 
@@ -111,7 +114,7 @@ fun EnhancedEmptyState(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = otaku.fgMuted,
                     textAlign = TextAlign.Center
                 )
             }

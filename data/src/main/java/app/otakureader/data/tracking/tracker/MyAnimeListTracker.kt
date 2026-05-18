@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.MalListStatus
 import app.otakureader.data.tracking.api.MyAnimeListApi
 import app.otakureader.data.tracking.api.MyAnimeListOAuthApi
@@ -27,15 +28,15 @@ class MyAnimeListTracker(
     private val oauthApi: MyAnimeListOAuthApi,
     private val api: MyAnimeListApi,
     private val clientId: String,
-    private val clientSecret: String,
-    private val redirectUri: String
+    private val redirectUri: String,
+    private val tokenStore: TrackerTokenStore,
 ) : Tracker {
 
     override val id: Int = TrackerType.MY_ANIME_LIST
     override val name: String = "MyAnimeList"
 
-    private var accessToken: String? = null
-    private var refreshToken: String? = null
+    private var accessToken: String? = tokenStore.getTokens(TrackerType.MY_ANIME_LIST)?.accessToken
+    private var refreshToken: String? = tokenStore.getTokens(TrackerType.MY_ANIME_LIST)?.refreshToken
     private val tokenMutex = Mutex()
 
     override val isLoggedIn: Boolean
@@ -49,7 +50,6 @@ class MyAnimeListTracker(
         return try {
             val response = oauthApi.getAccessToken(
                 clientId = clientId,
-                clientSecret = clientSecret,
                 code = password,
                 codeVerifier = username,
                 redirectUri = redirectUri
@@ -58,6 +58,11 @@ class MyAnimeListTracker(
                 accessToken = response.accessToken
                 refreshToken = response.refreshToken
             }
+            tokenStore.saveTokens(
+                trackerId = id,
+                accessToken = response.accessToken,
+                refreshToken = response.refreshToken,
+            )
             true
         } catch (e: Exception) {
             false
@@ -67,6 +72,7 @@ class MyAnimeListTracker(
     override fun logout() {
         accessToken = null
         refreshToken = null
+        tokenStore.clearTokens(id)
     }
 
     override suspend fun search(query: String): List<TrackEntry> {

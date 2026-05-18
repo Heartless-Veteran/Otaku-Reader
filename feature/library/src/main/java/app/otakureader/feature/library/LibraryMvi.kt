@@ -1,7 +1,8 @@
 package app.otakureader.feature.library
 
-import app.otakureader.domain.model.MangaRecommendation
+import app.otakureader.domain.model.ContinueReadingItem
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.model.ReadingGoal
 
 enum class LibrarySortMode {
     ALPHABETICAL,
@@ -16,7 +17,9 @@ enum class LibraryFilterMode {
     DOWNLOADED,
     UNREAD,
     COMPLETED,
-    TRACKING
+    DROPPED,
+    TRACKING,
+    READING_LIST
 }
 
 data class LibraryState(
@@ -31,6 +34,8 @@ data class LibraryState(
     val selectedCategory: Long? = null,
     val gridSize: Int = 3,
     val showBadges: Boolean = true,
+    val isStaggeredGrid: Boolean = false,
+    val visualEffectsEnabled: Boolean = true,
     val filterHasNotes: Boolean = false,
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
     val filterMode: LibraryFilterMode = LibraryFilterMode.ALL,
@@ -38,11 +43,14 @@ data class LibraryState(
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
     val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
-    // Recommendations
-    val recommendations: List<MangaRecommendation> = emptyList(),
-    val isLoadingRecommendations: Boolean = false,
-    val recommendationsError: String? = null,
-    val hasEnoughMangaForRecommendations: Boolean = false
+    // Reading list filter
+    val readingLists: List<ReadingListFilterItem> = emptyList(),
+    val filterReadingListId: Long? = null,
+    val readingListMangaIds: Set<Long> = emptySet(),
+    // Continue Reading
+    val continueReadingItems: List<ContinueReadingItem> = emptyList(),
+    // Daily reading goal progress (shown in header when a goal is set)
+    val readingGoal: ReadingGoal = ReadingGoal()
 )
 
 data class LibraryMangaItem(
@@ -58,10 +66,19 @@ data class LibraryMangaItem(
     val isNsfw: Boolean = false,
     val lastRead: Long? = null,
     val dateAdded: Long = 0L,
-    val status: MangaStatus = MangaStatus.UNKNOWN
+    val status: MangaStatus = MangaStatus.UNKNOWN,
+    val totalChapterCount: Int = 0,
+    val userCompleted: Boolean = false,
+    val userDropped: Boolean = false
 )
 
 data class CategoryItem(
+    val id: Long,
+    val name: String,
+    val count: Int
+)
+
+data class ReadingListFilterItem(
     val id: Long,
     val name: String,
     val count: Int
@@ -86,17 +103,15 @@ sealed class LibraryEvent {
     data object MarkSelectedAsUnread : LibraryEvent()
     data object RemoveSelectedFromLibrary : LibraryEvent()
     data object DownloadSelected : LibraryEvent()
-    // Recommendations
-    data object LoadRecommendations : LibraryEvent()
-    data object RefreshRecommendations : LibraryEvent()
-    data class DismissRecommendation(val recommendationTitle: String) : LibraryEvent()
-    data class OnRecommendationClick(val recommendation: MangaRecommendation) : LibraryEvent()
+    // Continue Reading
+    data class ContinueReadingClick(val mangaId: Long, val chapterId: Long) : LibraryEvent()
+    // Reading list filter (null = clear/show all)
+    data class SetFilterReadingList(val listId: Long?) : LibraryEvent()
 }
 
 sealed class LibraryEffect {
     data class NavigateToManga(val mangaId: Long) : LibraryEffect()
-    data class NavigateToReader(val mangaId: Long, val chapterId: Long?) : LibraryEffect()
+    data class NavigateToReader(val mangaId: Long, val chapterId: Long) : LibraryEffect()
     data class ShowError(val message: String) : LibraryEffect()
     data class NavigateToMigration(val selectedMangaIds: List<Long>) : LibraryEffect()
-    data class NavigateToRecommendationSearch(val title: String) : LibraryEffect()
 }

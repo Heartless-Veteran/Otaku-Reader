@@ -1,4 +1,4 @@
-package app.otakureader.feature.reader.panel
+package app.otakureader.feature.reader.services
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -23,7 +23,7 @@ import javax.inject.Singleton
 /**
  * Service for caching panel analysis results.
  * 
- * This service provides persistent caching of Gemini Vision panel analysis
+ * This service provides persistent caching of local panel analysis
  * results to avoid re-analyzing the same pages. It uses a hybrid approach:
  * - DataStore for metadata and quick lookups
  * - Files for storing full analysis results (JSON)

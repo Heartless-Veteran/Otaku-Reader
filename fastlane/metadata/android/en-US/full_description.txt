@@ -1,0 +1,7 @@
+{
+  "title": "Otaku Reader",
+  "short_description": "Modern manga reader — no AI, no cloud, no ads",
+  "full_description": "Otaku Reader is a free and open-source manga reader for Android. Built from the ground up with modern architecture: Jetpack Compose, Material You, Room, DataStore, and Hilt.\n\n**No AI. No cloud sync. No ads. No tracking.**\n\n**Key Features:**\n- Clean Material 3 UI with dynamic color\n- Browse and read manga from multiple sources\n- Download chapters for offline reading (CBZ format)\n- Library with categories, filters, and search\n- Reader supports paged (LTR/RTL), webtoon, and continuous modes\n- Track reading progress with AniList, MyAnimeList, or Kitsu\n- Local source: import CBZ/CBR/ZIP/folders via SAF\n- OPDS catalog support\n- Migration between sources\n- Local backup/restore (JSON inside ZIP)\n- In-app update checker (GitHub Releases)\n- Dark mode + AMOLED black theme\n- Android 15+ edge-to-edge support\n\n**Architecture:**\n- Jetpack Compose + MVI pattern\n- Hilt dependency injection\n- Room database with FTS search\n- DataStore Proto for settings\n- WorkManager for downloads and updates\n- Paging 3 for infinite scroll\n\nSource code: https://github.com/HeartlessVeteran2/Otaku-Reader",
+  "changelog": "Phase 4: Performance optimization with Baseline Profiles and Startup Benchmarks. AI code fully removed.",
+  "video": ""
+}

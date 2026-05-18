@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="more_title">More</string>
+    <string name="more_back">Back</string>
+    <string name="more_app_name">Otaku Reader</string>
     
     <!-- Settings -->
     <string name="more_settings">Settings</string>
@@ -25,4 +27,42 @@
     <!-- Backup & Restore -->
     <string name="more_backup">Backup &amp; Restore</string>
     <string name="more_backup_desc">Back up and restore your library data</string>
+
+    <!-- Feed -->
+    <string name="more_feed">Feed</string>
+    <string name="more_feed_desc">Latest updates from followed manga</string>
+
+    <!-- QR Library Sharing -->
+    <string name="more_share_library">Share Library</string>
+    <string name="more_share_library_desc">Show a QR code to share your manga list</string>
+    <string name="more_scan_library">Scan Library</string>
+    <string name="more_scan_library_desc">Import manga from a friend\'s QR code</string>
+    <string name="more_scan_library_title">Scan Library</string>
+    <string name="more_scan_library_opening_camera">Opening camera…</string>
+    <string name="more_scan_library_try_again">Try Again</string>
+    <string name="more_scan_library_importing">Importing library…</string>
+    <string name="more_scan_library_import_complete">Import complete!</string>
+    <string name="more_scan_library_import_result">%1$d added, %2$d not found locally</string>
+    <string name="more_scan_library_import_failed">Import failed: %1$s</string>
+    <string name="more_scan_library_retry">Retry</string>
+    <string name="more_scan_library_found">Library found!</string>
+    <string name="more_scan_library_ready_to_import">%1$d manga ready to import</string>
+    <string name="more_scan_library_add_to_library">Add to My Library</string>
+    <string name="more_scan_library_scan_another">Scan Another</string>
+    <string name="more_scan_library_prompt">Point your camera at a library QR code</string>
+
+    <!-- Version footer -->
+    <string name="more_version_label">Otaku Reader v%s</string>
+
+    <!-- Update Errors -->
+    <string name="more_update_errors">Update Errors</string>
+    <string name="more_update_errors_desc">Review and clear update failures</string>
+
+    <!-- ShareLibraryScreen -->
+    <string name="more_share_library_title">Share Library</string>
+    <string name="more_share_library_hint">Show this QR code to a friend to share your library</string>
+    <string name="more_share_library_qr_cd">QR code containing library data</string>
+    <string name="more_share_library_scan_button">Scan Someone Else\'s Library</string>
+    <string name="more_share_library_encode_error">Failed to encode library: %1$s</string>
+    <string name="more_share_library_qr_error">Failed to generate QR code</string>
 </resources>

@@ -9,8 +9,20 @@ plugins {
     alias(libs.plugins.hilt) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
+    alias(libs.plugins.license.report) apply false
+    alias(libs.plugins.cyclonedx.bom) apply false
     // R-4: detekt static analysis applied to all subprojects
     alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    version.set("1.8.0")
+    android.set(true)
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
 }
 
 detekt {
@@ -24,7 +36,6 @@ detekt {
         "data/src",
         "domain/src",
         "feature",
-        "server/src"
     )
 }
 
@@ -71,6 +82,12 @@ allprojects {
 
             // Log4j Core - fixes XMLLayout sanitization and RCE (CVE-2021-44228); bumped to 2.25.4
             force("org.apache.logging.log4j:log4j-core:2.25.4")
+
+            // logback — fixes CVE-2024-12798 (ACE, 7.3), CVE-2023-6378 (DoS, 7.1),
+            // CVE-2025-11226 (ACE, 6.9), CVE-2026-1225 (class instantiation, 5.0),
+            // CVE-2024-12801 (SSRF, 4.6); all resolved in 1.5.18+
+            force("ch.qos.logback:logback-core:1.5.25")
+            force("ch.qos.logback:logback-classic:1.5.25")
 
             // Plexus Utils - fixes directory traversal (CVSS 7.5)
             force("org.codehaus.plexus:plexus-utils:4.0.3")

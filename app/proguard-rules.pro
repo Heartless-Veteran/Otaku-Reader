@@ -23,13 +23,15 @@
 -dontwarn okhttp3.**
 -dontwarn okio.**
 
-# ML Kit - Text Recognition and Image Labeling
-# Keep ML Kit classes to prevent runtime failures when models are loaded via reflection
--keep class com.google.mlkit.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
--keep class com.google.android.odml.** { *; }
--dontwarn com.google.mlkit.**
--dontwarn com.google.android.gms.internal.mlkit_vision_common.**
+# Keep custom Coil 3 Decoder implementations loaded reflectively by the ImageLoader pipeline.
+# Without this, R8 would strip Factory/create() methods that Coil discovers at runtime.
+-keep class * implements coil3.decode.Decoder { *; }
+-keep class * implements coil3.decode.Decoder$Factory { *; }
 
 # NOTE: Firebase/Firestore rules were removed — Firebase is not a project dependency.
 # If Firebase is added in the future, re-add the appropriate keep rules.
+
+# Keep Glance widget entry points and AppWidget subclasses
+-keep class * extends androidx.glance.appwidget.GlanceAppWidget { *; }
+-keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver { *; }
+-keep @dagger.hilt.EntryPoint interface * { *; }

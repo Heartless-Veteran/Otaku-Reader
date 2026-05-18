@@ -24,6 +24,7 @@ class CropBorderTransformation(private val config: CropConfig = CropConfig()) : 
             "-${config.maxCropPercent}-${config.detectWhiteBorders}-${config.detectBlackBorders}" +
             "-${config.enabled}"
 
+    @Suppress("LoopWithTooManyJumpStatements", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod", "ComplexCondition")
     override suspend fun transform(input: Bitmap, size: Size): Bitmap {
         if (!config.enabled) return input
 

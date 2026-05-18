@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.details
 
 import androidx.compose.animation.AnimatedContent
@@ -63,6 +64,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
+import app.otakureader.core.common.estimateReadTimeMinutes
+import app.otakureader.core.common.formatReadTime
+import app.otakureader.core.common.estimatePageCount
 import coil3.compose.AsyncImage
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -154,6 +158,7 @@ fun ChapterList(
 }
 
 @Composable
+@Suppress("UnusedParameter")
 private fun ChapterListHeader(
     chapterCount: Int,
     selectedCount: Int,
@@ -312,7 +317,7 @@ fun ChapterListItem(
         targetValue = if (chapter.read) 0.6f else 1f,
         label = "readAlpha"
     )
-
+    val chapterNameFormat = stringResource(R.string.details_chapter_number_format)
     var showMenu by remember { mutableStateOf(false) }
 
     Card(
@@ -350,7 +355,7 @@ fun ChapterListItem(
                 if (chapter.thumbnailUrl != null) {
                     AsyncImage(
                         model = chapter.thumbnailUrl,
-                        contentDescription = "Chapter thumbnail",
+                        contentDescription = stringResource(R.string.details_chapter_thumbnail_cd),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -365,7 +370,7 @@ fun ChapterListItem(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             Text(
-                                text = "Load\npreview",
+                                text = stringResource(R.string.details_chapter_load_preview),
                                 style = MaterialTheme.typography.labelSmall,
                                 textAlign = TextAlign.Center
                             )
@@ -387,7 +392,7 @@ fun ChapterListItem(
             // Chapter info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatChapterName(chapter),
+                    text = formatChapterName(chapter, chapterNameFormat),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = if (chapter.read) FontWeight.Normal else FontWeight.Medium,
                     maxLines = 1,
@@ -426,9 +431,21 @@ fun ChapterListItem(
                 if (chapter.lastPageRead > 0 && !chapter.read && chapter.totalPages > 0) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Page ${chapter.lastPageRead} / ${chapter.totalPages}",
+                        text = stringResource(R.string.details_chapter_reading_progress, chapter.lastPageRead, chapter.totalPages),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Read time estimate
+                if (!chapter.read) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    val estPages = if (chapter.totalPages > 0) chapter.totalPages else estimatePageCount(chapter.chapterNumber, -1)
+                    val estMinutes = estimateReadTimeMinutes(estPages)
+                    Text(
+                        text = stringResource(R.string.details_chapter_read_time, formatReadTime(estMinutes)),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -444,7 +461,11 @@ fun ChapterListItem(
                             } else {
                                 Icons.Default.Circle
                             },
-                            contentDescription = if (chapter.read) stringResource(R.string.details_chapter_mark_as_unread) else stringResource(R.string.details_chapter_mark_as_read),
+                            contentDescription = if (chapter.read) {
+                                stringResource(R.string.details_chapter_mark_as_unread)
+                            } else {
+                                stringResource(R.string.details_chapter_mark_as_read)
+                            },
                             tint = if (chapter.read) {
                                 MaterialTheme.colorScheme.primary
                             } else {
@@ -461,7 +482,11 @@ fun ChapterListItem(
                             } else {
                                 Icons.Default.BookmarkBorder
                             },
-                            contentDescription = if (chapter.bookmark) stringResource(R.string.details_chapter_remove_bookmark) else stringResource(R.string.details_chapter_bookmark),
+                            contentDescription = if (chapter.bookmark) {
+                                stringResource(R.string.details_chapter_remove_bookmark)
+                            } else {
+                                stringResource(R.string.details_chapter_bookmark)
+                            },
                             tint = if (chapter.bookmark) {
                                 MaterialTheme.colorScheme.secondary
                             } else {
@@ -487,14 +512,22 @@ fun ChapterListItem(
         onDismissRequest = { showMenu = false }
     ) {
         DropdownMenuItem(
-            text = { Text(stringResource(if (chapter.read) R.string.details_chapter_mark_as_unread else R.string.details_chapter_mark_as_read)) },
+            text = {
+                val resId = if (chapter.read) R.string.details_chapter_mark_as_unread
+                    else R.string.details_chapter_mark_as_read
+                Text(stringResource(resId))
+            },
             onClick = {
                 onToggleRead()
                 showMenu = false
             }
         )
         DropdownMenuItem(
-            text = { Text(stringResource(if (chapter.bookmark) R.string.details_chapter_remove_bookmark else R.string.details_chapter_bookmark)) },
+            text = {
+                val resId = if (chapter.bookmark) R.string.details_chapter_remove_bookmark
+                    else R.string.details_chapter_bookmark
+                Text(stringResource(resId))
+            },
             onClick = {
                 onToggleBookmark()
                 showMenu = false
@@ -568,24 +601,25 @@ private fun DownloadIcon(
         },
         modifier = modifier
     ) {
+        val downloadContentDesc = when (status) {
+            DetailsContract.DownloadStatus.NOT_DOWNLOADED -> stringResource(R.string.details_chapter_download)
+            DetailsContract.DownloadStatus.DOWNLOADING -> stringResource(R.string.details_chapter_downloading)
+            DetailsContract.DownloadStatus.DOWNLOADED -> stringResource(R.string.details_chapter_delete_download)
+        }
         Icon(
             imageVector = icon,
-            contentDescription = when (status) {
-                DetailsContract.DownloadStatus.NOT_DOWNLOADED -> "Download chapter"
-                DetailsContract.DownloadStatus.DOWNLOADING -> "Downloading"
-                DetailsContract.DownloadStatus.DOWNLOADED -> "Delete download"
-            },
+            contentDescription = downloadContentDesc,
             tint = tint
         )
     }
 }
 
-/**
- * Format chapter name for display
- */
-private fun formatChapterName(chapter: DetailsContract.ChapterItem): String {
+private fun formatChapterName(chapter: DetailsContract.ChapterItem, chapterFormat: String): String {
     return when {
-        chapter.chapterNumber >= 0 -> "Chapter ${chapter.chapterNumber.toInt()}${if (chapter.name.contains(":")) chapter.name.substringAfter(":") else ""}".trim()
+        chapter.chapterNumber >= 0 -> {
+            val suffix = if (chapter.name.contains(":")) chapter.name.substringAfter(":") else ""
+            String.format(chapterFormat, chapter.chapterNumber.toInt(), suffix).trim()
+        }
         else -> chapter.name
     }
 }

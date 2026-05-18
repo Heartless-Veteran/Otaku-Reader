@@ -1,9 +1,11 @@
-import app.otakureader.buildlogic.libs
 import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.the
+import org.jetbrains.kotlin.compose.compiler.gradle.ComposeCompilerGradlePluginExtension
 
 class AndroidLibraryComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -16,6 +18,14 @@ class AndroidLibraryComposeConventionPlugin : Plugin<Project> {
                 }
             }
 
+            // Wire up the project-wide Compose compiler stability configuration.
+            extensions.configure<ComposeCompilerGradlePluginExtension> {
+                stabilityConfigurationFiles.add(
+                    rootProject.layout.projectDirectory.file("compose_compiler_config.conf")
+                )
+            }
+
+            val libs = the<VersionCatalogsExtension>().named("libs")
             dependencies {
                 val bom = libs.findLibrary("compose-bom").get()
                 add("implementation", platform(bom))

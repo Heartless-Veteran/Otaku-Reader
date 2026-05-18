@@ -4,8 +4,7 @@
     "config:recommended",
     ":dependencyDashboard",
     ":semanticPrefixFixDepsChoreOthers",
-    ":ignoreUnstable",
-    ":automergeDisabled"
+    ":ignoreUnstable"
   ],
   "schedule": [
     "before 5am on saturday"
@@ -22,6 +21,82 @@
       "groupName": "All Dependencies",
       "groupSlug": "all-deps",
       "matchPackageNames": ["**"]
+    },
+    {
+      "description": "Automerge minor and patch updates for GitHub Actions — low risk, well-sandboxed",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Automerge minor and patch updates for Kotlin test libraries — no production impact",
+      "matchPackageNames": [
+        "org.jetbrains.kotlinx:kotlinx-coroutines-test",
+        "io.mockk:mockk",
+        "app.cash.turbine:turbine",
+        "junit:junit",
+        "org.robolectric:robolectric",
+        "androidx.test:core",
+        "androidx.test:core-ktx",
+        "androidx.test.ext:junit",
+        "androidx.test.ext:junit-ktx",
+        "com.github.takahirom.roborazzi:roborazzi",
+        "com.github.takahirom.roborazzi:roborazzi-compose",
+        "com.github.takahirom.roborazzi:roborazzi-junit-rule"
+      ],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Automerge minor and patch for kotlinx.serialization and kotlinx.coroutines core — stable, low risk",
+      "matchPackageNames": [
+        "org.jetbrains.kotlinx:kotlinx-serialization-json",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-android",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core"
+      ],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Never automerge major updates — always require manual review",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "Group Kotlin + KSP + Compose Compiler plugin + Compose BOM + AGP into a single PR. Version drift between these is the #1 source of build breakage, so they must always bump together and never auto-merge.",
+      "groupName": "kotlin-ksp-compose-agp toolchain",
+      "groupSlug": "kotlin-toolchain",
+      "matchPackageNames": [
+        "org.jetbrains.kotlin:**",
+        "org.jetbrains.kotlin.android",
+        "org.jetbrains.kotlin.jvm",
+        "org.jetbrains.kotlin.plugin.serialization",
+        "org.jetbrains.kotlin.plugin.compose",
+        "com.google.devtools.ksp",
+        "com.google.devtools.ksp:**",
+        "com.android.tools.build:gradle",
+        "com.android.application",
+        "com.android.library",
+        "com.android.test",
+        "androidx.compose:compose-bom"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Never automerge security-sensitive networking/crypto dependencies",
+      "matchPackageNames": [
+        "com.squareup.okhttp3:okhttp",
+        "com.squareup.okhttp3:*",
+        "androidx.security:*",
+        "com.google.crypto.tink:*"
+      ],
+      "automerge": false
     }
   ],
   "vulnerabilityAlerts": {

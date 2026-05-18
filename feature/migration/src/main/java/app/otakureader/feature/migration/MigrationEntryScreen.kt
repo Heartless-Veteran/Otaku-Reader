@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.migration
 
 import androidx.compose.foundation.layout.Arrangement
@@ -184,7 +185,11 @@ fun MigrationEntryScreen(
                 filtered.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = if (state.searchQuery.isBlank()) stringResource(R.string.migration_entry_library_empty) else stringResource(R.string.migration_entry_no_results),
+                            text = if (state.searchQuery.isBlank()) {
+                                stringResource(R.string.migration_entry_library_empty)
+                            } else {
+                                stringResource(R.string.migration_entry_no_results)
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

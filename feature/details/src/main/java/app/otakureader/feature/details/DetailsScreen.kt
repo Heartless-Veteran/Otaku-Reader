@@ -1,5 +1,10 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.details
 
+import android.content.Intent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,17 +14,25 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AspectRatio
@@ -29,6 +42,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PlayArrow
@@ -36,6 +50,7 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -46,8 +61,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -57,19 +73,28 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import android.content.Intent
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -84,19 +109,39 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.preferences.DeleteAfterReadMode
+import app.otakureader.core.ui.adaptive.isExpanded
+import app.otakureader.core.ui.adaptive.rememberWindowWidthSizeClass
+import app.otakureader.core.ui.background.CoverSplashBackground
 import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
+import app.otakureader.core.ui.components.GlitchText
+import app.otakureader.core.ui.components.GlowButton
+import app.otakureader.core.ui.components.InkButton
+import app.otakureader.core.ui.components.TypewriterText
+import app.otakureader.core.ui.theme.ContentType
+import app.otakureader.core.ui.theme.LocalOtakuColors
+import app.otakureader.core.ui.theme.MangaDynamicTheme
+import app.otakureader.core.ui.theme.manhwaAccent
+import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
-import app.otakureader.core.preferences.DeleteAfterReadMode
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material3.OutlinedButton
 
 private val MARKDOWN_BOLD_REGEX = Regex("""\*\*(.+?)\*\*""")
 private val MARKDOWN_ITALIC_REGEX = Regex("""(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)""")
+
+// Two-pane split for the Expanded width class. The info pane is given slightly
+// more horizontal space than the chapter list because the manga header and
+// description benefit from extra width; the two weights must sum to 1f.
+private const val INFO_PANE_WEIGHT = 0.55f
+private const val CHAPTER_PANE_WEIGHT = 0.45f
+
+// Parallax hero constants
+private const val HERO_TOP_BAR_FADE_RANGE = 600f
+private const val HERO_BG_PARALLAX_FACTOR = 0.4f
+private const val HERO_FG_PARALLAX_FACTOR = 0.15f
+private const val HERO_BG_SCALE = 1.15f
 private val MARKDOWN_LINK_REGEX = Regex("""\[(.+?)]\((.+?)\)""")
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,6 +157,23 @@ fun DetailsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val isExpanded = rememberWindowWidthSizeClass().isExpanded
+    val listState = rememberLazyListState()
+    val heroScrollOffset by remember {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex == 0)
+                listState.firstVisibleItemScrollOffset.toFloat()
+            else
+                Float.MAX_VALUE
+        }
+    }
+    // In expanded (tablet) layout there is no parallax hero — keep the TopAppBar fully opaque.
+    val topBarAlpha by remember(isExpanded) {
+        derivedStateOf {
+            if (isExpanded) 1f
+            else (heroScrollOffset / HERO_TOP_BAR_FADE_RANGE).coerceIn(0f, 1f)
+        }
+    }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -148,15 +210,30 @@ fun DetailsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
+    val dynamicScheme = rememberCoverColorScheme(
+        imageUrl = state.manga?.thumbnailUrl,
+        darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
+        enabled = state.autoThemeEnabled
+    )
+
+    MangaDynamicTheme(colorScheme = dynamicScheme) {
+        Scaffold(
+            topBar = {
             TopAppBar(
-                title = { Text(state.manga?.title ?: stringResource(R.string.details_title_fallback)) },
+                title = {
+                    Text(
+                        text = state.manga?.title ?: stringResource(R.string.details_title_fallback),
+                        modifier = Modifier.alpha(topBarAlpha),
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.details_back))
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = topBarAlpha),
+                ),
                 actions = {
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.details_refresh))
@@ -166,6 +243,29 @@ fun DetailsScreen(
                     }
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.OpenTracking) }) {
                         Icon(Icons.Default.QueryStats, contentDescription = stringResource(R.string.details_tracking))
+                    }
+                    var overflowExpanded by remember { mutableStateOf(false) }
+                    IconButton(onClick = { overflowExpanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                    }
+                    DropdownMenu(
+                        expanded = overflowExpanded,
+                        onDismissRequest = { overflowExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Download all chapters") },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.DownloadAllChapters)
+                                overflowExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Download unread chapters") },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.DownloadUnreadChapters)
+                                overflowExpanded = false
+                            }
+                        )
                     }
                 }
             )
@@ -184,7 +284,11 @@ fun DetailsScreen(
                     icon = { Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.details_continue_reading)) },
                     text = {
                         Text(
-                            if (state.hasUnreadChapters) stringResource(R.string.details_continue_reading) else stringResource(R.string.details_start_reading)
+                            if (state.hasUnreadChapters) {
+                                stringResource(R.string.details_continue_reading)
+                            } else {
+                                stringResource(R.string.details_start_reading)
+                            }
                         )
                     }
                 )
@@ -201,111 +305,66 @@ fun DetailsScreen(
             state.manga != null -> DetailsContent(
                 state = state,
                 onEvent = viewModel::onEvent,
+                listState = listState,
                 modifier = Modifier.padding(paddingValues)
             )
             else -> EmptyScreen(modifier = Modifier.padding(paddingValues))
         }
     }
 }
+}
 
 @Composable
 private fun DetailsContent(
     state: DetailsContract.State,
     onEvent: (DetailsContract.Event) -> Unit,
+    listState: LazyListState,
     modifier: Modifier = Modifier
 ) {
     val manga = state.manga ?: return
+    val widthSizeClass = rememberWindowWidthSizeClass()
+    val scrollOffset: () -> Float = {
+        if (listState.firstVisibleItemIndex == 0)
+            listState.firstVisibleItemScrollOffset.toFloat()
+        else Float.MAX_VALUE
+    }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            MangaHeader(
-                manga = manga,
-                isFavorite = state.isFavorite,
-                showPanoramaCover = state.showPanoramaCover,
-                onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
-                onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) }
-            )
+    if (widthSizeClass.isExpanded) {
+        // Tablet / DeX / desktop: split the screen so the chapter list isn't
+        // wasted vertical space below a long header. Each pane scrolls
+        // independently. We give the info pane slightly more room because
+        // the manga header and description benefit from extra width.
+        Row(modifier = modifier.fillMaxSize()) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(INFO_PANE_WEIGHT)
+                    .fillMaxHeight(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                detailsInfoItems(manga = manga, state = state, onEvent = onEvent)
+            }
+            VerticalDivider()
+            LazyColumn(
+                modifier = Modifier
+                    .weight(CHAPTER_PANE_WEIGHT)
+                    .fillMaxHeight(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                detailsChapterItems(state = state, onEvent = onEvent)
+            }
         }
-
-        item {
-            MangaDescription(
-                description = manga.description,
-                expanded = state.descriptionExpanded,
-                onToggle = { onEvent(DetailsContract.Event.ToggleDescription) },
-                aiSummary = state.aiSummary,
-                isGeneratingSummary = state.isGeneratingSummary,
-                aiSummaryEnabled = state.aiSummaryEnabled,
-                onGenerateAiSummary = { onEvent(DetailsContract.Event.GenerateAiSummary) }
-            )
-        }
-
-        item {
-            MangaNotes(
-                notes = manga.notes,
-                onEditClick = { onEvent(DetailsContract.Event.ShowNoteEditor) }
-            )
-        }
-
-        item {
-            SourceSuggestionsSection(
-                suggestions = state.sourceSuggestions,
-                isLoading = state.isLoadingSourceSuggestions,
-                error = state.sourceSuggestionsError,
-                onSuggestionClick = { suggestion ->
-                    onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
-                },
-                onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) }
-            )
-        }
-
-        item {
-            HorizontalDivider()
-        }
-
-        item {
-            DeleteAfterReadOption(
-                override = state.deleteAfterReadOverride,
-                globalEnabled = state.globalDeleteAfterRead,
-                onChange = { onEvent(DetailsContract.Event.SetDeleteAfterReadOverride(it)) }
-            )
-        }
-
-        item {
-            NotificationOption(
-                notifyEnabled = manga.notifyNewChapters,
-                onToggle = { onEvent(DetailsContract.Event.ToggleNotifications) }
-            )
-        }
-
-        item {
-            ReaderSettingsSection(
-                manga = manga,
-                onEvent = onEvent
-            )
-        }
-
-        item {
-            ChapterListHeader(
-                chapterCount = state.chapters.size,
-                sortOrder = state.chapterSortOrder,
-                isFilterActive = state.chapterFilter.isActive,
-                onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
-                onShowFilter = { onEvent(DetailsContract.Event.ShowChapterFilter) }
-            )
-        }
-
-        items(state.sortedChapters, key = { it.id }) { chapter ->
-            ChapterListItem(
-                chapter = chapter,
-                isSelected = state.selectedChapters.contains(chapter.id),
-                onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
-                onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
-                onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) }
-            )
+    } else {
+        // Phone / small tablet: single scrolling column with info above chapters.
+        LazyColumn(
+            state = listState,
+            modifier = modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            detailsInfoItems(manga = manga, state = state, onEvent = onEvent, scrollOffset = scrollOffset)
+            detailsChapterItems(state = state, onEvent = onEvent)
         }
     }
 
@@ -328,6 +387,105 @@ private fun DetailsContent(
     }
 }
 
+/** Manga header, description, notes, source suggestions, and per-manga options. */
+private fun LazyListScope.detailsInfoItems(
+    manga: app.otakureader.domain.model.Manga,
+    state: DetailsContract.State,
+    onEvent: (DetailsContract.Event) -> Unit,
+    scrollOffset: () -> Float = { 0f },
+) {
+    item {
+        MangaHeader(
+            manga = manga,
+            isFavorite = state.isFavorite,
+            showPanoramaCover = state.showPanoramaCover,
+            onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
+            onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) },
+            scrollOffset = scrollOffset,
+        )
+    }
+
+    item {
+        MangaDescription(
+            description = manga.description,
+            expanded = state.descriptionExpanded,
+            onToggle = { onEvent(DetailsContract.Event.ToggleDescription) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+
+    item {
+        MangaNotes(
+            notes = manga.notes,
+            onEditClick = { onEvent(DetailsContract.Event.ShowNoteEditor) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+    }
+
+    item {
+        SourceSuggestionsSection(
+            suggestions = state.sourceSuggestions,
+            isLoading = state.isLoadingSourceSuggestions,
+            error = state.sourceSuggestionsError,
+            onSuggestionClick = { suggestion ->
+                onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
+            },
+            onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+    }
+
+    item { HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp)) }
+
+    item {
+        DeleteAfterReadOption(
+            override = state.deleteAfterReadOverride,
+            globalEnabled = state.globalDeleteAfterRead,
+            onChange = { onEvent(DetailsContract.Event.SetDeleteAfterReadOverride(it)) }
+        )
+    }
+
+    item {
+        NotificationOption(
+            notifyEnabled = manga.notifyNewChapters,
+            onToggle = { onEvent(DetailsContract.Event.ToggleNotifications) }
+        )
+    }
+
+    item {
+        ReaderSettingsSection(
+            manga = manga,
+            onEvent = onEvent
+        )
+    }
+}
+
+/** Chapter list header followed by the sorted chapter rows. */
+private fun LazyListScope.detailsChapterItems(
+    state: DetailsContract.State,
+    onEvent: (DetailsContract.Event) -> Unit,
+) {
+    item {
+        ChapterListHeader(
+            chapterCount = state.chapters.size,
+            sortOrder = state.chapterSortOrder,
+            isFilterActive = state.chapterFilter.isActive,
+            onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
+            onShowFilter = { onEvent(DetailsContract.Event.ShowChapterFilter) }
+        )
+    }
+
+    items(state.sortedChapters, key = { it.id }) { chapter ->
+        ChapterListItem(
+            chapter = chapter,
+            isSelected = state.selectedChapters.contains(chapter.id),
+            onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
+            onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
+            onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) }
+        )
+    }
+}
+
 @Composable
 private fun MangaHeader(
     manga: app.otakureader.domain.model.Manga,
@@ -335,10 +493,42 @@ private fun MangaHeader(
     showPanoramaCover: Boolean,
     onToggleFavorite: () -> Unit,
     onTogglePanoramaCover: () -> Unit,
+    scrollOffset: () -> Float = { 0f },
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
+
+    // Detect content type from sourceId string representation
+    val sourceIdStr = remember(manga.sourceId) { manga.sourceId.toString() }
+    val autoDetectedContentType = remember(sourceIdStr) {
+        val src = sourceIdStr.lowercase()
+        if (src.contains("manhwa") || src.contains("webtoon") ||
+            src.contains("korean") || src.contains("toon")
+        ) {
+            ContentType.MANHWA
+        } else {
+            ContentType.MANGA
+        }
+    }
+    // Local override toggle — survives recomposition, resets when manga changes
+    var isOverriddenManhwa by rememberSaveable(manga.id) {
+        mutableStateOf(autoDetectedContentType == ContentType.MANHWA)
+    }
+    val contentType = if (isOverriddenManhwa) ContentType.MANHWA else ContentType.MANGA
+
+    // Bloom enter animation — fades the hero in on first composition
+    var bloomProgress by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(manga.id) {
+        val animatable = Animatable(0f)
+        animatable.animateTo(1f, animationSpec = tween(800, easing = FastOutSlowInEasing))
+        bloomProgress = animatable.value
+    }
+
+    // Derive splash colors from the Material theme primary/secondary driven by MangaDynamicTheme
+    val dominantColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+    val vibrantColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
+
     Column(modifier = modifier.fillMaxWidth()) {
-        // Cover image - either panorama (wide) or standard (square)
         if (showPanoramaCover) {
             // Panorama mode - wide banner cover
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -350,8 +540,6 @@ private fun MangaHeader(
                         .fillMaxWidth()
                         .height(200.dp)
                 )
-                
-                // Toggle button overlay
                 IconButton(
                     onClick = onTogglePanoramaCover,
                     modifier = Modifier
@@ -369,80 +557,188 @@ private fun MangaHeader(
                 }
             }
         } else {
-            // Standard mode - thumbnail + info side by side
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Box {
-                    AsyncImage(
-                        model = manga.thumbnailUrl,
-                        contentDescription = manga.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(width = 120.dp, height = 180.dp)
+            // Enhanced hero — 360dp tall, bloom-animated, content-type-aware
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(360.dp)
+                    .graphicsLayer { alpha = bloomProgress }
+            ) {
+                // Background layer: CoverSplashBackground when cover URL available,
+                // fallback gradient otherwise
+                if (!manga.thumbnailUrl.isNullOrBlank()) {
+                    CoverSplashBackground(
+                        dominant = dominantColor,
+                        vibrant = vibrantColor,
+                        modifier = Modifier.fillMaxSize()
                     )
-                    
-                    // Toggle button overlay
-                    IconButton(
-                        onClick = onTogglePanoramaCover,
+                } else {
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(32.dp)
+                            .fillMaxSize()
                             .background(
-                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                shape = CircleShape
+                                Brush.verticalGradient(
+                                    listOf(Color(0xFF12121A), Color(0xFF0A0A0F))
+                                )
                             )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AspectRatio,
-                            contentDescription = stringResource(R.string.details_toggle_panorama),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = manga.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                // Blurred cover image — parallax depth layer
+                if (!manga.thumbnailUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = manga.thumbnailUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .blur(24.dp)
+                            .alpha(0.35f)
+                            .graphicsLayer {
+                                val offset = scrollOffset()
+                                translationY = offset * HERO_BG_PARALLAX_FACTOR
+                                scaleX = HERO_BG_SCALE
+                                scaleY = HERO_BG_SCALE
+                            }
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    manga.author?.let { author ->
-                        Text(
-                            text = stringResource(R.string.details_author, author),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                // Bottom gradient fade
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to Color.Transparent,
+                                0.45f to otaku.bg.copy(alpha = 0.35f),
+                                1f to otaku.bg.copy(alpha = 0.95f),
+                            )
                         )
+                )
+
+                // Foreground content row — cover + info, with subtle parallax
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
+                        .graphicsLayer { translationY = scrollOffset() * HERO_FG_PARALLAX_FACTOR },
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    // Cover thumbnail with panorama toggle
+                    Box {
+                        AsyncImage(
+                            model = manga.thumbnailUrl,
+                            contentDescription = manga.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(width = 100.dp, height = 150.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                        )
+                        IconButton(
+                            onClick = onTogglePanoramaCover,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(28.dp)
+                                .background(
+                                    color = Color.Black.copy(alpha = 0.5f),
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AspectRatio,
+                                contentDescription = stringResource(R.string.details_toggle_panorama),
+                                modifier = Modifier.size(14.dp),
+                                tint = Color.White,
+                            )
+                        }
                     }
 
-                    manga.artist?.let { artist ->
-                        Text(
-                            text = stringResource(R.string.details_artist, artist),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    // Title, author, action buttons
+                    Column(modifier = Modifier.weight(1f)) {
+                        // Animated title: TypewriterText for manga, GlitchText for manhwa
+                        val titleStyle = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
                         )
-                    }
+                        if (contentType == ContentType.MANGA) {
+                            TypewriterText(
+                                text = manga.title,
+                                style = titleStyle,
+                                speedMs = 40L
+                            )
+                        } else {
+                            GlitchText(
+                                text = manga.title,
+                                style = titleStyle
+                            )
+                        }
 
-                    Text(
-                        text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = manga.status.colorValue()
-                    )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        manga.author?.let { author ->
+                            Text(
+                                text = author,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.8f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
 
-                    FilledIconToggleButton(
-                        checked = isFavorite,
-                        onCheckedChange = { onToggleFavorite() }
-                    ) {
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                        // ContentType toggle chip
+                        AssistChip(
+                            onClick = { isOverriddenManhwa = !isOverriddenManhwa },
+                            label = {
+                                Text(
+                                    if (contentType == ContentType.MANGA) "Manga" else "Manhwa",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Read button — styled by content type
+                        if (contentType == ContentType.MANGA) {
+                            InkButton(onClick = onToggleFavorite) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = if (isFavorite)
+                                        stringResource(R.string.details_remove_from_library)
+                                    else
+                                        stringResource(R.string.details_add_to_library),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White
+                                )
+                            }
+                        } else {
+                            GlowButton(
+                                onClick = onToggleFavorite,
+                                glowColor = ContentType.MANHWA.manhwaAccent()
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = if (isFavorite)
+                                        stringResource(R.string.details_remove_from_library)
+                                    else
+                                        stringResource(R.string.details_add_to_library),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -496,7 +792,11 @@ private fun MangaHeader(
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (isFavorite) stringResource(R.string.details_remove_from_library) else stringResource(R.string.details_add_to_library)
+                        contentDescription = if (isFavorite) {
+                            stringResource(R.string.details_remove_from_library)
+                        } else {
+                            stringResource(R.string.details_add_to_library)
+                        }
                     )
                 }
             }
@@ -633,10 +933,6 @@ private fun MangaDescription(
     description: String?,
     expanded: Boolean,
     onToggle: () -> Unit,
-    aiSummary: String? = null,
-    isGeneratingSummary: Boolean = false,
-    aiSummaryEnabled: Boolean = false,
-    onGenerateAiSummary: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (description.isNullOrBlank()) return
@@ -652,51 +948,6 @@ private fun MangaDescription(
         if (description.length > 100) {
             TextButton(onClick = onToggle) {
                 Text(if (expanded) stringResource(R.string.details_show_less) else stringResource(R.string.details_show_more))
-            }
-        }
-
-        // AI Summary section – only shown when the feature toggle is on
-        if (aiSummaryEnabled) {
-            Spacer(modifier = Modifier.height(8.dp))
-            if (aiSummary != null) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            shape = MaterialTheme.shapes.small
-                        )
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.details_ai_summary_label),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = aiSummary,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            } else {
-                TextButton(
-                    onClick = onGenerateAiSummary,
-                    enabled = !isGeneratingSummary
-                ) {
-                    if (isGeneratingSummary) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.details_ai_summary_generating))
-                    } else {
-                        Text(stringResource(R.string.details_ai_summary_generate))
-                    }
-                }
             }
         }
     }
@@ -715,7 +966,11 @@ private fun DeleteAfterReadOption(
             supportingContent = {
                 Column(modifier = Modifier.selectableGroup()) {
                     val options = listOf(
-                        (if (globalEnabled) stringResource(R.string.details_delete_follow_global_on) else stringResource(R.string.details_delete_follow_global_off)) to DeleteAfterReadMode.INHERIT,
+                        (if (globalEnabled) {
+                            stringResource(R.string.details_delete_follow_global_on)
+                        } else {
+                            stringResource(R.string.details_delete_follow_global_off)
+                        }) to DeleteAfterReadMode.INHERIT,
                         stringResource(R.string.details_delete_on) to DeleteAfterReadMode.ENABLED,
                         stringResource(R.string.details_delete_off) to DeleteAfterReadMode.DISABLED
                     )
@@ -764,7 +1019,11 @@ private fun NotificationOption(
         leadingContent = {
             Icon(
                 imageVector = if (notifyEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                contentDescription = "Cover image",
+                contentDescription = if (notifyEnabled) {
+                    stringResource(R.string.details_notify_icon_on)
+                } else {
+                    stringResource(R.string.details_notify_icon_off)
+                },
                 tint = if (notifyEnabled) MaterialTheme.colorScheme.primary
                        else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -811,7 +1070,11 @@ private fun ReaderSettingsSection(
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = if (expanded) stringResource(R.string.details_collapse) else stringResource(R.string.details_expand)
+                        contentDescription = if (expanded) {
+                            stringResource(R.string.details_collapse)
+                        } else {
+                            stringResource(R.string.details_expand)
+                        }
                     )
                 }
             }
@@ -1340,8 +1603,6 @@ private fun EmptyScreen(modifier: Modifier = Modifier) {
         Text(stringResource(R.string.details_no_manga))
     }
 }
-
-private const val DISMISS_BUTTON_BACKGROUND_ALPHA = 0.72f
 
 @Composable
 private fun SourceSuggestionsSection(

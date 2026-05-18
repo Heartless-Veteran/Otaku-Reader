@@ -1,21 +1,27 @@
 package app.otakureader.core.ui.components
 
+import app.otakureader.core.ui.R
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,19 +36,24 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import app.otakureader.core.ui.R
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.modifiers.bottomGradientScrim
 
 /**
- * Enhanced manga card with loading states, error handling, and improved visuals.
+ * Enhanced manga card with loading states, error handling, selection overlay,
+ * reading progress bar, and Mihon-style title-on-gradient layout.
  *
  * @param title The manga title to display
  * @param coverUrl The URL of the manga cover image
  * @param onClick Callback when the card is clicked
  * @param modifier Modifier for customizing the layout
- * @param badge Optional composable to display as a badge (e.g., unread count)
+ * @param badge Optional composable for the top-right badge (e.g., unread count)
  * @param contentDescription Accessibility description for the cover image
+ * @param isSelected Whether the card is in selected state (shows checkmark overlay)
+ * @param readProgress 0f–1f fraction of chapters read; null hides the progress bar
+ * @param onLongClick Optional long-click callback (enables multi-select)
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaCard(
     title: String,
@@ -51,16 +62,23 @@ fun MangaCard(
     modifier: Modifier = Modifier,
     badge: @Composable (() -> Unit)? = null,
     contentDescription: String? = null,
+    isSelected: Boolean = false,
+    readProgress: Float? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    var imageLoadFailed by remember { mutableStateOf(false) }
+
+    val otaku = LocalOtakuColors.current
 
     Card(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Box {
-            // Cover image with loading and error states
+            // Cover image
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(coverUrl)
@@ -72,50 +90,52 @@ fun MangaCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(2f / 3f),
-                loading = {
-                    MangaCardShimmer()
-                },
-                error = {
-                    imageLoadFailed = true
-                    MangaCardError()
-                },
-                success = {
-                    imageLoadFailed = false
-                }
+                loading = { MangaCardShimmer() },
+                error = { MangaCardError() }
             )
 
-            // Gradient scrim for text readability (only show if image loaded)
-            if (!imageLoadFailed) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .bottomGradientScrim(
-                            heightPercent = 0.35f,
-                            startAlpha = 0.0f,
-                            endAlpha = 0.75f
+            // Left spine shadow for physical book depth
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(12.dp)
+                    .align(Alignment.CenterStart)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.5f),
+                                Color.Transparent
+                            )
                         )
-                )
-            }
+                    )
+            )
 
-            // Title overlay at bottom
+            // Gradient scrim for title readability
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+                    .bottomGradientScrim(
+                        heightPercent = 0.45f,
+                        startAlpha = 0.0f,
+                        endAlpha = 0.85f
+                    )
+            )
+
+            // Title overlaid at bottom
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (imageLoadFailed) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    Color.White
-                },
+                color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
+                    .padding(start = 8.dp, end = 8.dp, bottom = if (readProgress != null) 10.dp else 8.dp)
                     .fillMaxWidth(),
             )
 
-            // Optional badge (e.g., unread count)
+            // Unread / custom badge
             badge?.let {
                 Box(
                     modifier = Modifier
@@ -125,53 +145,55 @@ fun MangaCard(
                     it()
                 }
             }
+
+            // Selection overlay — semi-transparent tint + checkmark
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .background(otaku.accent.copy(alpha = 0.38f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = stringResource(R.string.manga_card_selected),
+                        tint = Color.White,
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+
+            // Reading progress bar — thin strip at the very bottom of the card
+            if (readProgress != null && readProgress > 0f) {
+                LinearProgressIndicator(
+                    progress = { readProgress.coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .align(Alignment.BottomCenter),
+                    color = otaku.accent,
+                    trackColor = otaku.surface3.copy(alpha = 0.5f),
+                )
+            }
         }
     }
 }
 
-/**
- * Placeholder shown while the manga cover is loading.
- * Alternative to MangaCardShimmer for static placeholder display.
- */
-@Suppress("UnusedPrivateMember")
-@Composable
-private fun MangaCardPlaceholder() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(2f / 3f)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-    ) {
-        // Shimmer effect could be added here
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .height(80.dp)
-                .background(
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f),
-                    shape = MaterialTheme.shapes.small
-                )
-        )
-    }
-}
-
-/**
- * Error state shown when the manga cover fails to load.
- */
 @Composable
 private fun MangaCardError() {
+    val otaku = LocalOtakuColors.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(2f / 3f)
-            .background(MaterialTheme.colorScheme.errorContainer),
+            .background(otaku.danger.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = "?",
             style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onErrorContainer
+            color = otaku.danger
         )
     }
 }

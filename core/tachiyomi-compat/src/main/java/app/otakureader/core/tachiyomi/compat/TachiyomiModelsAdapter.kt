@@ -25,7 +25,8 @@ object TachiyomiModelsAdapter {
             artist = sManga.artist,
             genre = sManga.genres,
             status = sManga.status,
-            initialized = sManga.initialized
+            initialized = sManga.initialized,
+            contentRating = sManga.contentRating.takeIf { it != SManga.CONTENT_SAFE },
         )
     }
 
@@ -69,6 +70,7 @@ object TachiyomiModelsAdapter {
     /**
      * Convert Tachiyomi SPage to Otaku Reader Page
      */
+    @Suppress("UnusedParameter")
     fun toPage(sPage: eu.kanade.tachiyomi.source.model.Page, chapterId: Long, index: Int): app.otakureader.sourceapi.Page {
         return app.otakureader.sourceapi.Page(
             index = index,
@@ -101,6 +103,7 @@ object TachiyomiModelsAdapter {
             status = sourceManga.status
             genre = sourceManga.genre ?: ""
             initialized = sourceManga.initialized
+            // contentRating is not settable on Tachiyomi's SManga OSS API — no round-trip possible.
         }
     }
 

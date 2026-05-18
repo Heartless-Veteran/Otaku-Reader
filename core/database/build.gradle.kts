@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.otakureader.android.library)
     alias(libs.plugins.otakureader.android.room)
     alias(libs.plugins.otakureader.android.hilt)
+    alias(libs.plugins.kover)
 }
 
 android {
@@ -9,6 +10,18 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
+    sourceSets {
+        getByName("test") {
+            assets.srcDir("schemas")
+        }
     }
 }
 
@@ -25,7 +38,15 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext.junit)
     testImplementation(libs.androidx.test.core)
-    // room-testing not needed: tests use Robolectric + Room.inMemoryDatabaseBuilder()
-    // MigrationTestHelper (provided by room-testing) is not used
-    // If migration tests are needed in the future, add room-testing and use MigrationTestHelper
+    testImplementation(libs.room.testing)
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(60)
+            }
+        }
+    }
 }

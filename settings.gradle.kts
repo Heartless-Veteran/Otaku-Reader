@@ -35,8 +35,6 @@ include(":core:navigation")
 include(":core:extension")
 include(":core:tachiyomi-compat")
 include(":core:discord")
-include(":core:ai")
-include(":core:ai-noop")
 
 // Domain layer
 include(":domain")
@@ -63,6 +61,3 @@ include(":feature:about")
 include(":feature:opds")
 include(":feature:feed")
 include(":feature:more")
-
-// Self-hosted sync server
-include(":server")

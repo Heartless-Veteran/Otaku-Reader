@@ -10,7 +10,7 @@ data class StatisticsState(
     val isLoading: Boolean = true,
     val stats: ReadingStats = ReadingStats(),
     val readingGoal: ReadingGoal = ReadingGoal(),
-    val error: String? = null
+    val error: String? = null,
 ) : UiState
 
 sealed interface StatisticsEvent : UiEvent {

@@ -4,18 +4,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,12 +26,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -109,13 +114,23 @@ fun GlobalSearchScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        GlobalSearchContent(
-            state = state,
-            onMangaClick = { sourceId, manga ->
-                viewModel.onEvent(GlobalSearchEvent.OnMangaClick(sourceId, manga))
-            },
-            modifier = Modifier.padding(paddingValues)
-        )
+        Column(modifier = Modifier.padding(paddingValues)) {
+            // Recent searches chip row
+            if (state.recentSearches.isNotEmpty() && !state.isSearching && state.sourceResults.isEmpty()) {
+                SearchHistoryChips(
+                    history = state.recentSearches,
+                    onItemClick = { viewModel.onEvent(GlobalSearchEvent.OnHistoryItemClick(it)) },
+                    onRemoveItem = { viewModel.onEvent(GlobalSearchEvent.OnRemoveHistoryItem(it)) },
+                    onClearHistory = { viewModel.onEvent(GlobalSearchEvent.OnClearHistory) }
+                )
+            }
+            GlobalSearchContent(
+                state = state,
+                onMangaClick = { sourceId, manga ->
+                    viewModel.onEvent(GlobalSearchEvent.OnMangaClick(sourceId, manga))
+                }
+            )
+        }
     }
 }
 
@@ -207,7 +222,7 @@ private fun SourceSection(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No results",
+                        text = stringResource(R.string.browse_no_results),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -258,6 +273,53 @@ private fun GlobalSearchMangaCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(4.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun SearchHistoryChips(
+    history: List<String>,
+    onItemClick: (String) -> Unit,
+    onRemoveItem: (String) -> Unit,
+    onClearHistory: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.search_history_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(onClick = onClearHistory) {
+                Text(stringResource(R.string.search_history_clear))
+            }
+        }
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 4.dp)
+        ) {
+            items(history, key = { it }) { query ->
+                InputChip(
+                    selected = false,
+                    onClick = { onItemClick(query) },
+                    label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    trailingIcon = {
+                        IconButton(onClick = { onRemoveItem(query) }, modifier = Modifier.size(18.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(R.string.search_history_remove),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                )
+            }
         }
     }
 }

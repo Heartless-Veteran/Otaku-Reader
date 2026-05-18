@@ -142,7 +142,6 @@ otaku-reader/
 │   ├── download/          # Download manager & provider
 │   ├── loader/            # Page loader (local-first)
 │   ├── repository/        # Repository implementations
-│   ├── sync/              # Self-hosted sync provider & manager
 │   └── worker/            # WorkManager background jobs
 ├── feature/               # Feature modules
 │   ├── about/             # About screen
@@ -158,7 +157,6 @@ otaku-reader/
 │   ├── statistics/        # Reading statistics & charts
 │   ├── tracking/          # Tracker integration (MAL, AniList, Kitsu…)
 │   └── updates/           # Updates & downloads
-├── server/                # Self-hosted sync server (Ktor + Docker)
 ├── source-api/            # Extension API contracts
 └── baselineprofile/       # Baseline profile for startup optimization
 ```
@@ -612,16 +610,16 @@ class LibraryViewModel @Inject constructor(
 - ❌ Don't expose mutable state from ViewModels
 - ❌ Don't use callbacks, prefer Flow/StateFlow
 
-## Self-Hosted Sync
+## Cloud Sync
 
-Otaku Reader includes a self-hosted sync solution for personal cross-device synchronization:
-
-- **Server**: Ktor-based HTTP API with Bearer authentication
-- **Client**: `SelfHostedSyncProvider` implementing `SyncProvider` interface
-- **Deployment**: Docker/Docker Compose for easy self-hosting
-- **Mode**: Manual backup/restore (no automatic sync)
-
-See [Self-Hosted Sync Architecture](self-hosted-sync.md) for implementation details and [Server Setup](../../server/README.md) for deployment instructions.
+> **Extracted.** The self-hosted sync server, the cloud `SyncManager` / `SyncProvider`
+> abstraction, the Self-Hosted / Google Drive / Dropbox / WebDAV providers, and the
+> background `SyncWorker` were moved to the
+> [Otaku-Reader-Sync](https://github.com/HeartlessVeteran2/Otaku-Reader-Sync) sibling
+> repository.
+>
+> The main app keeps **local backup & restore** (see `data/backup/`) and **tracker sync**
+> for AniList / MAL / Kitsu (see `data/tracking/` and `data/worker/TrackerSyncWorker.kt`).
 
 ---
 

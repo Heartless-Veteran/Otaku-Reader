@@ -1,9 +1,15 @@
 [versions]
+# Android SDK levels — the single source of truth for the entire project.
+# Update these keys here; all modules pick them up automatically via AndroidConfig.kt.
+compile-sdk = "36"
+target-sdk = "36"
+min-sdk = "26"
+
 # Core
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 agp = "9.1.1"
-# D-3: KSP version must match the Kotlin version prefix. Using 2.3.6 (latest available)
-ksp = "2.3.6"
+# D-3: KSP uses standalone versioning since 2.3.x. 2.3.7 is the latest patch release for the 2.3.x series.
+ksp = "2.3.7"
 
 # AndroidX
 core-ktx = "1.18.0"
@@ -11,9 +17,10 @@ appcompat = "1.7.1"
 activity-compose = "1.13.0"
 material = "1.13.0"
 palette = "1.0.0"
+exifinterface = "1.3.7"
 
 # Compose
-compose-bom = "2026.03.01"
+compose-bom = "2026.04.01"
 
 # Coroutines
 coroutines = "1.10.2"
@@ -22,12 +29,13 @@ coroutines = "1.10.2"
 lifecycle = "2.10.0"
 
 # Navigation
-navigation = "2.9.7"
-accompanist-navigation = "0.36.0"
+navigation = "2.9.8"
 
 # Hilt
 hilt = "2.59.2"
+# hilt-androidx covers all androidx.hilt artifacts: hilt-navigation-compose, hilt-work, hilt-compiler
 hilt-navigation-compose = "1.3.0"
+hilt-androidx = "1.3.0"
 
 # Room
 room = "2.8.4"
@@ -57,20 +65,37 @@ workmanager = "2.11.2"
 # Glance (widgets)
 glance = "1.1.1"
 
+# ProfileInstaller
+profileinstaller = "1.4.0"
+
+# Splash Screen
+splashscreen = "1.0.1"
+
+# QR / Barcode
+zxing-core = "3.5.3"
+zxing-android-embedded = "4.3.0"
+
 # Discord
 # Discord RPC is implemented natively in core/discord; no external library needed.
 
-# AI
-generativeai = "0.9.0"
-mlkit-text-recognition = "16.0.1"
-mlkit-image-labeling = "17.0.9"
+# RxJava (Tachiyomi extension API)
+rxjava = "1.3.8"
+rxandroid = "1.2.1"
 
-# Server (D-4: moved from hardcoded strings in server/build.gradle.kts)
-ktor = "3.4.2"
-logback = "1.5.32"
+# Desugaring
+desugar-jdk-libs = "2.1.5"
+
+# License reporting
+license-report = "2.8"
+
+# SBOM generation
+cyclonedx-bom = "1.9.0"
 
 # Static Analysis (R-4)
 detekt = "1.23.8"
+ktlint-gradle = "14.2.0"
+leakcanary = "2.14"
+roborazzi = "1.28.0"
 
 # Testing
 junit = "4.13.2"
@@ -81,6 +106,7 @@ espresso = "3.7.0"
 mockk = "1.14.9"
 turbine = "1.2.1"
 robolectric = "4.16.1"
+kover = "0.8.3"
 
 [libraries]
 # Kotlin
@@ -104,13 +130,14 @@ androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidge
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
 # Aliases matching code-style references (libs.paging.runtime, libs.paging.compose)
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 # Alias matching libs.workmanager.ktx
 workmanager-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
 # AndroidX Browser
-browser = { group = "androidx.browser", name = "browser", version = "1.8.0" }
+browser = { group = "androidx.browser", name = "browser", version = "1.10.0" }
 
 # Compose BOM
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
@@ -121,12 +148,11 @@ compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
-compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
-# Alias matching libs.compose.material.icons.extended
 compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 # Additional Compose artifacts (BOM-managed)
 compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
 
 # Lifecycle
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
@@ -139,22 +165,22 @@ lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-ru
 # Navigation
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
 navigation-runtime = { group = "androidx.navigation", name = "navigation-runtime", version.ref = "navigation" }
-accompanist-navigation-animation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version.ref = "accompanist-navigation" }
 
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-navigation-compose" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-androidx" }
 # Hilt WorkManager integration (libs.hilt.work) - uses androidx.hilt group
-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-navigation-compose" }
+hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-androidx" }
 # androidx.hilt annotation processor for @HiltWorker (libs.hilt.work.compiler)
-hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-navigation-compose" }
+hilt-work-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-androidx" }
 
 # Room
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
+room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 # DataStore
 datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
@@ -168,7 +194,6 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor" 
 okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-brotli = { group = "com.squareup.okhttp3", name = "okhttp-brotli", version.ref = "okhttp" }
 okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
-netty-all = { group = "io.netty", name = "netty-all", version.ref = "netty" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-scalars = { group = "com.squareup.retrofit2", name = "converter-scalars", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
@@ -182,23 +207,12 @@ coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", versi
 # Alias matching libs.coil.okhttp
 coil-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 
-# Ktor Server
-ktor-server-core = { group = "io.ktor", name = "ktor-server-core-jvm", version.ref = "ktor" }
-ktor-server-netty = { group = "io.ktor", name = "ktor-server-netty-jvm", version.ref = "ktor" }
-ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation-jvm", version.ref = "ktor" }
-ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json-jvm", version.ref = "ktor" }
-ktor-server-auth = { group = "io.ktor", name = "ktor-server-auth-jvm", version.ref = "ktor" }
-ktor-server-status-pages = { group = "io.ktor", name = "ktor-server-status-pages-jvm", version.ref = "ktor" }
-ktor-server-cors = { group = "io.ktor", name = "ktor-server-cors-jvm", version.ref = "ktor" }
-ktor-server-websockets = { group = "io.ktor", name = "ktor-server-websockets-jvm", version.ref = "ktor" }
-ktor-server-call-logging = { group = "io.ktor", name = "ktor-server-call-logging-jvm", version.ref = "ktor" }
-ktor-server-test-host = { group = "io.ktor", name = "ktor-server-test-host-jvm", version.ref = "ktor" }
-logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+# RxJava (Tachiyomi extension API)
+rxjava = { group = "io.reactivex", name = "rxjava", version.ref = "rxjava" }
+rxandroid = { group = "io.reactivex", name = "rxandroid", version.ref = "rxandroid" }
 
-# AI
-generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
-mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkit-text-recognition" }
-mlkit-image-labeling = { group = "com.google.mlkit", name = "image-labeling", version.ref = "mlkit-image-labeling" }
+# Desugaring (core library desugaring for API 26+ language features)
+android-desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar-jdk-libs" }
 
 # Gradle plugins (as libraries for build-logic)
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
@@ -207,6 +221,21 @@ ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "symbol-processin
 hilt-gradlePlugin = { group = "com.google.dagger", name = "hilt-android-gradle-plugin", version.ref = "hilt" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
 compose-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+
+# Debug tools
+leakcanary = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
+profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+# Splash Screen (branded launch experience on all API levels)
+splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
+
+# QR / Barcode
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing-core" }
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxing-android-embedded" }
+
+# Screenshot testing
+roborazzi-core = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit = { group = "io.github.takahirom.roborazzi", name = "roborazzi-junit-rule", version.ref = "roborazzi" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -242,18 +271,23 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-gradle" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 room = { id = "androidx.room", version.ref = "room" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 # Convention plugins (local)
 otakureader-android-application = { id = "otakureader.android.application", version = "unspecified" }
-otakureader-android-application-compose = { id = "otakureader.android.application.compose", version = "unspecified" }
-otakureader-android-application-flavors = { id = "otakureader.android.application.flavors", version = "unspecified" }
 otakureader-android-library = { id = "otakureader.android.library", version = "unspecified" }
 otakureader-android-library-compose = { id = "otakureader.android.library.compose", version = "unspecified" }
 otakureader-android-feature = { id = "otakureader.android.feature", version = "unspecified" }
 otakureader-android-hilt = { id = "otakureader.android.hilt", version = "unspecified" }
 otakureader-android-room = { id = "otakureader.android.room", version = "unspecified" }
 otakureader-kotlin-library = { id = "otakureader.kotlin.library", version = "unspecified" }
+license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "license-report" }
+cyclonedx-bom = { id = "org.cyclonedx.bom", version.ref = "cyclonedx-bom" }
+
 # Extra Android plugins for baselineprofile module
 android-test = { id = "com.android.test", version.ref = "agp" }
 baselineprofile = { id = "androidx.baselineprofile", version = "1.3.4" }
+

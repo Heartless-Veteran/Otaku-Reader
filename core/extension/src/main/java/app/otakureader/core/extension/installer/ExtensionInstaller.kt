@@ -1,6 +1,7 @@
 package app.otakureader.core.extension.installer
 
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.Intent
 import android.os.Build
@@ -46,9 +47,8 @@ class ExtensionInstaller(
 ) {
     
     companion object {
-        private const val EXTENSIONS_DIR = "extensions"
+        private const val EXTENSIONS_DIR = "exts"
         private const val DOWNLOADS_DIR = "extension_downloads"
-        private const val BUFFER_SIZE = 8192
     }
     
     private val _installationState = MutableStateFlow<InstallationState>(InstallationState.Idle)
@@ -59,7 +59,7 @@ class ExtensionInstaller(
     }
     
     private val downloadsDir: File by lazy {
-        File(context.cacheDir, DOWNLOADS_DIR).apply { mkdirs() }
+        File(context.filesDir, DOWNLOADS_DIR).apply { mkdirs() }
     }
 
     /**
@@ -121,8 +121,10 @@ class ExtensionInstaller(
                 }
             }
 
-            // Register the extension inside the app
-            val result = install(downloadFile)
+            // Register the extension inside the app, passing the repo-verified hash so the
+            // universal trust gate inside ExtensionLoader can be satisfied without a separate
+            // user confirmation step.
+            val result = install(downloadFile, trustedHash = extension.signatureHash)
 
             result.onSuccess { installed ->
                 installed.apkPath?.let { path ->
@@ -142,64 +144,62 @@ class ExtensionInstaller(
 
     /**
      * Install an extension from a downloaded APK file.
-     * @param apkFile The downloaded APK file
-     * @return Result containing the installed Extension
+     *
+     * @param apkFile The downloaded APK file.
+     * @param trustedHash When non-null this hash was already verified by the caller against
+     *   a repository-sourced expected hash. The extension is added to the trust store before
+     *   loading so the universal trust gate inside [ExtensionLoader] passes.  When null (e.g.
+     *   user-sideloaded APK), the extension must already be trusted or [ExtensionLoadResult.Untrusted]
+     *   is returned and the caller must present a user-facing trust confirmation dialog.
      */
-    suspend fun install(apkFile: File): Result<Extension> = withContext(Dispatchers.IO) {
+    suspend fun install(apkFile: File, trustedHash: String? = null): Result<Extension> =
+        withContext(Dispatchers.IO) {
         try {
             _installationState.value = InstallationState.Verifying
-            
-            // Load and verify the extension
-            val loadResult = loader.loadExtension(apkFile.absolutePath)
-            
+
+            // Pre-trust when the caller has already verified the hash against a known-good source.
+            if (trustedHash != null) {
+                loader.trustExtension(trustedHash)
+            }
+
+            val packageInfo = parseApkInfo(apkFile)
+                ?: return@withContext Result.failure(
+                    IllegalStateException("Failed to parse APK: ${apkFile.absolutePath}")
+                )
+
+            // Move to permanent location first — Android 14+ requires read-only in filesDir
+            val destFile = File(extensionsDir, "${packageInfo.packageName}.ext")
+            apkFile.copyTo(destFile, overwrite = true)
+            destFile.setReadOnly()
+
+            val loadResult = loader.loadExtension(destFile.absolutePath)
             when (loadResult) {
                 is ExtensionLoadResult.Error -> {
                     _installationState.value = InstallationState.Error(
-                        loadResult.message,
-                        loadResult.throwable
+                        loadResult.message, loadResult.throwable
                     )
-                    Result.failure(
-                        loadResult.throwable
-                            ?: IllegalStateException(loadResult.message)
-                    )
+                    Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
                 }
                 is ExtensionLoadResult.Success -> {
-                    val extension = loadResult.extension
-
                     _installationState.value = InstallationState.Installing
-
-                    // Move APK to permanent location
-                    val destFile = File(extensionsDir, "${extension.pkgName}.apk")
-                    apkFile.copyTo(destFile, overwrite = true)
-
-                    // Update extension with final path
-                    val finalExtension = extension.copy(apkPath = destFile.absolutePath)
-
-                    // Save to repository
+                    val finalExtension = loadResult.extension.copy(apkPath = destFile.absolutePath)
                     val result = repository.installExtension(
-                        finalExtension.pkgName,
-                        destFile.absolutePath
+                        finalExtension.pkgName, destFile.absolutePath
                     )
-
                     result.onSuccess { ext ->
                         _installationState.value = InstallationState.Success(ext)
                         // Notify the receiver so private extensions appear in the catalogue
                         ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
                     }.onFailure { error ->
                         _installationState.value = InstallationState.Error(
-                            "Failed to save extension: ${error.message}",
-                            error
+                            "Failed to save extension: ${error.message}", error
                         )
                     }
-
                     result
                 }
                 is ExtensionLoadResult.Untrusted -> {
-                    // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
-                    // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
                     _installationState.value = InstallationState.Error(
-                        "Extension is not trusted. Please verify its signature before installing.",
-                        null
+                        "Extension is not trusted. Please verify its signature before installing.", null
                     )
                     Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                 }
@@ -208,10 +208,7 @@ class ExtensionInstaller(
             _installationState.value = InstallationState.Error("Installation failed", e)
             Result.failure(e)
         } finally {
-            // Cleanup download file
-            if (apkFile.exists() && apkFile.parentFile == downloadsDir) {
-                apkFile.delete()
-            }
+            if (apkFile.exists() && apkFile.parentFile == downloadsDir) apkFile.delete()
         }
     }
     
@@ -221,71 +218,63 @@ class ExtensionInstaller(
      * @param newApkFile The new APK file
      * @return Result containing the updated Extension
      */
-    suspend fun update(pkgName: String, newApkFile: File): Result<Extension> = 
+    suspend fun update(pkgName: String, newApkFile: File): Result<Extension> =
         withContext(Dispatchers.IO) {
             try {
                 _installationState.value = InstallationState.Verifying
-                
-                // Verify the new APK
-                val loadResult = loader.loadExtension(newApkFile.absolutePath)
-                
-                when (loadResult) {
+
+                val newPackageInfo = parseApkInfo(newApkFile)
+                    ?: return@withContext Result.failure(
+                        IllegalStateException("Failed to parse update APK: ${newApkFile.absolutePath}")
+                    )
+
+                if (newPackageInfo.packageName != pkgName) {
+                    return@withContext Result.failure(
+                        IllegalArgumentException(
+                            "Package name mismatch: expected $pkgName, got ${newPackageInfo.packageName}"
+                        )
+                    )
+                }
+
+                // Move to permanent location first — Android 14+ requires read-only in filesDir
+                val destFile = File(extensionsDir, "$pkgName.ext")
+                newApkFile.copyTo(destFile, overwrite = true)
+                destFile.setReadOnly()
+
+                when (val loadResult = loader.loadExtension(destFile.absolutePath)) {
                     is ExtensionLoadResult.Error -> {
                         _installationState.value = InstallationState.Error(
-                            loadResult.message,
-                            loadResult.throwable
+                            loadResult.message, loadResult.throwable
                         )
-                        Result.failure(
-                            loadResult.throwable
-                                ?: IllegalStateException(loadResult.message)
-                        )
+                        Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
                     }
                     is ExtensionLoadResult.Success -> {
-                        val extension = loadResult.extension
-
-                        // Verify package name matches
-                        if (extension.pkgName != pkgName) {
+                        // Signer continuity: reject if signing certificate changed — a compromised
+                        // repository could swap a trusted extension for a differently-signed one.
+                        val oldExtension = repository.getExtension(pkgName)
+                        val newHash = loadResult.extension.signatureHash
+                        if (oldExtension?.signatureHash != null && newHash != oldExtension.signatureHash) {
                             return@withContext Result.failure(
-                                IllegalArgumentException(
-                                    "Package name mismatch: expected $pkgName, got ${extension.pkgName}"
-                                )
+                                SecurityException("Extension update rejected: signing certificate changed for $pkgName")
                             )
                         }
-
                         _installationState.value = InstallationState.Installing
-
-                        // Remove old APK
-                        val oldExtension = repository.getExtension(pkgName)
-                        oldExtension?.apkPath?.let { oldPath ->
-                            File(oldPath).delete()
-                        }
-
-                        // Move new APK to permanent location
-                        val destFile = File(extensionsDir, "$pkgName.apk")
-                        newApkFile.copyTo(destFile, overwrite = true)
-
-                        // Update repository
+                        oldExtension?.apkPath?.let { File(it).delete() }
                         val result = repository.updateExtension(pkgName, destFile.absolutePath)
-
                         result.onSuccess { ext ->
                             _installationState.value = InstallationState.Success(ext)
                             // Notify the receiver so private extensions appear in the catalogue
                             ExtensionInstallReceiver.notifyReplaced(context, pkgName)
                         }.onFailure { error ->
                             _installationState.value = InstallationState.Error(
-                                "Failed to update extension: ${error.message}",
-                                error
+                                "Failed to update extension: ${error.message}", error
                             )
                         }
-
                         result
                     }
                     is ExtensionLoadResult.Untrusted -> {
-                        // Note: ExtensionLoader never returns Untrusted; this branch is currently unreachable.
-                        // Future: implement trust verification in ExtensionLoader.loadFromPackageInfo().
                         _installationState.value = InstallationState.Error(
-                            "Extension is not trusted. Please verify its signature before updating.",
-                            null
+                            "Extension is not trusted. Please verify its signature before updating.", null
                         )
                         Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                     }
@@ -294,10 +283,7 @@ class ExtensionInstaller(
                 _installationState.value = InstallationState.Error("Update failed", e)
                 Result.failure(e)
             } finally {
-                // Cleanup download file
-                if (newApkFile.exists() && newApkFile.parentFile == downloadsDir) {
-                    newApkFile.delete()
-                }
+                if (newApkFile.exists() && newApkFile.parentFile == downloadsDir) newApkFile.delete()
             }
         }
     
@@ -335,12 +321,12 @@ class ExtensionInstaller(
                 context.startActivity(deleteIntent)
 
                 // Remove any locally cached private APK copy for this package.
-                File(extensionsDir, "$pkgName.apk").takeIf { it.exists() }?.delete()
+                File(extensionsDir, "$pkgName.ext").takeIf { it.exists() }?.delete()
 
                 Result.success(Unit)
             } else {
                 // Private/sideloaded extension: delete local APK and remove from DB.
-                File(extensionsDir, "$pkgName.apk").takeIf { it.exists() }?.delete()
+                File(extensionsDir, "$pkgName.ext").takeIf { it.exists() }?.delete()
 
                 // Remove from repository and notify the receiver.
                 repository.uninstallExtension(pkgName).also {
@@ -374,6 +360,18 @@ class ExtensionInstaller(
         }
     }
     
+    private fun parseApkInfo(apkFile: File): PackageInfo? {
+        return context.packageManager.getPackageArchiveInfo(
+            apkFile.absolutePath,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                PackageManager.GET_SIGNING_CERTIFICATES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+            } else {
+                @Suppress("DEPRECATION")
+                PackageManager.GET_SIGNATURES or PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
+            }
+        )
+    }
+
     /**
      * Verify APK signature against expected hash.
      * @param apkFile The APK file to verify
@@ -441,21 +439,24 @@ class ExtensionInstaller(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !context.packageManager.canRequestPackageInstalls()
         ) {
-            // Ask the user to grant install permission for unknown apps
-            val intent = Intent(
-                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                "package:${context.packageName}".toUri()
-            ).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
+            // Skip system install if permission is not granted.
+            // Internal private-extension loading already works; system install
+            // is only an optional optimisation for shared-package discovery.
+            android.util.Log.d(
+                "ExtensionInstaller",
+                "Skipping system install — permission not granted. " +
+                    "Extension will load via internal path: ${apkFile.absolutePath}",
+            )
             return
         }
+
+        // Make the file read-only so the system installer accepts it.
+        apkFile.setReadOnly()
 
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
-            apkFile
+            apkFile,
         )
         val installIntent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")

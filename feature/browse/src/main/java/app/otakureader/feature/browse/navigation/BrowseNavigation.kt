@@ -7,12 +7,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import app.otakureader.core.navigation.BrowseRoute
-import app.otakureader.core.navigation.ExtensionInstallRoute
-import app.otakureader.core.navigation.ExtensionsRoute
-import app.otakureader.core.navigation.GlobalSearchRoute
-import app.otakureader.core.navigation.SourceDetailRoute
-import app.otakureader.core.navigation.SourceMangaDetailRoute
+import app.otakureader.core.navigation.Route
 import app.otakureader.feature.browse.BrowseScreen
 import app.otakureader.feature.browse.ExtensionsBottomSheet
 import app.otakureader.feature.browse.GlobalSearchScreen
@@ -20,6 +15,7 @@ import app.otakureader.feature.browse.SourceMangaDetailScreen
 import app.otakureader.feature.browse.SourceMangaScreen
 import app.otakureader.feature.browse.extension.ExtensionInstallScreen
 
+@Suppress("UnusedParameter")
 fun NavGraphBuilder.browseScreen(
     onMangaClick: (sourceId: String, mangaUrl: String, mangaTitle: String) -> Unit,
     onNavigateToSource: (sourceId: String) -> Unit,
@@ -27,7 +23,7 @@ fun NavGraphBuilder.browseScreen(
     onNavigateToGlobalSearch: () -> Unit,
     onNavigateToOpds: () -> Unit = {},
 ) {
-    composable<BrowseRoute> {
+    composable<Route.Browse> {
         BrowseScreen(
             viewModel = hiltViewModel(),
             onMangaClick = { sourceId, mangaUrl ->
@@ -44,12 +40,12 @@ fun NavGraphBuilder.sourceDetailScreen(
     onMangaClick: (sourceId: String, mangaUrl: String, mangaTitle: String) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    composable<SourceDetailRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<SourceDetailRoute>()
+    composable<Route.SourceListing> { backStackEntry ->
+        val route = backStackEntry.toRoute<Route.SourceListing>()
         SourceMangaScreen(
-            sourceId = route.sourceId,
+            sourceId = route.sourceId.toString(),
             onMangaClick = { mangaUrl, mangaTitle ->
-                onMangaClick(route.sourceId, mangaUrl, mangaTitle)
+                onMangaClick(route.sourceId.toString(), mangaUrl, mangaTitle)
             },
             onNavigateBack = onNavigateBack
         )
@@ -59,7 +55,7 @@ fun NavGraphBuilder.sourceDetailScreen(
 fun NavGraphBuilder.sourceMangaDetailScreen(
     onNavigateToMangaDetail: (mangaId: Long) -> Unit,
 ) {
-    composable<SourceMangaDetailRoute> {
+    composable<Route.SourceMangaDetail> {
         SourceMangaDetailScreen(
             onNavigateToMangaDetail = onNavigateToMangaDetail
         )
@@ -70,7 +66,7 @@ fun NavGraphBuilder.extensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
 ) {
-    composable<ExtensionsRoute>(
+    composable<Route.ExtensionCatalog>(
         enterTransition = { fadeIn(animationSpec = tween(200)) },
         exitTransition = { fadeOut(animationSpec = tween(200)) },
         popEnterTransition = { fadeIn(animationSpec = tween(200)) },
@@ -86,7 +82,7 @@ fun NavGraphBuilder.extensionsBottomSheet(
 fun NavGraphBuilder.extensionInstallScreen(
     onNavigateBack: () -> Unit,
 ) {
-    composable<ExtensionInstallRoute> {
+    composable<Route.ExtensionInstall> {
         ExtensionInstallScreen(
             onBackClick = onNavigateBack
         )
@@ -97,8 +93,8 @@ fun NavGraphBuilder.globalSearchScreen(
     onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
-    composable<GlobalSearchRoute> { backStackEntry ->
-        val route = backStackEntry.toRoute<GlobalSearchRoute>()
+    composable<Route.Search> { backStackEntry ->
+        val route = backStackEntry.toRoute<Route.Search>()
         GlobalSearchScreen(
             initialQuery = route.query,
             onMangaClick = onMangaClick,

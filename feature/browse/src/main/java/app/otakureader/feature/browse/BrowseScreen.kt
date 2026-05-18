@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -22,6 +23,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
@@ -49,11 +52,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.ContentType
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.isActive
@@ -74,6 +80,7 @@ fun BrowseScreen(
     onNavigateToLibrary: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -168,6 +175,7 @@ private fun BrowseContent(
     onEvent: (BrowseEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     Column(modifier = modifier.fillMaxSize()) {
         // Search bar with filter button
         Row(
@@ -189,9 +197,20 @@ private fun BrowseContent(
                 singleLine = true
             )
 
+            // Save-search button (shown when there is a non-empty query)
+            if (state.searchQuery.isNotBlank()) {
+                Spacer(modifier = Modifier.width(4.dp))
+                IconButton(onClick = { onEvent(BrowseEvent.SaveCurrentSearch) }) {
+                    Icon(
+                        Icons.Default.BookmarkBorder,
+                        contentDescription = stringResource(R.string.browse_save_search),
+                    )
+                }
+            }
+
             // Filter button - shown when a source has filters
             if (state.availableFilters.filters.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 FilterButton(
                     activeCount = countActiveFilters(state.activeFilters),
                     onClick = { onEvent(BrowseEvent.ToggleFilterSheet) }
@@ -199,16 +218,53 @@ private fun BrowseContent(
             }
         }
 
+        // Saved search chips
+        if (state.savedSearches.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.savedSearches, key = { it.id }) { search ->
+                    FilterChip(
+                        selected = state.searchQuery == search.query,
+                        onClick = { onEvent(BrowseEvent.ApplySavedSearch(search)) },
+                        label = { Text(search.query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Bookmark,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { onEvent(BrowseEvent.DeleteSavedSearch(search.id)) },
+                                modifier = Modifier.size(18.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.browse_delete_saved_search),
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (state.isSearching) {
-            // Show search results
+        if (state.isSearching || state.hasSearchResults) {
+            // Show search results (isSearching acts as loading indicator within results view)
             SearchResultsContent(
                 results = state.searchResults,
                 onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
                 onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                 hasNextPage = state.hasNextPage,
-                isLoading = state.isLoading
+                isLoading = state.isSearching || state.isLoading
             )
         } else {
             // Show sources and popular manga
@@ -224,9 +280,6 @@ private fun BrowseContent(
                     onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                     hasNextPage = state.hasNextPage,
                     isLoading = state.isLoading,
-                    sourceIntelligenceEnabled = state.sourceIntelligenceEnabled,
-                    sourceIntelligence = state.sourceIntelligence,
-                    isAnalyzingSource = state.isAnalyzingSource
                 )
             }
         }
@@ -241,7 +294,7 @@ private fun BrowseContent(
             ) {
                 Text(
                     text = error,
-                    color = MaterialTheme.colorScheme.error,
+                    color = otaku.danger,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -269,6 +322,16 @@ private fun FilterButton(
 private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int {
     return filters.filters.count { filter -> filter.isActive() }
 }
+
+/** Returns true when a source ID string suggests manhwa/webtoon content. */
+private fun isManhwaSource(sourceId: String): Boolean {
+    val normalized = sourceId.lowercase()
+    return normalized.contains("manhwa") || normalized.contains("webtoon") ||
+        normalized.contains("korean") || normalized.contains("toon") ||
+        normalized.contains("naver") || normalized.contains("kakao") ||
+        normalized.contains("lezhin")
+}
+
 @Composable
 private fun SourcesContent(
     sources: List<String>,
@@ -279,11 +342,32 @@ private fun SourcesContent(
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
     isLoading: Boolean,
-    sourceIntelligenceEnabled: Boolean = false,
-    sourceIntelligence: Map<String, String> = emptyMap(),
-    isAnalyzingSource: Boolean = false
 ) {
+    // Determine if the currently selected source is manga or manhwa for the accent bar
+    val isMangaSection = currentSourceId == null || !isManhwaSource(currentSourceId)
+
     Column {
+        // Section header with colored accent bar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .background(
+                        color = if (isMangaSection) Color(0xFFFF4757) else Color(0xFF9B59B6),
+                        shape = RoundedCornerShape(2.dp)
+                    )
+            )
+            Text(
+                text = stringResource(R.string.browse_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
         // Source filter chips
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -295,33 +379,6 @@ private fun SourcesContent(
                     onClick = { onSourceSelect(sourceId) },
                     label = { Text(sourceId.substringAfterLast(".").take(20)) }
                 )
-            }
-        }
-
-        // Source Intelligence card for the selected source
-        if (sourceIntelligenceEnabled && currentSourceId != null) {
-            val intelligence = sourceIntelligence[currentSourceId]
-            when {
-                intelligence != null -> {
-                    SourceIntelligenceCard(
-                        summary = intelligence,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                }
-                isAnalyzingSource -> {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.browse_source_intel_analyzing),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
             }
         }
 
@@ -352,7 +409,8 @@ private fun SourcesContent(
                 onMangaClick = onMangaClick,
                 onLoadMore = onLoadMore,
                 hasNextPage = hasNextPage,
-                isLoading = isLoading
+                isLoading = isLoading,
+                currentSourceId = currentSourceId
             )
         }
     }
@@ -364,8 +422,10 @@ private fun MangaGrid(
     onMangaClick: (SourceManga) -> Unit,
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
-    isLoading: Boolean
+    isLoading: Boolean,
+    currentSourceId: String? = null
 ) {
+    val otaku = LocalOtakuColors.current
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
         contentPadding = PaddingValues(16.dp),
@@ -375,7 +435,8 @@ private fun MangaGrid(
         items(manga, key = { it.url }) { mangaItem ->
             MangaCard(
                 manga = mangaItem,
-                onClick = { onMangaClick(mangaItem) }
+                onClick = { onMangaClick(mangaItem) },
+                currentSourceId = currentSourceId
             )
         }
 
@@ -393,7 +454,7 @@ private fun MangaGrid(
                         Text(
                             text = stringResource(R.string.browse_load_more),
                             modifier = Modifier.clickable { onLoadMore() },
-                            color = MaterialTheme.colorScheme.primary
+                            color = otaku.accent
                         )
                     }
                 }
@@ -405,23 +466,48 @@ private fun MangaGrid(
 @Composable
 private fun MangaCard(
     manga: SourceManga,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    currentSourceId: String? = null
 ) {
+    val isManga = currentSourceId == null || !isManhwaSource(currentSourceId)
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
         Column {
-            // Manga cover
-            AsyncImage(
-                model = manga.thumbnailUrl,
-                contentDescription = manga.title,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.7f),
-                contentScale = ContentScale.Crop
-            )
+            Box {
+                // Manga cover
+                AsyncImage(
+                    model = manga.thumbnailUrl,
+                    contentDescription = manga.title,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(0.7f),
+                    contentScale = ContentScale.Crop
+                )
+
+                // Content-type badge pill
+                if (currentSourceId != null) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(
+                                color = if (isManga) Color(0xFFFF4757).copy(alpha = 0.15f)
+                                        else Color(0xFF9B59B6).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = if (isManga) "MANGA" else "MANHWA",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6)
+                        )
+                    }
+                }
+            }
 
             // Manga title
             Text(
@@ -484,41 +570,3 @@ private fun EmptySourcesContent() {
     }
 }
 
-/**
- * Card that shows the AI-generated quality analysis for the currently selected source.
- */
-@Composable
-private fun SourceIntelligenceCard(
-    summary: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.tertiaryContainer,
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.Top
-    ) {
-        Text(
-            text = "✨",
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Column {
-            Text(
-                text = stringResource(R.string.browse_source_intel_label),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-        }
-    }
-}

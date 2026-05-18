@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.otakureader.kotlin.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
 }
 
 dependencies {
@@ -17,4 +18,14 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+}
+
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(60)
+            }
+        }
+    }
 }

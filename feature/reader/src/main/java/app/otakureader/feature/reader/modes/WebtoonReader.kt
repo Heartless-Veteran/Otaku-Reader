@@ -15,15 +15,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import app.otakureader.feature.reader.R
+import app.otakureader.feature.reader.components.SubsamplingWebtoonDecoder
 import app.otakureader.feature.reader.components.ZoomableImage
-import app.otakureader.feature.reader.model.ImageQuality
+import app.otakureader.domain.model.ImageQuality
 import app.otakureader.feature.reader.model.ReaderPage
+
+private const val MOUSE_SCROLL_MULTIPLIER = 120f
 
 /**
  * Webtoon reader mode - vertical continuous scrolling.
@@ -39,11 +46,14 @@ fun WebtoonReader(
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
     dataSaverEnabled: Boolean = false,
+    pageGapDp: Int = 4,
+    disableZoomOut: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = currentPage
     )
+    val coroutineScope = rememberCoroutineScope()
     
     // Track current page based on scroll position
     val currentVisiblePage by remember {
@@ -84,15 +94,39 @@ fun WebtoonReader(
         ContentScale.Fit
     }
 
+    // OOM guard for very long single-strip webtoon panels (e.g. 1080×10000 px Korean/Chinese
+    // chapters delivered as one image). The factory peeks the source for bounds and only
+    // engages when the image exceeds the height/pixel budget; normal pages fall through to
+    // Coil's default decoder. Remembered so all pages share one factory instance.
+    val webtoonDecoderFactory = remember { SubsamplingWebtoonDecoder.Factory() }
+
     LazyColumn(
         state = listState,
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = modifier
+            .fillMaxSize()
+            // Precise mouse-wheel scroll for DeX / external mouse (default Compose delta is too coarse).
+            // scrollBy (non-animating) is used intentionally — animateScrollBy queues animations on
+            // every pointer event and feels sluggish for continuous mouse-wheel input.
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        if (event.type == PointerEventType.Scroll) {
+                            val delta = event.changes.firstOrNull()?.scrollDelta?.y ?: continue
+                            coroutineScope.launch {
+                                listState.scroll { scrollBy(delta * MOUSE_SCROLL_MULTIPLIER) }
+                            }
+                        }
+                    }
+                }
+            },
+        contentPadding = PaddingValues(vertical = pageGapDp.dp),
+        verticalArrangement = Arrangement.spacedBy(pageGapDp.dp)
     ) {
         itemsIndexed(
             items = pages,
-            key = { index, page -> page.id }
+            key = { _, page -> page.id },
+            contentType = { _, _ -> "manga_page" }
         ) { index, page ->
             Box(
                 modifier = Modifier
@@ -109,6 +143,8 @@ fun WebtoonReader(
                     imageQuality = imageQuality,
                     dataSaverEnabled = dataSaverEnabled,
                     onTap = onTap,
+                    decoderFactory = webtoonDecoderFactory,
+                    minScale = if (disableZoomOut) 1f else 0.5f,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

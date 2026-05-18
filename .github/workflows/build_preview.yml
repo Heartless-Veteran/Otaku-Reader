@@ -1,8 +1,6 @@
 name: Preview Build
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -31,26 +29,22 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: gradle
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: 🐘 Set up Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
 
-      - name: Ensure Android SDK components
+      - name: Install Android SDK components
         run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;35.0.0"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Full Debug APK
-        run: ./gradlew :app:assembleFullDebug --no-daemon
-        env:
-          CI: true
-
-      - name: Build FOSS Debug APK
-        run: ./gradlew :app:assembleFossDebug --no-daemon
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
         env:
           CI: true
 
@@ -63,24 +57,17 @@ jobs:
           echo "commit=$COMMIT" >> $GITHUB_OUTPUT
           echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Upload Full Debug APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: otaku-reader-full-debug-${{ steps.version.outputs.commit }}
-          path: app/build/outputs/apk/full/debug/*.apk
-          retention-days: 7
-
-      - name: Upload FOSS Debug APK
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: otaku-reader-foss-debug-${{ steps.version.outputs.commit }}
-          path: app/build/outputs/apk/foss/debug/*.apk
+          name: otaku-reader-debug-${{ steps.version.outputs.commit }}
+          path: app/build/outputs/apk/debug/*.apk
           retention-days: 7
 
       - name: Comment on PR
         if: github.event_name == 'pull_request'
         continue-on-error: true
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const commit = '${{ steps.version.outputs.commit }}';
@@ -91,9 +78,8 @@ jobs:
             
             Commit: \`${commit}\`
             
-            **Download APKs:**
-            - [Full Debug APK](${artifactsUrl}) (with AI features)
-            - [FOSS Debug APK](${artifactsUrl}) (open source only)
+            **Download APK:**
+            - [Debug APK](${artifactsUrl})
             
             Artifacts are available for 7 days.
             `;

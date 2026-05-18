@@ -4,19 +4,24 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
-import app.otakureader.domain.model.MangaRecommendation
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ReadingListRepository
+import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.tracking.TrackRepository
-import app.otakureader.domain.usecase.DismissRecommendationUseCase
-import app.otakureader.domain.usecase.GetForYouRecommendationsUseCase
+import app.otakureader.domain.usecase.GetCategoriesUseCase
+import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
-import app.otakureader.domain.usecase.RefreshRecommendationsUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +35,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -40,16 +46,18 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
+    private val searchLibraryManga: SearchLibraryMangaUseCase,
     private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
     private val libraryPreferences: LibraryPreferences,
     private val generalPreferences: GeneralPreferences,
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
     private val trackRepository: TrackRepository,
-    private val categoryDao: app.otakureader.core.database.dao.CategoryDao,
-    private val getForYouRecommendations: GetForYouRecommendationsUseCase,
-    private val refreshRecommendations: RefreshRecommendationsUseCase,
-    private val dismissRecommendation: DismissRecommendationUseCase
+    private val getCategories: GetCategoriesUseCase,
+    private val getContinueReading: GetContinueReadingUseCase,
+    private val readingGoalPreferences: ReadingGoalPreferences,
+    private val statisticsRepository: StatisticsRepository,
+    private val readingListRepository: ReadingListRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -61,38 +69,85 @@ class LibraryViewModel @Inject constructor(
     /** Holds the full, unfiltered library items for reactive filtering. */
     private val _allItems = MutableStateFlow<List<LibraryMangaItem>>(emptyList())
 
+    /** IDs of manga matching the current search query; null when no search is active. */
+    private val _searchMatchingIds = MutableStateFlow<Set<Long>?>(null)
+    private var searchJob: Job? = null
+
     init {
         loadLibrary()
         loadCategories()
         observeLibraryPreferences()
         observeFilteredItems()
         observeNewUpdatesCount()
-        observeLibraryForRecommendations()
+        observeContinueReading()
+        observeGoalProgress()
+        observeReadingLists()
     }
 
     fun onEvent(event: LibraryEvent) {
         when (event) {
+            is LibraryEvent.Refresh,
+            is LibraryEvent.OnMangaClick,
+            is LibraryEvent.OnMangaLongClick,
+            is LibraryEvent.ContinueReadingClick -> handleNavigationEvent(event)
+            is LibraryEvent.OnSearchQueryChange,
+            is LibraryEvent.ToggleSearchBar,
+            is LibraryEvent.OnCategorySelected,
+            is LibraryEvent.ClearSelection -> handleUiStateEvent(event)
+            is LibraryEvent.FilterHasNotes,
+            is LibraryEvent.SetSortMode,
+            is LibraryEvent.SetFilterMode,
+            is LibraryEvent.SetFilterSource,
+            is LibraryEvent.ToggleNsfw,
+            is LibraryEvent.SetFilterReadingList -> handleFilterSortEvent(event)
+            is LibraryEvent.ToggleFavorite,
+            is LibraryEvent.MarkSelectedAsRead,
+            is LibraryEvent.MarkSelectedAsUnread,
+            is LibraryEvent.RemoveSelectedFromLibrary,
+            is LibraryEvent.DownloadSelected -> handleActionEvent(event)
+        }
+    }
+
+    private fun handleNavigationEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.Refresh -> onRefresh()
             is LibraryEvent.OnMangaClick -> onMangaClick(event.mangaId)
             is LibraryEvent.OnMangaLongClick -> onMangaLongClick(event.mangaId)
+            is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId, event.chapterId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleUiStateEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.OnSearchQueryChange -> onSearchQueryChange(event.query)
             is LibraryEvent.ToggleSearchBar -> toggleSearchBar()
             is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
             is LibraryEvent.ClearSelection -> clearSelection()
-            is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleFilterSortEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.FilterHasNotes -> onFilterHasNotes(event.enabled)
             is LibraryEvent.SetSortMode -> onSetSortMode(event.mode)
             is LibraryEvent.SetFilterMode -> onSetFilterMode(event.mode)
             is LibraryEvent.SetFilterSource -> onSetFilterSource(event.sourceId)
             is LibraryEvent.ToggleNsfw -> onToggleNsfw(event.show)
+            is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
+            else -> Unit // unreachable due to outer when
+        }
+    }
+
+    private fun handleActionEvent(event: LibraryEvent) {
+        when (event) {
+            is LibraryEvent.ToggleFavorite -> toggleFavorite(event.mangaId)
             is LibraryEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is LibraryEvent.MarkSelectedAsUnread -> markSelectedAsUnread()
             is LibraryEvent.RemoveSelectedFromLibrary -> removeSelectedFromLibrary()
             is LibraryEvent.DownloadSelected -> downloadSelected()
-            is LibraryEvent.LoadRecommendations -> loadRecommendations()
-            is LibraryEvent.RefreshRecommendations -> loadRecommendations(forceRefresh = true)
-            is LibraryEvent.DismissRecommendation -> onDismissRecommendation(event.recommendationTitle)
-            is LibraryEvent.OnRecommendationClick -> onRecommendationClick(event.recommendation)
+            else -> Unit // unreachable due to outer when
         }
     }
 
@@ -127,6 +182,12 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         generalPreferences.showNsfwContent
             .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.isStaggeredGrid
+            .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
+            .launchIn(viewModelScope)
+        generalPreferences.visualEffectsEnabled
+            .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
             .launchIn(viewModelScope)
     }
 
@@ -193,15 +254,13 @@ class LibraryViewModel @Inject constructor(
 
     private fun loadCategories() {
         viewModelScope.launch {
-            categoryDao.getCategories()
-                .collect { entities ->
-                    val items = entities.map { entity ->
-                        // Count manga in this category
-                        val mangaIds = categoryDao.getMangaIdsByCategoryId(entity.id).first()
+            getCategories()
+                .collect { categories ->
+                    val items = categories.map { category ->
                         CategoryItem(
-                            id = entity.id,
-                            name = entity.name,
-                            count = mangaIds.size
+                            id = category.id,
+                            name = category.name,
+                            count = category.mangaCount
                         )
                     }
                     _state.update { it.copy(categories = items) }
@@ -212,13 +271,16 @@ class LibraryViewModel @Inject constructor(
     /** Encapsulates all filter/sort parameters derived from state for use in the filtered-items combine. */
     private data class FilterSortParams(
         val query: String,
+        val searchMatchingIds: Set<Long>?,
         val filterHasNotes: Boolean,
         val sortMode: LibrarySortMode,
         val filterMode: LibraryFilterMode,
         val filterSourceId: Long?,
         val showNsfw: Boolean,
         val selectedCategory: Long?,
-        val categoryMangaIds: Set<Long> = emptySet() // Manga IDs in the selected category
+        val categoryMangaIds: Set<Long> = emptySet(),
+        val filterReadingListId: Long? = null,
+        val readingListMangaIds: Set<Long> = emptySet()
     )
 
     private fun observeFilteredItems() {
@@ -228,7 +290,7 @@ class LibraryViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .collect { categoryId ->
                     if (categoryId != null) {
-                        val mangaIds = categoryDao.getMangaIdsByCategoryId(categoryId).first()
+                        val mangaIds = getCategories.getMangaIdsForCategory(categoryId).first()
                         _state.update { it.copy(categoryFilterMangaIds = mangaIds.toSet()) }
                     } else {
                         _state.update { it.copy(categoryFilterMangaIds = emptySet()) }
@@ -236,23 +298,41 @@ class LibraryViewModel @Inject constructor(
                 }
         }
 
-        // Combine all items with filter params (now including category manga IDs from state)
+        // When reading list filter changes, reactively track the manga IDs in that list
+        _state.map { it.filterReadingListId }
+            .distinctUntilChanged()
+            .flatMapLatest { listId ->
+                if (listId != null) {
+                    readingListRepository.getListWithManga(listId)
+                        .map { (_, items) -> items.map { it.manga.id }.toSet() }
+                } else {
+                    flowOf(emptySet())
+                }
+            }
+            .onEach { ids -> _state.update { it.copy(readingListMangaIds = ids) } }
+            .launchIn(viewModelScope)
+
+        // Combine all items with filter params (now including category, reading list, and search result IDs from state)
         combine(
             _allItems,
-            _state.map { 
+            _searchMatchingIds,
+            _state.map {
                 FilterSortParams(
                     query = it.searchQuery,
+                    searchMatchingIds = null, // populated by combine below
                     filterHasNotes = it.filterHasNotes,
                     sortMode = it.sortMode,
                     filterMode = it.filterMode,
                     filterSourceId = it.filterSourceId,
                     showNsfw = it.showNsfw,
                     selectedCategory = it.selectedCategory,
-                    categoryMangaIds = it.categoryFilterMangaIds
+                    categoryMangaIds = it.categoryFilterMangaIds,
+                    filterReadingListId = it.filterReadingListId,
+                    readingListMangaIds = it.readingListMangaIds
                 )
             }.distinctUntilChanged()
-        ) { items, params ->
-            applyFiltersAndSort(items, params)
+        ) { items, matchingIds, params ->
+            applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds))
         }
             .onEach { filtered ->
                 _state.update { it.copy(mangaList = filtered) }
@@ -261,53 +341,73 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
-        var filtered = items
+        val filtered = items
+            .let { applyCategoryFilter(it, params) }
+            .let { applyNsfwFilter(it, params) }
+            .let { applySearchFilter(it, params) }
+            .let { applyHasNotesFilter(it, params) }
+            .let { applySourceFilter(it, params) }
+            .let { applyReadingListFilter(it, params) }
+            .let { applyFilterMode(it, params.filterMode) }
+        return applySort(filtered, params.sortMode)
+    }
 
-        // Category filter
-        if (params.selectedCategory != null) {
-            filtered = filtered.filter { mangaItem ->
-                mangaItem.id in params.categoryMangaIds
-            }
+    private fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.selectedCategory != null) {
+            items.filter { it.id in params.categoryMangaIds }
+        } else {
+            items
         }
+    }
 
-        // NSFW filter
-        if (!params.showNsfw) {
-            filtered = filtered.filter { !it.isNsfw }
+    private fun applyNsfwFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (!params.showNsfw) items.filter { !it.isNsfw } else items
+    }
+
+    private fun applySearchFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        val matchingIds = params.searchMatchingIds ?: return items
+        return items.filter { it.id in matchingIds }
+    }
+
+    private fun applyHasNotesFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterHasNotes) items.filter { it.hasNote } else items
+    }
+
+    private fun applySourceFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterSourceId != null) {
+            items.filter { it.sourceId == params.filterSourceId }
+        } else {
+            items
         }
+    }
 
-        // Search filter
-        if (params.query.isNotBlank()) {
-            filtered = filtered.filter {
-                it.title.contains(params.query, ignoreCase = true)
-            }
+    private fun applyReadingListFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+        return if (params.filterReadingListId != null) {
+            items.filter { it.id in params.readingListMangaIds }
+        } else {
+            items
         }
+    }
 
-        // Has notes filter
-        if (params.filterHasNotes) {
-            filtered = filtered.filter { it.hasNote }
+    private fun applyFilterMode(items: List<LibraryMangaItem>, filterMode: LibraryFilterMode): List<LibraryMangaItem> {
+        return when (filterMode) {
+            LibraryFilterMode.DOWNLOADED -> items.filter { it.isDownloaded }
+            LibraryFilterMode.UNREAD -> items.filter { it.unreadCount > 0 }
+            LibraryFilterMode.COMPLETED -> items.filter { it.userCompleted }
+            LibraryFilterMode.DROPPED -> items.filter { it.userDropped }
+            LibraryFilterMode.TRACKING -> items.filter { it.hasTracking }
+            LibraryFilterMode.READING_LIST -> items
+            LibraryFilterMode.ALL -> items
         }
+    }
 
-        // Filter by source
-        if (params.filterSourceId != null) {
-            filtered = filtered.filter { it.sourceId == params.filterSourceId }
-        }
-
-        // Filter mode
-        filtered = when (params.filterMode) {
-            LibraryFilterMode.DOWNLOADED -> filtered.filter { it.isDownloaded }
-            LibraryFilterMode.UNREAD -> filtered.filter { it.unreadCount > 0 }
-            LibraryFilterMode.COMPLETED -> filtered.filter { it.status == MangaStatus.COMPLETED }
-            LibraryFilterMode.TRACKING -> filtered.filter { it.hasTracking }
-            LibraryFilterMode.ALL -> filtered
-        }
-
-        // Sort
-        return when (params.sortMode) {
-            LibrarySortMode.ALPHABETICAL -> filtered.sortedBy { it.title }
-            LibrarySortMode.LAST_READ -> filtered.sortedByDescending { it.lastRead ?: 0L }
-            LibrarySortMode.DATE_ADDED -> filtered.sortedByDescending { it.dateAdded }
-            LibrarySortMode.UNREAD_COUNT -> filtered.sortedByDescending { it.unreadCount }
-            LibrarySortMode.SOURCE -> filtered.sortedBy { it.sourceId }
+    private fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode): List<LibraryMangaItem> {
+        return when (sortMode) {
+            LibrarySortMode.ALPHABETICAL -> items.sortedBy { it.title }
+            LibrarySortMode.LAST_READ -> items.sortedByDescending { it.lastRead ?: 0L }
+            LibrarySortMode.DATE_ADDED -> items.sortedByDescending { it.dateAdded }
+            LibrarySortMode.UNREAD_COUNT -> items.sortedByDescending { it.unreadCount }
+            LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         }
     }
 
@@ -339,12 +439,26 @@ class LibraryViewModel @Inject constructor(
 
     private fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            _searchMatchingIds.value = null
+            return
+        }
+        _searchMatchingIds.value = emptySet()
+        searchJob = viewModelScope.launch {
+            delay(300L)
+            searchLibraryManga(query).collect { mangas ->
+                _searchMatchingIds.value = mangas.map { it.id }.toSet()
+            }
+        }
     }
 
     private fun toggleSearchBar() {
         _state.update { state ->
             if (state.showSearchBar) {
                 // Closing: also clear the query
+                searchJob?.cancel()
+                _searchMatchingIds.value = null
                 state.copy(showSearchBar = false, searchQuery = "")
             } else {
                 state.copy(showSearchBar = true)
@@ -388,10 +502,24 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun downloadSelected() {
-        // TODO: Wire up DownloadRepository to enqueue selected manga chapters.
-        // Currently left as a no-op to avoid silently doing nothing after clearing
-        // the selection — callers should wait until this is implemented before exposing it.
-        clearSelection()
+        val mangaIds = _state.value.selectedManga
+        if (mangaIds.isEmpty()) return
+        viewModelScope.launch {
+            val mangaById = _allItems.value.associateBy { it.id }
+            mangaIds.forEach { mangaId ->
+                val manga = mangaById[mangaId] ?: return@forEach
+                val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
+                chapters.filter { !it.read }.forEach { chapter ->
+                    downloadRepository.enqueueChapter(
+                        mangaId = mangaId,
+                        chapterId = chapter.id,
+                        mangaTitle = manga.title,
+                        chapterTitle = chapter.name
+                    )
+                }
+            }
+            clearSelection()
+        }
     }
 
     private fun toggleFavorite(mangaId: Long) {
@@ -428,82 +556,61 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    // ---- Recommendations ----
+    private fun observeContinueReading() {
+        getContinueReading()
+            .onEach { items -> _state.update { it.copy(continueReadingItems = items) } }
+            .catch { e -> android.util.Log.w("LibraryViewModel", "observeContinueReading failed", e) }
+            .launchIn(viewModelScope)
+    }
 
-    /**
-     * Observes the library items count and automatically triggers recommendation loading
-     * whenever the library grows to the minimum required size (>=3 items).
-     */
-    private fun observeLibraryForRecommendations() {
-        _allItems
-            .map { it.size >= MIN_LIBRARY_SIZE_FOR_RECOMMENDATIONS }
-            .distinctUntilChanged()
-            .onEach { hasEnough ->
-                _state.update { it.copy(hasEnoughMangaForRecommendations = hasEnough) }
-                if (hasEnough) {
-                    loadRecommendations()
+    private fun observeGoalProgress() {
+        combine(
+            readingGoalPreferences.dailyChapterGoal,
+            readingGoalPreferences.weeklyChapterGoal
+        ) { daily, weekly -> Pair(daily, weekly) }
+            .flatMapLatest { (dailyGoal, weeklyGoal) ->
+                statisticsRepository.getReadingGoalProgress(dailyGoal, weeklyGoal)
+            }
+            .onEach { goal -> _state.update { it.copy(readingGoal = goal) } }
+            .catch { e ->
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                android.util.Log.w("LibraryViewModel", "observeGoalProgress failed", e)
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun onContinueReadingClick(mangaId: Long, chapterId: Long) {
+        viewModelScope.launch {
+            _effect.send(LibraryEffect.NavigateToReader(mangaId, chapterId))
+        }
+    }
+
+    private fun observeReadingLists() {
+        readingListRepository.getAllLists()
+            .map { lists ->
+                lists.map { list ->
+                    ReadingListFilterItem(
+                        id = list.id,
+                        name = list.name,
+                        count = list.itemCount
+                    )
+                }
+            }
+            .onEach { items ->
+                _state.update { state ->
+                    val currentListId = state.filterReadingListId
+                    val stillExists = currentListId == null || items.any { it.id == currentListId }
+                    state.copy(
+                        readingLists = items,
+                        filterReadingListId = if (stillExists) currentListId else null
+                    )
                 }
             }
             .launchIn(viewModelScope)
     }
 
-    private fun loadRecommendations(forceRefresh: Boolean = false) {
-        // Guard against duplicate concurrent loads
-        if (!forceRefresh && _state.value.isLoadingRecommendations) return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isLoadingRecommendations = true, recommendationsError = null) }
-            val result = if (forceRefresh) {
-                refreshRecommendations().map { it.recommendations }
-            } else {
-                getForYouRecommendations()
-            }
-            result
-                .onSuccess { recommendations ->
-                    _state.update {
-                        it.copy(
-                            recommendations = recommendations,
-                            isLoadingRecommendations = false,
-                            recommendationsError = null
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    _state.update {
-                        it.copy(
-                            isLoadingRecommendations = false,
-                            recommendationsError = error.message
-                        )
-                    }
-                }
-        }
-    }
-
-    private fun onDismissRecommendation(recommendationTitle: String) {
-        // Optimistically remove from UI immediately
-        _state.update { state ->
-            state.copy(
-                recommendations = state.recommendations.filterNot { it.title == recommendationTitle }
-            )
-        }
-        viewModelScope.launch {
-            dismissRecommendation(recommendationTitle)
-        }
-    }
-
-    private fun onRecommendationClick(recommendation: MangaRecommendation) {
-        viewModelScope.launch {
-            val mangaId = recommendation.mangaId
-            if (mangaId != null) {
-                _effect.send(LibraryEffect.NavigateToManga(mangaId))
-            } else {
-                _effect.send(LibraryEffect.NavigateToRecommendationSearch(recommendation.title))
-            }
-        }
-    }
-
-    companion object {
-        private const val MIN_LIBRARY_SIZE_FOR_RECOMMENDATIONS = 3
+    private fun onSetFilterReadingList(listId: Long?) {
+        _state.update { it.copy(filterReadingListId = listId) }
     }
 
     private fun Manga.toLibraryItem(
@@ -519,9 +626,12 @@ class LibraryViewModel @Inject constructor(
         sourceId = sourceId,
         isDownloaded = isDownloaded,
         hasTracking = hasTracking,
-        isNsfw = false, // Requires source/extension metadata not yet available in the Manga model
+        isNsfw = contentRating == ContentRating.EROTICA || contentRating == ContentRating.PORNOGRAPHIC,
         lastRead = lastRead,
         dateAdded = dateAdded,
-        status = status
+        status = status,
+        totalChapterCount = totalChapters,
+        userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 }

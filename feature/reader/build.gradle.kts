@@ -6,13 +6,6 @@ plugins {
 android {
     namespace = "app.otakureader.feature.reader"
 
-    // Mirror the flavor dimension from :app and :data so Gradle can match variants
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") { dimension = "distribution" }
-        create("foss") { dimension = "distribution" }
-    }
-
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
@@ -20,8 +13,6 @@ android {
 
 dependencies {
     implementation(projects.core.common)
-    // core:ai is only needed for the full flavor (panel-aware reader with Gemini Vision)
-    "fullImplementation"(projects.core.ai)
     implementation(projects.core.preferences)
     implementation(projects.core.ui)
     implementation(projects.core.discord)
@@ -32,6 +23,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.exifinterface)
     // WorkManager is used in ReaderViewModel.onCleared() to enqueue guaranteed history writes (H-5)
     implementation(libs.workmanager.ktx)
 
@@ -40,4 +32,10 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.robolectric)
+
+    // Compose UI tests on JVM (Robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.roborazzi.core)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit)
 }

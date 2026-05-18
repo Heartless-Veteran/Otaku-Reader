@@ -35,7 +35,7 @@ class BackupRepository @Inject constructor(
 
         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
             outputStream.write(backupJson.toByteArray())
-        } ?: throw IllegalStateException("Failed to open output stream for URI: $uri")
+        } ?: error("Failed to open output stream for URI: $uri")
     }
 
     /**
@@ -46,7 +46,7 @@ class BackupRepository @Inject constructor(
     suspend fun restoreBackup(uri: Uri) = withContext(Dispatchers.IO) {
         val backupJson = context.contentResolver.openInputStream(uri)?.use { inputStream ->
             inputStream.readBytes().decodeToString()
-        } ?: throw IllegalStateException("Failed to open input stream for URI: $uri")
+        } ?: error("Failed to open input stream for URI: $uri")
 
         backupRestorer.restoreBackup(backupJson)
     }

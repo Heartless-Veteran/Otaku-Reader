@@ -1,4 +1,5 @@
 // Stub matching tachiyomiorg/extensions-lib — used at compile time only.
+@file:Suppress("VariableNaming")
 package eu.kanade.tachiyomi.source.model
 
 @Suppress("unused")

@@ -5,6 +5,12 @@ plugins {
 
 android {
     namespace = "app.otakureader.feature.library"
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -21,4 +27,13 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+
+    // Screenshot tests
+    testImplementation(libs.roborazzi.core)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit)
+    testImplementation(libs.robolectric)
+
+    // Compose UI tests on JVM (Robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
 }

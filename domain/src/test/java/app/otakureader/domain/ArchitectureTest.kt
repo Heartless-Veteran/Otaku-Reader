@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.domain
 
 import org.junit.Assert.assertTrue
@@ -219,18 +220,33 @@ class ArchitectureTest {
             buildContent.contains("kotlin(\"jvm\")")
         )
 
-        // Verify no Android dependencies (using literal string checks, not regex)
-        val androidDependencyPatterns = listOf(
-            "androidx.",
-            "android.arch.",
-            "com.google.android."
-        )
-
-        androidDependencyPatterns.forEach { pattern ->
+        // Verify no Android dependencies.
+        // The build file uses version catalog aliases (libs.compose.runtime) rather than
+        // literal group:artifact strings, so checking for "androidx." as a literal is a
+        // false-negative. Instead we check that any alias whose name suggests an Android
+        // artifact (libs.compose.*, libs.androidx.*, libs.android.*) is ONLY used with
+        // compileOnly — the one permitted exception is the @Immutable compile annotation.
+        val androidLiteralPatterns = listOf("android.arch.", "com.google.android.")
+        androidLiteralPatterns.forEach { pattern ->
             assertTrue(
                 "Domain build.gradle.kts should not contain Android dependency: $pattern",
                 !buildContent.contains(pattern)
             )
         }
+
+        val androidAliasPrefixes = listOf("libs.compose", "libs.androidx", "libs.android")
+        val illegalAndroidAliasDeps = buildContent.lines()
+            .map { it.trim() }
+            .filter { line ->
+                line.isNotBlank() && !line.startsWith("//") &&
+                androidAliasPrefixes.any { line.contains(it) } &&
+                !line.startsWith("compileOnly(")
+            }
+
+        assertTrue(
+            "Domain should only use compileOnly for Android-resolving catalog aliases. " +
+                "Non-compileOnly Android alias deps found: ${illegalAndroidAliasDeps.joinToString()}",
+            illegalAndroidAliasDeps.isEmpty()
+        )
     }
 }

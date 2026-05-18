@@ -1,5 +1,10 @@
 package app.otakureader.sourceapi
 
+@Deprecated(
+    message = "Use MangaSource with suspend functions instead. HttpSource retains the legacy " +
+        "get* naming convention incompatible with the MangaSource fetch* pipeline.",
+    replaceWith = ReplaceWith("MangaSource", "app.otakureader.sourceapi.MangaSource")
+)
 interface HttpSource : Source {
     val baseUrl: String
     suspend fun getPopularManga(page: Int): MangasPage

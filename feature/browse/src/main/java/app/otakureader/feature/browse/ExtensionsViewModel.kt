@@ -6,11 +6,12 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.extension.domain.model.Extension
+import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
 import app.otakureader.core.preferences.GeneralPreferences
-import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +35,8 @@ data class ExtensionsState(
     val error: String? = null,
     val showNsfw: Boolean = false,
     val sortMode: SortMode = SortMode.NAME,
-    val isUpdatingAll: Boolean = false
+    val isUpdatingAll: Boolean = false,
+    val selectedTab: Int = 0
 ) : UiState
 
 enum class SortMode {
@@ -56,6 +58,7 @@ sealed interface ExtensionsEvent : UiEvent {
     data object UpdateAllExtensions : ExtensionsEvent
     data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
     data class SetSortMode(val mode: SortMode) : ExtensionsEvent
+    data class SelectTab(val tab: Int) : ExtensionsEvent
 }
 
 sealed interface ExtensionsEffect : UiEffect {
@@ -68,7 +71,7 @@ class ExtensionsViewModel @Inject constructor(
     private val extensionRepository: ExtensionRepository,
     private val extensionInstaller: ExtensionInstaller,
     private val extensionRepoRepository: ExtensionRepoRepository,
-    private val sourceRepository: SourceRepository,
+    private val extensionManagementRepository: ExtensionManagementRepository,
     private val generalPreferences: GeneralPreferences
 ) : ViewModel() {
 
@@ -135,9 +138,13 @@ class ExtensionsViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
-        loadExtensions()
-        observeRepositories()
-        refreshExtensions()
+        viewModelScope.launch {
+            @Suppress("DEPRECATION")
+            extensionRepoRepository.ensureDefaultRepository()
+            loadExtensions()
+            observeRepositories()
+            refreshExtensions()
+        }
     }
 
     fun onEvent(event: ExtensionsEvent) {
@@ -156,6 +163,7 @@ class ExtensionsViewModel @Inject constructor(
                 generalPreferences.setShowNsfwContent(event.show)
             }
             is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
+            is ExtensionsEvent.SelectTab -> _state.update { it.copy(selectedTab = event.tab) }
         }
     }
 
@@ -228,11 +236,22 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun refreshExtensions() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            _state.update { it.copy(isLoading = true, error = null) }
             try {
-                extensionRepository.refreshAvailableExtensions()
-                extensionRepository.checkForUpdates()
-                _state.update { it.copy(isLoading = false) }
+                val availableResult = extensionRepository.refreshAvailableExtensions()
+                availableResult
+                    .onSuccess {
+                        extensionRepository.checkForUpdates()
+                        _state.update { it.copy(isLoading = false) }
+                    }
+                    .onFailure { error ->
+                        _state.update {
+                            it.copy(
+                                isLoading = false,
+                                error = "Failed to refresh extensions: ${error.message ?: "Unknown error"}"
+                            )
+                        }
+                    }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -248,7 +267,8 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 extensionRepository.setExtensionEnabled(extension.pkgName, enabled)
-                sourceRepository.refreshSources()
+                extensionManagementRepository.refreshSources()
+                    .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update extension: ${e.message}"))
             }
@@ -281,13 +301,26 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun installExtension(extension: Extension) {
         viewModelScope.launch {
+            // Show loading spinner immediately before the download starts
+            _state.update { s ->
+                s.copy(availableExtensions = s.availableExtensions.map {
+                    if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.INSTALLING) else it
+                })
+            }
             try {
-                // Use the installer's download and install method
                 val result = extensionInstaller.downloadAndInstall(extension)
                 result.onSuccess {
+                    // Refresh sources first so the source is available before the snackbar fires
+                    extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
                     _effect.send(ExtensionsEffect.ShowSnackbar("Extension installed: ${extension.name}"))
-                    sourceRepository.refreshSources()
                 }.onFailure { error ->
+                    // Revert the optimistic status on failure
+                    _state.update { s ->
+                        s.copy(availableExtensions = s.availableExtensions.map {
+                            if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.AVAILABLE) else it
+                        })
+                    }
                     _effect.send(ExtensionsEffect.ShowError("Failed to install: ${error.message}"))
                 }
             } catch (e: Exception) {
@@ -298,11 +331,17 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun uninstallExtension(extension: Extension) {
         viewModelScope.launch {
+            _state.update { s ->
+                s.copy(installedExtensions = s.installedExtensions.map {
+                    if (it.pkgName == extension.pkgName) it.copy(status = InstallStatus.UNINSTALLING) else it
+                })
+            }
             try {
                 val result = extensionInstaller.uninstall(extension.pkgName)
                 result.onSuccess {
+                    extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
                     _effect.send(ExtensionsEffect.ShowSnackbar("Extension uninstalled: ${extension.name}"))
-                    sourceRepository.refreshSources()
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to uninstall: ${error.message}"))
                 }
@@ -314,11 +353,21 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun updateExtension(extension: Extension) {
         viewModelScope.launch {
+            _state.update { s ->
+                val updatedStatus = { ext: Extension ->
+                    if (ext.pkgName == extension.pkgName) ext.copy(status = InstallStatus.UPDATING) else ext
+                }
+                s.copy(
+                    installedExtensions = s.installedExtensions.map(updatedStatus),
+                    extensionsWithUpdates = s.extensionsWithUpdates.map(updatedStatus),
+                )
+            }
             try {
                 val result = extensionInstaller.downloadAndInstall(extension)
                 result.onSuccess {
+                    extensionManagementRepository.refreshSources()
+                        .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
                     _effect.send(ExtensionsEffect.ShowSnackbar("Extension updated: ${extension.name}"))
-                    sourceRepository.refreshSources()
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to update: ${error.message}"))
                 }
@@ -344,7 +393,8 @@ class ExtensionsViewModel @Inject constructor(
             }
 
             _state.update { it.copy(isUpdatingAll = false) }
-            sourceRepository.refreshSources()
+            extensionManagementRepository.refreshSources()
+                .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
 
             when {
                 failCount == 0 -> _effect.send(ExtensionsEffect.ShowSnackbar("All $successCount extensions updated"))

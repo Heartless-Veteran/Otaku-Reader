@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `onboarding_completed` preference tracking
 - Comprehensive system audit documentation
 
+### Changed
+- Build is now a single flat artifact: removed `full` / `foss` product flavors and the `distribution` flavor dimension. Use `./gradlew assembleDebug` / `assembleRelease` directly (no more `assembleFullRelease` / `assembleFossRelease`).
+
 ### Fixed
 - H-6: DataStore write failures now show snackbar (no longer silent)
 - H-12: Reader chapter load failures show error message (no longer blank)
@@ -29,7 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extension system with 2000+ Tachiyomi-compatible sources
 - Library management with categories and favorites
 - Download system with offline reading and CBZ export
-- AI features: categorization, recommendations, smart search
 - Tracker sync (MAL, AniList, Kitsu, MangaUpdates, Shikimori)
 - Discord Rich Presence integration
 - OPDS catalog support

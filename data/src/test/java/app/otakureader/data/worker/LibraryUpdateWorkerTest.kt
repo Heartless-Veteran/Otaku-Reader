@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
@@ -51,6 +52,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadManager: DownloadManager
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var worker: LibraryUpdateWorker
 
     private lateinit var connectivityManager: ConnectivityManager
@@ -115,6 +117,7 @@ class LibraryUpdateWorkerTest {
         libraryPreferences = mockk()
         downloadManager = mockk(relaxed = true)
         chapterRepository = mockk()
+        notificationPreferences = mockk(relaxed = true)
 
         connectivityManager = mockk()
         network = mockk()
@@ -144,7 +147,8 @@ class LibraryUpdateWorkerTest {
             downloadPreferences,
             generalPreferences,
             downloadManager,
-            chapterRepository
+            chapterRepository,
+            notificationPreferences
         )
     }
 
@@ -520,5 +524,59 @@ class LibraryUpdateWorkerTest {
 
         // Then - worker succeeds despite download failure
         assertEquals(ListenableWorker.Result.success(), result)
+    }
+
+    // -------------------------------------------------------------------------
+    // Library Update WiFi Gate Tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun `doWork skips updates when updateOnlyOnWifi is true and WiFi unavailable`() = runTest {
+        // Given
+        every { libraryPreferences.updateOnlyOnWifi } returns flowOf(true)
+        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
+
+        coEvery { getLibraryManga() } returns flowOf(listOf(testManga1))
+
+        // When
+        val result = worker.doWork()
+
+        // Then - work is retried because WiFi gate blocks the work until connectivity is restored
+        assertEquals(ListenableWorker.Result.retry(), result)
+        coVerify(exactly = 0) { updateLibraryManga(any()) }
+    }
+
+    @Test
+    fun `doWork proceeds with updates when updateOnlyOnWifi is true and WiFi available`() = runTest {
+        // Given
+        every { libraryPreferences.updateOnlyOnWifi } returns flowOf(true)
+        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns true
+
+        coEvery { getLibraryManga() } returns flowOf(listOf(testManga1))
+        coEvery { updateLibraryManga(testManga1) } returns Result.success(0)
+
+        // When
+        val result = worker.doWork()
+
+        // Then - update proceeds normally on WiFi
+        assertEquals(ListenableWorker.Result.success(), result)
+        coVerify(exactly = 1) { updateLibraryManga(testManga1) }
+    }
+
+    @Test
+    fun `doWork proceeds with updates when updateOnlyOnWifi is false and no WiFi`() = runTest {
+        // Given
+        every { libraryPreferences.updateOnlyOnWifi } returns flowOf(false)
+        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
+
+        coEvery { getLibraryManga() } returns flowOf(listOf(testManga1))
+        coEvery { updateLibraryManga(testManga1) } returns Result.success(1)
+
+        // When
+        val result = worker.doWork()
+
+        // Then - update proceeds on cellular since WiFi gate is off
+        assertEquals(ListenableWorker.Result.success(), result)
+        coVerify(exactly = 1) { updateLibraryManga(testManga1) }
     }
 }

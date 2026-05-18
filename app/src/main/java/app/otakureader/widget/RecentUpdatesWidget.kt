@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -55,6 +56,8 @@ class RecentUpdatesWidget : GlanceAppWidget() {
                 .take(3)
                 .map { update ->
                     MangaUpdate(
+                        mangaId = update.manga.id,
+                        chapterId = update.chapter.id,
                         title = update.manga.title,
                         subtitle = update.chapter.name
                     )
@@ -80,6 +83,8 @@ class RecentUpdatesWidget : GlanceAppWidget() {
 }
 
 private data class MangaUpdate(
+    val mangaId: Long,
+    val chapterId: Long,
     val title: String,
     val subtitle: String
 )
@@ -135,7 +140,14 @@ private fun UpdateItemWidget(update: MangaUpdate) {
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .clickable(actionStartActivity<MainActivity>())
+            .clickable(
+                actionStartActivity<MainActivity>(
+                    parameters = actionParametersOf(
+                        WidgetKeys.MANGA_ID_KEY to update.mangaId,
+                        WidgetKeys.CHAPTER_ID_KEY to update.chapterId
+                    )
+                )
+            )
     ) {
         Text(
             text = update.title,

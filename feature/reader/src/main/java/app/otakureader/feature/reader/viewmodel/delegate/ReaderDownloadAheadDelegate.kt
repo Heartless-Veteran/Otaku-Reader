@@ -1,0 +1,119 @@
+package app.otakureader.feature.reader.viewmodel.delegate
+
+import android.content.Context
+import android.util.Log
+import app.otakureader.domain.model.Chapter
+import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.Manga
+import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.sourceapi.Page
+import app.otakureader.sourceapi.SourceChapter
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+class ReaderDownloadAheadDelegate @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val downloadPreferences: DownloadPreferences,
+    private val downloadRepository: DownloadRepository,
+    private val sourceRepository: SourceRepository,
+    private val chapterRepository: ChapterRepository,
+    private val mangaRepository: MangaRepository,
+) {
+    fun maybeDownloadNextChapter(
+        scope: CoroutineScope,
+        currentPage: Int,
+        totalPages: Int,
+        mangaId: Long,
+        chapterId: Long,
+        getCurrentManga: () -> Manga?,
+    ) {
+        if (totalPages == 0) return
+        val progress = currentPage.toFloat() / totalPages
+        if (progress < PROGRESS_THRESHOLD) return
+
+        scope.launch {
+            val downloadAheadChapters = downloadPreferences.downloadAheadWhileReading.first()
+            if (downloadAheadChapters <= 0) return@launch
+
+            val onlyOnWifi = downloadPreferences.downloadAheadOnlyOnWifi.first()
+            if (onlyOnWifi && !isOnWifi()) return@launch
+
+            val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
+            val currentIndex = chapters.indexOfFirst { it.id == chapterId }
+            if (currentIndex == -1 || currentIndex >= chapters.size - 1) return@launch
+
+            val manga = getCurrentManga() ?: mangaRepository.getMangaById(mangaId) ?: return@launch
+            val sourceName = manga.sourceId.toString()
+            val existingDownloads = downloadRepository.observeDownloads().first()
+
+            val endIndex = minOf(currentIndex + downloadAheadChapters, chapters.size - 1)
+            for (i in currentIndex + 1..endIndex) {
+                tryEnqueueChapter(manga, chapters[i], sourceName, existingDownloads)
+            }
+        }
+    }
+
+    private suspend fun tryEnqueueChapter(
+        manga: Manga,
+        chapter: Chapter,
+        sourceName: String,
+        existingDownloads: List<DownloadItem>,
+    ) {
+        if (existingDownloads.any { it.chapterId == chapter.id }) return
+        if (downloadRepository.isChapterDownloaded(sourceName, manga.title, chapter.name)) return
+
+        val sourceChapter = SourceChapter(
+            url = chapter.url,
+            name = chapter.name,
+            dateUpload = chapter.dateUpload,
+            chapterNumber = chapter.chapterNumber,
+            scanlator = chapter.scanlator,
+        )
+        val pageListResult = sourceRepository.getPageList(sourceName, sourceChapter)
+        pageListResult.onFailure { throwable ->
+            runCatching {
+                Log.w(TAG, "Failed to fetch page list for download-ahead " +
+                    "(mangaId=${manga.id}, chapterId=${chapter.id})", throwable)
+            }
+        }
+
+        val pageUrls = pageListResult.getOrNull()
+            ?.mapNotNull { page -> page.effectiveUrl() }
+            .orEmpty()
+        if (pageUrls.isEmpty()) return
+
+        downloadRepository.enqueueChapter(
+            mangaId = manga.id,
+            chapterId = chapter.id,
+            sourceName = sourceName,
+            mangaTitle = manga.title,
+            chapterTitle = chapter.name,
+            pageUrls = pageUrls,
+        )
+    }
+
+    private fun isOnWifi(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val activeNetwork = cm.activeNetwork ?: return false
+        val networkCapabilities = cm.getNetworkCapabilities(activeNetwork) ?: return false
+        return networkCapabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI)
+    }
+
+    private fun Page.effectiveUrl(): String? = when {
+        !imageUrl.isNullOrBlank() -> imageUrl
+        url.isNotBlank() -> url
+        else -> null
+    }
+
+    companion object {
+        private const val TAG = "ReaderDownloadAheadDelegate"
+        private const val PROGRESS_THRESHOLD = 0.8f
+    }
+}

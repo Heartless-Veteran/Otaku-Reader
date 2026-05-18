@@ -2,10 +2,8 @@ package app.otakureader.feature.browse
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.core.preferences.GeneralPreferences
-import app.otakureader.domain.model.SourceInfo
-import app.otakureader.domain.usecase.ai.ScoreSourcesForMangaUseCase
+import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
@@ -20,7 +18,9 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -36,9 +36,8 @@ class BrowseViewModel @Inject constructor(
     private val searchMangaUseCase: SearchMangaUseCase,
     private val getSourceFiltersUseCase: GetSourceFiltersUseCase,
     private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase,
+    private val feedRepository: FeedRepository,
     private val generalPreferences: GeneralPreferences,
-    private val aiPreferences: AiPreferences,
-    private val scoreSourcesForManga: ScoreSourcesForMangaUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowseState())
@@ -70,17 +69,21 @@ class BrowseViewModel @Inject constructor(
                 _state.update { it.copy(sources = filteredSources.map { s -> s.id }) }
             }
         }
-        observeSourceIntelligenceSettings()
+        observeSavedSearches()
     }
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun onEvent(event: BrowseEvent) {
         when (event) {
             is BrowseEvent.SelectSource -> {
                 _state.update {
                     it.copy(
                         currentSourceId = event.sourceId,
+                        searchQuery = "",
                         availableFilters = FilterList(),
-                        activeFilters = FilterList()
+                        activeFilters = FilterList(),
+                        hasSearchResults = false,
+                        searchResults = emptyList()
                     )
                 }
                 loadPopularManga(event.sourceId)
@@ -91,7 +94,12 @@ class BrowseViewModel @Inject constructor(
                 navigateToDetail(sourceId, event.manga.url)
             }
             is BrowseEvent.OnSearchQueryChange -> {
-                _state.update { it.copy(searchQuery = event.query) }
+                _state.update {
+                    it.copy(
+                        searchQuery = event.query,
+                        hasSearchResults = if (event.query.isBlank()) false else it.hasSearchResults
+                    )
+                }
             }
             is BrowseEvent.Search -> performSearch()
             is BrowseEvent.LoadNextPage -> loadNextPage()
@@ -116,10 +124,7 @@ class BrowseViewModel @Inject constructor(
                 _state.update { it.copy(showFilterSheet = false) }
                 performSearch()
             }
-            is BrowseEvent.RequestSourceScores -> {
-                requestSourceScores(event.mangaId, event.mangaTitle)
-            }
-            
+
             // Bulk favorite events
             is BrowseEvent.OnMangaLongClick -> {
                 toggleMangaSelection(event.manga)
@@ -136,6 +141,9 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ExitBulkSelectionMode -> {
                 _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
             }
+            is BrowseEvent.SaveCurrentSearch -> saveCurrentSearch()
+            is BrowseEvent.DeleteSavedSearch -> deleteSavedSearch(event.searchId)
+            is BrowseEvent.ApplySavedSearch -> applySavedSearch(event.search)
         }
     }
 
@@ -182,7 +190,7 @@ class BrowseViewModel @Inject constructor(
         val sourceId = _state.value.currentSourceId ?: return
 
         viewModelScope.launch {
-            _state.update { it.copy(isSearching = true, error = null) }
+            _state.update { it.copy(isSearching = true, hasSearchResults = true, error = null) }
             searchMangaUseCase(sourceId, query, 1, _state.value.activeFilters)
                 .onSuccess { mangaPage ->
                     _state.update {
@@ -198,6 +206,7 @@ class BrowseViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSearching = false,
+                            hasSearchResults = false,
                             error = error.message ?: "Search failed"
                         )
                     }
@@ -337,53 +346,52 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
-    // --- Source Intelligence ---
+    // --- Saved Searches ---
 
-    /**
-     * Observes the combined AI master toggle + source intelligence toggle from preferences.
-     * The [BrowseState.sourceIntelligenceEnabled] flag is kept in sync so the UI can
-     * conditionally show/hide source scoring chips.
-     */
-    private fun observeSourceIntelligenceSettings() {
+    private fun observeSavedSearches() {
         combine(
-            aiPreferences.aiEnabled,
-            aiPreferences.aiSourceIntelligence
-        ) { aiEnabled, sourceIntelEnabled ->
-            aiEnabled && sourceIntelEnabled
-        }.onEach { enabled ->
-            _state.update { it.copy(sourceIntelligenceEnabled = enabled) }
-        }.launchIn(viewModelScope)
+            feedRepository.getSavedSearches(),
+            _state.map { it.currentSourceId }.distinctUntilChanged()
+        ) { searches, sourceId ->
+            if (sourceId != null) searches.filter { it.sourceName == sourceId }
+            else searches
+        }
+            .onEach { filtered -> _state.update { it.copy(savedSearches = filtered) } }
+            .launchIn(viewModelScope)
     }
 
-    /**
-     * Requests AI source intelligence scoring for the given manga.
-     *
-     * Available sources are mapped to [SourceInfo] objects and passed to
-     * [ScoreSourcesForMangaUseCase]. Results are stored in [BrowseState.sourceScores]
-     * sorted by overall score descending so the UI can suggest the best source.
-     *
-     * When AI is disabled or unavailable the use case returns an empty list and no
-     * state update is performed – the UI continues to show sources unsorted.
-     */
-    private fun requestSourceScores(mangaId: Long, mangaTitle: String) {
+    private fun saveCurrentSearch() {
+        val state = _state.value
+        val sourceId = state.currentSourceId ?: return
+        val query = state.searchQuery.trim()
+        if (query.isBlank()) {
+            viewModelScope.launch { _effect.send(BrowseEffect.ShowSnackbar("Enter a search query to save")) }
+            return
+        }
         viewModelScope.launch {
-            _state.update { it.copy(isAnalyzingSource = true) }
-            val sourceInfoList = _sources.value.map { source ->
-                SourceInfo(
-                    sourceId = source.id,
-                    sourceName = source.name,
-                    chapterCount = 0, // Not available at browse level; AI uses name/language as proxy
-                    language = source.lang,
+            runCatching {
+                feedRepository.addSavedSearch(
+                    sourceId = sourceId.toLongOrNull() ?: 0L,
+                    sourceName = sourceId,
+                    query = query,
+                    filters = emptyMap(),
                 )
-            }
-            val result = scoreSourcesForManga(mangaId, mangaTitle, sourceInfoList)
-            val scores = result.getOrNull() ?: emptyList()
-            _state.update { state ->
-                state.copy(
-                    isAnalyzingSource = false,
-                    sourceScores = scores,
-                )
+            }.onSuccess {
+                _effect.send(BrowseEffect.ShowSnackbar("Search saved"))
+            }.onFailure {
+                _effect.send(BrowseEffect.ShowSnackbar("Failed to save search"))
             }
         }
+    }
+
+    private fun deleteSavedSearch(searchId: Long) {
+        viewModelScope.launch {
+            runCatching { feedRepository.removeSavedSearch(searchId) }
+        }
+    }
+
+    private fun applySavedSearch(search: app.otakureader.domain.model.FeedSavedSearch) {
+        _state.update { it.copy(searchQuery = search.query) }
+        performSearch()
     }
 }

@@ -111,6 +111,24 @@ class UpdateNotifier(private val context: Context) {
             .build()
     }
 
+    /**
+     * Send only a summary notification, no individual manga notifications.
+     * Used when smart batching decides there are too many updates to show individually.
+     */
+    @SuppressLint("MissingPermission")
+    fun notifySummaryOnly(mangaCount: Int, totalNewChapters: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return
+        }
+
+        val summaryNotification = buildSummaryNotification(mangaCount, totalNewChapters)
+        notificationManager.notify(UPDATE_NOTIFICATION_TAG, SUMMARY_NOTIFICATION_ID, summaryNotification)
+    }
+
     private fun buildSummaryNotification(mangaCount: Int, totalNewChapters: Int): android.app.Notification {
         val contentText = when {
             mangaCount == 1 -> "$totalNewChapters new chapter${if (totalNewChapters > 1) "s" else ""} available"

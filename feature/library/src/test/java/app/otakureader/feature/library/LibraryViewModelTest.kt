@@ -1,18 +1,23 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.library
 
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.domain.model.Manga
-import app.otakureader.domain.model.RecommendationResult
+import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.model.ReadingList
+import app.otakureader.domain.model.ReadingListMangaItem
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ReadingListRepository
+import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.tracking.TrackRepository
-import app.otakureader.core.database.dao.CategoryDao
-import app.otakureader.domain.usecase.DismissRecommendationUseCase
-import app.otakureader.domain.usecase.GetForYouRecommendationsUseCase
+import app.otakureader.domain.usecase.GetCategoriesUseCase
+import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
-import app.otakureader.domain.usecase.RefreshRecommendationsUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.cash.turbine.test
 import io.mockk.coEvery
@@ -20,6 +25,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -39,16 +45,18 @@ class LibraryViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var getLibraryManga: GetLibraryMangaUseCase
+    private lateinit var searchLibraryManga: SearchLibraryMangaUseCase
     private lateinit var toggleFavoriteManga: ToggleFavoriteMangaUseCase
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var downloadRepository: DownloadRepository
     private lateinit var trackRepository: TrackRepository
-    private lateinit var getForYouRecommendations: GetForYouRecommendationsUseCase
-    private lateinit var refreshRecommendations: RefreshRecommendationsUseCase
-    private lateinit var dismissRecommendation: DismissRecommendationUseCase
-    private lateinit var categoryDao: CategoryDao
+    private lateinit var getCategories: GetCategoriesUseCase
+    private lateinit var getContinueReading: GetContinueReadingUseCase
+    private lateinit var readingGoalPreferences: ReadingGoalPreferences
+    private lateinit var statisticsRepository: StatisticsRepository
+    private lateinit var readingListRepository: ReadingListRepository
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -60,6 +68,7 @@ class LibraryViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         getLibraryManga = mockk()
+        searchLibraryManga = mockk(relaxed = true)
         toggleFavoriteManga = mockk()
         libraryPreferences = mockk {
             every { gridSize } returns flowOf(3)
@@ -81,18 +90,26 @@ class LibraryViewModelTest {
         trackRepository = mockk {
             every { observeEntriesForManga(any()) } returns flowOf(emptyList())
         }
-        getForYouRecommendations = mockk {
-            coEvery { this@mockk.invoke(any()) } returns Result.success(emptyList())
+        getCategories = mockk(relaxed = true) {
+            every { this@mockk.invoke() } returns flowOf(emptyList())
+            every { getMangaIdsForCategory(any()) } returns flowOf(emptyList())
         }
-        refreshRecommendations = mockk {
-            coEvery { this@mockk.invoke() } returns Result.success(RecommendationResult(recommendations = emptyList()))
+        getContinueReading = mockk {
+            every { this@mockk.invoke() } returns flowOf(emptyList())
         }
-        dismissRecommendation = mockk {
-            coEvery { this@mockk.invoke(any()) } returns Unit
+        readingGoalPreferences = mockk {
+            every { dailyChapterGoal } returns flowOf(0)
+            every { weeklyChapterGoal } returns flowOf(0)
         }
-        categoryDao = mockk(relaxed = true) {
-            every { getCategories() } returns flowOf(emptyList())
-            every { getMangaIdsByCategoryId(any()) } returns flowOf(emptyList())
+        statisticsRepository = mockk {
+            every { getReadingGoalProgress(any(), any()) } returns flowOf(ReadingGoal())
+        }
+        readingListRepository = mockk {
+            every { getAllLists() } returns flowOf(emptyList())
+            every { getListWithManga(any()) } returns flowOf(Pair(
+                ReadingList(id = 0L, name = ""),
+                emptyList()
+            ))
         }
     }
 
@@ -104,16 +121,18 @@ class LibraryViewModelTest {
     private fun createViewModel(): LibraryViewModel {
         return LibraryViewModel(
             getLibraryManga,
+            searchLibraryManga,
             toggleFavoriteManga,
             libraryPreferences,
             generalPreferences,
             chapterRepository,
             downloadRepository,
             trackRepository,
-            categoryDao,
-            getForYouRecommendations,
-            refreshRecommendations,
-            dismissRecommendation
+            getCategories,
+            getContinueReading,
+            readingGoalPreferences,
+            statisticsRepository,
+            readingListRepository,
         )
     }
 
@@ -296,7 +315,7 @@ class LibraryViewModelTest {
     @Test
     fun loadLibrary_onError_setsErrorState() = runTest {
         every { getLibraryManga() } returns kotlinx.coroutines.flow.flow {
-            throw RuntimeException("Database error")
+            throw IllegalStateException("Database error")
         }
 
         val viewModel = createViewModel()
@@ -455,5 +474,103 @@ class LibraryViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(3, viewModel.state.value.newUpdatesCount)
+    }
+
+    // --- Reading goal tests ---
+
+    @Test
+    fun observeGoalProgress_updatesStateWithGoal() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val testGoal = ReadingGoal(dailyGoal = 5, dailyProgress = 3, weeklyGoal = 20, weeklyProgress = 10)
+        every { readingGoalPreferences.dailyChapterGoal } returns flowOf(5)
+        every { readingGoalPreferences.weeklyChapterGoal } returns flowOf(20)
+        every { statisticsRepository.getReadingGoalProgress(5, 20) } returns flowOf(testGoal)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(testGoal, viewModel.state.value.readingGoal)
+    }
+
+    @Test
+    fun observeGoalProgress_reactsToGoalChanges() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val initialGoal = ReadingGoal(dailyGoal = 5, dailyProgress = 2)
+        val updatedGoal = ReadingGoal(dailyGoal = 10, dailyProgress = 2)
+
+        val dailyGoalFlow = MutableStateFlow(5)
+        every { readingGoalPreferences.dailyChapterGoal } returns dailyGoalFlow
+        every { readingGoalPreferences.weeklyChapterGoal } returns flowOf(0)
+        every { statisticsRepository.getReadingGoalProgress(5, 0) } returns flowOf(initialGoal)
+        every { statisticsRepository.getReadingGoalProgress(10, 0) } returns flowOf(updatedGoal)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(initialGoal, viewModel.state.value.readingGoal)
+
+        // Change goal
+        dailyGoalFlow.value = 10
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(updatedGoal, viewModel.state.value.readingGoal)
+    }
+
+    @Test
+    fun setFilterReadingList_withListId_setsReadingListMode() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val list = ReadingList(id = 42L, name = "Favorites", itemCount = 3)
+        every { readingListRepository.getAllLists() } returns flowOf(listOf(list))
+        every { readingListRepository.getListWithManga(42L) } returns flowOf(Pair(list, emptyList()))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.SetFilterReadingList(42L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(42L, viewModel.state.value.filterReadingListId)
+    }
+
+    @Test
+    fun setFilterReadingList_withNullId_resetsToAll() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val list = ReadingList(id = 42L, name = "Favorites", itemCount = 3)
+        every { readingListRepository.getAllLists() } returns flowOf(listOf(list))
+        every { readingListRepository.getListWithManga(42L) } returns flowOf(Pair(list, emptyList()))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.SetFilterReadingList(42L))
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(42L, viewModel.state.value.filterReadingListId)
+
+        viewModel.onEvent(LibraryEvent.SetFilterReadingList(null))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.filterReadingListId)
+    }
+
+    @Test
+    fun readingListFilter_filtersToListManga() = runTest {
+        val mangaInList = sampleMangas[0]
+        val mangaNotInList = sampleMangas[1]
+        every { getLibraryManga() } returns flowOf(listOf(mangaInList, mangaNotInList))
+
+        val list = ReadingList(id = 1L, name = "My List", itemCount = 1)
+        val listMangaItem = ReadingListMangaItem(manga = mangaInList)
+        every { readingListRepository.getAllLists() } returns flowOf(listOf(list))
+        every { readingListRepository.getListWithManga(1L) } returns flowOf(Pair(list, listOf(listMangaItem)))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.SetFilterReadingList(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val mangaList = viewModel.state.value.mangaList
+        assertEquals(1, mangaList.size)
+        assertEquals(mangaInList.id, mangaList[0].id)
     }
 }

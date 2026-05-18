@@ -37,6 +37,7 @@ class MigrateMangaUseCase @Inject constructor(
      * @param mode Migration mode (MOVE or COPY)
      * @return Result with MigrationResult containing status and details
      */
+    @Suppress("ThrowsCount", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     suspend operator fun invoke(
         sourceManga: Manga,
         targetCandidate: MigrationCandidate,

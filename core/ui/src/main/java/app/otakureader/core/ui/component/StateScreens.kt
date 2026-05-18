@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.R
 
 /** Full-screen loading indicator. */
@@ -44,6 +45,7 @@ fun LoadingScreen(
     message: String,
     modifier: Modifier = Modifier
 ) {
+    val otaku = LocalOtakuColors.current
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -54,7 +56,7 @@ fun LoadingScreen(
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = otaku.fgMuted
         )
     }
 }
@@ -85,6 +87,7 @@ fun ErrorScreen(
     retryText: String = stringResource(R.string.core_ui_retry),
     onRetry: (() -> Unit)? = null
 ) {
+    val otaku = LocalOtakuColors.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -96,7 +99,7 @@ fun ErrorScreen(
             imageVector = icon,
             contentDescription = title,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
+            tint = otaku.danger
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -104,7 +107,7 @@ fun ErrorScreen(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
+            color = otaku.fg
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -112,7 +115,7 @@ fun ErrorScreen(
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = otaku.fgMuted,
             textAlign = TextAlign.Center
         )
 
@@ -151,6 +154,7 @@ fun EmptyScreen(
     actionText: String? = null,
     onAction: (() -> Unit)? = null
 ) {
+    val otaku = LocalOtakuColors.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -162,7 +166,7 @@ fun EmptyScreen(
             imageVector = icon,
             contentDescription = title,
             modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            tint = otaku.fgMuted.copy(alpha = 0.6f)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -170,7 +174,7 @@ fun EmptyScreen(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = otaku.fg,
             textAlign = TextAlign.Center
         )
 
@@ -179,7 +183,7 @@ fun EmptyScreen(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = otaku.fgMuted,
                 textAlign = TextAlign.Center
             )
         }

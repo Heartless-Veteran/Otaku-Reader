@@ -35,4 +35,13 @@ interface MangaRepository {
     suspend fun removeFromFavorites(id: Long)
     suspend fun addMangaToCategory(mangaId: Long, categoryId: Long)
     suspend fun deleteDownloadsForManga(mangaId: Long)
+
+    // Completed series tracking
+    suspend fun markUserCompleted(id: Long, completed: Boolean)
+    fun getCompletedManga(): Flow<List<Manga>>
+    fun getActiveManga(): Flow<List<Manga>>
+
+    // Dropped series tracking
+    suspend fun markUserDropped(id: Long, dropped: Boolean)
+    fun getDroppedManga(): Flow<List<Manga>>
 }

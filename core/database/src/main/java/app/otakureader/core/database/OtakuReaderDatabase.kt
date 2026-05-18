@@ -3,31 +3,32 @@ package app.otakureader.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import app.otakureader.core.database.dao.CategorizationResultDao
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.OpdsServerDao
+import app.otakureader.core.database.dao.PageBookmarkDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
-import app.otakureader.core.database.dao.RecommendationDao
-import app.otakureader.core.database.dao.SmartSearchCacheDao
+import app.otakureader.core.database.dao.ReadingListDao
+import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.dao.TrackerSyncDao
-import app.otakureader.core.database.entity.CategorizationResultEntity
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
+import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.database.entity.FeedItemEntity
 import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.OpdsServerEntity
+import app.otakureader.core.database.entity.PageBookmarkEntity
 import app.otakureader.core.database.entity.ReadingHistoryEntity
-import app.otakureader.core.database.entity.RecommendationEntity
-import app.otakureader.core.database.entity.ReadingPatternEntity
-import app.otakureader.core.database.entity.RecommendationRefreshEntity
-import app.otakureader.core.database.entity.SmartSearchCacheEntity
+import app.otakureader.core.database.entity.ReadingListEntity
+import app.otakureader.core.database.entity.ReadingListItemEntity
+import app.otakureader.core.database.entity.ReadingStreakEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
 
@@ -38,6 +39,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         CategoryEntity::class,
         MangaCategoryEntity::class,
         ReadingHistoryEntity::class,
+        ReadingStreakEntity::class,
         OpdsServerEntity::class,
         // Feed feature
         FeedItemEntity::class,
@@ -46,16 +48,15 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Tracker sync feature
         TrackerSyncStateEntity::class,
         SyncConfigurationEntity::class,
-        // AI categorization feature
-        CategorizationResultEntity::class,
-        // Smart search cache
-        SmartSearchCacheEntity::class,
-        // AI recommendation feature
-        RecommendationEntity::class,
-        ReadingPatternEntity::class,
-        RecommendationRefreshEntity::class,
+        // Page bookmarks
+        PageBookmarkEntity::class,
+        // Reading lists
+        ReadingListEntity::class,
+        ReadingListItemEntity::class,
+        // Download queue persistence
+        DownloadQueueEntity::class,
     ],
-    version = 13,
+    version = 22,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -65,20 +66,15 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun mangaCategoryDao(): MangaCategoryDao
     abstract fun readingHistoryDao(): ReadingHistoryDao
+    abstract fun readingStreakDao(): ReadingStreakDao
     abstract fun opdsServerDao(): OpdsServerDao
+    abstract fun pageBookmarkDao(): PageBookmarkDao
 
-    // Feed + tracker sync DAOs
+    // Feed + tracker sync + reading list DAOs
     abstract fun feedDao(): FeedDao
     abstract fun trackerSyncDao(): TrackerSyncDao
-
-    // AI categorization DAO
-    abstract fun categorizationResultDao(): CategorizationResultDao
-
-    // Smart search cache DAO
-    abstract fun smartSearchCacheDao(): SmartSearchCacheDao
-
-    // AI recommendation DAO (recommendations, reading patterns, refresh history)
-    abstract fun recommendationDao(): RecommendationDao
+    abstract fun readingListDao(): ReadingListDao
+    abstract fun downloadQueueDao(): DownloadQueueDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

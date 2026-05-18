@@ -16,7 +16,7 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
 
     // --- Reading Mode ---
 
-    /** Reader display mode ordinal — matches [app.otakureader.feature.reader.model.ReaderMode]:
+    /** Reader display mode ordinal — matches [app.otakureader.domain.model.ReaderMode]:
      *  0 = SINGLE_PAGE, 1 = DUAL_PAGE, 2 = WEBTOON, 3 = SMART_PANELS. */
     val readerMode: Flow<Int> = dataStore.data.map { it[Keys.READER_MODE] ?: 0 }
     suspend fun setReaderMode(value: Int) = dataStore.edit { it[Keys.READER_MODE] = value }
@@ -43,10 +43,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
 
     val animatePageTransitions: Flow<Boolean> = dataStore.data.map { it[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true }
     suspend fun setAnimatePageTransitions(value: Boolean) = dataStore.edit { it[Keys.ANIMATE_PAGE_TRANSITIONS] = value }
-
-    /** Double tap animation speed: 0 = Slow, 1 = Normal, 2 = Fast */
-    val doubleTapAnimationSpeed: Flow<Int> = dataStore.data.map { it[Keys.DOUBLE_TAP_ANIMATION_SPEED] ?: 1 }
-    suspend fun setDoubleTapAnimationSpeed(value: Int) = dataStore.edit { it[Keys.DOUBLE_TAP_ANIMATION_SPEED] = value }
 
     val showReadingModeOverlay: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_READING_MODE_OVERLAY] ?: true }
     suspend fun setShowReadingModeOverlay(value: Boolean) = dataStore.edit { it[Keys.SHOW_READING_MODE_OVERLAY] = value }
@@ -80,15 +76,9 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
     val volumeKeysInverted: Flow<Boolean> = dataStore.data.map { it[Keys.VOLUME_KEYS_INVERTED] ?: false }
     suspend fun setVolumeKeysInverted(inverted: Boolean) = dataStore.edit { it[Keys.VOLUME_KEYS_INVERTED] = inverted }
 
-    // --- Auto Webtoon Detection ---
-
-    /** Automatically detect webtoon/long-strip manga and switch to webtoon mode */
-    val autoWebtoonDetection: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_WEBTOON_DETECTION] ?: true }
-    suspend fun setAutoWebtoonDetection(enabled: Boolean) = dataStore.edit { it[Keys.AUTO_WEBTOON_DETECTION] = enabled }
-
-    /** Image aspect ratio threshold for webtoon detection (height/width > this = webtoon) */
-    val webtoonDetectionThreshold: Flow<Float> = dataStore.data.map { it[Keys.WEBTOON_THRESHOLD]?.let { it / 100f } ?: 1.5f }
-    suspend fun setWebtoonDetectionThreshold(value: Float) = dataStore.edit { it[Keys.WEBTOON_THRESHOLD] = (value * 100).toInt() }
+    // --- Page Thumbnail Strip ---
+    val showPageThumbnailStrip: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] ?: true }
+    suspend fun setShowPageThumbnailStrip(value: Boolean) = dataStore.edit { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] = value }
 
     // --- Page Preload Customization ---
 
@@ -99,24 +89,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
     /** Number of pages to preload after current page (0 = disable) */
     val preloadPagesAfter: Flow<Int> = dataStore.data.map { it[Keys.PRELOAD_PAGES_AFTER] ?: 3 }
     suspend fun setPreloadPagesAfter(value: Int) = dataStore.edit { it[Keys.PRELOAD_PAGES_AFTER] = value }
-
-    // --- Smart Background ---
-
-    /** Enable smart background that adapts to page colors */
-    val smartBackground: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_BACKGROUND] ?: false }
-    suspend fun setSmartBackground(enabled: Boolean) = dataStore.edit { it[Keys.SMART_BACKGROUND] = enabled }
-
-    // --- Auto Theme Color ---
-
-    /** Enable automatic theme color extraction from manga covers */
-    val autoThemeColor: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_THEME_COLOR] ?: true }
-    suspend fun setAutoThemeColor(enabled: Boolean) = dataStore.edit { it[Keys.AUTO_THEME_COLOR] = enabled }
-
-    // --- Force Disable Webtoon Zoom ---
-
-    /** Disable zoom gestures in webtoon mode for smoother scrolling */
-    val forceDisableWebtoonZoom: Flow<Boolean> = dataStore.data.map { it[Keys.FORCE_DISABLE_WEBTOON_ZOOM] ?: false }
-    suspend fun setForceDisableWebtoonZoom(enabled: Boolean) = dataStore.edit { it[Keys.FORCE_DISABLE_WEBTOON_ZOOM] = enabled }
 
     // --- Webtoon Settings ---
 
@@ -174,7 +146,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         val SHOW_PAGE_NUMBER = booleanPreferencesKey("reader_show_page_number")
         val BACKGROUND_COLOR = intPreferencesKey("reader_background_color")
         val ANIMATE_PAGE_TRANSITIONS = booleanPreferencesKey("reader_animate_page_transitions")
-        val DOUBLE_TAP_ANIMATION_SPEED = intPreferencesKey("reader_double_tap_animation_speed")
         val SHOW_READING_MODE_OVERLAY = booleanPreferencesKey("reader_show_reading_mode_overlay")
         val SHOW_TAP_ZONES_OVERLAY = booleanPreferencesKey("reader_show_tap_zones_overlay")
         val READER_SCALE = intPreferencesKey("reader_scale")
@@ -183,13 +154,9 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         val INVERT_TAP_ZONES = booleanPreferencesKey("reader_invert_tap_zones")
         val VOLUME_KEYS_ENABLED = booleanPreferencesKey("reader_volume_keys_enabled")
         val VOLUME_KEYS_INVERTED = booleanPreferencesKey("reader_volume_keys_inverted")
-        val AUTO_WEBTOON_DETECTION = booleanPreferencesKey("reader_auto_webtoon_detection")
-        val WEBTOON_THRESHOLD = intPreferencesKey("reader_webtoon_threshold")
+        val SHOW_PAGE_THUMBNAIL_STRIP = booleanPreferencesKey("reader_show_page_thumbnail_strip")
         val PRELOAD_PAGES_BEFORE = intPreferencesKey("reader_preload_pages_before")
         val PRELOAD_PAGES_AFTER = intPreferencesKey("reader_preload_pages_after")
-        val SMART_BACKGROUND = booleanPreferencesKey("reader_smart_background")
-        val AUTO_THEME_COLOR = booleanPreferencesKey("reader_auto_theme_color")
-        val FORCE_DISABLE_WEBTOON_ZOOM = booleanPreferencesKey("reader_force_disable_webtoon_zoom")
         val WEBTOON_SIDE_PADDING = intPreferencesKey("reader_webtoon_side_padding")
         val WEBTOON_MENU_HIDE_SENSITIVITY = intPreferencesKey("reader_webtoon_menu_hide_sensitivity")
         val WEBTOON_DOUBLE_TAP_ZOOM = booleanPreferencesKey("reader_webtoon_double_tap_zoom")

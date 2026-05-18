@@ -1,14 +1,15 @@
 package app.otakureader.feature.reader.model
 
+import app.otakureader.domain.model.ReadingDirection
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
- * Data models for panel analysis results from Gemini Vision API.
+ * Data models for panel analysis results from local image processing.
  *
  * These models extend the basic ComicPanel with additional metadata
- * from AI-based panel detection, including confidence scores and
+ * from panel detection, including confidence scores and
  * detected text regions.
  */
 
@@ -195,7 +196,15 @@ sealed class PanelAnalysisResultWrapper {
  */
 sealed class PanelAnalysisException(message: String, cause: Throwable? = null) : Exception(message, cause) {
     class NotInitialized(message: String = "Panel analyzer not initialized") : PanelAnalysisException(message)
-    class NotAvailableInFoss(message: String = "Panel-aware reading is not available in FOSS builds") : PanelAnalysisException(message)
+
+    /**
+     * Thrown when panel-aware reading is requested but no real implementation is bound.
+     *
+     * The local [PanelDetector] handles panel detection using image processing;
+     * this exception is reserved for cases where the detector cannot run
+     * (e.g. missing bitmap, unsupported format).
+     */
+    class NotAvailable(message: String = "Panel-aware reading is not currently available") : PanelAnalysisException(message)
     class ApiError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)
     class InvalidResponse(message: String) : PanelAnalysisException(message)
     class ImageLoadError(message: String, cause: Throwable? = null) : PanelAnalysisException(message, cause)

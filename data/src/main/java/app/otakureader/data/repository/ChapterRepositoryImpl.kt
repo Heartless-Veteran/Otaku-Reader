@@ -10,6 +10,7 @@ import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.MangaStatus as DbMangaStatus
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.ChapterWithHistory
+import app.otakureader.domain.model.ContinueReadingItem
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.MangaUpdate
@@ -64,6 +65,10 @@ class ChapterRepositoryImpl @Inject constructor(
     override suspend fun updateBookmark(chapterId: Long, bookmark: Boolean) {
         chapterDao.updateBookmark(chapterId, bookmark)
     }
+
+    override suspend fun updateChapterNotes(chapterId: Long, notes: String?) {
+        chapterDao.updateChapterNotes(chapterId, notes)
+    }
     
     override suspend fun insertChapters(chapters: List<Chapter>) {
         chapterDao.insertAll(chapters.map { it.toEntity() })
@@ -76,6 +81,26 @@ class ChapterRepositoryImpl @Inject constructor(
     override fun observeHistory(): Flow<List<ChapterWithHistory>> {
         return readingHistoryDao.observeHistoryWithMangaInfo().map { entities ->
             entities.map { it.toDomain() }
+        }
+    }
+
+    override fun observeContinueReading(): Flow<List<ContinueReadingItem>> {
+        return readingHistoryDao.observeContinueReading().map { entities ->
+            entities
+                .distinctBy { it.mangaId }
+                .take(12)
+                .map { e ->
+                    ContinueReadingItem(
+                        mangaId = e.mangaId,
+                        chapterId = e.chapterId,
+                        mangaTitle = e.mangaTitle ?: "",
+                        thumbnailUrl = e.mangaThumbnailUrl,
+                        chapterName = e.name,
+                        chapterNumber = e.chapterNumber,
+                        lastPageRead = e.lastPageRead,
+                        readAt = e.readAt
+                    )
+                }
         }
     }
 
@@ -118,7 +143,8 @@ class ChapterRepositoryImpl @Inject constructor(
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,
-        dateFetch = dateFetch
+        dateFetch = dateFetch,
+        userNotes = userNotes
     )
 
     private fun ChapterWithHistoryEntity.toDomain() = ChapterWithHistory(
@@ -161,7 +187,7 @@ class ChapterRepositoryImpl @Inject constructor(
         author = author,
         artist = artist,
         description = description,
-        genre = genre?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() } ?: emptyList(),
+        genre = genre?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
         status = MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
@@ -181,7 +207,8 @@ class ChapterRepositoryImpl @Inject constructor(
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,
-        dateFetch = dateFetch
+        dateFetch = dateFetch,
+        userNotes = userNotes
     )
 }
 

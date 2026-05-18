@@ -5,7 +5,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -36,10 +38,20 @@ class ReadingGoalPreferences(private val dataStore: DataStore<Preferences>) {
     val reminderHour: Flow<Int> = dataStore.data.map { it[Keys.REMINDER_HOUR] ?: 20 }
     suspend fun setReminderHour(value: Int) = dataStore.edit { it[Keys.REMINDER_HOUR] = value.coerceIn(0, 23) }
 
+    // --- Goal notification deduplication ---
+
+    /** ISO date string (yyyy-MM-dd) of the last day a goal-completion notification was sent. */
+    suspend fun getLastGoalNotifiedDate(): String =
+        dataStore.data.map { it[Keys.LAST_GOAL_NOTIFIED_DATE] ?: "" }.first()
+
+    suspend fun setLastGoalNotifiedDate(date: String) =
+        dataStore.edit { it[Keys.LAST_GOAL_NOTIFIED_DATE] = date }
+
     private object Keys {
         val DAILY_CHAPTER_GOAL = intPreferencesKey("daily_chapter_goal")
         val WEEKLY_CHAPTER_GOAL = intPreferencesKey("weekly_chapter_goal")
         val REMINDERS_ENABLED = booleanPreferencesKey("reading_reminders_enabled")
         val REMINDER_HOUR = intPreferencesKey("reading_reminder_hour")
+        val LAST_GOAL_NOTIFIED_DATE = stringPreferencesKey("last_goal_notified_date")
     }
 }

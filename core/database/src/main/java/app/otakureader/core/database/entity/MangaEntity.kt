@@ -44,7 +44,12 @@ data class MangaEntity(
     val readerBackgroundColor: Long? = null,
     // Page preloading settings (#264)
     val preloadPagesBefore: Int? = null,
-    val preloadPagesAfter: Int? = null
+    val preloadPagesAfter: Int? = null,
+    val contentRating: Int = 0,
+    /** User has marked this manga as fully read / completed. */
+    val userCompleted: Boolean = false,
+    /** User has dropped / abandoned this manga. */
+    val userDropped: Boolean = false,
 )
 
 enum class MangaStatus {

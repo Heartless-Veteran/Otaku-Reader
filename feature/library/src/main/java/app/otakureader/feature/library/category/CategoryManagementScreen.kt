@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -30,6 +31,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,6 +62,7 @@ fun CategoryManagementScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
     var showCreateDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<CategoryUiItem?>(null) }
     var showDeleteConfirmation by remember { mutableStateOf<CategoryUiItem?>(null) }
@@ -67,7 +71,7 @@ fun CategoryManagementScreen(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is CategoryEffect.ShowSnackbar -> {
-                    // Handle snackbar if needed
+                    scope.launch { snackbarHostState.showSnackbar(effect.message) }
                 }
                 CategoryEffect.DismissDialog -> {
                     showCreateDialog = false
@@ -79,6 +83,7 @@ fun CategoryManagementScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.category_management_title)) },
@@ -140,8 +145,9 @@ fun CategoryManagementScreen(
                 editingCategory = null
             },
             onConfirm = { name ->
-                if (editingCategory != null) {
-                    viewModel.onEvent(CategoryEvent.UpdateCategory(editingCategory!!.id, name))
+                val editing = editingCategory
+                if (editing != null) {
+                    viewModel.onEvent(CategoryEvent.UpdateCategory(editing.id, name))
                 } else {
                     viewModel.onEvent(CategoryEvent.CreateCategory(name))
                 }
@@ -238,6 +244,26 @@ private fun CategoryListItem(
                                 Icon(
                                     imageVector = if (category.isHidden) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = null
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (category.isNsfw)
+                                        stringResource(R.string.category_remove_nsfw)
+                                    else
+                                        stringResource(R.string.category_mark_nsfw)
+                                )
+                            },
+                            onClick = {
+                                onToggleNsfw()
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (category.isNsfw) Icons.Default.VisibilityOff else Icons.Default.Warning,
+                                    contentDescription = null,
                                 )
                             }
                         )

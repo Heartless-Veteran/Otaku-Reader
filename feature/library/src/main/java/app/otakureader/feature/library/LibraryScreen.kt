@@ -1,7 +1,12 @@
 package app.otakureader.feature.library
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Arrangement
@@ -10,19 +15,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -46,35 +56,59 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.otakureader.domain.model.MangaRecommendation
+import app.otakureader.core.ui.components.MangaCard
+import app.otakureader.core.ui.components.ManhwaCard
+import app.otakureader.core.ui.components.OtakuChip
+import app.otakureader.core.ui.theme.LocalOtakuColors
+import app.otakureader.domain.model.Manga
 import coil3.compose.AsyncImage
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import app.otakureader.core.ui.adaptive.WindowWidthSizeClass
+import app.otakureader.core.ui.adaptive.isExpanded
+import app.otakureader.core.ui.adaptive.rememberWindowWidthSizeClass
+import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.model.ReadingGoal
+import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -82,15 +116,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun LibraryScreen(
     onMangaClick: (Long) -> Unit,
-    onNavigateToUpdates: () -> Unit,
-    onNavigateToBrowse: () -> Unit,
-    onNavigateToHistory: () -> Unit,
-    onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToDownloads: () -> Unit,
     onNavigateToMigration: (List<Long>) -> Unit = {},
     onNavigateToCategoryManagement: () -> Unit = {},
-    onRecommendationClick: (String) -> Unit = { onNavigateToBrowse() },
+    onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -103,6 +133,7 @@ fun LibraryScreen(
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is LibraryEffect.NavigateToManga -> onMangaClick(effect.mangaId)
+                is LibraryEffect.NavigateToReader -> onNavigateToReader(effect.mangaId, effect.chapterId)
                 is LibraryEffect.ShowError -> {
                     scope.launch {
                         snackbarHostState.showSnackbar(effect.message)
@@ -111,10 +142,6 @@ fun LibraryScreen(
                 is LibraryEffect.NavigateToMigration -> {
                     onNavigateToMigration(effect.selectedMangaIds)
                 }
-                is LibraryEffect.NavigateToRecommendationSearch -> {
-                    onRecommendationClick(effect.title)
-                }
-                else -> {}
             }
         }
     }
@@ -246,18 +273,6 @@ fun LibraryScreen(
                 )
             }
         },
-        bottomBar = {
-            LibraryBottomNavigation(
-                selectedRoute = "library",
-                onNavigateToLibrary = { /* Already here */ },
-                onNavigateToUpdates = onNavigateToUpdates,
-                onNavigateToBrowse = onNavigateToBrowse,
-                onNavigateToHistory = onNavigateToHistory,
-                onNavigateToStatistics = onNavigateToStatistics,
-                onNavigateToSettings = onNavigateToSettings,
-                newUpdatesCount = state.newUpdatesCount
-            )
-        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         LibraryContent(
@@ -275,6 +290,15 @@ private fun LibraryContent(
     onEvent: (LibraryEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val widthSizeClass = rememberWindowWidthSizeClass()
+    val isExpandedWidth = widthSizeClass.isExpanded
+    val adaptiveColumns = when (widthSizeClass) {
+        WindowWidthSizeClass.Expanded -> (state.gridSize + 2).coerceAtLeast(5)
+        WindowWidthSizeClass.Medium -> (state.gridSize + 1).coerceAtLeast(4)
+        WindowWidthSizeClass.Compact -> state.gridSize
+    }
+    var detailManga by remember { mutableStateOf<LibraryMangaItem?>(null) }
+
     PullToRefreshBox(
         isRefreshing = state.isRefreshing,
         onRefresh = { onEvent(LibraryEvent.Refresh) },
@@ -295,315 +319,249 @@ private fun LibraryContent(
                     )
                 }
             }
+            isExpandedWidth -> {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    MangaGrid(
+                        state = state,
+                        onEvent = onEvent,
+                        adaptiveColumns = adaptiveColumns,
+                        onMangaSelect = { manga -> detailManga = manga },
+                        modifier = Modifier.weight(0.55f)
+                    )
+                    VerticalDivider()
+                    MangaDetailPanel(
+                        manga = detailManga,
+                        onOpenFullDetails = { onEvent(LibraryEvent.OnMangaClick(it)) },
+                        onClose = { detailManga = null },
+                        modifier = Modifier.weight(0.45f)
+                    )
+                }
+            }
             else -> {
                 MangaGrid(
                     state = state,
-                    onEvent = onEvent
+                    onEvent = onEvent,
+                    adaptiveColumns = adaptiveColumns
                 )
             }
         }
     }
+}
+
+/** Returns true when a manga item belongs to the manhwa/webtoon content type. */
+private fun isManhwa(manga: LibraryMangaItem): Boolean {
+    val src = manga.sourceId.toString().lowercase()
+    return src.contains("manhwa") || src.contains("webtoon") ||
+        src.contains("korean") || src.contains("toon") || src.contains("naver")
 }
 
 @Composable
 private fun MangaGrid(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
+    adaptiveColumns: Int = state.gridSize,
+    onMangaSelect: ((LibraryMangaItem) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(state.gridSize),
-        contentPadding = PaddingValues(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxSize()
-    ) {
-        // "For You" recommendations header (full-width span)
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            ForYouSection(
-                recommendations = state.recommendations,
-                isLoading = state.isLoadingRecommendations,
-                error = state.recommendationsError,
-                hasEnoughManga = state.hasEnoughMangaForRecommendations,
-                onRefresh = { onEvent(LibraryEvent.RefreshRecommendations) },
-                onRecommendationClick = { onEvent(LibraryEvent.OnRecommendationClick(it)) },
-                onDismiss = { onEvent(LibraryEvent.DismissRecommendation(it)) }
-            )
-        }
+    var selectedContentFilter by remember { mutableIntStateOf(0) }
+    val contentTabs = listOf("All", "Manga", "Manhwa")
 
-        // Category filter chips (full-width span)
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            CategoryFilterChips(
-                categories = state.categories,
-                selectedCategory = state.selectedCategory,
-                onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
-        // Manga grid items
-        items(
-            items = state.mangaList,
-            key = { it.id }
-        ) { manga ->
-            MangaGridItem(
-                manga = manga,
-                showBadges = state.showBadges,
-                onClick = { onEvent(LibraryEvent.OnMangaClick(manga.id)) },
-                onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) }
-            )
-        }
+    val displayedManga = when (selectedContentFilter) {
+        1 -> state.mangaList.filter { !isManhwa(it) }
+        2 -> state.mangaList.filter { isManhwa(it) }
+        else -> state.mangaList
     }
-}
 
-@Composable
-private fun ForYouSection(
-    recommendations: List<MangaRecommendation>,
-    isLoading: Boolean,
-    error: String?,
-    hasEnoughManga: Boolean,
-    onRefresh: () -> Unit,
-    onRecommendationClick: (MangaRecommendation) -> Unit,
-    onDismiss: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Section header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.library_for_you_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
+    // Header items shared by both grid variants
+    val headerContent: @Composable () -> Unit = {
+        // Daily reading goal banner
+        if (state.readingGoal.dailyGoal > 0) {
+            DailyGoalBanner(readingGoal = state.readingGoal)
+        }
+
+        // Continue Reading section
+        if (state.continueReadingItems.isNotEmpty()) {
+            ContinueReadingSection(
+                items = state.continueReadingItems,
+                onItemClick = { mangaId, chapterId ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
+                }
             )
-            if (hasEnoughManga && !isLoading) {
-                IconButton(onClick = onRefresh) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.library_recommendations_refresh)
+        }
+
+        // Category filter chips
+        CategoryFilterChips(
+            categories = state.categories,
+            selectedCategory = state.selectedCategory,
+            onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        // Reading list filter chips
+        if (state.readingLists.isNotEmpty()) {
+            ReadingListFilterChips(
+                readingLists = state.readingLists,
+                selectedListId = state.filterReadingListId,
+                onListSelected = { onEvent(LibraryEvent.SetFilterReadingList(it)) },
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
+
+        // Content-type filter tabs
+        TabRow(
+            selectedTabIndex = selectedContentFilter,
+            containerColor = Color.Transparent,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            indicator = { tabPositions ->
+                if (selectedContentFilter < tabPositions.size) {
+                    val indicatorColor = when (selectedContentFilter) {
+                        1 -> Color(0xFFFF4757)
+                        2 -> Color(0xFF9B59B6)
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                    Box(
+                        modifier = Modifier
+                            .offset(x = tabPositions[selectedContentFilter].left)
+                            .width(tabPositions[selectedContentFilter].width)
+                            .height(3.dp)
+                            .background(indicatorColor, RoundedCornerShape(2.dp))
                     )
                 }
             }
-        }
-
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            !hasEnoughManga -> {
-                NotEnoughMangaCard(modifier = Modifier.padding(horizontal = 16.dp))
-            }
-            error != null -> {
-                RecommendationsErrorCard(
-                    error = error,
-                    onRetry = onRefresh,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            contentTabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedContentFilter == index,
+                    onClick = { selectedContentFilter = index },
+                    text = { Text(title) }
                 )
             }
-            recommendations.isEmpty() -> {
-                // Loaded successfully but nothing returned – show nothing extra
+        }
+    }
+
+    if (state.isStaggeredGrid) {
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(130.dp),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalItemSpacing = 8.dp,
+            modifier = modifier.fillMaxSize()
+        ) {
+            item(span = StaggeredGridItemSpan.FullLine) {
+                headerContent()
             }
-            else -> {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(
-                        items = recommendations,
-                        key = { it.title }
-                    ) { recommendation ->
-                        RecommendationCard(
-                            recommendation = recommendation,
-                            onClick = { onRecommendationClick(recommendation) },
-                            onDismiss = { onDismiss(recommendation.title) }
+
+            staggeredItems(
+                items = displayedManga,
+                key = { it.id },
+                contentType = { "manga_card" }
+            ) { manga ->
+                val cardContent: @Composable () -> Unit = {
+                    if (isManhwa(manga)) {
+                        ManhwaCard(
+                            coverUrl = manga.thumbnailUrl ?: "",
+                            title = manga.title,
+                            unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                            onClick = {
+                                if (onMangaSelect != null) onMangaSelect(manga)
+                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        val readProgress = if (manga.totalChapterCount > 0) {
+                            (manga.totalChapterCount - manga.unreadCount)
+                                .coerceAtLeast(0)
+                                .toFloat() / manga.totalChapterCount
+                        } else null
+                        MangaCard(
+                            title = manga.title,
+                            coverUrl = manga.thumbnailUrl,
+                            onClick = {
+                                if (onMangaSelect != null) onMangaSelect(manga)
+                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                            },
+                            onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                            isSelected = manga.id in state.selectedManga,
+                            readProgress = readProgress,
+                            badge = if (state.showBadges && manga.unreadCount > 0) {
+                                { UnreadBadge(count = manga.unreadCount) }
+                            } else null,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-    }
-}
-
-@Composable
-private fun NotEnoughMangaCard(modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Filter active",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(R.string.library_recommendations_not_enough_manga),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun RecommendationsErrorCard(
-    error: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            TextButton(onClick = onRetry) {
-                Text(stringResource(R.string.library_recommendations_error_retry))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RecommendationCard(
-    recommendation: MangaRecommendation,
-    onClick: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .width(140.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Box {
-            Column {
-                AsyncImage(
-                    model = recommendation.thumbnailUrl,
-                    contentDescription = stringResource(
-                        R.string.library_recommendations_thumbnail,
-                        recommendation.title
-                    ),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 4f)
-                )
-                Column(modifier = Modifier.padding(8.dp)) {
-                    Text(
-                        text = recommendation.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    if (recommendation.reasonExplanation.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.library_recommendations_reason_prefix,
-                                recommendation.reasonExplanation
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                if (state.visualEffectsEnabled) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(300)) + scaleIn(
+                            initialScale = 0.92f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
                         )
+                    ) {
+                        cardContent()
                     }
+                } else {
+                    cardContent()
                 }
             }
-            // Dismiss button with semi-transparent background for visibility over thumbnails
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-                    .size(24.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = DISMISS_BUTTON_BACKGROUND_ALPHA),
-                        shape = CircleShape
-                    )
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(adaptiveColumns),
+            contentPadding = PaddingValues(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = modifier.fillMaxSize()
+        ) {
+            item(
+                span = { GridItemSpan(maxLineSpan) },
+                contentType = "header_section"
             ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.library_recommendations_dismiss),
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+                headerContent()
             }
-        }
-    }
-}
 
-@Composable
-private fun MangaGridItem(
-    manga: LibraryMangaItem,
-    showBadges: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-    ) {
-        Column {
-            Box {
-                AsyncImage(
-                    model = manga.thumbnailUrl,
-                    contentDescription = manga.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(3f / 4f)
-                )
-                
-                if (showBadges && manga.unreadCount > 0) {
-                    UnreadBadge(
-                        count = manga.unreadCount,
-                        modifier = Modifier.align(Alignment.TopEnd)
+            gridItems(
+                items = displayedManga,
+                key = { it.id },
+                contentType = { "manga_card" }
+            ) { manga ->
+                val readProgress = if (manga.totalChapterCount > 0) {
+                    (manga.totalChapterCount - manga.unreadCount)
+                        .coerceAtLeast(0)
+                        .toFloat() / manga.totalChapterCount
+                } else null
+                val cardContent: @Composable () -> Unit = {
+                    MangaCard(
+                        title = manga.title,
+                        coverUrl = manga.thumbnailUrl,
+                        onClick = {
+                            if (onMangaSelect != null) onMangaSelect(manga)
+                            else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                        },
+                        onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                        isSelected = manga.id in state.selectedManga,
+                        readProgress = readProgress,
+                        badge = if (state.showBadges && manga.unreadCount > 0) {
+                            { UnreadBadge(count = manga.unreadCount) }
+                        } else null,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
+                if (state.visualEffectsEnabled) {
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(tween(300)) + scaleIn(
+                            initialScale = 0.92f,
+                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                        )
+                    ) {
+                        cardContent()
+                    }
+                } else {
+                    cardContent()
+                }
             }
-            
-            Text(
-                text = manga.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(8.dp)
-            )
         }
     }
 }
@@ -659,8 +617,6 @@ private fun EmptyLibraryMessage(
     }
 }
 
-private const val DISMISS_BUTTON_BACKGROUND_ALPHA = 0.72f
-
 @Composable
 private fun CategoryFilterChips(
     categories: List<CategoryItem>,
@@ -675,39 +631,337 @@ private fun CategoryFilterChips(
     ) {
         // "All" chip
         item {
-            FilterChip(
+            OtakuChip(
+                label = stringResource(R.string.library_category_all),
                 selected = selectedCategory == null,
                 onClick = { onCategorySelected(null) },
-                label = { Text(stringResource(R.string.library_category_all)) }
             )
         }
-        
+
         // Category chips
         items(
             items = categories,
             key = { it.id }
         ) { category ->
-            FilterChip(
+            OtakuChip(
+                label = category.name,
                 selected = selectedCategory == category.id,
                 onClick = { onCategorySelected(category.id) },
-                label = { Text(category.name) }
             )
         }
     }
 }
 
 @Composable
-private fun FilterChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    label: @Composable () -> Unit,
+private fun ReadingListFilterChips(
+    readingLists: List<ReadingListFilterItem>,
+    selectedListId: Long?,
+    onListSelected: (Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    androidx.compose.material3.FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = label,
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        item {
+            OtakuChip(
+                label = stringResource(R.string.library_reading_list_all),
+                selected = selectedListId == null,
+                onClick = { onListSelected(null) },
+            )
+        }
+
+        items(
+            items = readingLists,
+            key = { it.id }
+        ) { list ->
+            OtakuChip(
+                label = list.name,
+                selected = selectedListId == list.id,
+                onClick = { onListSelected(list.id) },
+            )
+        }
+    }
+}
+
+// ── Continue Reading ────────────────────────────────────────────────────────
+
+@Composable
+private fun ContinueReadingSection(
+    items: List<app.otakureader.domain.model.ContinueReadingItem>,
+    onItemClick: (mangaId: Long, chapterId: Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(18.dp)
+                    .padding(end = 4.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = stringResource(R.string.library_continue_reading_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(
+                items = items,
+                key = { it.mangaId }
+            ) { item ->
+                ContinueReadingCard(
+                    item = item,
+                    onClick = { onItemClick(item.mangaId, item.chapterId) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun ContinueReadingCard(
+    item: app.otakureader.domain.model.ContinueReadingItem,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
         modifier = modifier
-    )
+            .width(130.dp)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+    ) {
+        Box {
+            coil3.compose.AsyncImage(
+                model = item.thumbnailUrl,
+                contentDescription = stringResource(
+                    R.string.library_continue_reading_cover,
+                    item.mangaTitle
+                ),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+            )
+
+            // Gradient + text overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2f / 3f)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.85f)
+                            ),
+                            startY = 80f
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+            ) {
+                Text(
+                    text = item.mangaTitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(
+                        R.string.library_continue_reading_chapter,
+                        item.chapterNumber
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun MangaDetailPanel(
+    manga: LibraryMangaItem?,
+    onOpenFullDetails: (Long) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (manga == null) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.library_detail_panel_hint),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(32.dp)
+            )
+        }
+        return
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        AsyncImage(
+            model = manga.thumbnailUrl,
+            contentDescription = manga.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .aspectRatio(2f / 3f)
+                .align(Alignment.CenterHorizontally)
+                .clip(MaterialTheme.shapes.medium)
+        )
+        Text(
+            text = manga.title,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (manga.unreadCount > 0) {
+            Text(
+                text = stringResource(R.string.library_detail_unread_chapters, manga.unreadCount),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        val statusText = when (manga.status) {
+            MangaStatus.ONGOING -> stringResource(R.string.manga_status_ongoing)
+            MangaStatus.COMPLETED -> stringResource(R.string.manga_status_completed)
+            MangaStatus.LICENSED -> stringResource(R.string.manga_status_licensed)
+            MangaStatus.PUBLISHING_FINISHED -> stringResource(R.string.manga_status_publishing_finished)
+            MangaStatus.CANCELLED -> stringResource(R.string.manga_status_cancelled)
+            MangaStatus.ON_HIATUS -> stringResource(R.string.manga_status_on_hiatus)
+            else -> null
+        }
+        if (statusText != null) {
+            Text(
+                text = statusText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Spacer(modifier = Modifier.weight(1f))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.Button(
+                onClick = { onOpenFullDetails(manga.id) },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(stringResource(R.string.library_detail_open))
+            }
+            OutlinedButton(onClick = onClose) {
+                Text(stringResource(R.string.library_detail_close))
+            }
+        }
+    }
+}
+
+/**
+ * Compact banner showing progress toward today's chapter reading goal.
+ * Displayed at the top of the library grid whenever a daily goal is configured.
+ */
+@Composable
+private fun DailyGoalBanner(
+    readingGoal: ReadingGoal,
+    modifier: Modifier = Modifier
+) {
+    // Guard: dailyGoal must be positive before computing the fraction to avoid division by zero.
+    if (readingGoal.dailyGoal <= 0) return
+    val isComplete = readingGoal.dailyProgress >= readingGoal.dailyGoal
+    val fraction = (readingGoal.dailyProgress.toFloat() / readingGoal.dailyGoal.toFloat())
+        .coerceIn(0f, 1f)
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isComplete)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.library_daily_goal_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = if (isComplete)
+                        stringResource(R.string.library_daily_goal_complete)
+                    else
+                        pluralStringResource(
+                            R.plurals.library_daily_goal_progress,
+                            readingGoal.dailyGoal,
+                            readingGoal.dailyProgress,
+                            readingGoal.dailyGoal
+                        ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isComplete)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            LinearProgressIndicator(
+                progress = { fraction },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = if (isComplete)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.surface,
+                strokeCap = StrokeCap.Round,
+            )
+        }
+    }
 }
 

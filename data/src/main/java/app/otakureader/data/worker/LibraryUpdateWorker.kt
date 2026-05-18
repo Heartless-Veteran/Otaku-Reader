@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.data.worker
 
 import android.content.Context
@@ -39,9 +40,11 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val downloadPreferences: DownloadPreferences,
     private val generalPreferences: GeneralPreferences,
     private val downloadManager: DownloadManager,
-    private val chapterRepository: ChapterRepository
+    private val chapterRepository: ChapterRepository,
+    private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences
 ) : CoroutineWorker(context, workerParams) {
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     override suspend fun doWork(): Result {
         return try {
             // Check if update should only run on Wi-Fi
@@ -143,13 +146,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
             if (notificationsEnabled && mangaWithNewChapters.isNotEmpty()) {
                 val totalNewChapters = mangaWithNewChapters.sumOf { it.newChapterCount }
                 try {
-                    UpdateNotifier(applicationContext).notify(
-                        mangaWithNewChapters,
-                        totalNewChapters
-                    )
+                    SmartNotificationBatcher(
+                        context = applicationContext,
+                        notificationPreferences = notificationPreferences
+                    ).notify(mangaWithNewChapters, totalNewChapters)
                 } catch (e: Exception) {
                     // Notification failures should not fail the entire library update.
-                    // Log the error for diagnostics (e.g., SecurityException, channel creation issues).
                     Log.w(TAG, "Failed to send library update notification", e)
                 }
             }

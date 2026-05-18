@@ -1,13 +1,16 @@
 package app.otakureader.data.repository
 
+import android.content.Context
 import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.core.database.entity.FeedItemEntity
 import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
+import app.otakureader.data.worker.FeedRefreshWorker
 import app.otakureader.domain.model.FeedItem
 import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.model.FeedSource
 import app.otakureader.domain.repository.FeedRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -19,6 +22,7 @@ private const val KV_SEP = "\u001F"    // ASCII Unit Separator (US)
 
 @Singleton
 class FeedRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val feedDao: FeedDao
 ) : FeedRepository {
 
@@ -56,8 +60,7 @@ class FeedRepositoryImpl @Inject constructor(
         feedDao.getFeedItemsForSource(sourceId, limit).map { entities -> entities.map { it.toDomain() } }
 
     override suspend fun refreshFeed() {
-        // Actual network refresh is driven by FeedRefreshWorker via WorkManager.
-        // Callers that need a background refresh should enqueue the worker directly.
+        FeedRefreshWorker.enqueueOneTime(context)
     }
 
     override suspend fun markFeedItemAsRead(feedItemId: Long) {

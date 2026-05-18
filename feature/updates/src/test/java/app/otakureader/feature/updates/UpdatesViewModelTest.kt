@@ -120,7 +120,7 @@ class UpdatesViewModelTest {
 
     @Test
     fun init_withError_setsErrorState() = runTest {
-        every { getRecentUpdatesUseCase() } returns flow { throw RuntimeException("Network error") }
+        every { getRecentUpdatesUseCase() } returns flow { throw IllegalStateException("Network error") }
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()

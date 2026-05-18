@@ -10,11 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
 /**
- * Transparent redirect screen for [app.otakureader.core.navigation.SourceMangaDetailRoute].
+ * Transparent redirect screen for [Route.SourceMangaDetail].
  *
  * Shows a loading spinner while [SourceMangaDetailViewModel] resolves the manga's
  * database ID (looking it up by source URL, or inserting a stub entry), then
- * immediately forwards to the [MangaDetailRoute] screen via [onNavigateToMangaDetail].
+ * immediately forwards to the [Route.MangaDetails] screen via [onNavigateToMangaDetail].
  */
 @Composable
 fun SourceMangaDetailScreen(

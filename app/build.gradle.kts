@@ -1,7 +1,11 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.otakureader.android.application)
     alias(libs.plugins.otakureader.android.hilt)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.cyclonedx.bom)
 }
 
 android {
@@ -15,24 +19,93 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    if (keystorePropertiesFile.exists()) {
+        val keystoreProperties = Properties().apply {
+            load(FileInputStream(keystorePropertiesFile))
+        }
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val releaseSigningConfig = signingConfigs.findByName("release")
+            if (releaseSigningConfig != null) {
+                signingConfig = releaseSigningConfig
+            }
         }
         debug {
             applicationIdSuffix = ".debug"
         }
     }
+}
 
-    // Mirror the distribution flavor dimension from :data so variant resolution works
-    flavorDimensions += "distribution"
-    productFlavors {
-        create("full") { dimension = "distribution" }
-        create("foss") { dimension = "distribution" }
+// CycloneDX v3.x - simplified configuration
+tasks.cyclonedxBom {
+    includeConfigs = listOf("releaseRuntimeClasspath")
+    skipConfigs = listOf("debugRuntimeClasspath", "testRuntimeClasspath")
+    projectType = "application"
+    schemaVersion = "1.6"
+    includeLicenseText = false
+    // Output defaults to build/reports/cyclonedx/bom.json
+}
+
+// Custom license report task — replaces the jk1 plugin which cannot resolve
+// Android library variants under AGP 9 + Gradle 9.5 without ambiguity errors.
+// Uses metadata-only resolution (resolutionResult.allComponents) so no artifact
+// files are downloaded and no variant-selection ambiguity occurs.
+tasks.register("generateLicenseReport") {
+    group = "reporting"
+    description = "Generates docs/DEPENDENCY_LICENSES.md from the release dependency graph"
+
+    // Configuration resolution happens at execution time (allComponents is lazy), so this
+    // task cannot participate in the Gradle configuration cache.
+    notCompatibleWithConfigurationCache("resolves configurations at execution time")
+
+    val outputFile = rootProject.layout.projectDirectory.file("docs/DEPENDENCY_LICENSES.md")
+    outputs.file(outputFile)
+
+    doLast {
+        val components = configurations.getByName("releaseRuntimeClasspath")
+            .incoming
+            .resolutionResult
+            .allComponents
+            .mapNotNull { it.moduleVersion }
+            .filter { it.group != "app.otakureader" }
+            .sortedBy { "${it.group}:${it.name}" }
+            .distinctBy { "${it.group}:${it.name}" }
+
+        val output = outputFile.asFile
+        val md = buildString {
+            appendLine("# Otaku Reader — Dependency Licenses")
+            appendLine()
+            appendLine(
+                "Auto-generated from the `releaseRuntimeClasspath` dependency graph. " +
+                    "For full license texts see each library's repository."
+            )
+            appendLine()
+            appendLine("| Artifact | Version |")
+            appendLine("|:---------|:--------|")
+            components.forEach { mv ->
+                appendLine("| `${mv.group}:${mv.name}` | `${mv.version}` |")
+            }
+        }
+        output.parentFile.mkdirs()
+        output.writeText(md)
+        logger.lifecycle("License report written to docs/DEPENDENCY_LICENSES.md")
     }
 }
 
@@ -67,10 +140,6 @@ dependencies {
     // Data layer (contains workers, repositories, etc.)
     implementation(projects.data)
 
-    // AI: full flavor uses real Gemini client, foss uses no-op
-    "fullImplementation"(projects.core.ai)
-    "fossImplementation"(projects.core.aiNoop)
-
     // Hilt WorkManager integration
     implementation(libs.hilt.work)
 
@@ -100,6 +169,18 @@ dependencies {
     // Glance widgets
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+
+    // ProfileInstaller — enables on-device baseline profile installation
+    implementation(libs.profileinstaller)
+
+    // SplashScreen — branded launch experience on all API levels
+    implementation(libs.splashscreen)
+
+    // Encrypted SharedPreferences for crash log storage
+    implementation(libs.androidx.security.crypto)
+
+    // Debug tools (LeakCanary — no-op in release builds)
+    debugImplementation(libs.leakcanary)
 
     // Activity Compose
     implementation(libs.androidx.activity.compose)

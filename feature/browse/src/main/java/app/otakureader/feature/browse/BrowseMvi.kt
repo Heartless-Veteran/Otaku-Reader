@@ -3,7 +3,7 @@ package app.otakureader.feature.browse
 import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
-import app.otakureader.domain.model.SourceScore
+import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.SourceManga
 
@@ -15,24 +15,19 @@ data class BrowseState(
     val searchQuery: String = "",
     val searchResults: List<SourceManga> = emptyList(),
     val isSearching: Boolean = false,
+    val hasSearchResults: Boolean = false,
     val error: String? = null,
     val hasNextPage: Boolean = false,
     val currentPage: Int = 1,
     val availableFilters: FilterList = FilterList(),
     val activeFilters: FilterList = FilterList(),
     val showFilterSheet: Boolean = false,
-    /** AI-ranked source scores for the manga currently being browsed, sorted by overall score desc. */
-    val sourceScores: List<SourceScore> = emptyList(),
-    /** True while AI is analyzing sources. */
-    val isAnalyzingSource: Boolean = false,
-    /** Whether the Source Intelligence feature is enabled in settings. */
-    val sourceIntelligenceEnabled: Boolean = false,
-    /** AI-generated intelligence text keyed by sourceId. */
-    val sourceIntelligence: Map<String, String> = emptyMap(),
     /** Currently selected manga for bulk favorite (IDs mapped to manga). */
     val selectedManga: Map<String, SourceManga> = emptyMap(),
     /** True when bulk selection mode is active. */
-    val isBulkSelectionMode: Boolean = false
+    val isBulkSelectionMode: Boolean = false,
+    /** Saved searches for the current source, loaded from the database. */
+    val savedSearches: List<FeedSavedSearch> = emptyList(),
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -47,15 +42,20 @@ sealed interface BrowseEvent : UiEvent {
     data class UpdateFilter(val index: Int, val filter: app.otakureader.sourceapi.Filter<*>) : BrowseEvent
     data object ResetFilters : BrowseEvent
     data object ApplyFilters : BrowseEvent
-    /** Request AI source scoring for a specific manga (identified by title). */
-    data class RequestSourceScores(val mangaId: Long, val mangaTitle: String) : BrowseEvent
-    
+
     // Bulk favorite events
     data class OnMangaLongClick(val manga: SourceManga) : BrowseEvent
     data class ToggleMangaSelection(val manga: SourceManga) : BrowseEvent
     data object ClearSelection : BrowseEvent
     data object AddSelectedToLibrary : BrowseEvent
     data object ExitBulkSelectionMode : BrowseEvent
+
+    /** Saves the current search query + filters for the active source. */
+    data object SaveCurrentSearch : BrowseEvent
+    /** Deletes the saved search with the given id. */
+    data class DeleteSavedSearch(val searchId: Long) : BrowseEvent
+    /** Applies a previously saved search (restores query, filters, runs search). */
+    data class ApplySavedSearch(val search: app.otakureader.domain.model.FeedSavedSearch) : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

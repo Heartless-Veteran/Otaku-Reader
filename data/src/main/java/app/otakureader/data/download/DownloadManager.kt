@@ -1,17 +1,18 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.DownloadPriority
 import app.otakureader.domain.model.DownloadStatus
+import app.otakureader.core.common.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Holds everything needed to download a chapter.
@@ -59,10 +62,10 @@ data class ChapterDownloadRequest(
 class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloader: Downloader,
-    private val downloadPreferences: DownloadPreferences
+    private val downloadPreferences: DownloadPreferences,
+    private val downloadQueueDao: DownloadQueueDao,
+    @ApplicationScope private val scope: CoroutineScope
 ) {
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mutex = Mutex()
 
     private val _downloads = MutableStateFlow<List<DownloadItem>>(emptyList())
@@ -81,12 +84,12 @@ class DownloadManager @Inject constructor(
     private var maxConcurrentDownloads: Int = 2
 
     init {
-        // Load concurrent download preference
         scope.launch {
             downloadPreferences.concurrentDownloads.collect { max ->
                 maxConcurrentDownloads = max.coerceIn(1, 5)
             }
         }
+        scope.launch { restoreQueueFromDb() }
     }
 
     // -------------------------------------------------------------------------
@@ -121,7 +124,21 @@ class DownloadManager @Inject constructor(
             // Check if we can start immediately or need to wait for a slot
             jobs.size < maxConcurrentDownloads
         }
-        
+
+        downloadQueueDao.insert(
+            DownloadQueueEntity(
+                chapterId = request.chapterId,
+                mangaId = request.mangaId,
+                mangaTitle = request.mangaTitle,
+                chapterTitle = request.chapterTitle,
+                sourceName = request.sourceName,
+                pageUrlsJson = Json.encodeToString(request.pageUrls),
+                priority = request.priority,
+                status = DownloadStatus.QUEUED.name,
+                addedAt = System.currentTimeMillis()
+            )
+        )
+
         // Start download only if under the concurrent limit
         if (shouldStart) {
             launchDownloadJob(request.chapterId, request)
@@ -133,6 +150,7 @@ class DownloadManager @Inject constructor(
             jobs.remove(chapterId)?.cancel()
             updateStatus(chapterId, DownloadStatus.PAUSED)
         }
+        downloadQueueDao.updateStatus(chapterId, DownloadStatus.PAUSED.name)
     }
 
     suspend fun resume(chapterId: Long) {
@@ -150,6 +168,7 @@ class DownloadManager @Inject constructor(
         } else {
             // Just mark as queued, will be picked up when a slot opens
             mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
+            downloadQueueDao.updateStatus(chapterId, DownloadStatus.QUEUED.name)
         }
     }
 
@@ -160,6 +179,7 @@ class DownloadManager @Inject constructor(
             downloadMap.remove(chapterId)
             refreshDownloadsList()
         }
+        downloadQueueDao.delete(chapterId)
     }
 
     /**
@@ -173,6 +193,7 @@ class DownloadManager @Inject constructor(
             downloadMap.remove(chapterId)
             refreshDownloadsList()
         }
+        downloadQueueDao.delete(chapterId)
     }
 
     suspend fun clearAll() {
@@ -183,6 +204,7 @@ class DownloadManager @Inject constructor(
             downloadMap.clear()
             _downloads.value = emptyList()
         }
+        downloadQueueDao.deleteAll()
     }
 
     /**
@@ -195,16 +217,18 @@ class DownloadManager @Inject constructor(
      * If the chapter is not in the queue this is a no-op.
      */
     suspend fun prioritize(chapterId: Long) {
-        mutex.withLock {
+        val newPriority = mutex.withLock {
             val item = downloadMap[chapterId] ?: return
             val minPriority = downloadMap.values
                 .filter { it.chapterId != chapterId }
                 .minOfOrNull { it.priority } ?: DownloadPriority.NORMAL
-            val newPriority = if (minPriority > Int.MIN_VALUE) minPriority - 1 else Int.MIN_VALUE
-            downloadMap[chapterId] = item.copy(priority = newPriority)
-            requests[chapterId]?.let { requests[chapterId] = it.copy(priority = newPriority) }
+            val p = if (minPriority > Int.MIN_VALUE) minPriority - 1 else Int.MIN_VALUE
+            downloadMap[chapterId] = item.copy(priority = p)
+            requests[chapterId]?.let { requests[chapterId] = it.copy(priority = p) }
             refreshDownloadsList()
+            p
         }
+        downloadQueueDao.updatePriority(chapterId, newPriority)
     }
 
     /**
@@ -215,12 +239,14 @@ class DownloadManager @Inject constructor(
      * is a no-op.
      */
     suspend fun reorder(chapterId: Long, newPriority: Int) {
-        mutex.withLock {
+        val updated = mutex.withLock {
             val item = downloadMap[chapterId] ?: return
             downloadMap[chapterId] = item.copy(priority = newPriority)
             requests[chapterId]?.let { requests[chapterId] = it.copy(priority = newPriority) }
             refreshDownloadsList()
+            true
         }
+        if (updated) downloadQueueDao.updatePriority(chapterId, newPriority)
     }
 
     /**
@@ -243,6 +269,8 @@ class DownloadManager @Inject constructor(
 
         // Defensive copy to prevent concurrent mutation by caller
         val chapterIdsCopy = chapterIds.toList()
+        // Collect all final (chapterId → priority) pairs so we can persist after releasing the lock.
+        val priorityUpdates = mutableMapOf<Long, Int>()
         mutex.withLock {
             val chapterIdSet = chapterIdsCopy.toHashSet()
             // Determine the targets in their current queue order.
@@ -270,6 +298,7 @@ class DownloadManager @Inject constructor(
                     requests[item.chapterId]?.let {
                         requests[item.chapterId] = it.copy(priority = newPriority)
                     }
+                    priorityUpdates[item.chapterId] = newPriority
                 }
             } else {
                 // Not enough room below outsideMin. Renormalize non-targets to non-negative
@@ -286,6 +315,7 @@ class DownloadManager @Inject constructor(
                     requests[item.chapterId]?.let {
                         requests[item.chapterId] = it.copy(priority = normalizedPriority)
                     }
+                    priorityUpdates[item.chapterId] = normalizedPriority
                 }
 
                 orderedTargets.forEachIndexed { index, item ->
@@ -294,10 +324,14 @@ class DownloadManager @Inject constructor(
                     requests[item.chapterId]?.let {
                         requests[item.chapterId] = it.copy(priority = newPriority)
                     }
+                    priorityUpdates[item.chapterId] = newPriority
                 }
             }
 
             refreshDownloadsList()
+        }
+        for ((id, priority) in priorityUpdates) {
+            downloadQueueDao.updatePriority(id, priority)
         }
     }
 
@@ -351,6 +385,49 @@ class DownloadManager @Inject constructor(
         _downloads.value = downloadMap.values.sortedBy { it.priority }
     }
 
+    private suspend fun restoreQueueFromDb() {
+        val entities = downloadQueueDao.getAllOnce()
+        if (entities.isEmpty()) return
+
+        mutex.withLock {
+            for (entity in entities) {
+                val pageUrls = try {
+                    Json.decodeFromString<List<String>>(entity.pageUrlsJson)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                val request = ChapterDownloadRequest(
+                    mangaId = entity.mangaId,
+                    chapterId = entity.chapterId,
+                    sourceName = entity.sourceName,
+                    mangaTitle = entity.mangaTitle,
+                    chapterTitle = entity.chapterTitle,
+                    pageUrls = pageUrls,
+                    priority = entity.priority
+                )
+                requests[entity.chapterId] = request
+                // DOWNLOADING in DB means the job was interrupted — restore as QUEUED.
+                val restoredStatus = when (entity.status) {
+                    DownloadStatus.PAUSED.name -> DownloadStatus.PAUSED
+                    DownloadStatus.FAILED.name -> DownloadStatus.FAILED
+                    else -> DownloadStatus.QUEUED
+                }
+                downloadMap[entity.chapterId] = DownloadItem(
+                    id = entity.chapterId,
+                    mangaId = entity.mangaId,
+                    chapterId = entity.chapterId,
+                    mangaTitle = entity.mangaTitle,
+                    chapterTitle = entity.chapterTitle,
+                    status = restoredStatus,
+                    priority = entity.priority
+                )
+            }
+            refreshDownloadsList()
+        }
+        // Fill all available concurrent slots, not just one.
+        repeat(maxConcurrentDownloads) { processPendingQueue() }
+    }
+
     /**
      * Processes the pending download queue when slots become available.
      * Finds the highest priority queued download and starts it if under the limit.
@@ -384,6 +461,7 @@ class DownloadManager @Inject constructor(
     /**
      * Launches a download job for the given chapter. Must be called outside [mutex] lock.
      */
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     private suspend fun launchDownloadJob(chapterId: Long, request: ChapterDownloadRequest) {
         mutex.withLock {
             // Double-check we haven't exceeded the limit
@@ -453,7 +531,15 @@ class DownloadManager @Inject constructor(
                         mutex.withLock { updateStatus(chapterId, DownloadStatus.COMPLETED) }
                     }
                 } finally {
-                    mutex.withLock { jobs.remove(chapterId) }
+                    val finalStatus = mutex.withLock {
+                        jobs.remove(chapterId)
+                        downloadMap[chapterId]?.status
+                    }
+                    when (finalStatus) {
+                        DownloadStatus.COMPLETED -> downloadQueueDao.delete(chapterId)
+                        DownloadStatus.FAILED -> downloadQueueDao.updateStatus(chapterId, DownloadStatus.FAILED.name)
+                        else -> Unit
+                    }
                     // Only look for the next queued item when real download work was done.
                     // Skipping this when pages were empty prevents an infinite re-launch loop.
                     if (downloadedPages) {

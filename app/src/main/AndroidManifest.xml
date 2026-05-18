@@ -7,7 +7,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+<!-- Required for extension installation: allows the app to install extension APKs
+         that the user explicitly downloads from trusted extension repositories.
+         This permission is only exercised via ExtensionInstaller after the user
+         confirms the installation through the Extensions screen. No background or
+         automatic APK installs are performed. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Storage permissions for legacy chapter downloads, local manga, covers, and CBZ export -->
@@ -18,13 +22,15 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- Required to send ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS intent from onboarding -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <!-- Package visibility and management: required to list and uninstall Tachiyomi extension packages (including sideloaded/private ones on Android 11+) -->
-    <uses-permission
-        android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
+    <!-- Package visibility: required to discover and manage Tachiyomi-compatible extension
+         packages. Uses targeted <queries> below instead of QUERY_ALL_PACKAGES so this
+         does not trigger a Play Store policy review. -->
+    <queries>
+        <!-- Known Tachiyomi/Mihon extension package prefixes -->
+        <intent>
+            <action android:name="tachiyomi.extension" />
+        </intent>
+    </queries>
 
 
     <application
@@ -34,7 +40,6 @@
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:largeHeap="true"
         android:localeConfig="@xml/locales_config"
         android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -44,22 +49,85 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.OtakuReaderBase"
+            android:theme="@style/Theme.OtakuReaderSplash"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
-            <!-- Deep link intent filter for manga URLs -->
-            <!-- Note: Using single intent-filter with specific host+path combinations -->
+            <!-- Deep links: MangaDex -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mangadex.org" android:pathPrefix="/title" />
+                <data android:scheme="https" android:host="www.mangadex.org" android:pathPrefix="/title" />
+            </intent-filter>
+
+            <!-- Deep links: MangaPlus (Shonen Jump) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mangaplus.shueisha.co.jp" android:pathPrefix="/titles" />
+            </intent-filter>
+
+            <!-- Deep links: MangaSee -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mangasee123.com" android:pathPrefix="/manga" />
+            </intent-filter>
+
+            <!-- Deep links: MangaFire -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="mangafire.to" android:pathPrefix="/manga" />
+            </intent-filter>
+
+            <!-- Deep links: Bato.to -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="bato.to" android:pathPrefix="/title" />
+                <data android:scheme="https" android:host="bato.to" android:pathPrefix="/series" />
+            </intent-filter>
+
+            <!-- Deep links: Webtoons -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.webtoons.com" android:pathPattern="/.*/list.*" />
+            </intent-filter>
+
+            <!-- OAuth callback deep links: Kitsu -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- MangaDex -->
-                <data android:scheme="https" android:host="mangadex.org" android:pathPrefix="/title" />
-                <data android:scheme="https" android:host="www.mangadex.org" android:pathPrefix="/title" />
+                <data android:scheme="app.otakureader" android:host="kitsu-oauth" />
+            </intent-filter>
+
+            <!-- OAuth callback deep links: MyAnimeList -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.otakureader" android:host="mal-oauth" />
+            </intent-filter>
+
+            <!-- OAuth callback deep links: Shikimori -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.otakureader" android:host="shikimori-oauth" />
             </intent-filter>
             
             <!-- Share intent filter for text/plain -->
@@ -122,6 +190,20 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/continue_reading_widget_info" />
+        </receiver>
+
+        <!-- Now Reading Widget -->
+        <receiver
+            android:name=".widget.NowReadingWidgetReceiver"
+            android:exported="true"
+            android:label="@string/now_reading_widget_label"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/now_reading_widget_info" />
         </receiver>
 
         <!-- Recent Updates Widget -->

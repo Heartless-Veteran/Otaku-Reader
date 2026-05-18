@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import app.otakureader.feature.reader.R
 import app.otakureader.feature.reader.components.PanelNavigationView
 import app.otakureader.feature.reader.components.ZoomableImage
-import app.otakureader.feature.reader.model.ImageQuality
+import app.otakureader.domain.model.ImageQuality
 import app.otakureader.feature.reader.model.ReaderPage
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -64,6 +64,7 @@ fun SmartPanelsReader(
     
     HorizontalPager(
         state = pagerState,
+        beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { pageIndex ->
         val page = pages[pageIndex]
@@ -107,6 +108,7 @@ fun SmartPanelsReader(
 }
 
 @Composable
+@Suppress("UnusedParameter")
 private fun SmartPanelView(
     page: ReaderPage,
     currentPanel: Int,

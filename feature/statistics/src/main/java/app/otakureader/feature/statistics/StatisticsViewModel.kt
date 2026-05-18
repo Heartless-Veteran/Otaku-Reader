@@ -3,6 +3,7 @@ package app.otakureader.feature.statistics
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.model.ReadingStats
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.usecase.GetReadingStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +23,7 @@ import javax.inject.Inject
 class StatisticsViewModel @Inject constructor(
     private val getReadingStatsUseCase: GetReadingStatsUseCase,
     private val statisticsRepository: StatisticsRepository,
-    private val readingGoalPreferences: ReadingGoalPreferences
+    private val readingGoalPreferences: ReadingGoalPreferences,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StatisticsState())

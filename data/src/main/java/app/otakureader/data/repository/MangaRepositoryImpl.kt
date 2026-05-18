@@ -3,6 +3,7 @@ package app.otakureader.data.repository
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
+import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
@@ -23,10 +24,7 @@ class MangaRepositoryImpl @Inject constructor(
 
     override fun getLibraryManga(): Flow<List<Manga>> {
         return mangaDao.getFavoriteMangaWithUnreadCount()
-            .distinctUntilChanged { old, new ->
-                // Only emit if the actual content changed
-                old.size == new.size && old.map { it.manga.id } == new.map { it.manga.id }
-            }
+            .distinctUntilChanged()
             .map { mangaWithUnreadList ->
                 mangaWithUnreadList.map { it.manga.toDomain(it.unreadCount) }
             }
@@ -162,6 +160,34 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
+    // Completed series tracking
+    override suspend fun markUserCompleted(id: Long, completed: Boolean) {
+        mangaDao.updateUserCompleted(id, completed)
+    }
+
+    override fun getCompletedManga(): Flow<List<Manga>> {
+        return mangaDao.getCompletedManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override fun getActiveManga(): Flow<List<Manga>> {
+        return mangaDao.getActiveManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    // Dropped series tracking
+    override suspend fun markUserDropped(id: Long, dropped: Boolean) {
+        mangaDao.updateUserDropped(id, dropped)
+    }
+
+    override fun getDroppedManga(): Flow<List<Manga>> {
+        return mangaDao.getDroppedManga().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -188,7 +214,10 @@ class MangaRepositoryImpl @Inject constructor(
         readerBackgroundColor = readerBackgroundColor,
         // Page preloading settings (#264)
         preloadPagesBefore = preloadPagesBefore,
-        preloadPagesAfter = preloadPagesAfter
+        preloadPagesAfter = preloadPagesAfter,
+        contentRating = ContentRating.fromOrdinal(contentRating),
+        userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -200,7 +229,7 @@ class MangaRepositoryImpl @Inject constructor(
         author = author,
         artist = artist,
         description = description,
-        genre = genre.joinToString(","),
+        genre = genre.joinToString("|||"),
         status = status.ordinal,
         favorite = favorite,
         initialized = initialized,
@@ -216,6 +245,9 @@ class MangaRepositoryImpl @Inject constructor(
         readerBackgroundColor = readerBackgroundColor,
         // Page preloading settings (#264)
         preloadPagesBefore = preloadPagesBefore,
-        preloadPagesAfter = preloadPagesAfter
+        preloadPagesAfter = preloadPagesAfter,
+        contentRating = contentRating.ordinal,
+        userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 }

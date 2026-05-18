@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.ShikimoriApi
 import app.otakureader.data.tracking.api.ShikimoriOAuthApi
 import app.otakureader.data.tracking.api.ShikimoriUserRateBody
@@ -32,15 +33,16 @@ class ShikimoriTracker(
     private val api: ShikimoriApi,
     private val clientId: String,
     private val clientSecret: String,
-    private val redirectUri: String
+    private val redirectUri: String,
+    private val tokenStore: TrackerTokenStore,
 ) : Tracker {
 
     override val id: Int = TrackerType.SHIKIMORI
     override val name: String = "Shikimori"
 
-    private var accessToken: String? = null
-    private var refreshToken: String? = null
-    private var currentUserId: Long? = null
+    private var accessToken: String? = tokenStore.getTokens(TrackerType.SHIKIMORI)?.accessToken
+    private var refreshToken: String? = tokenStore.getTokens(TrackerType.SHIKIMORI)?.refreshToken
+    private var currentUserId: Long? = tokenStore.getTokens(TrackerType.SHIKIMORI)?.userId
     private val tokenMutex = Mutex()
 
     override val isLoggedIn: Boolean
@@ -69,6 +71,12 @@ class ShikimoriTracker(
             }
             if (uid != null) {
                 currentUserId = uid
+                tokenStore.saveTokens(
+                    trackerId = id,
+                    accessToken = response.accessToken,
+                    refreshToken = response.refreshToken,
+                    userId = uid,
+                )
                 true
             } else {
                 tokenMutex.withLock {
@@ -90,6 +98,7 @@ class ShikimoriTracker(
         accessToken = null
         refreshToken = null
         currentUserId = null
+        tokenStore.clearTokens(id)
     }
 
     override suspend fun search(query: String): List<TrackEntry> {

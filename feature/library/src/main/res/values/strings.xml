@@ -52,14 +52,53 @@
     <string name="category_delete_cancel">Cancel</string>
     <string name="category_empty_title">No categories yet</string>
     <string name="category_empty_message">Create categories to organize your library</string>
+    <string name="category_mark_nsfw">Mark as NSFW</string>
+    <string name="category_remove_nsfw">Remove NSFW</string>
+    <string name="category_nsfw_toggled">NSFW status updated</string>
     <!-- Search -->
     <string name="library_search">Search library</string>
     <string name="library_search_placeholder">Search…</string>
     <string name="library_search_close">Close search</string>
+
+    <!-- Filter chips -->
+    <string name="library_filter_all">All</string>
+    <string name="library_filter_downloaded">Downloaded</string>
+    <string name="library_filter_unread">Unread</string>
+    <string name="library_filter_completed">Completed</string>
+    <string name="library_filter_dropped">Dropped</string>
+    <string name="library_filter_tracking">Tracking</string>
     <!-- Bulk selection actions -->
     <string name="library_deselect_all">Deselect all</string>
     <string name="library_mark_selected_read">Mark as read</string>
     <string name="library_mark_selected_unread">Mark as unread</string>
     <string name="library_download_selected">Download selected</string>
     <string name="library_remove_selected">Remove from library</string>
+    <!-- Daily goal banner -->
+    <string name="library_daily_goal_label">Daily Reading Goal</string>
+    <string name="library_daily_goal_complete">Daily goal reached! 🎉</string>
+    <plurals name="library_daily_goal_progress">
+        <item quantity="one">%1$d / %2$d chapter today</item>
+        <item quantity="other">%1$d / %2$d chapters today</item>
+    </plurals>
+
+    <!-- Continue Reading -->
+    <string name="library_continue_reading_title">Continue Reading</string>
+    <string name="library_continue_reading_cover">Cover for %1$s</string>
+    <string name="library_continue_reading_chapter">Ch. %.1f</string>
+
+    <!-- Detail panel (tablet two-pane) -->
+    <string name="library_detail_panel_hint">Tap a manga to view details</string>
+    <string name="library_detail_unread_chapters">%d unread chapters</string>
+    <string name="library_detail_open">Open Details</string>
+    <string name="library_detail_close">Close</string>
+
+    <!-- Manga status labels (used in detail panel) -->
+    <string name="manga_status_ongoing">Ongoing</string>
+    <string name="manga_status_completed">Completed</string>
+    <string name="manga_status_licensed">Licensed</string>
+    <string name="manga_status_publishing_finished">Publishing Finished</string>
+    <string name="manga_status_cancelled">Cancelled</string>
+    <string name="manga_status_on_hiatus">On Hiatus</string>
+    <string name="library_filter_reading_list">Reading List</string>
+    <string name="library_reading_list_all">All Lists</string>
 </resources>

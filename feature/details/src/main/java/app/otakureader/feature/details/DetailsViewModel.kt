@@ -11,12 +11,9 @@ import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.core.preferences.DownloadPreferences
-import app.otakureader.core.preferences.AiPreferences
-import app.otakureader.domain.repository.AiRepository
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
 import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
-import app.otakureader.domain.usecase.ai.SummarizeChapterUseCase
-import app.otakureader.domain.usecase.ai.GenerateMangaSummaryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +38,7 @@ import javax.inject.Inject
  * ViewModel for Manga Details Screen following MVI pattern
  */
 @HiltViewModel
+@Suppress("LargeClass")
 class DetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
@@ -48,12 +46,9 @@ class DetailsViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val sourceRepository: SourceRepository,
     private val downloadPreferences: DownloadPreferences,
+    private val generalPreferences: GeneralPreferences,
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
-    private val summarizeChapter: SummarizeChapterUseCase,
-    private val aiRepository: AiRepository,
-    private val aiPreferences: AiPreferences,
-    private val generateMangaSummary: GenerateMangaSummaryUseCase
 ) : ViewModel() {
 
     private val mangaId: Long = savedStateHandle.get<Long>(MANGA_ID_ARG) 
@@ -80,6 +75,7 @@ class DetailsViewModel @Inject constructor(
         observeStaticSettings()
     }
 
+    @Suppress("CyclomaticComplexMethod")
     fun onEvent(event: DetailsContract.Event) {
         when (event) {
             is DetailsContract.Event.Refresh -> refreshData()
@@ -99,6 +95,8 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ToggleChapterRead -> toggleChapterRead(event.chapterId)
             is DetailsContract.Event.ToggleChapterBookmark -> toggleChapterBookmark(event.chapterId)
             is DetailsContract.Event.DownloadChapter -> downloadChapter(event.chapterId)
+            is DetailsContract.Event.DownloadAllChapters -> downloadAllChapters(unreadOnly = false)
+            is DetailsContract.Event.DownloadUnreadChapters -> downloadAllChapters(unreadOnly = true)
             is DetailsContract.Event.DeleteChapterDownload -> deleteChapterDownload(event.chapterId)
             is DetailsContract.Event.ExportChapterAsCbz -> exportChapterAsCbz(event.chapterId)
             is DetailsContract.Event.MarkPreviousAsRead -> markPreviousAsRead(event.chapterId)
@@ -130,11 +128,7 @@ class DetailsViewModel @Inject constructor(
             
             // Chapter thumbnail loading
             is DetailsContract.Event.LoadChapterThumbnail -> loadChapterThumbnail(event.chapterId)
-            is DetailsContract.Event.RequestChapterSummary -> requestChapterSummary(event.chapterId)
 
-            // AI Summary Translation
-            is DetailsContract.Event.GenerateAiSummary -> generateAiSummary()
-            
             // Source suggestions
             is DetailsContract.Event.LoadSourceSuggestions -> loadSourceSuggestions()
             is DetailsContract.Event.OnSourceSuggestionClick -> onSourceSuggestionClick(event.suggestion)
@@ -197,19 +191,17 @@ class DetailsViewModel @Inject constructor(
      * Fetch thumbnails for downloaded chapters in the background.
      * Only fetches for chapters that have been downloaded to avoid excessive network requests.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun fetchThumbnailsForDownloadedChapters(chapters: List<Chapter>) {
         viewModelScope.launch {
-            // Get chapters that need thumbnail fetching
             val chaptersNeedingThumbnails = chapters.filter { chapter ->
-                // Only fetch for chapters that have been read or partially read
                 !thumbnailCache.containsKey(chapter.id) && chapter.lastPageRead > 0
-            }.take(10) // Limit to first 10 to avoid overwhelming the source
-            
+            }.take(10)
+
             if (chaptersNeedingThumbnails.isEmpty()) return@launch
-            
+
             val manga = _state.value.manga ?: return@launch
-            val source = sourceRepository.getSource(manga.sourceId.toString()) ?: return@launch
-            
+
             supervisorScope {
                 chaptersNeedingThumbnails.map { chapter ->
                     async {
@@ -222,26 +214,24 @@ class DetailsViewModel @Inject constructor(
                                 scanlator = chapter.scanlator
                             )
 
-                            val pages = source.fetchPageList(sourceChapter)
+                            // Use repository instead of calling source directly (#587)
+                            val pages = sourceRepository.getPageList(manga.sourceId.toString(), sourceChapter)
+                                .getOrNull() ?: return@async
                             if (pages.isNotEmpty()) {
                                 val firstPageUrl = pages.first().imageUrl
                                 thumbnailCache[chapter.id] = firstPageUrl to pages.size
 
-                                // Update the chapter in state with new thumbnail
                                 _state.update { state ->
                                     val updatedChapters = state.chapters.map { item ->
                                         if (item.id == chapter.id) {
-                                            item.copy(
-                                                thumbnailUrl = firstPageUrl,
-                                                totalPages = pages.size
-                                            )
+                                            item.copy(thumbnailUrl = firstPageUrl, totalPages = pages.size)
                                         } else item
                                     }
                                     state.copy(chapters = updatedChapters)
                                 }
                             }
-                        } catch (e: Exception) {
-                            // Silently fail - thumbnails are optional
+                        } catch (_: Exception) {
+                            // Silently fail — thumbnails are optional
                         }
                     }
                 }.awaitAll()
@@ -299,14 +289,11 @@ class DetailsViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        combine(
-            aiPreferences.aiEnabled,
-            aiPreferences.aiSummaryTranslation
-        ) { aiEnabled, summaryEnabled ->
-            aiEnabled && summaryEnabled
-        }.onEach { enabled ->
-            _state.update { it.copy(aiSummaryEnabled = enabled) }
-        }.launchIn(viewModelScope)
+        generalPreferences.autoThemeColor
+            .onEach { enabled ->
+                _state.update { it.copy(autoThemeEnabled = enabled) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun refreshData() {
@@ -568,6 +555,30 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    private fun downloadAllChapters(unreadOnly: Boolean) {
+        viewModelScope.launch {
+            val manga = _state.value.manga ?: return@launch
+            val sourceName = manga.sourceId.toString()
+            val chapters = if (unreadOnly) {
+                _state.value.chapters.filter { !it.read }
+            } else {
+                _state.value.chapters
+            }
+            if (chapters.isEmpty()) return@launch
+            chapters.forEach { chapter ->
+                downloadRepository.enqueueChapter(
+                    mangaId = chapter.mangaId,
+                    chapterId = chapter.id,
+                    sourceName = sourceName,
+                    mangaTitle = manga.title,
+                    chapterTitle = chapter.name
+                )
+            }
+            val label = if (unreadOnly) "unread" else "all"
+            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
+        }
+    }
+
     private fun deleteChapterDownload(chapterId: Long) {
         viewModelScope.launch {
             val chapter = _state.value.chapters.firstOrNull { it.id == chapterId }
@@ -657,6 +668,7 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    @Suppress("UnusedParameter")
     private fun setDeleteAfterReadOverride(mode: DeleteAfterReadMode) {
         // Delete-after-reading feature has been removed.
         // Provide explicit feedback so the user is aware this action is no longer supported.
@@ -812,14 +824,8 @@ class DetailsViewModel @Inject constructor(
             if (thumbnailCache.containsKey(chapterId)) return@launch
             
             _effect.send(DetailsContract.Effect.ShowSnackbar("Loading preview..."))
-            
+
             try {
-                val source = sourceRepository.getSource(manga.sourceId.toString())
-                if (source == null) {
-                    _effect.send(DetailsContract.Effect.ShowError("Source not available"))
-                    return@launch
-                }
-                
                 val sourceChapter = SourceChapter(
                     url = chapter.url,
                     name = chapter.name,
@@ -827,8 +833,13 @@ class DetailsViewModel @Inject constructor(
                     chapterNumber = chapter.chapterNumber,
                     scanlator = chapter.scanlator
                 )
-                
-                val pages = source.fetchPageList(sourceChapter)
+
+                // Use repository to respect caching and abstraction layers (#587)
+                val pages = sourceRepository.getPageList(manga.sourceId.toString(), sourceChapter)
+                    .getOrElse {
+                        _effect.send(DetailsContract.Effect.ShowError("Source not available"))
+                        return@launch
+                    }
                 if (pages.isNotEmpty()) {
                     val firstPageUrl = pages.first().imageUrl
                     thumbnailCache[chapterId] = firstPageUrl to pages.size
@@ -858,74 +869,8 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Request an AI-generated summary for the given chapter.
-     *
-     * The summary is fetched asynchronously; the result is reflected in
-     * [DetailsContract.State.chapterSummaries] keyed by [chapterId].
-     * When the AI feature is disabled or unavailable the call is a no-op so
-     * the UI degrades gracefully (no summary shown, no error displayed).
-     */
-    private fun requestChapterSummary(chapterId: Long) {
-        viewModelScope.launch {
-            val manga = _state.value.manga ?: return@launch
-            val chapter = _state.value.chapters.find { it.id == chapterId } ?: return@launch
-
-            val precedingTitles = _state.value.sortedChapters
-                .takeWhile { it.id != chapterId }
-                .takeLast(SUMMARY_CONTEXT_CHAPTERS)
-                .map { it.name }
-
-            val result = summarizeChapter(
-                chapterId = chapterId,
-                mangaId = mangaId,
-                mangaTitle = manga.title,
-                chapterName = chapter.name,
-                precedingChapterTitles = precedingTitles,
-            )
-            result.getOrNull()?.let { summary ->
-                _state.update { state ->
-                    state.copy(
-                        chapterSummaries = state.chapterSummaries + (chapterId to summary.summary)
-                    )
-                }
-            }
-        }
-    }
-
     companion object {
         const val MANGA_ID_ARG = "mangaId"
-        private const val SUMMARY_CONTEXT_CHAPTERS = 5
-    }
-
-    // --- AI Summary Translation ---
-
-    private fun generateAiSummary() {
-        val manga = _state.value.manga ?: return
-        val description = manga.description ?: return
-
-        viewModelScope.launch {
-            if (!aiRepository.isAvailable()) {
-                _effect.send(
-                    DetailsContract.Effect.ShowError("AI is not available. Please configure an API key in Settings.")
-                )
-                return@launch
-            }
-
-            _state.update { it.copy(isGeneratingSummary = true) }
-            generateMangaSummary(title = manga.title, description = description)
-                .onSuccess { summary ->
-                    _state.update { it.copy(aiSummary = summary, isGeneratingSummary = false) }
-                }
-                .onFailure { error ->
-                    _state.update { it.copy(isGeneratingSummary = false) }
-                    _effect.send(
-                        DetailsContract.Effect.ShowError(
-                            "Failed to generate summary: ${error.message ?: "Unknown error"}"
-                        )
-                    )
-                }
-        }
     }
 
     // --- Source Suggestions ---

@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -25,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.otakureader.MainActivity
 import app.otakureader.R
+import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -41,6 +43,7 @@ class ContinueReadingWidget : GlanceAppWidget() {
     @InstallIn(SingletonComponent::class)
     interface WidgetEntryPoint {
         fun mangaRepository(): MangaRepository
+        fun chapterRepository(): ChapterRepository
     }
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -49,6 +52,7 @@ class ContinueReadingWidget : GlanceAppWidget() {
             WidgetEntryPoint::class.java
         )
         val mangaRepository = entryPoint.mangaRepository()
+        val chapterRepository = entryPoint.chapterRepository()
 
         val readingItems = try {
             mangaRepository.getLibraryManga()
@@ -57,7 +61,10 @@ class ContinueReadingWidget : GlanceAppWidget() {
                 .sortedByDescending { it.lastRead }
                 .take(3)
                 .map { manga ->
+                    val nextChapter = chapterRepository.getNextUnreadChapter(manga.id)
                     ReadingItem(
+                        mangaId = manga.id,
+                        chapterId = nextChapter?.id,
                         title = manga.title,
                         subtitle = if (manga.unreadCount > 0) {
                             context.getString(R.string.widget_chapters_remaining, manga.unreadCount)
@@ -87,6 +94,8 @@ class ContinueReadingWidget : GlanceAppWidget() {
 }
 
 private data class ReadingItem(
+    val mangaId: Long,
+    val chapterId: Long?,
     val title: String,
     val subtitle: String
 )
@@ -118,7 +127,7 @@ private fun ContinueReadingContent(
 
             Spacer(modifier = GlanceModifier.height(12.dp))
 
-            items.take(3).forEach { item ->
+            items.forEach { item ->
                 ReadingItemWidget(item)
                 Spacer(modifier = GlanceModifier.height(8.dp))
             }
@@ -141,7 +150,18 @@ private fun ReadingItemWidget(item: ReadingItem) {
     Column(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .clickable(actionStartActivity<MainActivity>())
+            .clickable(
+                actionStartActivity<MainActivity>(
+                    parameters = if (item.chapterId != null) {
+                        actionParametersOf(
+                            WidgetKeys.MANGA_ID_KEY to item.mangaId,
+                            WidgetKeys.CHAPTER_ID_KEY to item.chapterId
+                        )
+                    } else {
+                        actionParametersOf(WidgetKeys.MANGA_ID_KEY to item.mangaId)
+                    }
+                )
+            )
     ) {
         Text(
             text = item.title,

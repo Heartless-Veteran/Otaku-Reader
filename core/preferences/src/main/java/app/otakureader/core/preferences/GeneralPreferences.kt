@@ -4,9 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -104,6 +106,33 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val autoThemeColor: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_THEME_COLOR] ?: false }
     suspend fun setAutoThemeColor(value: Boolean) = dataStore.edit { it[Keys.AUTO_THEME_COLOR] = value }
 
+    // --- Visual Effects ---
+
+    /**
+     * Whether visual effects (screentone patterns, glassmorphism, neon glows) are enabled.
+     * Default: true (effects on).
+     */
+    val visualEffectsEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.VISUAL_EFFECTS_ENABLED] ?: true }
+    suspend fun setVisualEffectsEnabled(value: Boolean) = dataStore.edit { it[Keys.VISUAL_EFFECTS_ENABLED] = value }
+
+    // --- Per-Title Content Type Override ---
+
+    /**
+     * Returns true when the given manga ID has been overridden to MANHWA (webtoon) content type.
+     * Default: false (MANGA).
+     */
+    fun getMangaContentType(mangaId: Long): Flow<Boolean> = dataStore.data.map { prefs ->
+        val ids = prefs[Keys.MANHWA_OVERRIDE_IDS] ?: emptySet()
+        mangaId.toString() in ids  // true = MANHWA override, false = MANGA (default)
+    }
+
+    /** Adds or removes the given manga ID from the MANHWA override set. */
+    suspend fun toggleMangaContentTypeOverride(mangaId: Long, setManhwa: Boolean) = dataStore.edit { prefs ->
+        val current = prefs[Keys.MANHWA_OVERRIDE_IDS]?.toMutableSet() ?: mutableSetOf()
+        if (setManhwa) current.add(mangaId.toString()) else current.remove(mangaId.toString())
+        prefs[Keys.MANHWA_OVERRIDE_IDS] = current
+    }
+
     // --- Saved Searches ---
 
     /**
@@ -142,13 +171,44 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     /** Latest available version info (stored as JSON string). */
     val latestVersionInfo: Flow<String?> = dataStore.data.map { it[Keys.LATEST_VERSION_INFO] }
-    suspend fun setLatestVersionInfo(value: String?) = dataStore.edit { 
+    suspend fun setLatestVersionInfo(value: String?) = dataStore.edit {
         if (value != null) {
             it[Keys.LATEST_VERSION_INFO] = value
         } else {
             it.remove(Keys.LATEST_VERSION_INFO)
         }
     }
+
+    // --- Smart Download ---
+
+    val smartDownloadEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_ENABLED] ?: false }
+    suspend fun setSmartDownloadEnabled(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_ENABLED] = value }
+
+    val smartDownloadChaptersAhead: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_CHAPTERS_AHEAD] ?: 3 }
+    suspend fun setSmartDownloadChaptersAhead(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_CHAPTERS_AHEAD] = value }
+
+    val smartDownloadThreshold: Flow<Float> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_THRESHOLD] ?: 0.8f }
+    suspend fun setSmartDownloadThreshold(value: Float) = dataStore.edit { it[Keys.SMART_DOWNLOAD_THRESHOLD] = value }
+
+    val smartDownloadWifiOnly: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_WIFI_ONLY] ?: true }
+    suspend fun setSmartDownloadWifiOnly(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_WIFI_ONLY] = value }
+
+    val smartDownloadFavoritesOnly: Flow<Boolean> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_FAVORITES_ONLY] ?: true }
+    suspend fun setSmartDownloadFavoritesOnly(value: Boolean) = dataStore.edit { it[Keys.SMART_DOWNLOAD_FAVORITES_ONLY] = value }
+
+    val smartDownloadMinStorageMb: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] ?: 500 }
+    suspend fun setSmartDownloadMinStorageMb(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] = value }
+
+    // --- Image Cache ---
+
+    /**
+     * Maximum size of Coil's on-disk image cache in megabytes.
+     * Changes take effect after the next app restart.
+     */
+    val coilDiskCacheSizeMb: Flow<Int> =
+        dataStore.data.map { it[Keys.COIL_DISK_CACHE_SIZE_MB] ?: DEFAULT_COIL_DISK_CACHE_MB }
+    suspend fun setCoilDiskCacheSizeMb(value: Int) =
+        dataStore.edit { it[Keys.COIL_DISK_CACHE_SIZE_MB] = value.coerceIn(MIN_COIL_DISK_CACHE_MB, MAX_COIL_DISK_CACHE_MB) }
 
     private object Keys {
         val THEME_MODE = intPreferencesKey("theme_mode")
@@ -165,10 +225,25 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DISCORD_RPC_ENABLED = booleanPreferencesKey("discord_rpc_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val AUTO_THEME_COLOR = booleanPreferencesKey("auto_theme_color")
+        val VISUAL_EFFECTS_ENABLED = booleanPreferencesKey("visual_effects_enabled")
+        val MANHWA_OVERRIDE_IDS = stringSetPreferencesKey("manhwa_override_ids")
         val SAVED_SEARCHES = stringPreferencesKey("saved_searches")
         val APP_UPDATE_CHECK_ENABLED = booleanPreferencesKey("app_update_check_enabled")
         val LAST_APP_UPDATE_CHECK = longPreferencesKey("last_app_update_check")
         val CURRENT_VERSION_CODE = intPreferencesKey("current_version_code")
         val LATEST_VERSION_INFO = stringPreferencesKey("latest_version_info")
+        val COIL_DISK_CACHE_SIZE_MB = intPreferencesKey("coil_disk_cache_size_mb")
+        val SMART_DOWNLOAD_ENABLED = booleanPreferencesKey("smart_download_enabled")
+        val SMART_DOWNLOAD_CHAPTERS_AHEAD = intPreferencesKey("smart_download_chapters_ahead")
+        val SMART_DOWNLOAD_THRESHOLD = floatPreferencesKey("smart_download_threshold")
+        val SMART_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("smart_download_wifi_only")
+        val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
+        val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
+    }
+
+    companion object {
+        const val DEFAULT_COIL_DISK_CACHE_MB = 512
+        const val MIN_COIL_DISK_CACHE_MB = 64
+        const val MAX_COIL_DISK_CACHE_MB = 2048
     }
 }

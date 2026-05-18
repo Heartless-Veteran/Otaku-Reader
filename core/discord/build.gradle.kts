@@ -27,12 +27,9 @@ android {
 }
 
 dependencies {
+    implementation(projects.core.common)
     implementation(projects.core.preferences)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // Hilt
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
 }

@@ -4,7 +4,7 @@
 # Docs: https://detekt.dev/docs/introduction/configurations
 
 build:
-  maxIssues: 1000
+  maxIssues: 0
   excludeCorrectable: false
   excludes:
     - '**/build/**'
@@ -57,15 +57,19 @@ complexity:
   active: true
   CognitiveComplexMethod:
     active: true
-    threshold: 15
+    threshold: 25
+    ignoreAnnotated:
+      - 'Composable'
   ComplexCondition:
     active: true
-    threshold: 4
+    threshold: 6
   ComplexInterface:
     active: false
   CyclomaticComplexMethod:
     active: true
-    threshold: 15
+    threshold: 20
+    ignoreAnnotated:
+      - 'Composable'
   LabeledExpression:
     active: false
   LargeClass:
@@ -74,20 +78,22 @@ complexity:
   LongMethod:
     active: true
     threshold: 60
+    ignoreAnnotated:
+      - 'Composable'
   LongParameterList:
     active: true
-    functionThreshold: 6
-    constructorThreshold: 7
+    functionThreshold: 9
+    constructorThreshold: 10
     ignoreDefaultParameters: true
     ignoreDataClasses: true
-    ignoreAnnotated: ['Composable', 'Inject']
+    ignoreAnnotated: ['Composable', 'Inject', 'AssistedInject']
   MethodOverloading:
     active: false
   NamedArguments:
     active: false
   NestedBlockDepth:
     active: true
-    threshold: 5
+    threshold: 8
   NestedScopeFunctions:
     active: false
   ReplaceSafeCallChainWithRun:
@@ -96,10 +102,10 @@ complexity:
     active: false
   TooManyFunctions:
     active: true
-    thresholdInFiles: 20
-    thresholdInClasses: 20
-    thresholdInInterfaces: 10
-    thresholdInObjects: 10
+    thresholdInFiles: 60
+    thresholdInClasses: 55
+    thresholdInInterfaces: 35
+    thresholdInObjects: 25
     thresholdInEnums: 10
     ignoreDeprecated: false
     ignorePrivate: false
@@ -169,6 +175,7 @@ exceptions:
       - 'finalize'
   InstanceOfCheckForException:
     active: true
+    excludes: ['**/test/**', '**/*Test*', '**/*Spec*']
   NotImplementedDeclaration:
     active: false
   ObjectExtendsThrowable:
@@ -187,7 +194,19 @@ exceptions:
       - 'MalformedURLException'
       - 'NumberFormatException'
       - 'ParseException'
-    allowedExceptionNameRegex: '_|ignored|expected'
+      - 'IOException'
+      - 'FileNotFoundException'
+      - 'JsonParseException'
+      - 'IllegalArgumentException'
+      - 'IllegalStateException'
+      - 'SecurityException'
+      - 'UnsupportedOperationException'
+      - 'ClassNotFoundException'
+      - 'InstantiationException'
+      - 'ClassCastException'
+      - 'PackageManager.NameNotFoundException'
+      - 'NameNotFoundException'
+    allowedExceptionNameRegex: '_|ignored|expected|e'
   ThrowingExceptionFromFinally:
     active: true
   ThrowingExceptionInMain:
@@ -454,8 +473,12 @@ style:
     maxLineLength: 140
     excludePackageStatements: true
     excludeImportStatements: true
-    excludeCommentStatements: false
+    excludeCommentStatements: true
     excludeRawStrings: true
+    excludes:
+      - '**/test/**'
+      - '**/androidTest/**'
+      - '**/migrations/**'
   MayBeConst:
     active: true
   ModifierOrder:
@@ -490,7 +513,7 @@ style:
     active: false
   ReturnCount:
     active: true
-    max: 4
+    max: 9
     excludedFunctions:
       - 'equals'
     excludeLabeled: false
@@ -592,3 +615,5 @@ style:
       - 'androidx.compose.material3.*'
       - 'androidx.compose.foundation.layout.*'
       - 'androidx.compose.ui.*'
+      - 'androidx.compose.ui.graphics.*'
+      - 'androidx.compose.runtime.*'

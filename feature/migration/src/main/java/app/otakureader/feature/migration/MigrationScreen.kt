@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.migration
 
 import androidx.compose.foundation.background
@@ -364,7 +365,11 @@ private fun MigrationConfirmationDialog(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (candidates.size == 1) stringResource(R.string.migration_choose_target, candidates.size) else stringResource(R.string.migration_choose_target_plural, candidates.size),
+                    text = if (candidates.size == 1) {
+                        stringResource(R.string.migration_choose_target, candidates.size)
+                    } else {
+                        stringResource(R.string.migration_choose_target_plural, candidates.size)
+                    },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -660,7 +665,10 @@ private fun MigrationTaskItem(task: MigrationTaskItem) {
                     } else {
                         stringResource(R.string.migration_status_completed)
                     }
-                    MigrationStatus.FAILED -> stringResource(R.string.migration_status_failed, task.errorMessage ?: stringResource(R.string.migration_status_unknown_error))
+                    MigrationStatus.FAILED -> stringResource(
+                        R.string.migration_status_failed,
+                        task.errorMessage ?: stringResource(R.string.migration_status_unknown_error)
+                    )
                     MigrationStatus.SKIPPED -> stringResource(R.string.migration_status_skipped)
                 }
 

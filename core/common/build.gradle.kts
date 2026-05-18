@@ -5,6 +5,9 @@ plugins {
 
 android {
     namespace = "app.otakureader.core.common"
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -12,4 +15,6 @@ dependencies {
     implementation(libs.androidx.palette)
     implementation(libs.kotlinx.coroutines.android)
     api(libs.kotlinx.coroutines.core)
+    implementation(libs.lifecycle.viewmodel.ktx)
+    implementation(libs.zxing.core)
 }

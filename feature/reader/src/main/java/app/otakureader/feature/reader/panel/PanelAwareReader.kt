@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,17 +53,17 @@ import androidx.compose.ui.unit.dp
 import app.otakureader.feature.reader.R
 import app.otakureader.feature.reader.components.ZoomableImage
 import app.otakureader.feature.reader.model.ComicPanel
-import app.otakureader.feature.reader.model.ImageQuality
+import app.otakureader.domain.model.ImageQuality
 import app.otakureader.feature.reader.model.PanelBounds
 import app.otakureader.feature.reader.model.ReaderPage
-import app.otakureader.feature.reader.model.ReadingDirection
+import app.otakureader.domain.model.ReadingDirection
 import kotlinx.coroutines.launch
 
 /**
  * Panel-aware reader that provides intelligent panel-by-panel navigation.
  * 
  * This component enhances the reading experience by:
- * - Using Gemini Vision AI for accurate panel detection
+ * - Using local image processing (edge detection + line analysis) for panel detection
  * - Supporting both RTL (manga) and LTR (comics) reading orders
  * - Providing smooth animated transitions between panels
  * - Allowing tap or swipe navigation
@@ -136,9 +135,6 @@ fun PanelAwareReader(
     val offsetX = remember { Animatable(0f) }
     val offsetY = remember { Animatable(0f) }
     val alpha = remember { Animatable(1f) }
-
-    // Track drag state for swipe gestures
-    var dragOffset by remember { mutableFloatStateOf(0f) }
 
     // Animate to current panel when it changes
     LaunchedEffect(validPanelIndex, containerSize) {
@@ -384,6 +380,7 @@ private fun TapZones(
  * Overlay with panel navigation controls.
  */
 @Composable
+@Suppress("UnusedParameter")
 private fun PanelReaderOverlay(
     currentPanel: Int,
     totalPanels: Int,

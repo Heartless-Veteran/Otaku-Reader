@@ -113,6 +113,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
 
     // ── Sync Operations ────────────────────────────────────────────────────
 
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     override suspend fun syncManga(
         mangaId: Long,
         trackerId: Int
@@ -202,7 +203,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                         val remoteTime = syncState.remoteLastModified
                         remoteTime == null || syncState.localLastModified >= remoteTime
                     }
-                    ConflictResolution.ASK -> throw IllegalStateException(
+                    ConflictResolution.ASK -> error(
                         "ASK conflict resolution should have been handled before reaching this branch"
                     )
                 }
@@ -283,6 +284,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         return TrackerSyncRepository.SyncSummary(attempted, successful, failed, conflicts)
     }
 
+    @Suppress("LongMethod")
     override suspend fun resolveConflict(
         mangaId: Long,
         trackerId: Int,

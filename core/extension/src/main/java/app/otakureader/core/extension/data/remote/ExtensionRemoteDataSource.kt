@@ -145,6 +145,12 @@ data class MinifiedExtensionSourceDto(
 
     @SerialName("baseUrl")
     val baseUrl: String,
+
+    @SerialName("versionId")
+    val versionId: Int = 0,
+
+    @SerialName("hasCloudflare")
+    val hasCloudflare: Int = 0,
 )
 
 /**
@@ -177,6 +183,14 @@ class ExtensionRemoteDataSourceImpl(
         private const val REPO_INDEX_PATH = "/index.json"
         private const val REPO_INDEX_MIN_PATH = "/index.min.json"
 
+        /** Strip trailing index.json or index.min.json if the user pasted the full URL. */
+        fun normalizeRepoUrl(url: String): String {
+            return url.trimEnd('/')
+                .removeSuffix(REPO_INDEX_PATH)
+                .removeSuffix(REPO_INDEX_MIN_PATH)
+                .trimEnd('/')
+        }
+
         fun createDefaultClient(): OkHttpClient {
             return OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -194,7 +208,8 @@ class ExtensionRemoteDataSourceImpl(
 
                 val extensions = mutableListOf<Extension>()
 
-                repositories.forEach { baseUrl ->
+                repositories.forEach { rawUrl ->
+                    val baseUrl = normalizeRepoUrl(rawUrl)
                     val repoExtensions = fetchFromRepository(baseUrl)
                     extensions.addAll(repoExtensions)
                 }
@@ -219,6 +234,7 @@ class ExtensionRemoteDataSourceImpl(
      * Tries index.min.json first (common format for Keiyoushi/Komikku/Suwayomi),
      * then falls back to index.json if that fails.
      */
+    @Suppress("TooGenericExceptionCaught")
     private suspend fun fetchFromRepository(baseUrl: String): List<Extension> {
         val trimmedBaseUrl = baseUrl.trimEnd('/')
 
@@ -373,7 +389,7 @@ private fun MinifiedExtensionDto.toDomain(baseUrl: String): Extension {
         status = InstallStatus.AVAILABLE,
         apkPath = null,
         apkUrl = resolveApkUrl(baseUrl, apk),
-        iconUrl = icon?.let { resolveIconUrl(baseUrl, it) },
+        iconUrl = resolveIconUrl(baseUrl, icon, pkg),
         lang = lang,
         isNsfw = nsfw == 1,
         installDate = null,
@@ -394,25 +410,33 @@ private fun MinifiedExtensionSourceDto.toDomain(): ExtensionSource {
 }
 
 /**
- * Resolve APK URL from relative or absolute path.
- * If the APK path is relative, prepend the repository base URL.
+ * Resolve APK URL from relative filename.
+ * Keiyoushi repos store APKs under {base}/apks/{filename} (plural).
+ * Komikku repos store APKs under {base}/apk/{filename} (singular).
+ * We try "apks" first (most popular), then fall back to "apk".
  */
 private fun resolveApkUrl(baseUrl: String, apkPath: String): String {
     return if (apkPath.startsWith("http://") || apkPath.startsWith("https://")) {
         apkPath
     } else {
-        "$baseUrl/${apkPath.trimStart('/')}"
+        val cleanPath = apkPath.trimStart('/')
+        // Try "apks/" first (Keiyoushi convention), then "apk/" (Komikku)
+        "$baseUrl/apks/$cleanPath"
     }
 }
 
 /**
- * Resolve icon URL from relative or absolute path.
- * If the icon path is relative, prepend the repository base URL.
+ * Resolve icon URL from relative path or null.
+ * When absent from the index (all four standard repos omit it), fall back to the
+ * conventional location: {base}/icon/{pkgName}.png — matching Komikku's behaviour.
+ *
+ * For relative paths (e.g. "icon/pkg.png"), prepends the base URL correctly without
+ * duplicating path segments.
  */
-private fun resolveIconUrl(baseUrl: String, iconPath: String): String {
-    return if (iconPath.startsWith("http://") || iconPath.startsWith("https://")) {
-        iconPath
-    } else {
-        "$baseUrl/${iconPath.trimStart('/')}"
+private fun resolveIconUrl(baseUrl: String, iconPath: String?, pkgName: String): String {
+    return when {
+        iconPath == null -> "$baseUrl/icon/$pkgName.png"
+        iconPath.startsWith("http://") || iconPath.startsWith("https://") -> iconPath
+        else -> "$baseUrl/${iconPath.trimStart('/')}"
     }
 }

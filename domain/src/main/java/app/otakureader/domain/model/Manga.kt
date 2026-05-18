@@ -42,8 +42,26 @@ data class Manga(
     val readerBackgroundColor: Long? = null,
     // Page preloading settings (#264)
     val preloadPagesBefore: Int? = null,
-    val preloadPagesAfter: Int? = null
+    val preloadPagesAfter: Int? = null,
+    val contentRating: ContentRating = ContentRating.SAFE,
+    /** User has marked this manga as fully read. */
+    val userCompleted: Boolean = false,
+    /** User has dropped / abandoned this manga. */
+    val userDropped: Boolean = false,
 )
+
+@Serializable
+enum class ContentRating {
+    SAFE,
+    SUGGESTIVE,
+    EROTICA,
+    PORNOGRAPHIC;
+
+    companion object {
+        fun fromOrdinal(ordinal: Int): ContentRating =
+            entries.getOrElse(ordinal) { SAFE }
+    }
+}
 
 @Serializable
 enum class MangaStatus {

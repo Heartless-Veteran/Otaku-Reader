@@ -1,55 +1,79 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Screen title -->
     <string name="tracking_title">Tracking</string>
-    <string name="tracking_back">Back</string>
-    <string name="tracking_login">Login</string>
-    <string name="tracking_logout">Logout</string>
+    
+    <!-- Login / Auth -->
+    <string name="tracking_login">Log In</string>
+    <string name="tracking_login_title">%1$s Login</string>
+    <string name="tracking_logout">Log Out</string>
     <string name="tracking_logged_in">Logged in</string>
     <string name="tracking_not_logged_in">Not logged in</string>
-    <string name="tracking_login_title">Login to %s</string>
-    <string name="tracking_login_success">Logged in to %s</string>
-    <string name="tracking_login_failed">Failed to log in to %s</string>
-    <string name="tracking_login_error">Login error: %s</string>
     <string name="tracking_username">Username</string>
     <string name="tracking_password">Password</string>
-    <string name="tracking_cancel">Cancel</string>
-    <string name="tracking_search">Search manga</string>
-    <string name="tracking_search_placeholder">Enter manga title…</string>
-    <string name="tracking_search_error">Search failed: %s</string>
+    <string name="tracking_oauth_browser_error">Could not open browser for OAuth</string>
+    
+    <!-- Link / Unlink -->
+    <string name="tracking_link">Link</string>
     <string name="tracking_unlink">Unlink</string>
-    <string name="tracking_unlink_success">Unlinked from %s</string>
-    <string name="tracking_unlink_error">Failed to unlink: %s</string>
-    <string name="tracking_link_success">Linked to %s</string>
-    <string name="tracking_link_error">Failed to link: %s</string>
-    <string name="tracking_update_error">Update failed: %s</string>
-    <string name="tracking_oauth_browser_error">No browser found to open OAuth login</string>
-    <string name="tracking_chapter_progress">Ch. %d</string>
-    <string name="tracking_status_reading">Reading</string>
-    <string name="tracking_status_completed">Completed</string>
-    <string name="tracking_status_on_hold">On Hold</string>
-    <string name="tracking_status_dropped">Dropped</string>
-    <string name="tracking_status_plan_to_read">Plan to Read</string>
-    <string name="tracking_status_re_reading">Re-reading</string>
-    <!-- 2-way sync -->
+    
+    <!-- Sync -->
     <string name="tracking_sync">Sync</string>
-    <string name="tracking_push">Push to tracker</string>
-    <string name="tracking_pull">Pull from tracker</string>
-    <string name="tracking_sync_success">Sync completed successfully</string>
-    <string name="tracking_push_success">Pushed to tracker successfully</string>
-    <string name="tracking_pull_success">Pulled from tracker successfully</string>
-    <string name="tracking_sync_error">Sync failed: %s</string>
-    <string name="tracking_conflict_resolved">Conflict resolved</string>
-    <!-- Sync status indicators -->
+    <string name="tracking_push">Push</string>
+    <string name="tracking_pull">Pull</string>
     <string name="tracking_sync_status_synced">Synced</string>
-    <string name="tracking_sync_status_pending">Pending sync</string>
     <string name="tracking_sync_status_syncing">Syncing…</string>
-    <string name="tracking_sync_status_conflict">Sync conflict</string>
-    <string name="tracking_sync_status_error">Sync error</string>
-    <!-- Conflict resolution dialog -->
-    <string name="tracking_conflict_title">Sync conflict – %s</string>
-    <string name="tracking_conflict_description">Both local and remote progress have changed. Choose which version to keep.</string>
-    <string name="tracking_conflict_local_chapter">Local: Chapter %d</string>
-    <string name="tracking_conflict_remote_chapter">Remote: Chapter %d</string>
-    <string name="tracking_conflict_keep_local">Keep local</string>
-    <string name="tracking_conflict_keep_remote">Keep remote</string>
+    <string name="tracking_sync_status_pending">Pending</string>
+    <string name="tracking_sync_status_conflict">Conflict</string>
+    <string name="tracking_sync_status_error">Error</string>
+    
+    <!-- Conflict dialog -->
+    <string name="tracking_conflict_title">Sync Conflict</string>
+    <string name="tracking_conflict_description">This manga has different progress on the tracker and locally.</string>
+    <string name="tracking_conflict_local_chapter">Local: Chapter %1$.1f</string>
+    <string name="tracking_conflict_remote_chapter">Remote: Chapter %1$.1f</string>
+    <string name="tracking_conflict_keep_local">Keep Local</string>
+    <string name="tracking_conflict_keep_remote">Keep Remote</string>
+    
+    <!-- Search -->
+    <string name="tracking_search">Search</string>
+    <string name="tracking_search_placeholder">Search tracker…</string>
+    
+    <!-- Chapter progress -->
+    <string name="tracking_chapter_progress">Chapter %1$.1f</string>
+    
+    <!-- Cancel -->
+    <string name="tracking_cancel">Cancel</string>
+    
+    <!-- Back -->
+    <string name="tracking_back">Go back</string>
+
+    <!-- OAuth screen -->
+    <string name="tracking_oauth_title">Tracker Login</string>
+    <string name="tracking_oauth_linking">Linking %1$s…</string>
+    <string name="tracking_oauth_link_failed">Failed to link %1$s</string>
+    <string name="tracking_oauth_unknown_error">Unknown error</string>
+    <string name="tracking_oauth_retry">Retry</string>
+    <string name="tracking_oauth_go_back">Go Back</string>
+    <string name="tracking_oauth_linked_success">%1$s linked successfully!</string>
+    <string name="tracking_oauth_linked_snackbar">Successfully linked %1$s account</string>
+    
+    <!-- Login feedback -->
+    <string name="tracking_login_success">Logged in to %1$s</string>
+    <string name="tracking_login_failed">Failed to log in to %1$s</string>
+    <string name="tracking_login_error">Login error: %1$s</string>
+    <string name="tracking_link_success">Linked to %1$s</string>
+    <string name="tracking_link_error">Failed to link: %1$s</string>
+    <string name="tracking_unlink_success">Unlinked from %1$s</string>
+    <string name="tracking_unlink_error">Failed to unlink: %1$s</string>
+    <string name="tracking_search_error">Search failed: %1$s</string>
+    
+    <!-- Update feedback -->
+    <string name="tracking_update_error">Update failed: %1$s</string>
+    
+    <!-- Sync feedback -->
+    <string name="tracking_sync_success">Sync completed successfully</string>
+    <string name="tracking_sync_error">Sync failed: %1$s</string>
+    <string name="tracking_push_success">Progress pushed to trackers</string>
+    <string name="tracking_pull_success">Progress pulled from trackers</string>
+    <string name="tracking_conflict_resolved">Conflict resolved</string>
 </resources>

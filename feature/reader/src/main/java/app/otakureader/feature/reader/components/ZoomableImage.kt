@@ -1,3 +1,4 @@
+@file:Suppress("MaxLineLength")
 package app.otakureader.feature.reader.components
 
 import androidx.compose.animation.core.Animatable
@@ -34,10 +35,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import coil3.compose.AsyncImage
+import coil3.decode.Decoder
 import coil3.request.ImageRequest
 import coil3.request.transformations
 import coil3.size.Size
-import app.otakureader.feature.reader.model.ImageQuality
+import app.otakureader.domain.model.ImageQuality
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -67,6 +69,8 @@ fun ZoomableImage(
     onDoubleTap: ((Offset) -> Unit)? = null,
     onTap: ((Offset) -> Unit)? = null,
     onZoomChange: ((Float) -> Unit)? = null,
+    onImageSizeKnown: ((width: Int, height: Int) -> Unit)? = null,
+    decoderFactory: Decoder.Factory? = null,
     resetOnChange: Boolean = true
 ) {
     val scope = rememberCoroutineScope()
@@ -86,7 +90,7 @@ fun ZoomableImage(
             .pointerInput(imageUrl, minScale, maxScale) {
                 coroutineScope {
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
+                        awaitFirstDown(requireUnconsumed = false)
 
                         do {
                             val event = awaitPointerEvent()
@@ -105,6 +109,11 @@ fun ZoomableImage(
                                     val centroidX = centroid.x
                                     val centroidY = centroid.y
 
+                                    // High-frequency pinch path: onZoom/onPan use Animatable.snapTo
+                                    // (NOT animateTo), so this scope.launch does not start an
+                                    // animation coroutine and cannot produce an animation backlog
+                                    // even under rapid repeated pinch input. See ZoomableState
+                                    // KDoc for the full guarantee.
                                     scope.launch {
                                         zoomState.onZoom(
                                             newScale,
@@ -115,6 +124,7 @@ fun ZoomableImage(
                                             zoomState.onPan(panChange)
                                         }
                                     }
+                                    onZoomChange?.invoke(newScale)
 
                                     event.changes.forEach { it.consume() }
                                 }
@@ -151,7 +161,9 @@ fun ZoomableImage(
     ) {
         if (imageUrl != null) {
             val context = LocalContext.current
-            val imageModel = remember(imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize, context) {
+            val imageModel = remember(
+                imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize, decoderFactory, context
+            ) {
                 val builder = ImageRequest.Builder(context).data(imageUrl)
                 // Determine the container's longest side in px (0 when not yet measured).
                 val containerMax = if (containerSize != IntSize.Zero)
@@ -159,11 +171,11 @@ fun ZoomableImage(
                 // imageQuality caps by explicit pixel budget; dataSaverEnabled is a fallback cap
                 // when quality is ORIGINAL.  Where the container is already measured we further
                 // cap at the container dimension so we never decode more pixels than fit on screen.
-                if (imageQuality.pixels != null) {
+                val qPixels = imageQuality.pixels
+                if (qPixels != null) {
                     // Coil fits the image into the given box (ContentScale.Fit semantics),
                     // so equal width and height effectively cap the longer side at that value.
-                    val targetPx = if (containerMax > 0) min(imageQuality.pixels, containerMax)
-                                   else imageQuality.pixels
+                    val targetPx = if (containerMax > 0) min(qPixels, containerMax) else qPixels
                     builder.size(targetPx, targetPx)
                 } else if (dataSaverEnabled) {
                     val targetPx = if (containerMax > 0) min(DATA_SAVER_MAX_DIMENSION, containerMax)
@@ -174,6 +186,11 @@ fun ZoomableImage(
                 }
                 if (cropBordersEnabled) {
                     builder.transformations(CropBorderTransformation())
+                }
+                if (decoderFactory != null) {
+                    // Prepended so it runs before Coil's default BitmapFactoryDecoder; if the
+                    // factory returns null (image fits the budget) Coil falls through.
+                    builder.decoderFactory(decoderFactory)
                 }
 
                 builder.build()
@@ -186,6 +203,9 @@ fun ZoomableImage(
             AsyncImage(
                 model = imageModel,
                 contentDescription = contentDescription,
+                onSuccess = { state ->
+                    onImageSizeKnown?.invoke(state.result.image.width, state.result.image.height)
+                },
                 modifier = Modifier
                     .let { baseModifier ->
                         if (zoomState.isZoomed) {
@@ -213,10 +233,37 @@ fun ZoomableImage(
 }
 
 /**
- * Advanced zoomable state with smooth animations and boundary constraints
+ * Advanced zoomable state with smooth animations and boundary constraints.
+ *
+ * Animation-queue / coroutine-backlog guarantees (see issue: high-frequency pinch gestures
+ * queueing Animatable coroutines):
+ *
+ *  1. The three [Animatable] instances ([_scale], [_offsetX], [_offsetY]) are constructed exactly
+ *     once as private fields of this class and reused for the lifetime of the state object. They
+ *     are NOT reallocated per gesture. Combined with [rememberZoomableState] using
+ *     `remember { ZoomableState() }`, this guarantees a single [Animatable] per axis per
+ *     composition, which is the precondition required for [Animatable.animateTo]'s built-in
+ *     cancellation-on-restart behavior to take effect.
+ *
+ *  2. The high-frequency pinch / pan path ([onZoom], [onPan]) uses [Animatable.snapTo], not
+ *     [Animatable.animateTo]. `snapTo` does not start an animation coroutine, so rapid pinch
+ *     input cannot produce an animation backlog — there is no animation to queue.
+ *
+ *  3. The [Animatable.animateTo] path is only reached from discrete user events
+ *     ([animateZoomTo] for double-tap, [fling], [reset]). Because every call targets the same
+ *     long-lived [Animatable] instance, Compose's internal mutator mutex cancels any in-flight
+ *     animation on that instance before starting the new one. Rapid double-taps therefore
+ *     supersede each other rather than fighting; previously launched outer coroutines unwind
+ *     promptly via [kotlinx.coroutines.CancellationException] propagated out of the cancelled child `animateTo`s.
+ *
+ * @Stable: equality is by reference and the public observable values are backed by Compose-aware
+ * state inside the [Animatable]s, so Compose can correctly skip recompositions.
  */
 @Stable
 class ZoomableState {
+    // NOTE: created once and reused for the lifetime of this state object. Do not reallocate
+    // these per gesture — doing so would defeat Animatable.animateTo()'s automatic cancellation
+    // of prior animations and could allow coroutines to queue under high-frequency input.
     private val _scale = Animatable(1f)
     private val _offsetX = Animatable(0f)
     private val _offsetY = Animatable(0f)

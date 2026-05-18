@@ -6,17 +6,19 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import app.otakureader.core.preferences.AiPreferences
 import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.EncryptedOpdsCredentialStore
+import app.otakureader.core.preferences.PendingOAuthStore
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
+import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
-import app.otakureader.core.preferences.SyncPreferences
+import app.otakureader.core.preferences.SearchHistoryPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -107,24 +109,34 @@ object PreferencesModule {
 
     @Provides
     @Singleton
-    fun provideSyncPreferences(dataStore: DataStore<Preferences>): SyncPreferences =
-        SyncPreferences(dataStore)
-
-    @Provides
-    @Singleton
-    fun provideAiPreferences(
-        dataStore: DataStore<Preferences>,
-        @ApplicationContext context: Context
-    ): AiPreferences = AiPreferences(dataStore, context)
-
-    @Provides
-    @Singleton
     fun provideReadingGoalPreferences(dataStore: DataStore<Preferences>): ReadingGoalPreferences =
         ReadingGoalPreferences(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideNotificationPreferences(dataStore: DataStore<Preferences>): NotificationPreferences =
+        NotificationPreferences(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideSearchHistoryPreferences(dataStore: DataStore<Preferences>): SearchHistoryPreferences =
+        SearchHistoryPreferences(dataStore)
 
     @Provides
     @Singleton
     fun provideEncryptedOpdsCredentialStore(
         @ApplicationContext context: Context
     ): EncryptedOpdsCredentialStore = EncryptedOpdsCredentialStore(context)
+
+    @Provides
+    @Singleton
+    fun providePendingOAuthStore(
+        @ApplicationContext context: Context
+    ): PendingOAuthStore = PendingOAuthStore(context)
+
+    @Provides
+    @Singleton
+    fun provideTrackerTokenStore(
+        @ApplicationContext context: Context
+    ): TrackerTokenStore = TrackerTokenStore(context)
 }

@@ -2,6 +2,7 @@ package app.otakureader.data.loader
 
 import android.content.Context
 import app.otakureader.data.download.DownloadProvider
+import app.otakureader.domain.loader.PageLoader as PageLoaderInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,7 +17,7 @@ import javax.inject.Singleton
 @Singleton
 class PageLoader @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : PageLoaderInterface {
 
     /**
      * Returns the URI for loading [pageUrl].
@@ -31,7 +32,7 @@ class PageLoader @Inject constructor(
      * @param chapterName name / title of the chapter
      * @param pageIndex   0-based index of this page within the chapter
      */
-    fun resolveUrl(
+    override fun resolveUrl(
         pageUrl: String,
         sourceName: String,
         mangaTitle: String,
@@ -45,6 +46,29 @@ class PageLoader @Inject constructor(
             chapterName,
             pageIndex
         )
-        return if (localFile.exists()) "file://${localFile.absolutePath}" else pageUrl
+        if (localFile.exists()) {
+            return "file://${localFile.absolutePath}"
+        }
+
+        // Fall back to CBZ extraction if the chapter was archived.
+        val cbzFile = DownloadProvider.getCbzFile(
+            context,
+            sourceName,
+            mangaTitle,
+            chapterName
+        )
+        if (cbzFile.exists()) {
+            val pageUris = DownloadProvider.getDownloadedPageUris(
+                context,
+                sourceName,
+                mangaTitle,
+                chapterName
+            )
+            if (pageIndex < pageUris.size) {
+                return pageUris[pageIndex]
+            }
+        }
+
+        return pageUrl
     }
 }
