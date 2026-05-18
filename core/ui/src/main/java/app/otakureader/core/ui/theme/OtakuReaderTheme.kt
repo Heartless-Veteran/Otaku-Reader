@@ -245,12 +245,12 @@ fun OtakuReaderTheme(
 
     val contentTypeScheme = when (contentType) {
         ContentType.MANGA -> finalColorScheme.copy(
-            primary = Color(0xFFFF4757),
-            secondary = Color(0xFFFFA502),
+            primary = ContentType.MANGA.mangaAccent(),
+            secondary = ContentType.MANGA.mangaSecondary(),
         )
         ContentType.MANHWA -> finalColorScheme.copy(
-            primary = Color(0xFF9B59B6),
-            secondary = Color(0xFF00D2D3),
+            primary = ContentType.MANHWA.manhwaAccent(),
+            secondary = ContentType.MANHWA.manhwaSecondary(),
         )
         null -> finalColorScheme
     }

@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,7 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 @Composable
 fun CategoryChip(
@@ -24,7 +24,7 @@ fun CategoryChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(20.dp)
+    val shape = CircleShape
     val bg = if (selected) {
         MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
     } else {
@@ -53,8 +53,9 @@ fun CategoryChip(
         Text(
             text = label,
             color = textColor,
-            fontSize = 13.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
         )
     }
 }
@@ -62,7 +63,7 @@ fun CategoryChip(
 @Preview(showBackground = true, backgroundColor = 0xFF12121A)
 @Composable
 private fun CategoryChipPreview() {
-    MaterialTheme {
+    OtakuReaderTheme {
         androidx.compose.foundation.layout.Row(
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(12.dp),
