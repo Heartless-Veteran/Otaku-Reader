@@ -303,3 +303,192 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 - Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
 - Google Cloud project with Gemini API access exists for future AI features.
 - **Current priority: core stability and bug fixing, not new features.**
+
+---
+
+## Audit Workflow
+
+Full-systems audit using Ruflo (`ruvnet/ruflo`) multi-agent orchestration. Produces 10 deliverable files covering architecture, code quality, UI, performance, security, testing, features, master synthesis, roadmap, and patch queue.
+
+### Ruflo Setup (Run Once Per New Session)
+
+```bash
+# Initialize Ruflo in repo root (creates .claude/agents/, .mcp.json, .claude-flow/)
+npx ruflo@latest init --yes
+
+# Initialize memory database (vector-indexed, persists between sessions)
+npx ruflo@latest memory init
+
+# Initialize audit swarm
+npx ruflo@latest swarm init --name otaku-reader-audit --topology hierarchical-mesh
+
+# Register Ruflo as MCP server in Claude Code (adds to ~/.claude/claude_code_config.json)
+claude mcp add ruflo -- npx ruflo@latest mcp start
+
+# Install audit-specific plugins (run in Claude Code chat after MCP registration)
+# /plugin install ruflo-security-audit@ruflo
+# /plugin install ruflo-testgen@ruflo
+# /plugin install ruflo-docs@ruflo
+# /plugin install ruflo-adr@ruflo
+# /plugin install ruflo-observability@ruflo
+# /plugin install ruflo-intelligence@ruflo
+# /plugin install ruflo-rag-memory@ruflo
+# /plugin install ruflo-jujutsu@ruflo
+```
+
+Ruflo MCP config is in `.mcp.json` (already committed). Memory DB is at `.claude/memory.db`.
+
+### Audit Phases & Commands
+
+Parallelization order: Phase 0 → Phase 1 → Phases 2/3/4/5/6/7 in parallel → Phase 8 last.
+
+#### Phase 0: Bootstrap (already done — Ruflo initialized)
+
+```bash
+npx ruflo@latest memory search -q "otaku-reader audit"   # retrieve prior findings
+npx ruflo@latest memory stats                             # check DB health
+```
+
+#### Phase 1: Architecture & Structural Mapping
+
+**Ruflo (with MCP registered):**
+```
+/agent spawn architect-scout --role "Android Architecture Auditor" --tools file_read,git_log,dependency_analysis
+/swarm task --agent architect-scout --task "Map Otaku-Reader architecture and identify structural anti-patterns"
+/memory store --namespace otaku-reader --key architecture-map --value <output>
+```
+
+**Native Claude Code fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read core/navigation/Route.kt, domain/repository/*.kt,
+data/repository/*.kt, all module build.gradle.kts. Map dependency graph, find circular deps,
+identify god objects, list orphaned use cases.")
+```
+
+Deliverable: `AUDIT_ARCHITECTURE.md`
+
+#### Phase 2: Code Quality & Static Analysis
+
+**Ruflo:**
+```
+/agent spawn code-grunt --role "Kotlin Code Quality Auditor" --tools lint_runner,complexity_scanner
+/agent spawn smell-detector --role "Anti-Pattern Hunter" --tools static_analysis,git_blame
+/swarm task --agents code-grunt,smell-detector --parallel --task "Audit Otaku-Reader codebase for quality smells"
+```
+
+**Native fallback:** Parallel agents reading ViewModels and use cases, scanning for `!!`, bare try/catch, >20-line functions, nesting >3.
+
+Deliverable: `AUDIT_CODE_SMELLS.md`
+
+#### Phase 3: UI/UX & Compose Audit
+
+**Ruflo:**
+```
+/agent spawn ui-viper --role "Jetpack Compose UI Auditor" --tools compose_inspector,layout_analyzer
+/swarm task --agent ui-viper --task "Audit Otaku-Reader UI layer for Compose anti-patterns"
+```
+
+**Native fallback:** Agent reading LibraryScreen.kt, DetailsScreen.kt, ReaderScreen.kt, core/ui/ theme files.
+
+Deliverable: `AUDIT_UI.md`
+
+#### Phase 4: Performance & Memory
+
+**Ruflo:**
+```
+/agent spawn perf-sniper --role "Android Performance Auditor" --tools profiler,heap_analyzer,apk_analyzer
+/swarm task --agent perf-sniper --task "Profile Otaku-Reader for memory leaks, image OOM risk, startup performance"
+```
+
+**Native fallback:** Agent reading Room DAOs, migrations, Coil image loader config, WorkManager workers.
+
+Deliverable: `AUDIT_PERFORMANCE.md`
+
+#### Phase 5: Security Audit
+
+**Ruflo:**
+```
+/agent spawn sec-watch --role "Android Security Auditor" --tools cve_scanner,secret_scanner,manifest_auditor
+/swarm task --agent sec-watch --task "Run full security audit on Otaku-Reader including CVE scan and secret detection"
+```
+
+**Native fallback:** Agent reading SECURITY_AUDIT.md, tracking/ OAuth handling, preferences/ encryption, AndroidManifest.xml, network_security_config.xml.
+
+Deliverable: `AUDIT_SECURITY.md`
+
+#### Phase 6: Testing & Coverage
+
+**Ruflo:**
+```
+/agent spawn qa-engineer --role "Test Coverage Auditor" --tools coverage_analyzer,test_generator
+/swarm task --agent qa-engineer --task "Analyze Otaku-Reader test coverage and generate missing test stubs"
+```
+
+**Native fallback:** Agent listing `*/src/test/` directories, reading test files, identifying gaps, writing stubs.
+
+Deliverable: `AUDIT_TESTING.md`
+
+#### Phase 7: Feature Gap Analysis
+
+**Ruflo:**
+```
+/agent spawn product-hunter --role "Product Feature Auditor" --tools feature_matrix,comparator
+/swarm task --agent product-hunter --task "Compare Otaku-Reader feature set against standard manga reader expectations"
+```
+
+**Native fallback:** Agent reading feature/reader/, feature/settings/, data/backup/, feature/tracking/.
+
+Deliverable: `AUDIT_FEATURES.md`
+
+#### Phase 8: Master Synthesis
+
+**Ruflo:**
+```
+/swarm consensus --agents architect-scout,code-grunt,smell-detector,ui-viper,perf-sniper,sec-watch,qa-engineer,product-hunter --output AUDIT_MASTER.md
+/swarm goal --name "Otaku-Reader 90-Day Improvement Plan" --output ROADMAP.md
+```
+
+**Native fallback:** Synthesize all 7 phase outputs into AUDIT_MASTER.md (top 10 ranked by impact×effort), ROADMAP.md (30/60/90-day), PATCH_QUEUE.md (ready-to-apply P0 patches).
+
+Deliverables: `AUDIT_MASTER.md`, `ROADMAP.md`, `PATCH_QUEUE.md`
+
+### Ruflo Memory Commands
+
+```bash
+# Store a finding
+npx ruflo@latest memory store -k "finding-key" --value "description"
+
+# Retrieve prior findings before starting an audit phase
+npx ruflo@latest memory search -q "architecture" --limit 5
+
+# View all stored keys
+npx ruflo@latest memory stats
+
+# Export full audit bundle for archiving
+npx ruflo@latest memory export --namespace otaku-reader --output audit-bundle.json
+```
+
+### Ruflo → Native Claude Code Mapping
+
+| Ruflo Command | Native Equivalent |
+|---------------|-------------------|
+| `/agent spawn X --tools file_read` | `Agent(subagent_type="Explore", prompt="...")` |
+| `/swarm task --agents a,b --parallel` | Multiple `Agent(...)` calls in a single message |
+| `/memory store --key k --value v` | `npx ruflo@latest memory store -k k --value v` or write to plan file |
+| `/swarm consensus --agents a,b --output F` | Synthesize agent outputs in a final `Write(file_path=F)` call |
+| `/plugin install X@ruflo` | `Agent` with domain-specific analysis prompt |
+
+### Audit Deliverables Checklist
+
+| File | Phase | Contents |
+|------|-------|---------|
+| `AUDIT_ARCHITECTURE.md` | 1 | Module graph, god objects, dead code, dependency health |
+| `AUDIT_CODE_SMELLS.md` | 2 | P0/P1/P2 issues with file:line citations, patch suggestions |
+| `AUDIT_UI.md` | 3 | Compose anti-patterns, recomposition, accessibility |
+| `AUDIT_PERFORMANCE.md` | 4 | DB queries, image OOM, startup, benchmark targets |
+| `AUDIT_SECURITY.md` | 5 | CVE status, encryption gaps, OAuth analysis |
+| `AUDIT_TESTING.md` | 6 | Coverage heatmap, generated test stubs |
+| `AUDIT_FEATURES.md` | 7 | Feature gap matrix with effort estimates |
+| `AUDIT_MASTER.md` | 8 | Top 10 fixes ranked by impact×effort |
+| `ROADMAP.md` | 8 | 30/60/90-day milestones |
+| `PATCH_QUEUE.md` | 8 | Ready-to-apply Kotlin patches for all P0 items |
