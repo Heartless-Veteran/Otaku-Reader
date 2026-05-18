@@ -336,7 +336,7 @@ claude mcp add ruflo -- npx ruflo@latest mcp start
 # /plugin install ruflo-jujutsu@ruflo
 ```
 
-Ruflo MCP config is in `.mcp.json` (already committed). Memory DB is at `.claude/memory.db`.
+Ruflo MCP config is in `.mcp.json` (gitignored, generated via `ruflo init`). Memory DB is at `.claude/memory.db` (also gitignored).
 
 ### Audit Phases & Commands
 
@@ -360,9 +360,12 @@ npx ruflo@latest memory stats                             # check DB health
 
 **Native Claude Code fallback:**
 ```
-Agent(subagent_type="Explore", prompt="Read core/navigation/Route.kt, domain/repository/*.kt,
-data/repository/*.kt, all module build.gradle.kts. Map dependency graph, find circular deps,
-identify god objects, list orphaned use cases.")
+Agent(subagent_type="Explore", prompt="Read:
+  core/navigation/src/main/java/app/otakureader/core/navigation/Route.kt
+  domain/src/main/java/app/otakureader/domain/repository/ (all *.kt)
+  data/src/main/java/app/otakureader/data/repository/ (all *.kt)
+  all module build.gradle.kts files
+Map dependency graph, detect circular deps, identify god objects, list orphaned use cases.")
 ```
 
 Deliverable: `AUDIT_ARCHITECTURE.md`
@@ -376,7 +379,15 @@ Deliverable: `AUDIT_ARCHITECTURE.md`
 /swarm task --agents code-grunt,smell-detector --parallel --task "Audit Otaku-Reader codebase for quality smells"
 ```
 
-**Native fallback:** Parallel agents reading ViewModels and use cases, scanning for `!!`, bare try/catch, >20-line functions, nesting >3.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read:
+  feature/library/src/main/java/app/otakureader/feature/library/LibraryViewModel.kt
+  feature/details/src/main/java/app/otakureader/feature/details/DetailsViewModel.kt
+  feature/reader/src/main/java/app/otakureader/feature/reader/ReaderViewModel.kt
+  domain/src/main/java/app/otakureader/domain/usecase/ (all *.kt)
+Scan for !! operators, bare try/catch, functions >20 lines, nesting >3, LaunchedEffect misuse.")
+```
 
 Deliverable: `AUDIT_CODE_SMELLS.md`
 
@@ -388,7 +399,16 @@ Deliverable: `AUDIT_CODE_SMELLS.md`
 /swarm task --agent ui-viper --task "Audit Otaku-Reader UI layer for Compose anti-patterns"
 ```
 
-**Native fallback:** Agent reading LibraryScreen.kt, DetailsScreen.kt, ReaderScreen.kt, core/ui/ theme files.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read:
+  feature/library/src/main/java/app/otakureader/feature/library/LibraryScreen.kt
+  feature/details/src/main/java/app/otakureader/feature/details/DetailsScreen.kt
+  feature/reader/src/main/java/app/otakureader/feature/reader/ReaderScreen.kt
+  core/ui/src/main/java/app/otakureader/core/ui/ (theme and component files)
+Audit for recomposition anti-patterns, derivedStateOf misuse, remember vs rememberSaveable,
+Material3 compliance, accessibility gaps, god composables.")
+```
 
 Deliverable: `AUDIT_UI.md`
 
@@ -400,7 +420,16 @@ Deliverable: `AUDIT_UI.md`
 /swarm task --agent perf-sniper --task "Profile Otaku-Reader for memory leaks, image OOM risk, startup performance"
 ```
 
-**Native fallback:** Agent reading Room DAOs, migrations, Coil image loader config, WorkManager workers.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read:
+  core/database/src/main/java/app/otakureader/core/database/OtakuReaderDatabase.kt
+  core/database/src/main/java/app/otakureader/core/database/dao/ (all DAOs)
+  core/database/src/main/java/app/otakureader/core/database/migrations/ (all migrations)
+  data/src/main/java/app/otakureader/data/worker/ (WorkManager workers)
+  app/src/main/java/app/otakureader/di/ImageLoaderModule.kt
+Identify N+1 queries, missing indexes, OOM risk, battery drain, startup cost.")
+```
 
 Deliverable: `AUDIT_PERFORMANCE.md`
 
@@ -412,7 +441,16 @@ Deliverable: `AUDIT_PERFORMANCE.md`
 /swarm task --agent sec-watch --task "Run full security audit on Otaku-Reader including CVE scan and secret detection"
 ```
 
-**Native fallback:** Agent reading SECURITY_AUDIT.md, tracking/ OAuth handling, preferences/ encryption, AndroidManifest.xml, network_security_config.xml.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read:
+  SECURITY_AUDIT.md (existing baseline)
+  data/src/main/java/app/otakureader/data/tracking/ (OAuth token storage)
+  core/preferences/src/main/java/app/otakureader/core/preferences/ (encrypted storage)
+  app/src/main/AndroidManifest.xml
+  app/src/main/res/xml/network_security_config.xml
+Identify CVE status, unencrypted storage, OAuth flow gaps, exported component risks.")
+```
 
 Deliverable: `AUDIT_SECURITY.md`
 
@@ -424,7 +462,13 @@ Deliverable: `AUDIT_SECURITY.md`
 /swarm task --agent qa-engineer --task "Analyze Otaku-Reader test coverage and generate missing test stubs"
 ```
 
-**Native fallback:** Agent listing `*/src/test/` directories, reading test files, identifying gaps, writing stubs.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="List all */src/test/java/ directories.
+Read 5 representative test files. Check .github/workflows/ci.yml for coverage gates.
+Identify untested critical paths (migrations, OAuth, backup import).
+Generate test stubs for top 3 P0 untested paths.")
+```
 
 Deliverable: `AUDIT_TESTING.md`
 
@@ -436,7 +480,15 @@ Deliverable: `AUDIT_TESTING.md`
 /swarm task --agent product-hunter --task "Compare Otaku-Reader feature set against standard manga reader expectations"
 ```
 
-**Native fallback:** Agent reading feature/reader/, feature/settings/, data/backup/, feature/tracking/.
+**Native fallback:**
+```
+Agent(subagent_type="Explore", prompt="Read:
+  feature/reader/src/main/java/app/otakureader/feature/reader/ (reader modes and MVI)
+  feature/settings/src/main/java/app/otakureader/feature/settings/ (reader settings)
+  data/src/main/java/app/otakureader/data/backup/ (backup system)
+  feature/tracking/src/main/java/app/otakureader/feature/tracking/ (trackers)
+Build feature matrix vs standard manga reader checklist. Rate each: Complete/Partial/Missing.")
+```
 
 Deliverable: `AUDIT_FEATURES.md`
 
@@ -446,6 +498,7 @@ Deliverable: `AUDIT_FEATURES.md`
 ```
 /swarm consensus --agents architect-scout,code-grunt,smell-detector,ui-viper,perf-sniper,sec-watch,qa-engineer,product-hunter --output AUDIT_MASTER.md
 /swarm goal --name "Otaku-Reader 90-Day Improvement Plan" --output ROADMAP.md
+/swarm goal --name "P0 Patch Queue" --output PATCH_QUEUE.md
 ```
 
 **Native fallback:** Synthesize all 7 phase outputs into AUDIT_MASTER.md (top 10 ranked by impact×effort), ROADMAP.md (30/60/90-day), PATCH_QUEUE.md (ready-to-apply P0 patches).
