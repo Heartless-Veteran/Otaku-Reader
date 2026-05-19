@@ -569,6 +569,11 @@ style:
   UnusedPrivateMember:
     active: true
     allowedNames: '(_|ignored|expected|serialVersionUID)'
+    ignoreAnnotated:
+      - 'Preview'
+      - 'PreviewFontScale'
+      - 'PreviewLightDark'
+      - 'PreviewScreenSizes'
   UnusedPrivateProperty:
     active: true
     allowedNames: '_|ignored'
@@ -612,6 +617,7 @@ style:
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.android.synthetic.*'
+      - 'androidx.compose.runtime.*'
       - 'androidx.compose.material3.*'
       - 'androidx.compose.foundation.layout.*'
       - 'androidx.compose.ui.*'

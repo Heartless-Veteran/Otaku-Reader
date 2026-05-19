@@ -87,8 +87,6 @@ class ChapterRepositoryImpl @Inject constructor(
     override fun observeContinueReading(): Flow<List<ContinueReadingItem>> {
         return readingHistoryDao.observeContinueReading().map { entities ->
             entities
-                .distinctBy { it.mangaId }
-                .take(12)
                 .map { e ->
                     ContinueReadingItem(
                         mangaId = e.mangaId,
