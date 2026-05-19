@@ -1,6 +1,7 @@
 package app.otakureader.data.tracking.tracker
 
 import app.otakureader.core.preferences.TrackerTokenStore
+import kotlinx.coroutines.CancellationException
 import app.otakureader.data.tracking.api.MangaUpdatesApi
 import app.otakureader.data.tracking.api.MangaUpdatesListRequest
 import app.otakureader.data.tracking.api.MangaUpdatesLoginRequest
@@ -61,6 +62,8 @@ class MangaUpdatesTracker(
                 tokenStore.clearTokens(id)
                 false
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             false
         }
@@ -95,6 +98,8 @@ class MangaUpdatesTracker(
                 lastChapterRead = entry.chapter.toFloat(),
                 score = entry.score?.toFloat() ?: 0f
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -111,10 +116,14 @@ class MangaUpdatesTracker(
         return try {
             api.addToList(request)
             entry
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             try {
                 api.updateListEntry(request)
                 entry
+            } catch (e2: CancellationException) {
+                throw e2
             } catch (e2: Exception) {
                 entry
             }

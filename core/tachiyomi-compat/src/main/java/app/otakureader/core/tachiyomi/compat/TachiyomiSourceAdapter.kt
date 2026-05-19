@@ -265,10 +265,12 @@ class TachiyomiSourceAdapter(
         suspendCancellableCoroutine { cont ->
             val subscription = first().subscribe(
                 { value ->
-                    try { cont.resume(value) } catch (_: IllegalStateException) { }
+                    val token = cont.tryResume(value)
+                    if (token != null) cont.completeResume(token)
                 },
                 { error ->
-                    try { cont.resumeWithException(error) } catch (_: IllegalStateException) { }
+                    val token = cont.tryResumeWithException(error)
+                    if (token != null) cont.completeResume(token)
                 }
             )
             cont.invokeOnCancellation { subscription.unsubscribe() }
