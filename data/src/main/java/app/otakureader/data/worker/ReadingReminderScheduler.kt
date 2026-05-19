@@ -30,7 +30,7 @@ class ReadingReminderScheduler @Inject constructor(
      *
      * @param hour Hour of the day (0–23) to send the reminder.
      */
-    fun schedule(hour: Int) {
+    override fun schedule(hour: Int) {
         val now = Calendar.getInstance()
         val target = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, hour)
@@ -57,7 +57,7 @@ class ReadingReminderScheduler @Inject constructor(
     /**
      * Cancels the daily reading reminder.
      */
-    fun cancel() {
+    override fun cancel() {
         WorkManager.getInstance(context)
             .cancelUniqueWork(ReadingReminderWorker.WORK_NAME)
     }
