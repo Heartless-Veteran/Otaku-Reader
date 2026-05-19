@@ -34,22 +34,31 @@ class MangaUpdatesTracker(
     override val id: Int = TrackerType.MANGA_UPDATES
     override val name: String = "MangaUpdates"
 
-    private var sessionToken: String? = tokenStore.getTokens(TrackerType.MANGA_UPDATES)?.accessToken
-    private var userId: Long? = tokenStore.getTokens(TrackerType.MANGA_UPDATES)?.userId
+    private var sessionToken: String?
+    private var userId: Long?
+
+    init {
+        val tokens = tokenStore.getTokens(TrackerType.MANGA_UPDATES)
+        sessionToken = tokens?.accessToken
+        userId = tokens?.userId
+    }
 
     override val isLoggedIn: Boolean
-        get() = sessionToken != null
+        get() = sessionToken?.isNotBlank() == true
 
     override suspend fun login(username: String, password: String): Boolean {
         return try {
             val response = api.login(MangaUpdatesLoginRequest(login = username, password = password))
-            sessionToken = response.context?.sessionToken
-            userId = response.context?.uid
-            val token = sessionToken
-            if (token != null) {
+            val token = response.context?.sessionToken
+            if (token != null && token.isNotBlank()) {
+                sessionToken = token
+                userId = response.context?.uid
                 tokenStore.saveTokens(trackerId = id, accessToken = token, userId = userId)
                 true
             } else {
+                sessionToken = null
+                userId = null
+                tokenStore.clearTokens(id)
                 false
             }
         } catch (e: Exception) {
