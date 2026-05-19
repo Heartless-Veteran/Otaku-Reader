@@ -173,18 +173,3 @@ class TachiyomiBackupImporter @Inject constructor(
         }
     }
 }
-
-/**
- * Result of a Tachiyomi backup import operation.
- */
-data class ImportResult(
-    val mangaImported: Int,
-    val chaptersImported: Int,
-    val categoriesImported: Int,
-    val skipped: Int,
-    val totalManga: Int,
-    val totalChapters: Int
-) {
-    val success: Boolean
-        get() = mangaImported > 0 || skipped > 0
-}
