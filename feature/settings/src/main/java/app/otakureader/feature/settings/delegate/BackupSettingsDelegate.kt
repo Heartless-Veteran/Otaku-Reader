@@ -2,9 +2,9 @@ package app.otakureader.feature.settings.delegate
 
 import android.content.Context
 import app.otakureader.core.preferences.BackupPreferences
-import app.otakureader.data.backup.BackupScheduler
-import app.otakureader.data.backup.repository.BackupRepository
-import app.otakureader.data.backup.tachiyomi.TachiyomiBackupImporter
+import app.otakureader.domain.backup.BackupRepository
+import app.otakureader.domain.backup.BackupScheduler
+import app.otakureader.domain.backup.TachiyomiBackupImporter
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
@@ -76,7 +76,7 @@ class BackupSettingsDelegate @Inject constructor(
         is SettingsEvent.CreateBackupWithUri -> {
             updateState { it.copy(backup = it.backup.copy(isBackupInProgress = true)) }
             try {
-                backupRepository.createBackup(event.uri)
+                backupRepository.createBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup created successfully"))
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
@@ -89,7 +89,7 @@ class BackupSettingsDelegate @Inject constructor(
         is SettingsEvent.RestoreBackupFromUri -> {
             updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true)) }
             try {
-                backupRepository.restoreBackup(event.uri)
+                backupRepository.restoreBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

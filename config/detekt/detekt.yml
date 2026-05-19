@@ -460,14 +460,6 @@ style:
       - '**/test/**'
       - '**/*Test.kt'
       - '**/*Spec.kt'
-      # TODO: remove after PR 4 fixes architectural violations
-      - '**/feature/settings/SettingsViewModel.kt'
-      - '**/feature/settings/delegate/BackupSettingsDelegate.kt'
-      - '**/feature/settings/delegate/LibrarySettingsDelegate.kt'
-      - '**/feature/settings/delegate/ReaderSettingsDelegate.kt'
-      - '**/feature/settings/delegate/TrackerSyncSettingsDelegate.kt'
-      - '**/feature/tracking/TrackerOAuthViewModel.kt'
-      - '**/feature/updates/UpdatesViewModel.kt'
   ForbiddenMethodCall:
     active: true
     methods:
