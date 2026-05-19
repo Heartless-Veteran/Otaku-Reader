@@ -104,7 +104,6 @@ interface ReadingHistoryDao {
         INNER JOIN reading_history rh ON ch.id        = rh.chapter_id
         INNER JOIN manga           m  ON ch.mangaId   = m.id
         ORDER  BY rh.read_at DESC
-        LIMIT  500
         """
     )
     fun observeHistoryWithMangaInfo(): Flow<List<HistoryWithMangaEntity>>
@@ -180,13 +179,15 @@ interface ReadingHistoryDao {
         FROM   reading_history rh
         INNER JOIN chapters ch ON ch.id = rh.chapter_id
         INNER JOIN manga    m  ON m.id  = ch.mangaId
-        INNER JOIN (
-            SELECT ch2.mangaId, MAX(rh2.read_at) AS latest
+        WHERE  m.favorite = 1
+          AND  rh.chapter_id = (
+            SELECT rh2.chapter_id
             FROM   reading_history rh2
             INNER JOIN chapters ch2 ON ch2.id = rh2.chapter_id
-            GROUP  BY ch2.mangaId
-        ) sub ON ch.mangaId = sub.mangaId AND rh.read_at = sub.latest
-        WHERE  m.favorite = 1
+            WHERE  ch2.mangaId = ch.mangaId
+            ORDER BY rh2.read_at DESC, rh2.chapter_id DESC
+            LIMIT 1
+          )
         ORDER  BY rh.read_at DESC
         LIMIT  12
         """

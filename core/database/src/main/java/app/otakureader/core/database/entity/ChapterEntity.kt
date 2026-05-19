@@ -23,8 +23,7 @@ import androidx.room.PrimaryKey
         Index(value = ["dateFetch"]),
         // Composite index for getRecentUpdates() N+1 query optimization
         Index(value = ["mangaId", "dateFetch"]),
-        // Composite indexes for unread chapter count and sorted chapter list queries
-        Index(value = ["mangaId", "read"]),
+        // Composite index for unread chapter count and sorted chapter list queries
         Index(value = ["mangaId", "read", "sourceOrder"])
     ]
 )

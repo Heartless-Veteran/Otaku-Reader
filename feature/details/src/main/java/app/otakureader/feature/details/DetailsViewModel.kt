@@ -299,10 +299,15 @@ class DetailsViewModel @Inject constructor(
 
     private fun refreshData() {
         _state.update { it.copy(isRefreshing = true) }
-        loadMangaDetails()
-        loadChapters()
         viewModelScope.launch {
-            _state.update { it.copy(isRefreshing = false) }
+            try {
+                val manga = mangaRepository.getMangaById(mangaId)
+                _state.update { it.copy(manga = manga, isRefreshing = false) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(isRefreshing = false) }
+            }
         }
     }
 

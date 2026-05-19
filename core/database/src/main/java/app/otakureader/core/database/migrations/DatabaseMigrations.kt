@@ -232,7 +232,6 @@ internal val MIGRATION_21_22 = object : Migration(21, 22) {
 
 internal val MIGRATION_22_23 = object : Migration(22, 23) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE INDEX IF NOT EXISTS `index_chapters_mangaId_read` ON `chapters` (`mangaId`, `read`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_chapters_mangaId_read_sourceOrder` ON `chapters` (`mangaId`, `read`, `sourceOrder`)")
     }
 }
