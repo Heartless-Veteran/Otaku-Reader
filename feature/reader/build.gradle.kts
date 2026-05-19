@@ -17,7 +17,6 @@ dependencies {
     implementation(projects.core.ui)
     implementation(projects.core.discord)
     implementation(projects.domain)
-    implementation(projects.data)
     implementation(projects.sourceApi)
     implementation(libs.paging.compose)
     implementation(libs.lifecycle.viewmodel.ktx)

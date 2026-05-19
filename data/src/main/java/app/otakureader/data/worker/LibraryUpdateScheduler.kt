@@ -1,6 +1,7 @@
 package app.otakureader.data.worker
 
 import android.content.Context
+import app.otakureader.domain.scheduler.LibraryUpdateScheduler as LibraryUpdateSchedulerInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,11 +12,9 @@ import javax.inject.Singleton
 @Singleton
 class LibraryUpdateScheduler @Inject constructor(
     @ApplicationContext private val context: Context
-) {
-    /**
-     * Schedule (or reschedule) periodic library updates.
-     */
-    fun schedule(intervalHours: Int, wifiOnly: Boolean) {
+) : LibraryUpdateSchedulerInterface {
+
+    override fun schedule(intervalHours: Int, wifiOnly: Boolean) {
         LibraryUpdateWorker.schedule(
             context = context,
             intervalHours = intervalHours,
@@ -23,10 +22,11 @@ class LibraryUpdateScheduler @Inject constructor(
         )
     }
 
-    /**
-     * Cancel periodic library updates.
-     */
-    fun cancel() {
+    override fun cancel() {
         LibraryUpdateWorker.cancelPeriodic(context)
+    }
+
+    override fun enqueueNow() {
+        LibraryUpdateWorker.enqueue(context)
     }
 }

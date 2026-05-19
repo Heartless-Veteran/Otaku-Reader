@@ -1,8 +1,8 @@
 package app.otakureader.feature.settings.delegate
 
 import app.otakureader.core.preferences.GeneralPreferences
-import app.otakureader.data.tracking.TrackManager
-import app.otakureader.data.updater.AppUpdateChecker
+import app.otakureader.domain.tracking.TrackManager
+import app.otakureader.domain.updater.AppUpdateChecker
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
