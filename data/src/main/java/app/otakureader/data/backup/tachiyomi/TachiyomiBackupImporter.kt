@@ -9,6 +9,8 @@ import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
+import app.otakureader.domain.backup.ImportResult as DomainImportResult
+import app.otakureader.domain.backup.TachiyomiBackupImporter as TachiyomiBackupImporterInterface
 import app.otakureader.domain.model.MangaStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
@@ -27,7 +29,7 @@ class TachiyomiBackupImporter @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
     private val categoryDao: CategoryDao,
-) {
+) : TachiyomiBackupImporterInterface {
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -41,7 +43,7 @@ class TachiyomiBackupImporter @Inject constructor(
      * @return ImportResult with statistics
      */
     @Suppress("LongMethod")
-    suspend fun importBackup(backupJson: String): ImportResult {
+    override suspend fun importBackup(backupJson: String): DomainImportResult {
         val backup = json.decodeFromString<TachiyomiBackup>(backupJson)
 
         var mangaImported = 0
@@ -149,7 +151,7 @@ class TachiyomiBackupImporter @Inject constructor(
             // For now, we'll skip this since the mapping isn't directly in the manga object
         }
 
-        return ImportResult(
+        return DomainImportResult(
             mangaImported = mangaImported,
             chaptersImported = chaptersImported,
             categoriesImported = categoriesImported,

@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import app.otakureader.data.backup.BackupCreator
 import app.otakureader.data.backup.BackupRestorer
+import app.otakureader.domain.backup.BackupRepository as BackupRepositoryInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,49 +15,28 @@ import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Repository for managing backup and restore operations.
- * Coordinates file I/O with BackupCreator and BackupRestorer.
- */
 @Singleton
 class BackupRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val backupCreator: BackupCreator,
     private val backupRestorer: BackupRestorer
-) {
+) : BackupRepositoryInterface {
 
-    /**
-     * Creates a backup and writes it to the provided URI.
-     * @param uri Destination URI for the backup file (from SAF picker)
-     * @throws Exception if backup creation or write fails
-     */
-    suspend fun createBackup(uri: Uri) = withContext(Dispatchers.IO) {
+    override suspend fun createBackup(uriString: String) = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(uriString)
         val backupJson = backupCreator.createBackup()
-
-        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-            outputStream.write(backupJson.toByteArray())
-        } ?: error("Failed to open output stream for URI: $uri")
+        context.contentResolver.openOutputStream(uri)?.use { it.write(backupJson.toByteArray()) }
+            ?: error("Failed to open output stream for URI: $uriString")
     }
 
-    /**
-     * Restores a backup from the provided URI.
-     * @param uri Source URI for the backup file (from SAF picker)
-     * @throws Exception if backup read or restore fails
-     */
-    suspend fun restoreBackup(uri: Uri) = withContext(Dispatchers.IO) {
-        val backupJson = context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            inputStream.readBytes().decodeToString()
-        } ?: error("Failed to open input stream for URI: $uri")
-
+    override suspend fun restoreBackup(uriString: String) = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(uriString)
+        val backupJson = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+            ?: error("Failed to open input stream for URI: $uriString")
         backupRestorer.restoreBackup(backupJson)
     }
 
-    /**
-     * Creates an automatic backup and saves it to the app's private backup directory.
-     * @return The [File] that was written.
-     * @throws Exception if backup creation or write fails.
-     */
-    suspend fun createLocalBackup(): File = withContext(Dispatchers.IO) {
+    override suspend fun createLocalBackup(): File = withContext(Dispatchers.IO) {
         val backupJson = backupCreator.createBackup()
         val dir = getLocalBackupDir()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
@@ -65,31 +45,18 @@ class BackupRepository @Inject constructor(
         file
     }
 
-    /**
-     * Restores a backup from a local file path.
-     * @param file The local backup [File] to restore from.
-     * @throws Exception if restore fails.
-     */
-    suspend fun restoreLocalBackup(file: File) = withContext(Dispatchers.IO) {
-        val backupJson = file.readText()
-        backupRestorer.restoreBackup(backupJson)
+    override suspend fun restoreLocalBackup(file: File) = withContext(Dispatchers.IO) {
+        backupRestorer.restoreBackup(file.readText())
     }
 
-    /**
-     * Returns a list of automatic backup files stored locally, sorted newest first.
-     */
-    suspend fun listLocalBackups(): List<File> = withContext(Dispatchers.IO) {
+    override suspend fun listLocalBackups(): List<File> = withContext(Dispatchers.IO) {
         getLocalBackupDir()
             .listFiles { f -> f.isFile && f.name.endsWith(".json") }
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
     }
 
-    /**
-     * Removes old automatic backup files, keeping only the [maxCount] most recent ones.
-     * [maxCount] is coerced to at least 1 so the most recent backup is always retained.
-     */
-    suspend fun pruneLocalBackups(maxCount: Int) = withContext(Dispatchers.IO) {
+    override suspend fun pruneLocalBackups(maxCount: Int) = withContext(Dispatchers.IO) {
         val safeMax = maxCount.coerceAtLeast(1)
         val backups = listLocalBackups()
         if (backups.size > safeMax) {

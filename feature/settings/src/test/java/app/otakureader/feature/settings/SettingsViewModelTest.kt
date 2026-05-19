@@ -6,7 +6,7 @@ import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
-import app.otakureader.data.worker.ReadingReminderScheduler
+import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.feature.settings.delegate.AppearanceSettingsDelegate
 import app.otakureader.feature.settings.delegate.BackupSettingsDelegate
@@ -48,7 +48,7 @@ class SettingsViewModelTest {
     private lateinit var appPreferences: AppPreferences
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
     private lateinit var generalPreferences: GeneralPreferences
-    private lateinit var readingReminderScheduler: ReadingReminderScheduler
+    private lateinit var readingReminderScheduler: ReminderScheduler
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var context: Context
 

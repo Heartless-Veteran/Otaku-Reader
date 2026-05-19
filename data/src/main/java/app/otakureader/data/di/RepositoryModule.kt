@@ -20,6 +20,16 @@ import app.otakureader.data.repository.MangaRepositoryImpl
 import app.otakureader.data.repository.ReaderSettingsRepository
 import app.otakureader.data.loader.PageLoader as PageLoaderImpl
 import app.otakureader.data.history.WorkManagerHistoryScheduler
+import app.otakureader.data.backup.BackupScheduler as BackupSchedulerImpl
+import app.otakureader.data.backup.repository.BackupRepository as BackupRepositoryImpl
+import app.otakureader.data.backup.tachiyomi.TachiyomiBackupImporter as TachiyomiBackupImporterImpl
+import app.otakureader.data.tracking.TrackManager as TrackManagerImpl
+import app.otakureader.data.updater.AppUpdateChecker as AppUpdateCheckerImpl
+import app.otakureader.data.worker.LibraryUpdateScheduler as LibraryUpdateSchedulerImpl
+import app.otakureader.data.worker.ReadingReminderScheduler as ReadingReminderSchedulerImpl
+import app.otakureader.domain.backup.BackupRepository
+import app.otakureader.domain.backup.BackupScheduler
+import app.otakureader.domain.backup.TachiyomiBackupImporter
 import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
@@ -27,88 +37,79 @@ import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
+import app.otakureader.domain.scheduler.LibraryUpdateScheduler
+import app.otakureader.domain.scheduler.ReminderScheduler
+import app.otakureader.domain.tracking.TrackManager
+import app.otakureader.domain.updater.AppUpdateChecker
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
-/**
- * Hilt module binding all non-AI repositories.
- *
- * AI-related repositories were removed in Phase 0 (AI extraction).
- * They now live in the companion Otaku-Reader-AI module.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
     @Binds
-    abstract fun bindMangaRepository(
-        impl: MangaRepositoryImpl
-    ): MangaRepository
+    abstract fun bindMangaRepository(impl: MangaRepositoryImpl): MangaRepository
 
     @Binds
-    abstract fun bindChapterRepository(
-        impl: ChapterRepositoryImpl
-    ): ChapterRepository
+    abstract fun bindChapterRepository(impl: ChapterRepositoryImpl): ChapterRepository
 
     @Binds
-    abstract fun bindDownloadRepository(
-        impl: DownloadRepositoryImpl
-    ): DownloadRepository
+    abstract fun bindDownloadRepository(impl: DownloadRepositoryImpl): DownloadRepository
 
     @Binds
-    abstract fun bindCategoryRepository(
-        impl: CategoryRepositoryImpl
-    ): CategoryRepository
+    abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
 
     @Binds
-    abstract fun bindStatisticsRepository(
-        impl: StatisticsRepositoryImpl
-    ): StatisticsRepository
+    abstract fun bindStatisticsRepository(impl: StatisticsRepositoryImpl): StatisticsRepository
 
     @Binds
-    abstract fun bindOpdsRepository(
-        impl: OpdsRepositoryImpl
-    ): OpdsRepository
+    abstract fun bindOpdsRepository(impl: OpdsRepositoryImpl): OpdsRepository
 
     @Binds
-    abstract fun bindFeedRepository(
-        impl: FeedRepositoryImpl
-    ): FeedRepository
+    abstract fun bindFeedRepository(impl: FeedRepositoryImpl): FeedRepository
 
     @Binds
-    abstract fun bindReaderSettingsRepository(
-        impl: ReaderSettingsRepository
-    ): ReaderSettingsRepositoryInterface
+    abstract fun bindReaderSettingsRepository(impl: ReaderSettingsRepository): ReaderSettingsRepositoryInterface
 
     @Binds
-    abstract fun bindPageLoader(
-        impl: PageLoaderImpl
-    ): PageLoader
+    abstract fun bindPageLoader(impl: PageLoaderImpl): PageLoader
 
     @Binds
-    abstract fun bindReadingHistoryScheduler(
-        impl: WorkManagerHistoryScheduler
-    ): ReadingHistoryScheduler
+    abstract fun bindReadingHistoryScheduler(impl: WorkManagerHistoryScheduler): ReadingHistoryScheduler
 
     @Binds
-    abstract fun bindPageBookmarkRepository(
-        impl: PageBookmarkRepositoryImpl
-    ): PageBookmarkRepository
+    abstract fun bindPageBookmarkRepository(impl: PageBookmarkRepositoryImpl): PageBookmarkRepository
 
     @Binds
-    abstract fun bindSourceRepository(
-        impl: SourceRepositoryImpl
-    ): SourceRepository
+    abstract fun bindSourceRepository(impl: SourceRepositoryImpl): SourceRepository
 
     @Binds
-    abstract fun bindExtensionManagementRepository(
-        impl: SourceRepositoryImpl
-    ): ExtensionManagementRepository
+    abstract fun bindExtensionManagementRepository(impl: SourceRepositoryImpl): ExtensionManagementRepository
 
     @Binds
-    abstract fun bindReadingListRepository(
-        impl: ReadingListRepositoryImpl
-    ): ReadingListRepository
+    abstract fun bindReadingListRepository(impl: ReadingListRepositoryImpl): ReadingListRepository
+
+    @Binds
+    abstract fun bindReminderScheduler(impl: ReadingReminderSchedulerImpl): ReminderScheduler
+
+    @Binds
+    abstract fun bindLibraryUpdateScheduler(impl: LibraryUpdateSchedulerImpl): LibraryUpdateScheduler
+
+    @Binds
+    abstract fun bindBackupScheduler(impl: BackupSchedulerImpl): BackupScheduler
+
+    @Binds
+    abstract fun bindBackupRepository(impl: BackupRepositoryImpl): BackupRepository
+
+    @Binds
+    abstract fun bindTachiyomiBackupImporter(impl: TachiyomiBackupImporterImpl): TachiyomiBackupImporter
+
+    @Binds
+    abstract fun bindTrackManager(impl: TrackManagerImpl): TrackManager
+
+    @Binds
+    abstract fun bindAppUpdateChecker(impl: AppUpdateCheckerImpl): AppUpdateChecker
 }

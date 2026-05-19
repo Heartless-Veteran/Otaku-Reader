@@ -12,7 +12,6 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.core.ui)
     implementation(projects.domain)
-    implementation(projects.data)
     implementation(libs.paging.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)

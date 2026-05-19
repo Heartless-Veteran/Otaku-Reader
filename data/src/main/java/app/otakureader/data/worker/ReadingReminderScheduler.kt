@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import app.otakureader.domain.scheduler.ReminderScheduler
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
@@ -19,7 +20,7 @@ import javax.inject.Singleton
 @Singleton
 class ReadingReminderScheduler @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : ReminderScheduler {
 
     /**
      * Schedules (or reschedules) the daily reading reminder.

@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import app.otakureader.data.worker.BackupWorker
+import app.otakureader.domain.backup.BackupScheduler as BackupSchedulerInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -20,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class BackupScheduler @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : BackupSchedulerInterface {
 
     /**
      * Schedules (or reschedules) the periodic backup job.
@@ -31,7 +32,7 @@ class BackupScheduler @Inject constructor(
      * @param intervalHours How often to run the backup (in hours).
      *   Product minimum is 1 hour; WorkManager's own minimum is 15 minutes.
      */
-    fun schedule(intervalHours: Int) {
+    override fun schedule(intervalHours: Int) {
         val safeInterval = intervalHours.coerceAtLeast(1).toLong()
 
         val request = PeriodicWorkRequestBuilder<BackupWorker>(safeInterval, TimeUnit.HOURS)
@@ -53,7 +54,7 @@ class BackupScheduler @Inject constructor(
     /**
      * Cancels the periodic backup job.
      */
-    fun cancel() {
+    override fun cancel() {
         WorkManager.getInstance(context)
             .cancelUniqueWork(BackupWorker.WORK_NAME)
     }
