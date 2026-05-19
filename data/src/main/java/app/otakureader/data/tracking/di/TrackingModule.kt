@@ -214,8 +214,8 @@ object TrackingNetworkModule {
     @Provides
     @Singleton
     @IntoSet
-    fun provideMangaUpdatesTracker(api: MangaUpdatesApi): Tracker =
-        MangaUpdatesTracker(api)
+    fun provideMangaUpdatesTracker(api: MangaUpdatesApi, tokenStore: TrackerTokenStore): Tracker =
+        MangaUpdatesTracker(api, tokenStore)
 
     @Provides
     @Singleton
