@@ -20,7 +20,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -30,18 +29,6 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
-
-/**
- * Data class representing the latest app version information.
- */
-@Serializable
-data class VersionInfo(
-    val versionCode: Int,
-    val versionName: String,
-    val downloadUrl: String,
-    val releaseNotes: String,
-    val releaseDate: Long
-)
 
 /**
  * Worker that periodically checks for app updates from GitHub releases.
@@ -145,7 +132,7 @@ class AppUpdateChecker @Inject constructor(
 
     /**
      * Check if an update is available by querying the GitHub Releases API.
-     * Returns [VersionInfo] if a newer version exists, null if up to date or on error.
+     * Returns [AppVersionInfo] if a newer version exists, null if up to date or on error.
      */
     override suspend fun checkForUpdate(): AppVersionInfo? = withContext(Dispatchers.IO) {
         try {
