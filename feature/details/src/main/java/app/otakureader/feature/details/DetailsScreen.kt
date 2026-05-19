@@ -127,6 +127,8 @@ import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.ui.tooling.preview.Preview
+import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 private val MARKDOWN_BOLD_REGEX = Regex("""\*\*(.+?)\*\*""")
 private val MARKDOWN_ITALIC_REGEX = Regex("""(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)""")
@@ -1718,5 +1720,18 @@ private fun SuggestionItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF12121A)
+@Composable
+private fun MangaDescriptionPreview() {
+    OtakuReaderTheme {
+        MangaDescription(
+            description = "A young man is reincarnated into another world as an overpowered mage. " +
+                "He must navigate a dangerous world of monsters and politics while hiding his true power.",
+            expanded = false,
+            onToggle = {}
+        )
     }
 }

@@ -45,4 +45,5 @@ server/.env
 .claude/settings.json
 .mcp.json
 .swarm/
+.hive-mind/
 ruvector.db
