@@ -456,7 +456,7 @@ style:
         reason: 'Use domain backup use cases instead of data-layer backup classes directly.'
     excludes:
       - '**/data/**'
-      - 'app/src/**'
+      - '**/app/**'
       - '**/test/**'
       - '**/*Test.kt'
       - '**/*Spec.kt'
