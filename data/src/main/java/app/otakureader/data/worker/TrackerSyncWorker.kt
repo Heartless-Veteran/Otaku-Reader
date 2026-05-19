@@ -55,10 +55,11 @@ class TrackerSyncWorker @AssistedInject constructor(
          * @param context Application context.
          * @param intervalHours How often to sync (in hours, minimum 1).
          */
-        fun schedule(context: Context, intervalHours: Int = 1) {
+        fun schedule(context: Context, intervalHours: Int = 6) {
             val safeInterval = intervalHours.coerceAtLeast(1)
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
+                .setRequiresBatteryNotLow(true)
                 .build()
 
             val workRequest = PeriodicWorkRequestBuilder<TrackerSyncWorker>(
