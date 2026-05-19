@@ -65,6 +65,8 @@ import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.SourceManga
 import coil3.compose.AsyncImage
+import androidx.compose.ui.tooling.preview.Preview
+import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 /**
  * Browse screen for discovering manga from various sources.
@@ -567,6 +569,14 @@ private fun EmptySourcesContent() {
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF12121A)
+@Composable
+private fun EmptySourcesContentPreview() {
+    OtakuReaderTheme {
+        EmptySourcesContent()
     }
 }
 

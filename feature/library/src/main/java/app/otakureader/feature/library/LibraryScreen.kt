@@ -111,6 +111,8 @@ import app.otakureader.domain.model.ReadingGoal
 import androidx.compose.foundation.shape.RoundedCornerShape
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.compose.ui.tooling.preview.Preview
+import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -962,6 +964,14 @@ private fun DailyGoalBanner(
                 strokeCap = StrokeCap.Round,
             )
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF12121A)
+@Composable
+private fun EmptyLibraryMessagePreview() {
+    OtakuReaderTheme {
+        EmptyLibraryMessage()
     }
 }
 
