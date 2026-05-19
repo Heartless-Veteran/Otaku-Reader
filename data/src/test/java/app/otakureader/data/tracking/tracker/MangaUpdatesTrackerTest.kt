@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.MangaUpdatesApi
 import app.otakureader.data.tracking.api.MangaUpdatesListEntry
 import app.otakureader.data.tracking.api.MangaUpdatesLoginContext
@@ -15,6 +16,7 @@ import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,6 +35,7 @@ import org.junit.Test
 class MangaUpdatesTrackerTest {
 
     private lateinit var api: MangaUpdatesApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: MangaUpdatesTracker
 
     private val loginSuccess = MangaUpdatesLoginResponse(
@@ -43,7 +46,9 @@ class MangaUpdatesTrackerTest {
     @Before
     fun setUp() {
         api = mockk()
-        tracker = MangaUpdatesTracker(api)
+        tokenStore = mockk(relaxed = true)
+        every { tokenStore.getTokens(any()) } returns null
+        tracker = MangaUpdatesTracker(api, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -99,9 +104,7 @@ class MangaUpdatesTrackerTest {
     }
 
     @Test
-    fun `login with empty sessionToken stores it and returns true`() = runTest {
-        // The implementation checks sessionToken != null; empty string is not null,
-        // so login returns true even with an empty token. Validation is left to callers.
+    fun `login with empty sessionToken returns false and does not set isLoggedIn`() = runTest {
         coEvery { api.login(any()) } returns MangaUpdatesLoginResponse(
             status = "success",
             context = MangaUpdatesLoginContext(sessionToken = "", uid = 1L)
@@ -109,8 +112,8 @@ class MangaUpdatesTrackerTest {
 
         val result = tracker.login(username = "user", password = "pass")
 
-        assertTrue(result)
-        assertTrue(tracker.isLoggedIn)
+        assertFalse(result)
+        assertFalse(tracker.isLoggedIn)
     }
 
     @Test

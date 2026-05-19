@@ -3,8 +3,10 @@ package app.otakureader.data.worker
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
+import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -59,7 +61,11 @@ class FeedRefreshWorker @AssistedInject constructor(
          * Uses [ExistingPeriodicWorkPolicy.KEEP] so rescheduling doesn't reset the timer.
          */
         fun schedule(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
             val request = PeriodicWorkRequestBuilder<FeedRefreshWorker>(6, TimeUnit.HOURS)
+                .setConstraints(constraints)
                 .build()
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request)

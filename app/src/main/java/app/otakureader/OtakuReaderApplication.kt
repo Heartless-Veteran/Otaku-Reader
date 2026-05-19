@@ -113,6 +113,7 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
                 add(OkHttpNetworkFetcherFactory(callFactory = { okHttpClient }))
             }
             .allowRgb565(true)
+            .crossfade(300)
             .build()
     }
 }
