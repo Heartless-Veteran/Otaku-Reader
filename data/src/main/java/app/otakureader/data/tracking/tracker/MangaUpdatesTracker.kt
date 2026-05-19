@@ -1,5 +1,6 @@
 package app.otakureader.data.tracking.tracker
 
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.data.tracking.api.MangaUpdatesApi
 import app.otakureader.data.tracking.api.MangaUpdatesListRequest
 import app.otakureader.data.tracking.api.MangaUpdatesLoginRequest
@@ -14,6 +15,8 @@ import app.otakureader.domain.tracking.Tracker
  * Tracker implementation for [MangaUpdates (BakaUpdates)](https://www.mangaupdates.com/).
  *
  * Authentication uses session-based login (username + password → session token).
+ * The session token and user ID are persisted via [TrackerTokenStore] so they
+ * survive app restarts.
  *
  * MangaUpdates list IDs map to internal [TrackStatus] as follows:
  *  - 0 → READING
@@ -24,24 +27,40 @@ import app.otakureader.domain.tracking.Tracker
  *  - 5 → RE_READING
  */
 class MangaUpdatesTracker(
-    private val api: MangaUpdatesApi
+    private val api: MangaUpdatesApi,
+    private val tokenStore: TrackerTokenStore,
 ) : Tracker {
 
     override val id: Int = TrackerType.MANGA_UPDATES
     override val name: String = "MangaUpdates"
 
-    private var sessionToken: String? = null
-    private var userId: Long? = null
+    private var sessionToken: String?
+    private var userId: Long?
+
+    init {
+        val tokens = tokenStore.getTokens(TrackerType.MANGA_UPDATES)
+        sessionToken = tokens?.accessToken
+        userId = tokens?.userId
+    }
 
     override val isLoggedIn: Boolean
-        get() = sessionToken != null
+        get() = sessionToken?.isNotBlank() == true
 
     override suspend fun login(username: String, password: String): Boolean {
         return try {
             val response = api.login(MangaUpdatesLoginRequest(login = username, password = password))
-            sessionToken = response.context?.sessionToken
-            userId = response.context?.uid
-            sessionToken != null
+            val token = response.context?.sessionToken
+            if (token != null && token.isNotBlank()) {
+                sessionToken = token
+                userId = response.context?.uid
+                tokenStore.saveTokens(trackerId = id, accessToken = token, userId = userId)
+                true
+            } else {
+                sessionToken = null
+                userId = null
+                tokenStore.clearTokens(id)
+                false
+            }
         } catch (e: Exception) {
             false
         }
@@ -50,6 +69,7 @@ class MangaUpdatesTracker(
     override fun logout() {
         sessionToken = null
         userId = null
+        tokenStore.clearTokens(id)
     }
 
     override suspend fun search(query: String): List<TrackEntry> {

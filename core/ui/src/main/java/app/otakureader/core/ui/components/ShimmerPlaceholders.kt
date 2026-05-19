@@ -1,6 +1,8 @@
 package app.otakureader.core.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,7 +70,7 @@ fun TextShimmer(
     lastLineWidthPercent: Float = 0.6f,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         repeat(lines) { index ->
             val isLastLine = index == lines - 1
             val widthFraction = if (isLastLine) lastLineWidthPercent else 1f
@@ -77,7 +79,6 @@ fun TextShimmer(
                 modifier = Modifier
                     .fillMaxWidth(widthFraction)
                     .height(lineHeight.dp)
-                    .padding(vertical = 4.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .shimmer()
             )

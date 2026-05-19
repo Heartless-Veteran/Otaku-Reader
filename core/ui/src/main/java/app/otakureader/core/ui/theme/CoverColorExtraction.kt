@@ -9,8 +9,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.createBitmap
 import androidx.palette.graphics.Palette
-import coil3.ImageLoader
 import coil3.asDrawable
+import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
@@ -98,7 +98,7 @@ suspend fun extractColorSchemeFromUrl(
             .size(256, 256)
             .build()
 
-        val result = ImageLoader(context).execute(request)
+        val result = context.imageLoader.execute(request)
         if (result is SuccessResult) {
             val drawable = result.image.asDrawable(context.resources)
             if (drawable is BitmapDrawable) {

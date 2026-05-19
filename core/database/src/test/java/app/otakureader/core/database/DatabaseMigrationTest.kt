@@ -5,6 +5,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.otakureader.core.database.migrations.ALL_MIGRATIONS
+import app.otakureader.core.database.migrations.MIGRATION_10_11
+import app.otakureader.core.database.migrations.MIGRATION_11_12
 import app.otakureader.core.database.migrations.MIGRATION_13_14
 import app.otakureader.core.database.migrations.MIGRATION_14_15
 import app.otakureader.core.database.migrations.MIGRATION_15_16
@@ -14,8 +16,7 @@ import app.otakureader.core.database.migrations.MIGRATION_18_19
 import app.otakureader.core.database.migrations.MIGRATION_19_20
 import app.otakureader.core.database.migrations.MIGRATION_20_21
 import app.otakureader.core.database.migrations.MIGRATION_21_22
-import app.otakureader.core.database.migrations.MIGRATION_10_11
-import app.otakureader.core.database.migrations.MIGRATION_11_12
+import app.otakureader.core.database.migrations.MIGRATION_22_23
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -41,7 +42,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 22", 22, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 23", 23, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -68,7 +69,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 20 migrations (v2→v22)", 20, ALL_MIGRATIONS.size)
+        assertEquals("Expected 21 migrations (v2→v23)", 21, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -343,13 +344,45 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Full chain v9 → v22 ─────────────────────────────────────────────────
-    // Starts from v9 (oldest exported schema JSON). Runs v9→v21 via
-    // runMigrationsAndValidate (which validates against 9.json and 21.json),
-    // then applies MIGRATION_21_22 directly and asserts the final state.
+    // ── Migration 22 → 23 ───────────────────────────────────────────────────
+    // Adds: composite index (mangaId, read, sourceOrder) on chapters
 
     @Test
-    fun fullMigrationChain_v9ToV22() {
+    fun migration22To23_addsCompositeIndex() {
+        val db = helper.createDatabase(TEST_DB, 14)
+        MIGRATION_14_15.migrate(db)
+        MIGRATION_15_16.migrate(db)
+        MIGRATION_16_17.migrate(db)
+        MIGRATION_17_18.migrate(db)
+        MIGRATION_18_19.migrate(db)
+        MIGRATION_19_20.migrate(db)
+        MIGRATION_20_21.migrate(db)
+        MIGRATION_21_22.migrate(db)
+        val indexesBefore = db.indexNames("chapters")
+        assertFalse(
+            "index_chapters_mangaId_read_sourceOrder must NOT exist at v22",
+            "index_chapters_mangaId_read_sourceOrder" in indexesBefore,
+        )
+        MIGRATION_22_23.migrate(db)
+        val indexesAfter = db.indexNames("chapters")
+        assertTrue(
+            "index_chapters_mangaId_read_sourceOrder must exist after 22→23",
+            "index_chapters_mangaId_read_sourceOrder" in indexesAfter,
+        )
+        assertFalse(
+            "index_chapters_mangaId_read (redundant 2-column index) must NOT be created",
+            "index_chapters_mangaId_read" in indexesAfter,
+        )
+        db.close()
+    }
+
+    // ── Full chain v9 → v23 ─────────────────────────────────────────────────
+    // Starts from v9 (oldest exported schema JSON). Runs v9→v21 via
+    // runMigrationsAndValidate (which validates against 9.json and 21.json),
+    // then applies MIGRATION_21_22 and MIGRATION_22_23 directly.
+
+    @Test
+    fun fullMigrationChain_v9ToV23() {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(
             TEST_DB, 21, true,
@@ -357,6 +390,7 @@ class DatabaseMigrationTest {
         )
         assertFalse("download_queue must NOT exist at v21", "download_queue" in db.tableNames())
         MIGRATION_21_22.migrate(db)
+        MIGRATION_22_23.migrate(db)
         val tables = db.tableNames()
         assertTrue("manga must exist after full chain", "manga" in tables)
         assertTrue("chapters must exist after full chain", "chapters" in tables)
@@ -369,6 +403,10 @@ class DatabaseMigrationTest {
         assertTrue("contentRating must exist in manga after full chain", "contentRating" in db.columnNames("manga"))
         assertTrue("last_modified_at must exist in manga after full chain", "last_modified_at" in db.columnNames("manga"))
         assertTrue("userNotes must exist in chapters after full chain", "userNotes" in db.columnNames("chapters"))
+        assertTrue(
+            "index_chapters_mangaId_read_sourceOrder must exist after full chain",
+            "index_chapters_mangaId_read_sourceOrder" in db.indexNames("chapters"),
+        )
         db.close()
     }
 }

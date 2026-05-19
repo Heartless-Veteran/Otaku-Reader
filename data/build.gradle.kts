@@ -34,11 +34,8 @@ android {
 
         // ── MyAnimeList  (myanimelist.net/v1/oauth2 — PKCE authorization-code) ─
         //   Register at: https://myanimelist.net/apiconfig
-        //   Required: "Create API" → note down Client ID and Secret
-        //   MAL_CLIENT_SECRET is currently unused (PKCE flow does not need it)
-        //   but is included for parity should the API require it in future.
-        buildConfigField("String", "MAL_CLIENT_ID",       "\"${System.getenv("MAL_CLIENT_ID")       ?: ""}\"")
-        buildConfigField("String", "MAL_CLIENT_SECRET",   "\"${System.getenv("MAL_CLIENT_SECRET")   ?: ""}\"")
+        //   PKCE flow does not require a client secret.
+        buildConfigField("String", "MAL_CLIENT_ID", "\"${System.getenv("MAL_CLIENT_ID") ?: ""}\"")
 
         // ── Shikimori  (shikimori.one/oauth — authorization-code flow) ─────────
         //   Register at: https://shikimori.one/oauth/applications
