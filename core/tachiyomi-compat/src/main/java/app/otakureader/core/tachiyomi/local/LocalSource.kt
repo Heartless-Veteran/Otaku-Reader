@@ -14,6 +14,7 @@ import org.xmlpull.v1.XmlPullParserFactory
 import java.io.File
 import java.io.InputStream
 import java.util.zip.ZipFile
+import kotlinx.coroutines.CancellationException
 
 /**
  * Local manga source that serves manga from CBZ, ZIP, EPUB files and plain image folders
@@ -326,6 +327,8 @@ class LocalSource(
                     .filterNotNull()
                     .toList()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }
@@ -340,6 +343,8 @@ class LocalSource(
                 val entry = zip.getEntry("ComicInfo.xml") ?: return null
                 parseComicInfo(zip.getInputStream(entry))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -377,6 +382,8 @@ class LocalSource(
                 event = parser.next()
             }
             LocalMeta(title = title, author = author, artist = artist, description = description)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -400,6 +407,8 @@ class LocalSource(
                 artist = extract("artist"),
                 description = extract("description") ?: extract("summary")
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -416,6 +425,8 @@ class LocalSource(
                     ?: return null
                 parseOpfMeta(zip.getInputStream(opfEntry))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -453,6 +464,8 @@ class LocalSource(
                 event = parser.next()
             }
             LocalMeta(title = title, author = author, description = description)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -529,6 +542,8 @@ class LocalSource(
                     Page(index = index, url = "", imageUrl = "file://${outFile.absolutePath}")
                 }.filterNotNull()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }
@@ -547,7 +562,7 @@ class LocalSource(
      * item's href and then look for images referenced from that XHTML document.
      * For image-only EPUBs (non-standard), we return image manifest items directly.
      */
-    @Suppress("CognitiveComplexMethod")
+    @Suppress("CognitiveComplexMethod", "CyclomaticComplexMethod")
     private fun parseOpfSpineImagePaths(stream: InputStream): List<String> {
         return try {
             val factory = XmlPullParserFactory.newInstance()
@@ -614,6 +629,8 @@ class LocalSource(
                     .filter { it.mediaType in imageMediaTypes }
                     .map { it.href }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }

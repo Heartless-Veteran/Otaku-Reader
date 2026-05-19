@@ -14,6 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Manages cross-chapter prefetching for seamless reading experience.
@@ -131,6 +132,8 @@ class AdaptiveChapterPrefetcher @Inject constructor(
 
                 // Mark as prefetched
                 prefetchedChapters.add(nextChapter.id)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Silently ignore - cross-chapter prefetch is optional
             }
@@ -169,6 +172,8 @@ class AdaptiveChapterPrefetcher @Inject constructor(
 
                 // Mark as prefetched
                 prefetchedChapters.add(previousChapter.id)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Silently ignore - cross-chapter prefetch is optional
             }
@@ -231,6 +236,8 @@ class AdaptiveChapterPrefetcher @Inject constructor(
                         .data(imageUrl)
                         .build()
                     imageLoader.enqueue(request)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     // Silently ignore prefetch failures
                 }

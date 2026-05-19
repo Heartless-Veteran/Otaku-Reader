@@ -1,6 +1,7 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.DownloadPriority
@@ -32,6 +33,7 @@ class DownloadManagerTest {
     private lateinit var context: Context
     private lateinit var downloader: Downloader
     private lateinit var downloadPreferences: DownloadPreferences
+    private lateinit var downloadQueueDao: DownloadQueueDao
     private lateinit var downloadManager: DownloadManager
 
     private val testRequest = ChapterDownloadRequest(
@@ -48,6 +50,7 @@ class DownloadManagerTest {
         context = mockk(relaxed = true)
         downloader = mockk(relaxed = true)
         downloadPreferences = mockk()
+        downloadQueueDao = mockk(relaxed = true)
 
         // Mock preferences
         every { downloadPreferences.saveAsCbz } returns flowOf(false)
@@ -59,7 +62,7 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences, TestScope(testDispatcher))
+        downloadManager = DownloadManager(context, downloader, downloadPreferences, downloadQueueDao, TestScope(testDispatcher))
     }
 
     // -------------------------------------------------------------------------

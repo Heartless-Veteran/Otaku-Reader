@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 data class ExtensionsState(
     val isLoading: Boolean = false,
@@ -167,6 +168,7 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
+    @Suppress("ThrowsCount")
     private fun loadExtensions() {
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
@@ -181,6 +183,8 @@ class ExtensionsViewModel @Inject constructor(
                             )
                         }
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -197,6 +201,8 @@ class ExtensionsViewModel @Inject constructor(
                     .collect { extensions ->
                         _state.update { it.copy(availableExtensions = extensions) }
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Don't show error for available extensions
             }
@@ -213,6 +219,8 @@ class ExtensionsViewModel @Inject constructor(
                             )
                         }
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Don't show error for updates
             }
@@ -225,13 +233,7 @@ class ExtensionsViewModel @Inject constructor(
                 _state.update { it.copy(repositories = repos) }
             }
         }
-
-        viewModelScope.launch {
-            runCatching { extensionRepoRepository.getActiveRepository() }
-                .onSuccess { active ->
-                    _state.update { it.copy(activeRepository = active) }
-                }
-        }
+        // All configured repositories are simultaneously active — no single active repo concept.
     }
 
     private fun refreshExtensions() {
@@ -252,6 +254,8 @@ class ExtensionsViewModel @Inject constructor(
                             )
                         }
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -269,6 +273,8 @@ class ExtensionsViewModel @Inject constructor(
                 extensionRepository.setExtensionEnabled(extension.pkgName, enabled)
                 extensionManagementRepository.refreshSources()
                     .onFailure { e -> _effect.send(ExtensionsEffect.ShowError("Failed to reload sources: ${e.message}")) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update extension: ${e.message}"))
             }
@@ -290,13 +296,9 @@ class ExtensionsViewModel @Inject constructor(
     }
 
     private fun setActiveRepository(url: String) {
-        viewModelScope.launch {
-            runCatching { extensionRepoRepository.setActiveRepository(url) }
-                .onSuccess {
-                    _state.update { it.copy(activeRepository = url) }
-                    refreshExtensions()
-                }
-        }
+        // All repositories are simultaneously active; refresh to pick up any new extensions.
+        _state.update { it.copy(activeRepository = url) }
+        refreshExtensions()
     }
 
     private fun installExtension(extension: Extension) {
@@ -323,6 +325,8 @@ class ExtensionsViewModel @Inject constructor(
                     }
                     _effect.send(ExtensionsEffect.ShowError("Failed to install: ${error.message}"))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to install: ${e.message}"))
             }
@@ -345,6 +349,8 @@ class ExtensionsViewModel @Inject constructor(
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to uninstall: ${error.message}"))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to uninstall: ${e.message}"))
             }
@@ -371,6 +377,8 @@ class ExtensionsViewModel @Inject constructor(
                 }.onFailure { error ->
                     _effect.send(ExtensionsEffect.ShowError("Failed to update: ${error.message}"))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to update: ${e.message}"))
             }

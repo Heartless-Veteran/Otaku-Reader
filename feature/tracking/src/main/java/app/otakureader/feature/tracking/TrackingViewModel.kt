@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class TrackingViewModel @Inject constructor(
@@ -176,6 +177,8 @@ class TrackingViewModel @Inject constructor(
                         context.getString(R.string.tracking_login_failed, tracker.name)
                     ))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_login_error, e.message ?: "")
@@ -201,6 +204,8 @@ class TrackingViewModel @Inject constructor(
             try {
                 val results = tracker.search(query)
                 _state.update { it.copy(searchResults = results, isSearching = false) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_search_error, e.message ?: "")
@@ -229,6 +234,8 @@ class TrackingViewModel @Inject constructor(
                         context.getString(R.string.tracking_link_success, tracker.name)
                     ))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_link_error, e.message ?: "")
@@ -247,6 +254,8 @@ class TrackingViewModel @Inject constructor(
                 _effect.trySend(TrackingEffect.ShowMessage(
                     context.getString(R.string.tracking_unlink_success, tracker.name)
                 ))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_unlink_error, e.message ?: "")
@@ -264,6 +273,8 @@ class TrackingViewModel @Inject constructor(
                 val updated = tracker.update(currentEntry.copy(status = status))
                 // Only persist on confirmed success (update() must throw on failure)
                 trackRepository.upsertEntry(updated)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_update_error, e.message ?: "")
@@ -280,6 +291,8 @@ class TrackingViewModel @Inject constructor(
             try {
                 val updated = tracker.update(currentEntry.copy(lastChapterRead = chapter))
                 trackRepository.upsertEntry(updated)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_update_error, e.message ?: "")
@@ -296,6 +309,8 @@ class TrackingViewModel @Inject constructor(
             try {
                 val updated = tracker.update(currentEntry.copy(score = score))
                 trackRepository.upsertEntry(updated)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.trySend(TrackingEffect.ShowError(
                     context.getString(R.string.tracking_update_error, e.message ?: "")

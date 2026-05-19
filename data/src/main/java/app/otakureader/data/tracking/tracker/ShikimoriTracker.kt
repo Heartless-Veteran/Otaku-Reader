@@ -11,6 +11,7 @@ import app.otakureader.domain.model.TrackerType
 import app.otakureader.domain.tracking.Tracker
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CancellationException
 
 /**
  * Tracker implementation for [Shikimori](https://shikimori.one/).
@@ -66,6 +67,8 @@ class ShikimoriTracker(
             }
             val uid = try {
                 api.getCurrentUser().id
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 null
             }
@@ -85,6 +88,8 @@ class ShikimoriTracker(
                 }
                 false
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             tokenMutex.withLock {
                 accessToken = null
@@ -131,6 +136,8 @@ class ShikimoriTracker(
                 totalChapters = manga.chapters,
                 score = rate.score.toFloat()
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -155,6 +162,8 @@ class ShikimoriTracker(
                 api.updateUserRate(existing.id, request)
             }
             entry
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             entry
         }

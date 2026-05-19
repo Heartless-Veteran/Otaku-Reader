@@ -9,7 +9,7 @@ import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
-import app.otakureader.domain.backup.ImportResult as DomainImportResult
+import app.otakureader.domain.model.ImportResult as DomainImportResult
 import app.otakureader.domain.backup.TachiyomiBackupImporter as TachiyomiBackupImporterInterface
 import app.otakureader.domain.model.MangaStatus
 import kotlinx.coroutines.flow.first

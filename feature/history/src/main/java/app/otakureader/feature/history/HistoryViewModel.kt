@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -106,6 +107,8 @@ class HistoryViewModel @Inject constructor(
                     clearSelection()
                     _effect.send(HistoryEffect.ShowSnackbar("Removed ${selectedIds.size} item(s) from history"))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
             }
@@ -123,6 +126,8 @@ class HistoryViewModel @Inject constructor(
             try {
                 chapterRepository.clearAllHistory()
                 _effect.send(HistoryEffect.ShowSnackbar("History cleared"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar("Failed to clear history"))
             }
@@ -133,6 +138,8 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.removeFromHistory(chapterId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
             }

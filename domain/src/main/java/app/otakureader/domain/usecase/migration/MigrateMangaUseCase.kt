@@ -15,6 +15,7 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
 /**
@@ -105,7 +106,7 @@ class MigrateMangaUseCase @Inject constructor(
                 sourceManga.categoryIds.forEach { categoryId ->
                     try {
                         categoryRepository.addMangaToCategory(targetMangaId, categoryId)
-                    } catch (e: kotlinx.coroutines.CancellationException) {
+                    } catch (e: CancellationException) {
                         // Propagate cancellation immediately
                         throw e
                     } catch (e: Exception) {
@@ -122,7 +123,7 @@ class MigrateMangaUseCase @Inject constructor(
                 try {
                     val migratedEntry = entry.copy(mangaId = targetMangaId)
                     trackRepository.upsertEntry(migratedEntry)
-                } catch (e: kotlinx.coroutines.CancellationException) {
+                } catch (e: CancellationException) {
                     // Propagate cancellation immediately
                     throw e
                 } catch (e: Exception) {
@@ -152,7 +153,7 @@ class MigrateMangaUseCase @Inject constructor(
                         sourceManga.categoryIds.forEach { categoryId ->
                             try {
                                 categoryRepository.removeMangaFromCategory(sourceManga.id, categoryId)
-                            } catch (e: kotlinx.coroutines.CancellationException) {
+                            } catch (e: CancellationException) {
                                 // Propagate cancellation immediately
                                 throw e
                             } catch (e: Exception) {
@@ -179,6 +180,8 @@ class MigrateMangaUseCase @Inject constructor(
                     status = MigrationStatus.COMPLETED
                 )
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

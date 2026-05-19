@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class CategoryManagementViewModel @Inject constructor(
@@ -82,6 +83,8 @@ class CategoryManagementViewModel @Inject constructor(
                 createCategoryUseCase(name)
                 _effect.emit(CategoryEffect.DismissDialog)
                 _effect.emit(CategoryEffect.ShowSnackbar("Category created"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to create category: ${e.message}"))
             }
@@ -94,6 +97,8 @@ class CategoryManagementViewModel @Inject constructor(
                 updateCategoryUseCase(categoryId, name)
                 _effect.emit(CategoryEffect.DismissDialog)
                 _effect.emit(CategoryEffect.ShowSnackbar("Category updated"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to update category: ${e.message}"))
             }
@@ -105,6 +110,8 @@ class CategoryManagementViewModel @Inject constructor(
             try {
                 deleteCategoryUseCase(categoryId)
                 _effect.emit(CategoryEffect.ShowSnackbar("Category deleted"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to delete category: ${e.message}"))
             }
@@ -115,6 +122,8 @@ class CategoryManagementViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 toggleCategoryHiddenUseCase(categoryId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to toggle hidden: ${e.message}"))
             }
@@ -125,6 +134,8 @@ class CategoryManagementViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 toggleCategoryNsfwUseCase(categoryId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to toggle NSFW: ${e.message}"))
             }

@@ -92,6 +92,11 @@ class SourceRepositoryImpl @Inject constructor(
     private val _sources = MutableStateFlow<List<MangaSource>>(emptyList())
     override fun getSources(): Flow<List<MangaSource>> = _sources.asStateFlow()
 
+    @VisibleForTesting(otherwise = VisibleForTesting.NONE)
+    fun injectSourcesForTesting(sources: List<MangaSource>) {
+        _sources.value = sources
+    }
+
     // Cache for manga pages to avoid repeated network calls
     private val popularMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
     private val latestMangaCache = ConcurrentHashMap<String, ConcurrentHashMap<Int, MangaPage>>()
@@ -393,6 +398,8 @@ class SourceRepositoryImpl @Inject constructor(
                         )
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -429,6 +436,8 @@ class SourceRepositoryImpl @Inject constructor(
                 // Load the extension from the downloaded file through ExtensionLoader
                 // (includes signature verification and private extension handling)
                 loadExtension(tempFile.absolutePath)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             } finally {
@@ -442,6 +451,8 @@ class SourceRepositoryImpl @Inject constructor(
         return withContext(Dispatchers.IO) {
             val local = try {
                 currentLocalSource()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Failed to resolve local source", e)
                 return@withContext Result.failure(e)
@@ -458,6 +469,8 @@ class SourceRepositoryImpl @Inject constructor(
                 _sources.value = (listOf(local) + extensionSources).distinctBy { it.id }
                 clearCaches()
                 Result.success(Unit)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Failed to load extensions, falling back to local source", e)
                 _sources.value = listOf(local)

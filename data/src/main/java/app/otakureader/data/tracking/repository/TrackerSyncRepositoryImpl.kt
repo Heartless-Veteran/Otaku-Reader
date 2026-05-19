@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Implements bidirectional sync between the local database and external trackers.
@@ -258,6 +259,8 @@ class TrackerSyncRepositoryImpl @Inject constructor(
             }
 
             TrackerSyncRepository.SyncResult(true, "Sync successful")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             trackerSyncDao.updateSyncAttempt(syncState.id, SyncStatus.ERROR.ordinal, now)
             TrackerSyncRepository.SyncResult(false, e.message ?: "Sync failed")
@@ -310,6 +313,8 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                         syncError = null
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 trackerSyncDao.updateSyncState(
                     syncState.copy(
@@ -344,6 +349,8 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                         syncError = null
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 trackerSyncDao.updateSyncState(
                     syncState.copy(
@@ -395,6 +402,8 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                 )
             )
             TrackerSyncRepository.SyncResult(true, "Pushed to tracker successfully")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             trackerSyncDao.updateSyncAttempt(syncState.id, SyncStatus.ERROR.ordinal, now)
             TrackerSyncRepository.SyncResult(false, e.message ?: "Push failed")
@@ -449,6 +458,8 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                 )
             )
             TrackerSyncRepository.SyncResult(true, "Pulled from tracker successfully")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             trackerSyncDao.updateSyncAttempt(syncState.id, SyncStatus.ERROR.ordinal, now)
             TrackerSyncRepository.SyncResult(false, e.message ?: "Pull failed")

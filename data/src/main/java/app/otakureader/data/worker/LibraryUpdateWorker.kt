@@ -24,6 +24,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 
 /**
  * Background worker that checks for new chapters in the library.
@@ -150,6 +151,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
                         context = applicationContext,
                         notificationPreferences = notificationPreferences
                     ).notify(mangaWithNewChapters, totalNewChapters)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     // Notification failures should not fail the entire library update.
                     Log.w(TAG, "Failed to send library update notification", e)
@@ -162,6 +165,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
             } else {
                 Result.success()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure()
         }
@@ -193,6 +198,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 )
                 downloadManager.enqueue(request)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Log error but don't fail the entire worker
         }

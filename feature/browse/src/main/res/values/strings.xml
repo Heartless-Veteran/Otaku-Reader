@@ -37,6 +37,7 @@
     <string name="extensions_update">Update</string>
     <string name="extensions_install">Install</string>
     <string name="extensions_remove_repo">Remove repository</string>
+    <string name="extensions_set_active">Set active</string>
 
     <!-- Accessibility: GlobalSearchScreen -->
     <string name="browse_global_search">Search</string>

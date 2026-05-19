@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 private const val FEED_ITEMS_LIMIT = 100
 
@@ -65,6 +66,8 @@ class FeedViewModel @Inject constructor(
             _error.update { null }
             try {
                 feedRepository.refreshFeed()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _error.update { e.message }
             } finally {
@@ -83,6 +86,8 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 feedRepository.markFeedItemAsRead(feedItemId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(FeedEffect.ShowSnackbar(e.message ?: "Failed to mark as read"))
             }
@@ -93,6 +98,8 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 feedRepository.toggleFeedSource(sourceId, enabled)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(FeedEffect.ShowSnackbar(e.message ?: "Failed to update source"))
             }
@@ -103,6 +110,8 @@ class FeedViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 feedRepository.clearFeedHistory()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(FeedEffect.ShowSnackbar(e.message ?: "Failed to clear history"))
             }

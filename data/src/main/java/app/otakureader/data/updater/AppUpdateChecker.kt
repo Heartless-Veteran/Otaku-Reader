@@ -13,7 +13,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.updater.AppUpdateChecker as AppUpdateCheckerInterface
-import app.otakureader.domain.updater.AppVersionInfo
+import app.otakureader.domain.model.AppVersionInfo
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,6 +29,7 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Worker that periodically checks for app updates from GitHub releases.
@@ -56,6 +57,8 @@ class AppUpdateWorker @AssistedInject constructor(
                 generalPreferences.setLatestVersionInfo(Json.encodeToString(versionInfo))
             }
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.retry()
         }
@@ -165,6 +168,8 @@ class AppUpdateChecker @Inject constructor(
             } else {
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -211,6 +216,8 @@ class AppUpdateChecker @Inject constructor(
         if (dateStr.isNullOrEmpty()) return 0L
         return try {
             java.time.Instant.parse(dateStr).toEpochMilli()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             0L
         }
@@ -220,6 +227,8 @@ class AppUpdateChecker @Inject constructor(
         return try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             pInfo.versionName ?: "0.0.0"
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             "0.0.0"
         }

@@ -79,6 +79,10 @@ interface ReaderSettingsRepository {
     suspend fun setCropBordersEnabled(enabled: Boolean)
     suspend fun setShowPageThumbnailStrip(enabled: Boolean)
     suspend fun setSecureScreen(enabled: Boolean)
+    suspend fun setPreloadPagesBefore(count: Int)
+    suspend fun setPreloadPagesAfter(count: Int)
+    suspend fun setImageQuality(quality: ImageQuality)
+    suspend fun setDataSaverEnabled(enabled: Boolean)
 
     companion object {
         const val DEFAULT_PRELOAD_PAGES = 3

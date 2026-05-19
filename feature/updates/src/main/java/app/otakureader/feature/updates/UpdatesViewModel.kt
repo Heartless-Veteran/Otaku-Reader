@@ -21,9 +21,11 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val getRecentUpdatesUseCase: GetRecentUpdatesUseCase,
     private val getLibraryMangaUseCase: GetLibraryMangaUseCase,
     private val generalPreferences: GeneralPreferences,
@@ -193,6 +195,8 @@ class UpdatesViewModel @Inject constructor(
                     )
                 }
                 _state.update { state -> state.copy(pendingUpdates = pendingManga) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update { state -> state.copy(pendingUpdates = emptyList()) }
             }

@@ -7,11 +7,13 @@ import app.otakureader.data.tracking.api.MalSearchResponse
 import app.otakureader.data.tracking.api.MalTokenResponse
 import app.otakureader.data.tracking.api.MyAnimeListApi
 import app.otakureader.data.tracking.api.MyAnimeListOAuthApi
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,6 +33,7 @@ class MyAnimeListTrackerTest {
 
     private lateinit var oauthApi: MyAnimeListOAuthApi
     private lateinit var api: MyAnimeListApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: MyAnimeListTracker
 
     private val clientId = "test-client-id"
@@ -47,7 +50,9 @@ class MyAnimeListTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = MyAnimeListTracker(oauthApi, api, clientId, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        every { tokenStore.getTokens(any()) } returns null
+        tracker = MyAnimeListTracker(oauthApi, api, clientId, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -46,8 +46,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.crash.CrashHandler
-import app.otakureader.data.worker.LibraryUpdateScheduler
-import app.otakureader.data.worker.LibraryUpdateWorker
+import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.util.DeepLinkHandler
 import app.otakureader.util.DeepLinkResult
 import dagger.hilt.android.AndroidEntryPoint
@@ -109,7 +108,7 @@ class MainActivity : ComponentActivity() {
 
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {
-                    LibraryUpdateWorker.enqueue(applicationContext)
+                    libraryUpdateScheduler.enqueueNow()
                 }
             }
         }

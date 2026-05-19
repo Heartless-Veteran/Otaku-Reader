@@ -225,7 +225,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.PRELOAD_PAGES_BEFORE] ?: DEFAULT_PRELOAD_PAGES
     }
 
-    suspend fun setPreloadPagesBefore(count: Int) {
+    override suspend fun setPreloadPagesBefore(count: Int) {
         safeEdit { it[Keys.PRELOAD_PAGES_BEFORE] = count.coerceIn(0, MAX_PRELOAD_PAGES) }
     }
 
@@ -234,7 +234,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.PRELOAD_PAGES_AFTER] ?: DEFAULT_PRELOAD_PAGES
     }
 
-    suspend fun setPreloadPagesAfter(count: Int) {
+    override suspend fun setPreloadPagesAfter(count: Int) {
         safeEdit { it[Keys.PRELOAD_PAGES_AFTER] = count.coerceIn(0, MAX_PRELOAD_PAGES) }
     }
 
@@ -328,7 +328,7 @@ class ReaderSettingsRepository @Inject constructor(
         }
     }
 
-    suspend fun setImageQuality(quality: ImageQuality) {
+    override suspend fun setImageQuality(quality: ImageQuality) {
         safeEdit { prefs ->
             prefs[Keys.IMAGE_QUALITY] = quality.name
             // Remove the legacy int key so future reads always take the new path.
@@ -343,7 +343,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.DATA_SAVER_ENABLED] ?: false
     }
 
-    suspend fun setDataSaverEnabled(enabled: Boolean) {
+    override suspend fun setDataSaverEnabled(enabled: Boolean) {
         safeEdit { it[Keys.DATA_SAVER_ENABLED] = enabled }
     }
 

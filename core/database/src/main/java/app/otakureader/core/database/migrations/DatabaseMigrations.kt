@@ -49,7 +49,6 @@ internal val MIGRATION_8_9 = object : Migration(8, 9) {
 
 internal val MIGRATION_9_10 = object : Migration(9, 10) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE manga ADD COLUMN calculate_interval INTEGER NOT NULL DEFAULT 0")
         // reading_history
         db.execSQL("CREATE TABLE IF NOT EXISTS `reading_history` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapter_id` INTEGER NOT NULL, `read_at` INTEGER NOT NULL, `read_duration_ms` INTEGER NOT NULL, FOREIGN KEY(`chapter_id`) REFERENCES `chapters`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
         db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_reading_history_chapter_id` ON `reading_history` (`chapter_id`)")
@@ -79,30 +78,30 @@ internal val MIGRATION_9_10 = object : Migration(9, 10) {
 
 internal val MIGRATION_10_11 = object : Migration(10, 11) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE chapters ADD COLUMN version INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE chapters ADD COLUMN is_syncing INTEGER NOT NULL DEFAULT 0")
+        // Columns version/is_syncing were planned for sync but never added to the entity.
+        // Migration intentionally left as no-op to preserve version chain continuity.
     }
 }
 
 internal val MIGRATION_11_12 = object : Migration(11, 12) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE manga ADD COLUMN last_modified_at INTEGER DEFAULT 0")
-        db.execSQL("ALTER TABLE chapters ADD COLUMN last_modified_at INTEGER DEFAULT 0")
+        // last_modified_at was planned for sync tracking but never added to the entity.
+        // Migration intentionally left as no-op to preserve version chain continuity.
     }
 }
 
 internal val MIGRATION_12_13 = object : Migration(12, 13) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE manga ADD COLUMN favorite INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("CREATE TABLE IF NOT EXISTS tracks (_id INTEGER PRIMARY KEY AUTOINCREMENT, manga_id INTEGER NOT NULL, sync_id INTEGER NOT NULL, remote_id INTEGER NOT NULL, library_id INTEGER, title TEXT, last_chapter_read INTEGER, total_chapters INTEGER, score REAL, status INTEGER, tracking_url TEXT, start_date INTEGER, finish_date INTEGER)")
+        // `favorite` already existed since v9 — duplicate ALTER TABLE removed.
+        // `tracks` was a legacy Tachiyomi compatibility table; it is not a Room entity
+        // and has no DAO, so it is omitted here to keep the schema consistent.
     }
 }
 
 internal val MIGRATION_13_14 = object : Migration(13, 14) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE TABLE IF NOT EXISTS manga_sync (_id INTEGER PRIMARY KEY AUTOINCREMENT, manga_id INTEGER NOT NULL, sync_id INTEGER NOT NULL, remote_id INTEGER NOT NULL, library_id INTEGER, title TEXT, last_chapter_read INTEGER, total_chapters INTEGER, score REAL, status INTEGER, tracking_url TEXT, start_date INTEGER, finish_date INTEGER)")
-        db.execSQL("INSERT INTO manga_sync SELECT * FROM tracks")
-        db.execSQL("DROP TABLE tracks")
+        // tracks/manga_sync were legacy Tachiyomi compatibility tables that are not Room entities
+        // and have no DAOs; their creation and renaming are omitted to keep the schema consistent.
         db.execSQL("ALTER TABLE `manga` ADD COLUMN `contentRating` INTEGER NOT NULL DEFAULT 0")
     }
 }
