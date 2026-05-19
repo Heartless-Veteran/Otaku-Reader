@@ -19,6 +19,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Service for caching panel analysis results.
@@ -142,6 +143,8 @@ class PanelCacheService @Inject constructor(
             }
 
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -178,6 +181,8 @@ class PanelCacheService @Inject constructor(
             saveMetadata(metadata)
 
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             false
         }
@@ -199,6 +204,8 @@ class PanelCacheService @Inject constructor(
 
             // Delete metadata
             deleteMetadata(imageHash)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Ignore errors during deletion
         }
@@ -216,6 +223,8 @@ class PanelCacheService @Inject constructor(
             metadataDataStore.edit { preferences ->
                 preferences.clear()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             throw PanelAnalysisException.CacheError("Failed to clear cache", e)
         }
@@ -237,6 +246,8 @@ class PanelCacheService @Inject constructor(
                 maxSizeBytes = maxSize,
                 oldestEntryTimestamp = allMetadata.minByOrNull { it.timestamp }?.timestamp
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             CacheStats(0, 0, DEFAULT_MAX_CACHE_SIZE_BYTES, null)
         }
@@ -257,6 +268,8 @@ class PanelCacheService @Inject constructor(
                     deleteCachedResult(metadata.imageHash)
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Ignore errors during cleanup
         }
@@ -404,6 +417,8 @@ private data class CacheMetadata(
             val size = extractLong(json, "size") ?: 0
 
             CacheMetadata(hash, time, access, count.toInt(), size)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }

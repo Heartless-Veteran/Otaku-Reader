@@ -7,6 +7,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +45,10 @@ class GoalCompletionNotifierTest {
         context = ApplicationProvider.getApplicationContext()
         readingGoalPreferences = mockk()
         readingHistoryDao = mockk()
+
+        // Default stubs for goal notification deduplication
+        coEvery { readingGoalPreferences.getLastGoalNotifiedDate() } returns ""
+        coJustRun { readingGoalPreferences.setLastGoalNotifiedDate(any()) }
 
         // Grant POST_NOTIFICATIONS permission for SDK 34 tests
         val app = context as android.app.Application

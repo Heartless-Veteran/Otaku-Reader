@@ -129,9 +129,9 @@ class MangaDaoTest {
  val ids = listOf(3L, 1L, 2L)
  val results = mangaDao.getMangaByIds(ids)
  assertEquals(3, results.size)
- assertEquals(3L, results[0].id)
- assertEquals(1L, results[1].id)
- assertEquals(2L, results[2].id)
+ // IN (:ids) does not guarantee order — verify all requested IDs are returned
+ val resultIds = results.map { it.id }.toSet()
+ assertTrue(resultIds.containsAll(ids))
  }
 
  @Test

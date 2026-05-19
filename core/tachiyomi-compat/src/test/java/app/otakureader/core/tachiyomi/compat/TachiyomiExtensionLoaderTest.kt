@@ -566,8 +566,7 @@ class TachiyomiExtensionLoaderTest {
 
     @Test
     fun `getAllSources returns sources from all loaded extensions`() {
-        // Given: load extensions (they won't have real sources in unit tests,
-        // but we verify the method doesn't crash)
+        // Given: load extension with a real stub source class on the test classpath
         val pkg1 = "eu.kanade.tachiyomi.extension.en.test1"
         mockPackageInfo(pkg1, createPackageInfo(pkg1, "1.0.0", 1L, true, ".Source1"))
         loader.loadExtension(pkg1)
@@ -575,8 +574,8 @@ class TachiyomiExtensionLoaderTest {
         // When
         val sources = loader.getAllSources()
 
-        // Then: empty because no real classes, but method executed
-        assertTrue(sources.isEmpty())
+        // Then: Source1 stub is found via parent classloader, so one source is returned
+        assertEquals(1, sources.size)
     }
 
     @Test

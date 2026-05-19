@@ -1,4 +1,4 @@
-package app.otakureader.domain.updater
+package app.otakureader.domain.model
 
 import kotlinx.serialization.Serializable
 

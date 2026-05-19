@@ -84,8 +84,13 @@ class TachiyomiExtensionLoader(
 
     /**
      * Load a specific installed extension by package name.
+     *
+     * Returns the cached instance immediately if the extension is already loaded,
+     * avoiding a redundant PackageManager query on repeated calls.
      */
     fun loadExtension(packageName: String): LoadedExtension? {
+        loadedExtensions[packageName]?.let { return it }
+
         return try {
             val flags = PackageManager.GET_META_DATA or PackageManager.GET_CONFIGURATIONS
             val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

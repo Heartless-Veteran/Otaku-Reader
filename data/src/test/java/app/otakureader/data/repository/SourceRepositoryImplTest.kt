@@ -138,7 +138,8 @@ class SourceRepositoryImplTest {
 
     @Test
     fun getSources_deduplicatesById() = runTest {
-        // After refresh, only one source with id "dup" should remain.
+        // After refresh, only one source with id "999" should remain even if two
+        // extensions both provide a CatalogueSource with the same Long ID (999).
         val localSource = makeFakeSource(id = "local", name = "Local")
         val dupSource1 = makeFakeCatalogueSource(id = 999L, name = "Dup1")
         val dupSource2 = makeFakeCatalogueSource(id = 999L, name = "Dup2")
@@ -161,7 +162,8 @@ class SourceRepositoryImplTest {
         advanceUntilIdle()
 
         val sources = repository.getSources().first()
-        assertEquals(1, sources.count { it.id == "dup" })
+        // TachiyomiSourceAdapter converts CatalogueSource.id (Long) to String
+        assertEquals(1, sources.count { it.id == "999" })
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -277,11 +279,8 @@ class SourceRepositoryImplTest {
         val error = RuntimeException("Network timeout")
         coEvery { source.fetchPopularManga(any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
-        // Inject source into repository.
-        // In current code we need the source to appear in _sources.
-        // This test assumes a helper or that the repository has been refreshed.
-        // For a pure unit test we would ideally inject the source list directly.
         val result = repository.getPopularManga("en.broken", page = 1)
 
         assertTrue(result.isFailure)
@@ -306,6 +305,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchLatestUpdates(any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         val result = repository.getLatestUpdates("en.broken", page = 1)
 
@@ -319,6 +319,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchSearchManga(any(), any(), any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         val result = repository.searchManga("en.broken", query = "naruto", page = 1)
 
@@ -332,6 +333,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchMangaDetails(any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         val manga = SourceManga(url = "/m/1", title = "Test")
         val result = repository.getMangaDetails("en.broken", manga)
@@ -346,6 +348,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchChapterList(any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         val manga = SourceManga(url = "/m/1", title = "Test")
         val result = repository.getChapterList("en.broken", manga)
@@ -360,6 +363,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchPageList(any()) } throws error
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         val chapter = app.otakureader.sourceapi.SourceChapter(url = "/c/1", name = "Ch 1")
         val result = repository.getPageList("en.broken", chapter)
@@ -377,6 +381,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchPopularManga(any()) } throws kotlinx.coroutines.CancellationException()
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         repository.getPopularManga("en.broken", page = 1)
     }
@@ -386,6 +391,7 @@ class SourceRepositoryImplTest {
         val source = makeFakeSource(id = "en.broken", name = "BrokenSource")
         coEvery { source.fetchLatestUpdates(any()) } throws kotlinx.coroutines.CancellationException()
         every { healthMonitor.isSourceHealthy("en.broken") } returns true
+        repository.injectSourcesForTesting(listOf(source))
 
         repository.getLatestUpdates("en.broken", page = 1)
     }

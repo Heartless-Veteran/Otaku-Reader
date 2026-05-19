@@ -7,11 +7,13 @@ import app.otakureader.data.tracking.api.KitsuOAuthApi
 import app.otakureader.data.tracking.api.KitsuPagedResponse
 import app.otakureader.data.tracking.api.KitsuResource
 import app.otakureader.data.tracking.api.KitsuTokenResponse
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -31,6 +33,7 @@ class KitsuTrackerTest {
 
     private lateinit var oauthApi: KitsuOAuthApi
     private lateinit var api: KitsuApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: KitsuTracker
 
     private val clientId = "kitsu-client-id"
@@ -51,7 +54,9 @@ class KitsuTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = KitsuTracker(oauthApi, api, clientId, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        every { tokenStore.getTokens(any()) } returns null
+        tracker = KitsuTracker(oauthApi, api, clientId, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -173,7 +178,7 @@ class KitsuTrackerTest {
     }
 
     @Test
-    fun `provider migration — find after re-login uses new userId`() = runTest {
+    fun `provider migration - find after re-login uses new userId`() = runTest {
         coEvery { oauthApi.getAccessToken(any(), any(), any(), any(), any()) } returns tokenResponse
         coEvery { api.getCurrentUser() } returns userResponse(id = "100")
         tracker.login(username = "old@example.com", password = "pass")

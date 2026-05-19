@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.security.MessageDigest
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 
 /**
  * Installation state for tracking progress.
@@ -133,6 +134,8 @@ class ExtensionInstaller(
             }
 
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _installationState.value = InstallationState.Error(
                 "Installation failed: ${e.message}",
@@ -204,6 +207,8 @@ class ExtensionInstaller(
                     Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _installationState.value = InstallationState.Error("Installation failed", e)
             Result.failure(e)
@@ -218,6 +223,7 @@ class ExtensionInstaller(
      * @param newApkFile The new APK file
      * @return Result containing the updated Extension
      */
+    @Suppress("LongMethod")
     suspend fun update(pkgName: String, newApkFile: File): Result<Extension> =
         withContext(Dispatchers.IO) {
             try {
@@ -279,6 +285,8 @@ class ExtensionInstaller(
                         Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _installationState.value = InstallationState.Error("Update failed", e)
                 Result.failure(e)
@@ -333,6 +341,8 @@ class ExtensionInstaller(
                     ExtensionInstallReceiver.notifyRemoved(context, pkgName)
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -408,6 +418,8 @@ class ExtensionInstaller(
                 }
                 
                 actualHash == expectedHash
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 false
             }

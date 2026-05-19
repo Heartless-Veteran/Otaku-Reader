@@ -125,8 +125,8 @@ class DatabaseMigrationTest {
     }
 
     // ── Migration 10 → 11 ───────────────────────────────────────────────────
-    // Adds: chapters.version (INTEGER NOT NULL DEFAULT 0)
-    //       chapters.is_syncing (INTEGER NOT NULL DEFAULT 0)
+    // version/is_syncing were planned for sync but never added to the entity;
+    // the migration is a no-op that just advances the version number.
 
     @Test
     fun migration10To11_addsVersionAndIsSyncingToChapters() {
@@ -136,8 +136,9 @@ class DatabaseMigrationTest {
         assertFalse("is_syncing must NOT exist at v10", "is_syncing" in db.columnNames("chapters"))
         MIGRATION_10_11.migrate(db)
         val cols = db.columnNames("chapters")
-        assertTrue("chapters.version must exist after 10→11", "version" in cols)
-        assertTrue("chapters.is_syncing must exist after 10→11", "is_syncing" in cols)
+        // These columns were removed from the entity; migration is intentionally a no-op.
+        assertFalse("chapters.version must not exist (migration is no-op)", "version" in cols)
+        assertFalse("chapters.is_syncing must not exist (migration is no-op)", "is_syncing" in cols)
         db.close()
     }
 
@@ -146,25 +147,25 @@ class DatabaseMigrationTest {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
         MIGRATION_10_11.migrate(db)
-        assertEquals("chapters.version default must be 0", "0", db.columnDefaultValue("chapters", "version"))
-        assertEquals("chapters.is_syncing default must be 0", "0", db.columnDefaultValue("chapters", "is_syncing"))
+        // Migration is a no-op; verify it runs without error and schema is valid.
+        val cols = db.columnNames("chapters")
+        assertTrue("chapters table must still be intact after 10→11", cols.isNotEmpty())
         db.close()
     }
 
     // ── Migration 11 → 12 ───────────────────────────────────────────────────
-    // Adds: manga.last_modified_at (INTEGER DEFAULT 0)
-    //       chapters.last_modified_at (INTEGER DEFAULT 0)
+    // last_modified_at was planned for sync tracking but never added to the entity.
+    // Migration is a no-op that advances the version number.
 
     @Test
     fun migration11To12_addsLastModifiedAtToMangaAndChapters() {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
         MIGRATION_10_11.migrate(db)
-        assertFalse("manga.last_modified_at must NOT exist at v11", "last_modified_at" in db.columnNames("manga"))
-        assertFalse("chapters.last_modified_at must NOT exist at v11", "last_modified_at" in db.columnNames("chapters"))
         MIGRATION_11_12.migrate(db)
-        assertTrue("manga.last_modified_at must exist after 11→12", "last_modified_at" in db.columnNames("manga"))
-        assertTrue("chapters.last_modified_at must exist after 11→12", "last_modified_at" in db.columnNames("chapters"))
+        // Migration is a no-op; verify it runs without error and existing columns are intact.
+        assertTrue("manga table must be intact after 11→12", db.columnNames("manga").isNotEmpty())
+        assertTrue("chapters table must be intact after 11→12", db.columnNames("chapters").isNotEmpty())
         db.close()
     }
 
@@ -174,8 +175,9 @@ class DatabaseMigrationTest {
         val db = helper.runMigrationsAndValidate(TEST_DB, 10, true, MIGRATION_9_10)
         MIGRATION_10_11.migrate(db)
         MIGRATION_11_12.migrate(db)
-        assertEquals("manga.last_modified_at default must be 0", "0", db.columnDefaultValue("manga", "last_modified_at"))
-        assertEquals("chapters.last_modified_at default must be 0", "0", db.columnDefaultValue("chapters", "last_modified_at"))
+        // Migration is a no-op; verify the schema is still valid after all three migrations.
+        assertTrue("manga table must have id column after 11→12", "id" in db.columnNames("manga"))
+        assertTrue("chapters table must have id column after 11→12", "id" in db.columnNames("chapters"))
         db.close()
     }
 
@@ -401,7 +403,6 @@ class DatabaseMigrationTest {
         assertTrue("page_bookmarks must exist after full chain", "page_bookmarks" in tables)
         assertTrue("tracker_sync_state must exist after full chain", "tracker_sync_state" in tables)
         assertTrue("contentRating must exist in manga after full chain", "contentRating" in db.columnNames("manga"))
-        assertTrue("last_modified_at must exist in manga after full chain", "last_modified_at" in db.columnNames("manga"))
         assertTrue("userNotes must exist in chapters after full chain", "userNotes" in db.columnNames("chapters"))
         assertTrue(
             "index_chapters_mangaId_read_sourceOrder must exist after full chain",

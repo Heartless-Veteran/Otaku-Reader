@@ -9,11 +9,13 @@ import app.otakureader.data.tracking.api.AniListMediaList
 import app.otakureader.data.tracking.api.AniListPage
 import app.otakureader.data.tracking.api.AniListResponse
 import app.otakureader.data.tracking.api.AniListTitle
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,12 +34,15 @@ import org.junit.Test
 class AniListTrackerTest {
 
     private lateinit var api: AniListApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: AniListTracker
 
     @Before
     fun setUp() {
         api = mockk()
-        tracker = AniListTracker(api)
+        tokenStore = mockk(relaxed = true)
+        every { tokenStore.getTokens(any()) } returns null
+        tracker = AniListTracker(api, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────

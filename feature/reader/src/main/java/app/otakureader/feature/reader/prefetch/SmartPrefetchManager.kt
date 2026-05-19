@@ -14,6 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 /**
  * Manages smart prefetching of manga pages based on user behavior and strategy.
@@ -128,6 +129,8 @@ class SmartPrefetchManager @Inject constructor(
 
             // Enqueue prefetch request (non-blocking)
             imageLoader.enqueue(request)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Silently ignore prefetch failures - they're not critical
         }

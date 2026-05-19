@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class OpdsViewModel @Inject constructor(
@@ -97,6 +98,8 @@ class OpdsViewModel @Inject constructor(
                 saveOpdsServer(server)
                 _state.update { it.copy(showAddServerDialog = false, editingServer = null) }
                 _effect.send(OpdsEffect.ShowSnackbar("Server saved"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _effect.send(OpdsEffect.ShowSnackbar(e.message ?: "Failed to save server"))
             }

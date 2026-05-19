@@ -1,4 +1,4 @@
-package app.otakureader.domain.backup
+package app.otakureader.domain.model
 
 data class ImportResult(
     val mangaImported: Int,

@@ -6,11 +6,13 @@ import app.otakureader.data.tracking.api.ShikimoriOAuthApi
 import app.otakureader.data.tracking.api.ShikimoriTokenResponse
 import app.otakureader.data.tracking.api.ShikimoriUser
 import app.otakureader.data.tracking.api.ShikimoriUserRate
+import app.otakureader.core.preferences.TrackerTokenStore
 import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -29,6 +31,7 @@ class ShikimoriTrackerTest {
 
     private lateinit var oauthApi: ShikimoriOAuthApi
     private lateinit var api: ShikimoriApi
+    private lateinit var tokenStore: TrackerTokenStore
     private lateinit var tracker: ShikimoriTracker
 
     private val clientId = "shikimori-client-id"
@@ -48,7 +51,9 @@ class ShikimoriTrackerTest {
     fun setUp() {
         oauthApi = mockk()
         api = mockk()
-        tracker = ShikimoriTracker(oauthApi, api, clientId, clientSecret, redirectUri)
+        tokenStore = mockk(relaxed = true)
+        every { tokenStore.getTokens(any()) } returns null
+        tracker = ShikimoriTracker(oauthApi, api, clientId, clientSecret, redirectUri, tokenStore)
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -177,7 +182,7 @@ class ShikimoriTrackerTest {
     }
 
     @Test
-    fun `provider migration — find after re-login uses new userId`() = runTest {
+    fun `provider migration - find after re-login uses new userId`() = runTest {
         coEvery { oauthApi.getAccessToken(any(), any(), any(), any(), any()) } returns tokenResponse
         coEvery { api.getCurrentUser() } returns ShikimoriUser(id = 10L, nickname = "user-a")
         tracker.login(username = "", password = "code-a")

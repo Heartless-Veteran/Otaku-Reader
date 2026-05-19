@@ -48,7 +48,7 @@ class BackupSettingsDelegate @Inject constructor(
         }
     }
 
-    @Suppress("LongMethod", "CyclomaticComplexMethod", "InstanceOfCheckForException")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod", "InstanceOfCheckForException")
     suspend fun handleEvent(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,
@@ -65,6 +65,8 @@ class BackupSettingsDelegate @Inject constructor(
                 sendEffect(SettingsEffect.ShowSnackbar(
                     "Imported ${result.mangaImported} manga, ${result.chaptersImported} chapters, ${result.categoriesImported} categories"
                 ))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
@@ -78,6 +80,8 @@ class BackupSettingsDelegate @Inject constructor(
             try {
                 backupRepository.createBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup created successfully"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to create backup: ${e.message}"))
@@ -91,6 +95,8 @@ class BackupSettingsDelegate @Inject constructor(
             try {
                 backupRepository.restoreBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
@@ -115,6 +121,8 @@ class BackupSettingsDelegate @Inject constructor(
                     ?: throw IllegalArgumentException("Backup file not found: ${event.fileName}")
                 backupRepository.restoreLocalBackup(file)
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))

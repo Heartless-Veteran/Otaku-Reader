@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.CancellationException
 
 /**
  * Implementation of ExtensionRepository.
@@ -69,6 +70,8 @@ class ExtensionRepositoryImpl(
             
             localDataSource.insertExtension(extension)
             Result.success(mapper.toDomain(extension))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             localDataSource.updateStatus(pkgName, InstallStatus.ERROR.name)
             Result.failure(e)
@@ -80,6 +83,8 @@ class ExtensionRepositoryImpl(
             localDataSource.updateStatus(pkgName, InstallStatus.UNINSTALLING.name)
             localDataSource.deleteByPkgName(pkgName)
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -100,6 +105,8 @@ class ExtensionRepositoryImpl(
             
             localDataSource.insertExtension(updated)
             Result.success(mapper.toDomain(updated))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             localDataSource.updateStatus(pkgName, InstallStatus.ERROR.name)
             Result.failure(e)
@@ -126,6 +133,8 @@ class ExtensionRepositoryImpl(
             }
             
             updateCount
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             0
         }
@@ -161,6 +170,8 @@ class ExtensionRepositoryImpl(
             localDataSource.insertExtensions(availableExtensions)
             
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -1,5 +1,6 @@
 package app.otakureader.feature.updates
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
@@ -9,6 +10,7 @@ import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecentUpdatesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,9 +23,11 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val getRecentUpdatesUseCase: GetRecentUpdatesUseCase,
     private val getLibraryMangaUseCase: GetLibraryMangaUseCase,
     private val generalPreferences: GeneralPreferences,
@@ -193,6 +197,8 @@ class UpdatesViewModel @Inject constructor(
                     )
                 }
                 _state.update { state -> state.copy(pendingUpdates = pendingManga) }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update { state -> state.copy(pendingUpdates = emptyList()) }
             }
