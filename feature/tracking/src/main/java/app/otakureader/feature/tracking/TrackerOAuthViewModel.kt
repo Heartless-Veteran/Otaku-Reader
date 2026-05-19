@@ -3,7 +3,7 @@ package app.otakureader.feature.tracking
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.PendingOAuthStore
-import app.otakureader.data.tracking.TrackManager
+import app.otakureader.domain.tracking.TrackManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
