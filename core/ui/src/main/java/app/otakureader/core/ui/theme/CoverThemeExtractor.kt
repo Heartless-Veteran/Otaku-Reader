@@ -3,7 +3,6 @@ package app.otakureader.core.ui.theme
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.core.graphics.luminance
 import androidx.palette.graphics.Palette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,6 +10,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+@Suppress("CyclomaticComplexMethod")
 suspend fun extractTheme(bitmap: Bitmap, contentType: ContentType): MangaCoverTheme =
     withContext(Dispatchers.Default) {
         val palette = Palette.from(bitmap).generate()
@@ -72,8 +72,13 @@ private fun boostSaturation(color: Color, factor: Float): Color {
     return Color(android.graphics.Color.HSVToColor(hsl))
 }
 
+private fun Color.luminanceValue(): Float {
+    // Linear luminance approximation for Compose Color
+    return red * 0.2126f + green * 0.7152f + blue * 0.0722f
+}
+
 private fun clampLuminance(color: Color, minLum: Float, maxLum: Float): Color {
-    val lum = color.luminance()
+    val lum = color.luminanceValue()
     return when {
         lum < minLum -> color.copy(
             red = (color.red + minLum).coerceAtMost(1f),

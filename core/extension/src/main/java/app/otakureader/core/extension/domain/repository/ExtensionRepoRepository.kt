@@ -4,7 +4,12 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository for managing extension repository URLs.
- * Supports adding/removing third-party extension repositories (e.g., Keiyoushi, Komikku, Suwayomi).
+ * Supports adding/removing third-party extension repositories
+ * (e.g., Keiyoushi, Suwayomi, Yuzono).
+ *
+ * All configured repositories are simultaneously active — extensions from every
+ * added repository are fetched and merged. There is no concept of a single
+ * "active" repository.
  *
  * The system automatically detects and supports both:
  * - index.min.json (common format for Keiyoushi, Komikku, Suwayomi repositories)
@@ -13,7 +18,7 @@ import kotlinx.coroutines.flow.Flow
 interface ExtensionRepoRepository {
 
     /**
-     * Get all configured repository URLs.
+     * Get all configured repository URLs. All returned URLs are treated as active.
      */
     fun getRepositories(): Flow<List<String>>
 
@@ -28,16 +33,6 @@ interface ExtensionRepoRepository {
      * @param url The repository URL to remove
      */
     suspend fun removeRepository(url: String)
-
-    /**
-     * Get the currently active repository URL, or null if none is set.
-     */
-    suspend fun getActiveRepository(): String?
-
-    /**
-     * Set the active repository URL.
-     */
-    suspend fun setActiveRepository(url: String)
 
     /**
      * No-op. Retained for interface compatibility.

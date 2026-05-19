@@ -442,7 +442,32 @@ style:
         value: 'STOPSHIP:'
     allowedPatterns: ''
   ForbiddenImport:
-    active: false
+    active: true
+    imports:
+      - value: 'app.otakureader.data.*'
+        reason: 'Feature modules must use domain interfaces, not data-layer classes directly.'
+      - value: 'app.otakureader.data.repository.*'
+        reason: 'Use domain repository interfaces instead.'
+      - value: 'app.otakureader.data.worker.*'
+        reason: 'Introduce a domain scheduler interface instead.'
+      - value: 'app.otakureader.data.tracking.*'
+        reason: 'Use domain tracker interfaces instead of data-layer tracking classes directly.'
+      - value: 'app.otakureader.data.backup.*'
+        reason: 'Use domain backup use cases instead of data-layer backup classes directly.'
+    excludes:
+      - '**/data/**'
+      - 'app/src/**'
+      - '**/test/**'
+      - '**/*Test.kt'
+      - '**/*Spec.kt'
+      # TODO: remove after PR 4 fixes architectural violations
+      - '**/feature/settings/SettingsViewModel.kt'
+      - '**/feature/settings/delegate/BackupSettingsDelegate.kt'
+      - '**/feature/settings/delegate/LibrarySettingsDelegate.kt'
+      - '**/feature/settings/delegate/ReaderSettingsDelegate.kt'
+      - '**/feature/settings/delegate/TrackerSyncSettingsDelegate.kt'
+      - '**/feature/tracking/TrackerOAuthViewModel.kt'
+      - '**/feature/updates/UpdatesViewModel.kt'
   ForbiddenMethodCall:
     active: true
     methods:
@@ -569,6 +594,11 @@ style:
   UnusedPrivateMember:
     active: true
     allowedNames: '(_|ignored|expected|serialVersionUID)'
+    ignoreAnnotated:
+      - 'Preview'
+      - 'PreviewFontScale'
+      - 'PreviewLightDark'
+      - 'PreviewScreenSizes'
   UnusedPrivateProperty:
     active: true
     allowedNames: '_|ignored'
@@ -612,6 +642,7 @@ style:
     excludeImports:
       - 'java.util.*'
       - 'kotlinx.android.synthetic.*'
+      - 'androidx.compose.runtime.*'
       - 'androidx.compose.material3.*'
       - 'androidx.compose.foundation.layout.*'
       - 'androidx.compose.ui.*'

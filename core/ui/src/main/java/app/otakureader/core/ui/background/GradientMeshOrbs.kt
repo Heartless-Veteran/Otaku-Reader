@@ -30,8 +30,6 @@ private data class Orb(
     val speedY: Float
 )
 
-private const val FPS_CAP = 15
-
 @Composable
 fun GradientMeshOrbs(
     colors: List<Color>,

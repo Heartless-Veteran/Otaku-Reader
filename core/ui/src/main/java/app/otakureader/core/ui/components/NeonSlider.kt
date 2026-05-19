@@ -1,7 +1,11 @@
 package app.otakureader.core.ui.components
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -10,7 +14,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,8 +21,12 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
+import kotlin.math.PI
+import kotlin.math.sin
 import kotlin.random.Random
 
 @Composable
@@ -44,7 +51,7 @@ fun NeonSlider(
             Sparkle(
                 offset = sparkleRandom.nextFloat(),
                 size = 2f + sparkleRandom.nextFloat() * 3f,
-                phase = sparkleRandom.nextFloat() * 1000
+                phase = sparkleRandom.nextFloat() * (PI * 2).toFloat()
             )
         }
     }
@@ -54,6 +61,10 @@ fun NeonSlider(
         animationSpec = tween(200),
         label = "neonPulse"
     )
+
+    // Gate sparkle activity: only active when the slider has meaningful progress or is being dragged.
+    // This prevents unconditional per-frame recomposition of the parent composable.
+    val sparklesActive = isDragging || animatedValue > 0.05f
 
     Box(
         modifier = modifier
@@ -118,52 +129,71 @@ fun NeonSlider(
                 strokeWidth = 1.5f
             )
 
-            // Particle sparkles near thumb
-            if (isDragging || animatedValue > 0.05f) {
-                sparkles.forEach { sparkle ->
-                    val sparkleAlpha = ((kotlin.math.sin(
-                        (System.currentTimeMillis() + sparkle.phase) * 0.005
-                    ) + 1) / 2).toFloat() * 0.8f * pulseAlpha
-
-                    val sparkleX = (filledWidth - 20.dp.toPx() + sparkle.offset * 40.dp.toPx())
-                        .coerceIn(0f, size.width)
-                    val sparkleY = trackY - 10.dp.toPx() + sparkle.offset * 20.dp.toPx()
-
-                    drawCircle(
-                        color = glowColor.copy(alpha = sparkleAlpha * 0.3f),
-                        radius = sparkle.size * 2.5f,
-                        center = Offset(sparkleX, sparkleY)
-                    )
-                    drawCircle(
-                        color = Color(0xFF00D2D3).copy(alpha = sparkleAlpha),
-                        radius = sparkle.size,
-                        center = Offset(sparkleX, sparkleY)
-                    )
-                }
-            }
-
             // Neon thumb
             val thumbRadius = 12.dp.toPx()
-            drawCircle(
-                color = Color(0xFF16161F),
-                radius = thumbRadius,
-                center = Offset(filledWidth, trackY)
-            )
+            drawCircle(color = Color(0xFF16161F), radius = thumbRadius, center = Offset(filledWidth, trackY))
             drawCircle(
                 color = glowColor,
                 radius = thumbRadius - 2.dp.toPx(),
                 center = Offset(filledWidth, trackY),
                 style = Stroke(width = 2.dp.toPx())
             )
+            drawCircle(color = glowColor.copy(alpha = 0.3f), radius = 4.dp.toPx() * 2.5f, center = Offset(filledWidth, trackY))
+            drawCircle(color = Color.White.copy(alpha = 0.9f), radius = 4.dp.toPx(), center = Offset(filledWidth, trackY))
+        }
+
+        // SparkleLayer is conditionally composed — its rememberInfiniteTransition only
+        // runs (and only recomposes) when sparkles are actually visible. This scopes
+        // the per-frame recomposition to the child, keeping NeonSlider itself idle.
+        if (sparklesActive) {
+            SparkleLayer(
+                sparkles = sparkles,
+                glowColor = glowColor,
+                pulseAlpha = pulseAlpha,
+                animatedValue = animatedValue,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SparkleLayer(
+    sparkles: List<Sparkle>,
+    glowColor: Color,
+    pulseAlpha: Float,
+    animatedValue: Float,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "sparkle")
+    val sparkleTime by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = (PI * 2).toFloat(),
+        animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing)),
+        label = "sparkleTime"
+    )
+
+    Canvas(modifier = modifier.fillMaxSize()) {
+        val trackY = size.height / 2f
+        val filledWidth = animatedValue * size.width
+
+        sparkles.forEach { sparkle ->
+            val sparkleAlpha = ((sin(
+                (sparkleTime + sparkle.phase).toDouble()
+            ) + 1.0) / 2.0).toFloat() * 0.8f * pulseAlpha
+
+            val sparkleX = (filledWidth - 20.dp.toPx() + sparkle.offset * 40.dp.toPx())
+                .coerceIn(0f, size.width)
+            val sparkleY = trackY - 10.dp.toPx() + sparkle.offset * 20.dp.toPx()
+
             drawCircle(
-                color = glowColor.copy(alpha = 0.3f),
-                radius = 4.dp.toPx() * 2.5f,
-                center = Offset(filledWidth, trackY)
+                color = glowColor.copy(alpha = sparkleAlpha * 0.3f),
+                radius = sparkle.size * 2.5f,
+                center = Offset(sparkleX, sparkleY)
             )
             drawCircle(
-                color = Color.White.copy(alpha = 0.9f),
-                radius = 4.dp.toPx(),
-                center = Offset(filledWidth, trackY)
+                color = Color(0xFF00D2D3).copy(alpha = sparkleAlpha),
+                radius = sparkle.size,
+                center = Offset(sparkleX, sparkleY)
             )
         }
     }
@@ -172,6 +202,5 @@ fun NeonSlider(
 private data class Sparkle(
     val offset: Float,
     val size: Float,
-    val phase: Long
+    val phase: Float,
 )
-

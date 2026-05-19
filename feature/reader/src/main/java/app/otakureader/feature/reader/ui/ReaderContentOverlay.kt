@@ -49,6 +49,8 @@ import app.otakureader.core.ui.components.InkSlider
 import app.otakureader.core.ui.components.NeonSlider
 import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.core.ui.theme.manhwaAccent
+import androidx.compose.ui.tooling.preview.Preview
+import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 /**
  * Content-type-aware reader overlay showing the top controls, filmstrip, and page slider.
@@ -465,5 +467,49 @@ private fun ManhwaReaderOverlayContent(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0F)
+@Composable
+private fun ReaderContentOverlayMangaPreview() {
+    OtakuReaderTheme {
+        ReaderContentOverlay(
+            title = "Berserk",
+            chapterTitle = "Chapter 364: The Elf King",
+            currentPage = 12,
+            totalPages = 28,
+            isVisible = true,
+            contentType = ContentType.MANGA,
+            visualEffectsEnabled = true,
+            onDismiss = {},
+            onSettingsClick = {},
+            onPrevChapter = {},
+            onNextChapter = {},
+            onPageSliderChange = {},
+            onThumbnailClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0A0A0F)
+@Composable
+private fun ReaderContentOverlayManhwaPreview() {
+    OtakuReaderTheme {
+        ReaderContentOverlay(
+            title = "Solo Leveling",
+            chapterTitle = "Chapter 179",
+            currentPage = 8,
+            totalPages = 22,
+            isVisible = true,
+            contentType = ContentType.MANHWA,
+            visualEffectsEnabled = true,
+            onDismiss = {},
+            onSettingsClick = {},
+            onPrevChapter = {},
+            onNextChapter = {},
+            onPageSliderChange = {},
+            onThumbnailClick = {}
+        )
     }
 }

@@ -18,6 +18,8 @@ enum class ReadingDirection {
 
 fun ContentType.mangaAccent(): Color = Color(0xFFFF4757)
 fun ContentType.manhwaAccent(): Color = Color(0xFF9B59B6)
+fun ContentType.mangaSecondary(): Color = Color(0xFFFFA502)
+fun ContentType.manhwaSecondary(): Color = Color(0xFF00D2D3)
 
 fun detectContentType(sourceTag: String?, readingDirection: ReadingDirection): ContentType {
     if (sourceTag == null) return ContentType.MANGA

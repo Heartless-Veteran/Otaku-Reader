@@ -1,259 +1,547 @@
-# CLAUDE.md
+# CLAUDE.md — Otaku Reader
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file is the AI assistant reference for the Otaku Reader codebase. Read it before making any changes.
+
+---
 
 ## What This Project Is
 
-Otaku Reader is a manga-only Android app (~98% complete, in bug-fixing/stabilization). It is a clean-room alternative to Mihon/Tachiyomi that reuses the Tachiyomi extension ecosystem. The developer is newer to Kotlin — always explain what was wrong and why a fix works alongside any code change.
+Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is in a bug-fixing and stabilization phase (~98% feature-complete).
 
-## Commands
+**The developer is newer to Kotlin. Always explain what was wrong and why a fix works — never drop solutions without context.**
 
-```bash
-# Build
-./gradlew assembleDebug                    # debug APK → app/build/outputs/apk/debug/
+---
 
-# Tests
-./gradlew testDebugUnitTest               # all unit tests
-./gradlew :domain:koverVerify             # coverage gate ≥60% on :domain
-./gradlew :data:koverVerifyDebug          # coverage gate ≥60% on :data
-./gradlew :core:database:test             # migration tests only
+## Repository Layout
 
-# Lint / style
-./gradlew detekt                          # static analysis
-./gradlew ktlintCheck                     # style check
-./gradlew ktlintFormat                    # auto-fix style
-
-# Security
-bash scripts/check-buildconfig-security.sh   # scan BuildConfig for hardcoded credentials
-
-# Misc
-./gradlew :app:generateLicenseReport      # → docs/DEPENDENCY_LICENSES.md
-./gradlew :app:kspDebugKotlin             # compile Hilt graph (fast DI error check)
+```
+Otaku-Reader/
+├── app/                    # Application entry point, Navigation host, Widgets, DI root
+├── domain/                 # Pure business logic — UseCases, Repository interfaces
+├── data/                   # Repository implementations, WorkManager workers, Backup/Sync
+├── source-api/             # Tachiyomi extension API contracts (pure Kotlin/Java interfaces)
+├── server/                 # Self-hosted Ktor sync server
+├── baselineprofile/        # Baseline profile generation for app startup performance
+├── build-logic/            # Gradle convention plugins
+├── core/
+│   ├── common/             # Shared utilities, Palette API, coroutine helpers
+│   ├── database/           # Room entities, DAOs, migrations
+│   ├── network/            # OkHttp + Retrofit + Kotlinx Serialization setup
+│   ├── preferences/        # DataStore preferences, encrypted credential storage
+│   ├── ui/                 # Shared Compose components, Material 3 theme, Coil integration
+│   ├── navigation/         # Type-safe Compose Navigation routing
+│   ├── extension/          # Dynamic APK classloading for Tachiyomi extensions
+│   ├── tachiyomi-compat/   # RxJava 1.x stubs and Tachiyomi interface bridges
+│   ├── discord/            # Discord Rich Presence (native, no external library)
+│   ├── ai/                 # Gemini client, ML Kit (full flavor only)
+│   └── ai-noop/            # No-op AI stubs for FOSS flavor
+└── feature/
+    ├── library/            # Main manga collection, categories, filtering, "For You"
+    ├── reader/             # Multi-mode reader (single/dual/webtoon/smart panels)
+    ├── browse/             # Source browsing and global search (Paging 3)
+    ├── details/            # Manga detail page, chapter list, tracker status
+    ├── updates/            # New chapter updates list
+    ├── history/            # Reading history timeline
+    ├── settings/           # All app settings, backup/restore, cloud sync, tracker auth
+    ├── statistics/         # Reading stats dashboard
+    ├── migration/          # Source migration wizard
+    ├── tracking/           # Tracker integrations (MAL, AniList, Kitsu, MangaUpdates, Shikimori)
+    ├── onboarding/         # First-run setup wizard
+    ├── about/              # About screen, credits, version info
+    ├── opds/               # OPDS catalog support (Komga/Kavita)
+    ├── feed/               # Recommendations and activity feed
+    └── more/               # Bottom nav "More" section
 ```
 
-All five of these must pass before any PR merges to `main`: security check, detekt, ktlint, unit tests, assemble.
+---
 
 ## Architecture
 
-Three horizontal layers (inner to outer):
+### Layer Overview
 
 ```
-domain/          Pure Kotlin — use cases, repository interfaces, domain models. No Android deps.
-data/            Repository implementations, Room DAOs, WorkManager workers, download/backup/tracking/OPDS.
-feature/*/       Compose screens + HiltViewModels per feature.
+UI (Jetpack Compose)
+  └─ collectAsStateWithLifecycle()
+       └─ ViewModel (@HiltViewModel)
+            └─ StateFlow<UiState> + SharedFlow<Effect>
+                 └─ UseCases (Domain layer)
+                      └─ Repository interfaces (Domain layer)
+                           └─ Repository implementations (Data layer)
+                                └─ Room DAOs + Retrofit + DataStore
 ```
 
-Shared infrastructure lives in `core/` sub-modules:
-- `core/common` — utilities, `Result<T>`, `ReadTimeEstimator`, MVI base classes
-- `core/database` — Room v21 with explicit migrations (v2→v21)
-- `core/preferences` — DataStore wrappers (`GeneralPreferences`, `ReaderPreferences`, `DownloadPreferences`, `PendingOAuthStore`, `EncryptedOpdsCredentialStore`, etc.)
-- `core/ui` — Material 3 design system, dynamic color from cover art, MVI effect collector
-- `core/navigation` — type-safe Compose Navigation routes
-- `core/extension` — `ExtensionLoader`, `TrustedSignatureStore` (EncryptedSharedPreferences-backed)
-- `core/tachiyomi-compat` — bridges Tachiyomi APKs to `source-api` interfaces
-- `source-api` — pure Kotlin contract (`Source`, `HttpSource`, `SManga`, `SChapter`, `Page`, `MangasPage`, `Filter`). No Android deps.
+### MVI Pattern — Non-Negotiable
 
-### Module Conventions
+Every screen follows Model-View-Intent:
 
-- **Feature modules** — `feature/<name>/`, apply `otakureader.android.feature` convention plugin. Each feature is self-contained with its own Screen, ViewModel, and MVI contract.
-- **Core modules** — `core/<name>/`, shared infrastructure. Each core module has its own DI module in `<module>/di/*Module.kt`.
-- **Domain module** — `domain/`, pure Kotlin library (no Android plugin). Use cases, repository interfaces, and domain models only.
-- **Data module** — `data/`, repository implementations and data sources. Binds interfaces to implementations here.
+- **State**: Immutable data class, exposed as `StateFlow<UiState>` from the ViewModel.
+- **Intent**: Sealed class representing user actions. All UI changes go through an Intent → Reducer cycle.
+- **Effect**: One-shot events (navigation, toasts) via a separate `SharedFlow<Effect>` or `Channel`.
 
-### Dependency Rules
+Rules:
+- Never mutate state directly.
+- Never use `LiveData` — only `StateFlow` and `SharedFlow`.
+- Composables must be stateless where possible; hoist state up.
+- Collect state with `collectAsStateWithLifecycle()`, not `collectAsState()`.
+- Use `LaunchedEffect` only for one-time side effects on composition.
+- Use `rememberCoroutineScope()` only for user-triggered async actions.
 
-- `domain` has **zero** external deps (only Kotlin stdlib, coroutines, and `javax.inject`).
-- `data` depends on `domain` + `core/*`.
-- `feature/*` depends on `domain` + `core/*`.
-- **No feature module may depend on another feature module.** Navigation is via `core/navigation` routes only.
-- `app/` module depends on all feature modules and core modules, wires the nav graph.
+**Pattern example** (every feature looks like this):
+```
+LibraryMvi.kt      — sealed class LibraryState, LibraryIntent, LibraryEffect
+LibraryViewModel.kt — @HiltViewModel, produces StateFlow<LibraryState>
+LibraryScreen.kt   — stateless composable consuming state
+```
 
-## MVI Pattern
+### Clean Architecture Layer Rules
 
-Every feature uses Model-View-Intent. There are two patterns in the codebase:
+| Layer | Contains | Rules |
+|-------|----------|-------|
+| `domain/` | UseCases, Repository interfaces, domain models | Pure Kotlin, no Android imports, no DI annotations beyond `@Inject` |
+| `data/` | Repository implementations, DAOs (via core/database), Workers | Implements domain interfaces; entities ≠ domain models — always map |
+| `feature/*` | ViewModel, Composables, MVI state | Depends on domain, never on data directly |
+| `core/*` | Shared infrastructure | No feature-level dependencies |
 
-### Legacy Pattern (most existing features)
-ViewModel extends `ViewModel` directly and wires state/effect manually:
+---
+
+## Dependency Injection (Hilt)
+
+- All ViewModels: `@HiltViewModel`
+- All Repositories: `@Singleton` (unless there is a specific reason otherwise)
+- UseCases: `@Reusable` or unscoped
+- Always verify `@InstallIn` scope matches the injection site
+- KSP runs the Hilt processor — if a binding appears missing, check `@InstallIn` before blaming the ViewModel
+
+---
+
+## Database (Room)
+
+- **Every DAO read function returns `Flow<T>`** — never a plain value.
+- Migrations must be explicit. **Never use `fallbackToDestructiveMigration()` in production.**
+- Entities are separate from domain models. Always write and use mapper functions.
+- For tests, use in-memory Room databases — no `MigrationTestHelper`.
+
+---
+
+## Extension System — Non-Negotiable
+
+**Tachiyomi extension compatibility must never be broken.**
+
+Extensions load dynamically as APKs with classloader isolation. The interfaces in `source-api/` and `core/tachiyomi-compat/` must match the Tachiyomi/Mihon extension API exactly — this gives Otaku Reader access to 500+ community-maintained sources without any changes to those extensions.
+
+- Do not modify interface signatures in `source-api/`.
+- Do not change or remove the Tachiyomi RxJava 1.x stubs in `core/tachiyomi-compat/`.
+- Reference the Komikku fork in the same GitHub org when uncertain about the extension API.
+
+---
+
+## Build System
+
+### Convention Plugins (in `build-logic/`)
+
+| Plugin ID | Applies to |
+|-----------|-----------|
+| `otakureader.android.application` | `app/` |
+| `otakureader.android.library` | Most `core/*` and `data/`, `domain/` |
+| `otakureader.android.feature` | All `feature/*` modules (auto-adds `core:ui`, `core:navigation`, `domain`) |
+| `otakureader.android.hilt` | Any module needing DI |
+| `otakureader.android.room` | Any module with Room entities/DAOs |
+| `otakureader.android.library.compose` | Modules with Compose components |
+| `otakureader.kotlin.library` | Pure JVM modules (server, domain utilities) |
+
+### Key SDK & Kotlin Versions
+
+| Setting | Value |
+|---------|-------|
+| Kotlin | 2.3.20 |
+| AGP | 9.1.1 |
+| KSP | 2.3.6 |
+| compileSdk | 36 |
+| minSdk | 26 |
+| targetSdk | 35 |
+| JVM target | 17 |
+| Compose BOM | 2026.03.01 |
+
+### Product Flavors
+
+| Flavor | Description |
+|--------|-------------|
+| `full` | Includes Gemini SDK (`core/ai`), all AI features enabled |
+| `foss` | Uses `core/ai-noop` stubs, no proprietary SDKs |
+
+Build variants: `fullDebug`, `fullRelease`, `fossDebug`, `fossRelease`. The `foss` flavor is used in CI for open-source compliance.
+
+### Running Builds
+
+```bash
+# Assemble debug APK (FOSS flavor — fastest, no proprietary SDKs)
+./gradlew :app:assembleFossDebug
+
+# Run all unit tests
+./gradlew test
+
+# Run Detekt static analysis
+./gradlew detekt
+
+# Build release APKs (requires keystore.properties — see keystore.properties.template)
+./gradlew :app:assembleFullRelease :app:assembleFossRelease
+```
+
+---
+
+## Key Libraries
+
+| Purpose | Library |
+|---------|---------|
+| UI | Jetpack Compose + Material 3 |
+| Async | Kotlin Coroutines 1.10.2 + Flow |
+| DI | Hilt 2.59.2 (KSP-processed) |
+| Database | Room 2.8.4 |
+| Preferences | DataStore 1.2.1 |
+| Encryption | AndroidX Security Crypto 1.1.0 |
+| HTTP | OkHttp 4.12.0 + Retrofit 3.0.0 |
+| Serialization | Kotlinx Serialization 1.11.0 |
+| Image loading | Coil 3 (3.4.0) |
+| Paging | Paging 3 (3.4.2) |
+| Background work | WorkManager 2.11.2 |
+| Widgets | Glance 1.1.1 |
+| AI (full only) | Google Generative AI 0.9.0 + ML Kit |
+| Self-hosted server | Ktor 3.4.2 |
+| Static analysis | Detekt 1.23.8 |
+
+---
+
+## Testing
+
+### Frameworks
+
+| Tool | Role |
+|------|------|
+| JUnit 4 (primary) / JUnit 5 | Test runner |
+| MockK 1.14.9 | Kotlin mocking DSL |
+| Turbine 1.2.1 | Flow assertion (`.test { awaitItem() }`) |
+| Robolectric 4.16.1 | Android environment simulation for unit tests |
+| `androidx-test` | AndroidX testing utilities |
+
+### Patterns
 
 ```kotlin
-@HiltViewModel
-class LibraryViewModel @Inject constructor(...) : ViewModel() {
-    private val _state = MutableStateFlow(LibraryState())
-    val state: StateFlow<LibraryState> = _state.asStateFlow()
-
-    private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
-    val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
-
-    fun onEvent(event: LibraryEvent) { ... }
-}
-```
-
-### Modern Pattern (newer features — Details, OPDS, Tracking)
-Uses `BaseMviViewModel<S, E, F>` from `core/common` with contract objects:
-
-```kotlin
-// MVI contract file: DetailsMvi.kt
-object DetailsContract {
-    data class State(...) : UiState
-    sealed interface Event : UiEvent { ... }
-    sealed interface Effect : UiEffect { ... }
-}
-
-// ViewModel
-@HiltViewModel
-class DetailsViewModel @Inject constructor(...)
-    : BaseMviViewModel<DetailsContract.State, DetailsContract.Event, DetailsContract.Effect>(
-        initialState = DetailsContract.State()
-    ) {
-    override fun processEvent(event: DetailsContract.Event) { ... }
-}
-```
-
-### Screen: always collectAsStateWithLifecycle, never collectAsState
-
-```kotlin
-val state by viewModel.state.collectAsStateWithLifecycle()
-```
-
-Collect effects with `CollectAsEffect` from `core/ui`:
-
-```kotlin
-CollectAsEffect(viewModel.effect) { effect ->
-    when (effect) {
-        is LibraryEffect.NavigateToManga -> navigator.navigate(...)
+@Test
+fun `library state updates when intent received`() = runTest {
+    val viewModel = LibraryViewModel(mockUseCase, testDispatcher)
+    viewModel.uiState.test {
+        viewModel.onIntent(LibraryIntent.LoadLibrary)
+        val state = awaitItem()
+        assertThat(state.manga).isNotEmpty()
     }
 }
 ```
 
-Never mutate state directly (use `_state.update { it.copy(...) }`). Never use `LiveData`. Never use `GlobalScope`.
+- Use `runTest { }` for all suspend functions.
+- Use Turbine's `.test { }` for all Flow assertions.
+- Mock all external dependencies with MockK (`mockk { }` or `every { }`).
+- Use in-memory Room databases for DAO tests.
+- Modules that need Android resources set `unitTests.isIncludeAndroidResources = true`.
 
-## Naming Conventions
+---
 
-### Composables
-- **Screen** — `<Feature>Screen.kt` (top-level route composable, e.g., `LibraryScreen()`)
-- **Content** — `<Feature>Content()` (stateless body, used by Screen after collecting state)
-- **Components** — Descriptive names: `MangaCard()`, `ChapterListItem()`, `FilterBottomSheet()`
+## Common Bug Areas — Check These First
 
-### ViewModels
-- `<Feature>ViewModel.kt` — always annotated `@HiltViewModel`
-- State class: `<Feature>State` (or `DetailsContract.State` for modern MVI)
-- Event sealed class: `<Feature>Event` (or `DetailsContract.Event`)
-- Effect sealed class: `<Feature>Effect` (or `DetailsContract.Effect`)
-- Entry point: `fun onEvent(event: <Feature>Event)`
+1. **Hilt binding errors** — Missing `@Provides`, wrong scope, missing `@InstallIn`. Check the DI module before assuming the ViewModel is wrong.
+2. **Room DAO not connected** — DAO not injected into repo, repo not injected into UseCase. Trace the chain.
+3. **MVI state not updating UI** — `StateFlow` not collected in Compose, or reducer emitting same reference. Use `copy()`.
+4. **Extension loader failures** — ClassLoader issue, missing permission, or interface mismatch with Tachiyomi API.
+5. **Gradle dependency conflicts** — Version mismatches between Compose BOM, Kotlin, Hilt, or KSP. Check `libs.versions.toml` first.
+6. **Navigation crashes** — Missing destination, wrong argument type in NavGraph, or missing `@Serializable` on route class.
+7. **Coroutine scope leaks** — `GlobalScope` used instead of `viewModelScope` or `lifecycleScope`. Always use structured concurrency.
 
-### Use Cases
-- `<Verb><Noun>UseCase.kt` — e.g., `GetLibraryMangaUseCase`, `ToggleFavoriteMangaUseCase`
-- Single public method: `operator fun invoke(...)`
-- Located in `domain/usecase/` (or `domain/usecase/<subpackage>/` for grouped use cases like OPDS)
+---
 
-### Repositories
-- Interface: `<Noun>Repository` in `domain/repository/`
-- Implementation: `<Noun>RepositoryImpl` in `data/repository/` (or `data/<feature>/repository/`)
+## Code Style Conventions
 
-### DI Modules
-- Repository bindings: `data/di/RepositoryModule.kt` (`@Module @InstallIn(SingletonComponent::class)`)
-- Use case providers: `data/di/UseCaseModule.kt` (`@Module @InstallIn(SingletonComponent::class)`)
-- Feature-specific: `data/<feature>/di/<Feature>Module.kt` (e.g., `data/tracking/di/TrackingModule.kt`)
-- Core modules: each has its own `<core>/<name>/di/<Name>Module.kt`
+- Prefer extension functions over utility classes.
+- Use `sealed class` for UI state, intent, and effect modeling.
+- Keep ViewModels thin — business logic belongs in UseCases.
+- No hardcoded strings — use `strings.xml` resources.
+- No magic numbers — use named constants.
+- No XML layouts — this is a pure Jetpack Compose project.
+- No `GlobalScope`.
+- No `LiveData`.
 
-## Hilt DI Rules
+---
 
-- Repositories → `@Singleton`, bound in `data/di/RepositoryModule.kt`
-- Use cases → `@Reusable` or unscoped
-- ViewModels → `@HiltViewModel`
-- All `@Binds`/`@Provides` must have matching `@InstallIn` scope
-- Run `./gradlew :app:kspDebugKotlin` to catch missing bindings at compile time without running full tests
+## What NOT To Do
 
-**Resolved (as of latest audit):**
-- `TrackerSyncRepository` → implemented by `TrackerSyncRepositoryImpl` at `data/tracking/repository/TrackerSyncRepositoryImpl.kt`, bound via `data/tracking/di/TrackingModule.kt`
-- `ExtensionManagementRepository` → bound to `SourceRepositoryImpl` in `data/di/RepositoryModule.kt` (line 106)
+- **Do not break Tachiyomi extension compatibility** — this is the most critical constraint.
+- **Do not implement AI features** (Smart Search, Smart Panels recommendations, etc.) — planned for a later phase; stubs exist in `core/ai-noop/`.
+- **Do not add Firebase analytics or crash tooling** unless explicitly requested.
+- **Do not use `fallbackToDestructiveMigration()`** in Room database setup.
+- **Do not use `GlobalScope`** — use `viewModelScope`, `lifecycleScope`, or a provided `CoroutineScope`.
+- **Do not use `LiveData`** — StateFlow only.
+- **Do not write XML layouts** — Compose only.
+- **Do not mutate ViewModel state directly** — all changes through Intent → Reducer.
 
-## Testing Conventions
+---
 
-### Framework & Libraries
-- **JUnit 4** with `runTest { }` for coroutines
-- **MockK** for mocking (not Mockito)
-- **Turbine** (`app.cash.turbine`) for Flow assertions
-- **StandardTestDispatcher** + `@OptIn(ExperimentalCoroutinesApi::class)` for coroutine testing
+## CI/CD
 
-### ViewModel Tests
-- Mock all dependencies with `mockk { every { prop } returns flowOf(...) }` for DataStore preferences
-- Use `Dispatchers.setMain(testDispatcher)` in `@Before`, `Dispatchers.resetMain()` in `@After`
-- Assert state changes via `viewModel.state.test { ... }` or direct property access after `advanceUntilIdle()`
-- Test both success and error paths
+| Workflow | Trigger | What It Does |
+|----------|---------|--------------|
+| `android-ci.yml` | Push/PR to `main`, `develop` | Detekt, unit tests, debug APK (FOSS) |
+| `ci.yml` | Push/PR/dispatch to `main`, `develop` | Full + FOSS debug builds, unit tests |
+| `release.yml` | Tag push (`v*`) | Full + FOSS release APKs, GitHub release |
+| `benchmark.yml` | Manual | Baseline profile generation |
+| `build_preview.yml` | PR trigger | Preview APK build |
 
-### Use Case Tests
-- Mock the repository interface, verify `invoke()` delegates correctly
-- Test empty/success/error cases with Turbine
+CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches are managed with `actions/cache@v4`.
 
-### Domain Architecture Tests
-- `domain/src/test/java/app/otakureader/domain/ArchitectureTest.kt` enforces:
-  - No Android imports in domain layer (banned: `android.`, `androidx.`, `com.google.android.`)
-  - Domain data classes must live in `domain/model/`
-  - Domain repository package contains only interfaces
-  - Use cases must exist in `domain/usecase/`
-  - Domain build file uses Kotlin library plugin (not Android)
+---
 
-### Coverage Gates
-- `:domain` — ≥60% (enforced by `domain:koverVerify`)
-- `:data` — ≥60% (enforced by `data:koverVerifyDebug`)
-- Migration tests: `core/database` only (use `./gradlew :core:database:test`)
+## Developer Context
 
-## Room Database Rules
+- Solo developer, veteran background, newer to Kotlin — explain fixes, don't just drop code.
+- Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
+- Google Cloud project with Gemini API access exists for future AI features.
+- **Current priority: core stability and bug fixing, not new features.**
 
-- All DAO reads return `Flow<T>`, never a plain value
-- `fallbackToDestructiveMigration()` is only enabled in debug builds (`BuildConfig.DEBUG`) — never in production
-- Current DB version: 21. Migrations live in `core/database/`. All are additive (no destructive changes)
-- Adding a migration: increment version → write `Migration(N, N+1)` → add to `.addMigrations(...)` → write a `MigrationTestHelper` test → commit the exported schema JSON
+---
 
-## Extension System (Non-Negotiable)
+## Audit Workflow
 
-Tachiyomi extension compatibility must never be broken. Extensions (Keiyoushi ~1000, Komikku ~1000) are community-maintained APKs loaded at runtime via `DexClassLoader`. The `source-api` module mirrors Tachiyomi's source package types exactly.
+Full-systems audit using Ruflo (`ruvnet/ruflo`) multi-agent orchestration. Produces 10 deliverable files covering architecture, code quality, UI, performance, security, testing, features, master synthesis, roadmap, and patch queue.
 
-Never change `source-api` public signatures without verifying against the Tachiyomi extension API spec. Never execute extension code on the main thread. Extensions get the app's OkHttp client (respects user proxy/VPN). Always validate signatures via `TrustedSignatureStore` before loading.
+### Ruflo Setup (Run Once Per New Session)
 
-Flow: `ExtensionLoader` → validate signature → load DEX → instantiate `CatalogueSource` → wrap via `TachiyomiSourceAdapter` → expose as `SourceRepository`.
+```bash
+# Initialize Ruflo in repo root (creates .claude/agents/, .mcp.json, .claude-flow/)
+npx ruflo@latest init --yes
 
-## DataStore / Preferences
+# Initialize memory database (vector-indexed, persists between sessions)
+npx ruflo@latest memory init
 
-All settings use `Preferences DataStore` — never `SharedPreferences` for new settings. Preference classes: `GeneralPreferences`, `LibraryPreferences`, `ReaderPreferences`, `DownloadPreferences`, `BackupPreferences`, `ReadingGoalPreferences`, `EncryptedApiKeyStore`, `EncryptedOpdsCredentialStore`, `PendingOAuthStore`. Every class exposes `Flow<T>` for reads and `suspend fun setXxx()` for writes.
+# Initialize audit swarm
+npx ruflo@latest swarm init --name otaku-reader-audit --topology hierarchical-mesh
 
-Batch DataStore reads with `async/await` to avoid sequential blocking on cold start.
+# Register Ruflo as MCP server in Claude Code (adds to ~/.claude/claude_code_config.json)
+claude mcp add ruflo -- npx ruflo@latest mcp start
 
-## Reader Engine
-
-Four modes share `ReaderState` but have mode-specific composables:
-- **Single Page** — `HorizontalPager` with `beyondViewportPageCount = 1`
-- **Dual Page** — auto-detects spreads by aspect ratio (threshold 1.2)
-- **Webtoon** — `LazyColumn` with `contentType = { "manga_page" }`, configurable gap
-- **Smart Panels** — ML Kit panel detection, results cached in `LruCache<String, 50>`, falls back to single-page on failure
-
-Reader events are grouped via sealed interfaces by domain (`PageNavigation`, `ZoomControl`, `DisplayControl`, etc.) so handlers can filter entire domains.
-
-Performance rules: use `RGB_565` for opaque pages (2x memory reduction), preload adjacent pages, call `clearCache()` in `ViewModel.onCleared()`, cap Coil memory cache at `min(15%, 256 MB)`.
-
-## Toolchain Version Coupling
-
-Kotlin, KSP, Compose Compiler plugin, Compose BOM, and AGP versions are tightly coupled. The single source of truth is `gradle/libs.versions.toml`. SDK levels (`compileSdk`, `targetSdk`, `minSdk`) are also centralized there — never hardcode them in any `build.gradle.kts`. Bump the toolchain group as a single commit. Renovate groups these into one PR and never auto-merges them.
-
-Current: Kotlin 2.3.21 · KSP 2.3.7 · AGP 9.1.1 · Compose BOM 2026.04.01 · compileSdk/targetSdk 36 · minSdk 26.
-
-## Hard Rules
-
-- No AI features in this repo (Gemini, ML beyond Smart Panels) — use the separate [Otaku-Reader-AI](https://github.com/HeartlessVeteran2/Otaku-Reader-AI) repo
-- No Firebase, analytics, or crash tooling unless explicitly requested
-- No XML layouts — pure Compose
-- No `GlobalScope` — use `viewModelScope` or Hilt-injected `@ApplicationScope`
-- No `LiveData`
-- No hardcoded strings — use resource files
-- No `!!` — use `?.let`, `?: return`, or explicit null handling
-- Never call `source.fetchPageList()` directly — always route through `SourceRepository`
-- No secrets in `BuildConfig` — use encrypted DataStore stores or Gradle properties
-
-## Commit Format
-
-```
-type(scope): subject
+# Install audit-specific plugins (run in Claude Code chat after MCP registration)
+# /plugin install ruflo-security-audit@ruflo
+# /plugin install ruflo-testgen@ruflo
+# /plugin install ruflo-docs@ruflo
+# /plugin install ruflo-adr@ruflo
+# /plugin install ruflo-observability@ruflo
+# /plugin install ruflo-intelligence@ruflo
+# /plugin install ruflo-rag-memory@ruflo
+# /plugin install ruflo-jujutsu@ruflo
 ```
 
-Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`. One PR per concern. Branch from `main` as `feature/…` or `fix/…`.
+Ruflo MCP config is in `.mcp.json` (gitignored, generated via `ruflo init`). Memory DB is at `.claude/memory.db` (also gitignored).
+
+### Audit Phases & Commands
+
+Parallelization order: Phase 0 → Phase 1 → Phases 2/3/4/5/6/7 in parallel → Phase 8 last.
+
+#### Phase 0: Bootstrap (already done — Ruflo initialized)
+
+```bash
+npx ruflo@latest memory search -q "otaku-reader audit"   # retrieve prior findings
+npx ruflo@latest memory stats                             # check DB health
+```
+
+#### Phase 1: Architecture & Structural Mapping
+
+**Ruflo (with MCP registered):**
+```bash
+/agent spawn architect-scout --role "Android Architecture Auditor" --tools file_read,git_log,dependency_analysis
+/swarm task --agent architect-scout --task "Map Otaku-Reader architecture and identify structural anti-patterns"
+/memory store --namespace otaku-reader --key architecture-map --value <output>
+```
+
+**Native Claude Code fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  core/navigation/src/main/java/app/otakureader/core/navigation/Route.kt
+  domain/src/main/java/app/otakureader/domain/repository/ (all *.kt)
+  data/src/main/java/app/otakureader/data/repository/ (all *.kt)
+  all module build.gradle.kts files
+Map dependency graph, detect circular deps, identify god objects, list orphaned use cases.")
+```
+
+Deliverable: `AUDIT_ARCHITECTURE.md`
+
+#### Phase 2: Code Quality & Static Analysis
+
+**Ruflo:**
+```bash
+/agent spawn code-grunt --role "Kotlin Code Quality Auditor" --tools lint_runner,complexity_scanner
+/agent spawn smell-detector --role "Anti-Pattern Hunter" --tools static_analysis,git_blame
+/swarm task --agents code-grunt,smell-detector --parallel --task "Audit Otaku-Reader codebase for quality smells"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  feature/library/src/main/java/app/otakureader/feature/library/LibraryViewModel.kt
+  feature/details/src/main/java/app/otakureader/feature/details/DetailsViewModel.kt
+  feature/reader/src/main/java/app/otakureader/feature/reader/ReaderViewModel.kt
+  domain/src/main/java/app/otakureader/domain/usecase/ (all *.kt)
+Scan for !! operators, bare try/catch, functions >20 lines, nesting >3, LaunchedEffect misuse.")
+```
+
+Deliverable: `AUDIT_CODE_SMELLS.md`
+
+#### Phase 3: UI/UX & Compose Audit
+
+**Ruflo:**
+```bash
+/agent spawn ui-viper --role "Jetpack Compose UI Auditor" --tools compose_inspector,layout_analyzer
+/swarm task --agent ui-viper --task "Audit Otaku-Reader UI layer for Compose anti-patterns"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  feature/library/src/main/java/app/otakureader/feature/library/LibraryScreen.kt
+  feature/details/src/main/java/app/otakureader/feature/details/DetailsScreen.kt
+  feature/reader/src/main/java/app/otakureader/feature/reader/ReaderScreen.kt
+  core/ui/src/main/java/app/otakureader/core/ui/ (theme and component files)
+Audit for recomposition anti-patterns, derivedStateOf misuse, remember vs rememberSaveable,
+Material3 compliance, accessibility gaps, god composables.")
+```
+
+Deliverable: `AUDIT_UI.md`
+
+#### Phase 4: Performance & Memory
+
+**Ruflo:**
+```bash
+/agent spawn perf-sniper --role "Android Performance Auditor" --tools profiler,heap_analyzer,apk_analyzer
+/swarm task --agent perf-sniper --task "Profile Otaku-Reader for memory leaks, image OOM risk, startup performance"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  core/database/src/main/java/app/otakureader/core/database/OtakuReaderDatabase.kt
+  core/database/src/main/java/app/otakureader/core/database/dao/ (all DAOs)
+  core/database/src/main/java/app/otakureader/core/database/migrations/ (all migrations)
+  data/src/main/java/app/otakureader/data/worker/ (WorkManager workers)
+  app/src/main/java/app/otakureader/di/ImageLoaderModule.kt
+Identify N+1 queries, missing indexes, OOM risk, battery drain, startup cost.")
+```
+
+Deliverable: `AUDIT_PERFORMANCE.md`
+
+#### Phase 5: Security Audit
+
+**Ruflo:**
+```bash
+/agent spawn sec-watch --role "Android Security Auditor" --tools cve_scanner,secret_scanner,manifest_auditor
+/swarm task --agent sec-watch --task "Run full security audit on Otaku-Reader including CVE scan and secret detection"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  SECURITY_AUDIT.md (existing baseline)
+  data/src/main/java/app/otakureader/data/tracking/ (OAuth token storage)
+  core/preferences/src/main/java/app/otakureader/core/preferences/ (encrypted storage)
+  app/src/main/AndroidManifest.xml
+  app/src/main/res/xml/network_security_config.xml
+Identify CVE status, unencrypted storage, OAuth flow gaps, exported component risks.")
+```
+
+Deliverable: `AUDIT_SECURITY.md`
+
+#### Phase 6: Testing & Coverage
+
+**Ruflo:**
+```bash
+/agent spawn qa-engineer --role "Test Coverage Auditor" --tools coverage_analyzer,test_generator
+/swarm task --agent qa-engineer --task "Analyze Otaku-Reader test coverage and generate missing test stubs"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="List all */src/test/java/ directories.
+Read 5 representative test files. Check .github/workflows/ci.yml for coverage gates.
+Identify untested critical paths (migrations, OAuth, backup import).
+Generate test stubs for top 3 P0 untested paths.")
+```
+
+Deliverable: `AUDIT_TESTING.md`
+
+#### Phase 7: Feature Gap Analysis
+
+**Ruflo:**
+```bash
+/agent spawn product-hunter --role "Product Feature Auditor" --tools feature_matrix,comparator
+/swarm task --agent product-hunter --task "Compare Otaku-Reader feature set against standard manga reader expectations"
+```
+
+**Native fallback:**
+```text
+Agent(subagent_type="Explore", prompt="Read:
+  feature/reader/src/main/java/app/otakureader/feature/reader/ (reader modes and MVI)
+  feature/settings/src/main/java/app/otakureader/feature/settings/ (reader settings)
+  data/src/main/java/app/otakureader/data/backup/ (backup system)
+  feature/tracking/src/main/java/app/otakureader/feature/tracking/ (trackers)
+Build feature matrix vs standard manga reader checklist. Rate each: Complete/Partial/Missing.")
+```
+
+Deliverable: `AUDIT_FEATURES.md`
+
+#### Phase 8: Master Synthesis
+
+**Ruflo:**
+```bash
+/swarm consensus --agents architect-scout,code-grunt,smell-detector,ui-viper,perf-sniper,sec-watch,qa-engineer,product-hunter --output AUDIT_MASTER.md
+/swarm goal --name "Otaku-Reader 90-Day Improvement Plan" --output ROADMAP.md
+/swarm goal --name "P0 Patch Queue" --output PATCH_QUEUE.md
+```
+
+**Native fallback:** Synthesize all 7 phase outputs into AUDIT_MASTER.md (top 10 ranked by impact×effort), ROADMAP.md (30/60/90-day), PATCH_QUEUE.md (ready-to-apply P0 patches).
+
+Deliverables: `AUDIT_MASTER.md`, `ROADMAP.md`, `PATCH_QUEUE.md`
+
+### Ruflo Memory Commands
+
+```bash
+# Store a finding
+npx ruflo@latest memory store -k "finding-key" --value "description"
+
+# Retrieve prior findings before starting an audit phase
+npx ruflo@latest memory search -q "architecture" --limit 5
+
+# View all stored keys
+npx ruflo@latest memory stats
+
+# Export full audit bundle for archiving
+npx ruflo@latest memory export --namespace otaku-reader --output audit-bundle.json
+```
+
+### Ruflo → Native Claude Code Mapping
+
+| Ruflo Command | Native Equivalent |
+|---------------|-------------------|
+| `/agent spawn X --tools file_read` | `Agent(subagent_type="Explore", prompt="...")` |
+| `/swarm task --agents a,b --parallel` | Multiple `Agent(...)` calls in a single message |
+| `/memory store --key k --value v` | `npx ruflo@latest memory store -k k --value v` or write to plan file |
+| `/swarm consensus --agents a,b --output F` | Synthesize agent outputs in a final `Write(file_path=F)` call |
+| `/plugin install X@ruflo` | `Agent` with domain-specific analysis prompt |
+
+### Audit Deliverables Checklist
+
+| File | Phase | Contents |
+|------|-------|---------|
+| `AUDIT_ARCHITECTURE.md` | 1 | Module graph, god objects, dead code, dependency health |
+| `AUDIT_CODE_SMELLS.md` | 2 | P0/P1/P2 issues with file:line citations, patch suggestions |
+| `AUDIT_UI.md` | 3 | Compose anti-patterns, recomposition, accessibility |
+| `AUDIT_PERFORMANCE.md` | 4 | DB queries, image OOM, startup, benchmark targets |
+| `AUDIT_SECURITY.md` | 5 | CVE status, encryption gaps, OAuth analysis |
+| `AUDIT_TESTING.md` | 6 | Coverage heatmap, generated test stubs |
+| `AUDIT_FEATURES.md` | 7 | Feature gap matrix with effort estimates |
+| `AUDIT_MASTER.md` | 8 | Top 10 fixes ranked by impact×effort |
+| `ROADMAP.md` | 8 | 30/60/90-day milestones |
+| `PATCH_QUEUE.md` | 8 | Ready-to-apply Kotlin patches for all P0 items |

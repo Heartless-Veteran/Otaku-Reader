@@ -104,6 +104,7 @@ data class SettingsState(
     val imageQuality get() = reader.imageQuality
     val dataSaverEnabled get() = reader.dataSaverEnabled
     val incognitoMode get() = reader.incognitoMode
+    val secureScreen get() = reader.secureScreen
 
     // --- Library ---
     val libraryGridSize get() = library.libraryGridSize
