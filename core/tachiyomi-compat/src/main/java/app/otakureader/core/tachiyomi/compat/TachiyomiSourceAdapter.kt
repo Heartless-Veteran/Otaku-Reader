@@ -11,8 +11,11 @@ import app.otakureader.sourceapi.SourceManga
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import rx.Observable
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Adapter that wraps a Tachiyomi CatalogueSource and exposes it as an Otaku Reader MangaSource.
@@ -50,7 +53,7 @@ class TachiyomiSourceAdapter(
      */
     override suspend fun fetchPopularManga(page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
-            val mangasPage = tachiyomiSource.fetchPopularManga(page).toBlocking().first()
+            val mangasPage = tachiyomiSource.fetchPopularManga(page).awaitFirst()
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -60,7 +63,7 @@ class TachiyomiSourceAdapter(
      */
     override suspend fun fetchLatestUpdates(page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
-            val mangasPage = tachiyomiSource.fetchLatestUpdates(page).toBlocking().first()
+            val mangasPage = tachiyomiSource.fetchLatestUpdates(page).awaitFirst()
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -71,7 +74,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchSearchManga(page: Int, query: String, filters: FilterList): MangaPage {
         return withContext(Dispatchers.IO) {
             val tachiyomiFilters = convertFilters(filters)
-            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, tachiyomiFilters).toBlocking().first()
+            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, tachiyomiFilters).awaitFirst()
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -82,7 +85,7 @@ class TachiyomiSourceAdapter(
     suspend fun searchManga(query: String, page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
             val filterList = eu.kanade.tachiyomi.source.model.FilterList()
-            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, filterList).toBlocking().first()
+            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, filterList).awaitFirst()
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -93,7 +96,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchChapterList(manga: SourceManga): List<SourceChapter> {
         return withContext(Dispatchers.IO) {
             val sManga = TachiyomiModelsAdapter.toTachiyomiSManga(manga)
-            val sChapters = tachiyomiSource.fetchChapterList(sManga).toBlocking().first()
+            val sChapters = tachiyomiSource.fetchChapterList(sManga).awaitFirst()
             TachiyomiModelsAdapter.toSourceChapterList(sChapters)
         }
     }
@@ -104,7 +107,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchPageList(chapter: SourceChapter): List<Page> {
         return withContext(Dispatchers.IO) {
             val sChapter = TachiyomiModelsAdapter.toTachiyomiSChapter(chapter)
-            val sPages = tachiyomiSource.fetchPageList(sChapter).toBlocking().first()
+            val sPages = tachiyomiSource.fetchPageList(sChapter).awaitFirst()
             TachiyomiModelsAdapter.toPageList(sPages, chapter.hashCode().toLong())
         }
     }
@@ -115,7 +118,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchMangaDetails(manga: SourceManga): SourceManga {
         return withContext(Dispatchers.IO) {
             val sManga = TachiyomiModelsAdapter.toTachiyomiSManga(manga)
-            val detailedManga = tachiyomiSource.fetchMangaDetails(sManga).toBlocking().first()
+            val detailedManga = tachiyomiSource.fetchMangaDetails(sManga).awaitFirst()
             TachiyomiModelsAdapter.toSourceManga(
                 TachiyomiModelsAdapter.fromTachiyomiSManga(detailedManga),
             ).copy(url = manga.url)
@@ -253,4 +256,17 @@ class TachiyomiSourceAdapter(
         return map
     }
 
+    /**
+     * Suspends until this Observable emits its first item, propagating cancellation.
+     * Replaces toBlocking().first() to avoid blocking the IO thread pool under
+     * concurrent source requests (global search, background library updates).
+     */
+    private suspend fun <T> Observable<T>.awaitFirst(): T =
+        suspendCancellableCoroutine { cont ->
+            val subscription = first().subscribe(
+                { cont.resume(it) },
+                { cont.resumeWithException(it) }
+            )
+            cont.invokeOnCancellation { subscription.unsubscribe() }
+        }
 }
