@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -139,16 +141,15 @@ class ReaderViewModel @Inject constructor(
      */
     private fun observePageBookmarks() {
         viewModelScope.launch {
-            var previousJob: Job? = null
-            _state.collect { state ->
-                previousJob?.cancel()
-                previousJob = viewModelScope.launch {
-                    pageBookmarkRepository.isPageBookmarked(chapterId, state.currentPage)
-                        .collect { isBookmarked ->
-                            _state.update { it.copy(isCurrentPageBookmarked = isBookmarked) }
-                        }
+            _state
+                .map { it.currentPage }
+                .distinctUntilChanged()
+                .flatMapLatest { page ->
+                    pageBookmarkRepository.isPageBookmarked(chapterId, page)
                 }
-            }
+                .collect { isBookmarked ->
+                    _state.update { it.copy(isCurrentPageBookmarked = isBookmarked) }
+                }
         }
     }
 
@@ -712,7 +713,9 @@ class ReaderViewModel @Inject constructor(
      * Multiple rapid page changes will only trigger one save after the delay period.
      */
     private fun sharePage() {
-        // Implementation for sharing current page
+        viewModelScope.launch {
+            _effect.send(ReaderEffect.ShowSnackbar("Share page coming soon"))
+        }
     }
 
     private fun scheduleProgressSave() {
