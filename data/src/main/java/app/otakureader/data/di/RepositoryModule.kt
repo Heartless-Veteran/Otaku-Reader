@@ -46,6 +46,7 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
+/** Hilt module that binds data-layer repository implementations to their domain interfaces. */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
