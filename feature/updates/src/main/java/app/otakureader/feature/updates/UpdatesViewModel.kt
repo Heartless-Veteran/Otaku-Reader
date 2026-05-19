@@ -1,5 +1,6 @@
 package app.otakureader.feature.updates
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
@@ -9,6 +10,7 @@ import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecentUpdatesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
