@@ -569,6 +569,11 @@ style:
   UnusedPrivateMember:
     active: true
     allowedNames: '(_|ignored|expected|serialVersionUID)'
+    ignoreAnnotated:
+      - 'Preview'
+      - 'PreviewFontScale'
+      - 'PreviewLightDark'
+      - 'PreviewScreenSizes'
   UnusedPrivateProperty:
     active: true
     allowedNames: '_|ignored'
