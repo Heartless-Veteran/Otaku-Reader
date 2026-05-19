@@ -57,17 +57,20 @@ fun HankoBadge(
     count: Int,
     modifier: Modifier = Modifier
 ) {
+    var targetScale by remember { mutableStateOf(1f) }
+
     val scale by animateFloatAsState(
-        targetValue = 1f,
+        targetValue = targetScale,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
         ),
+        finishedListener = { targetScale = 1f },
         label = "hankoScale"
     )
 
     LaunchedEffect(count) {
-        // Trigger recomposition animation
+        targetScale = 1.25f
     }
 
     Box(

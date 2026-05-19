@@ -1,10 +1,20 @@
 package app.otakureader.core.ui.components
 
 import app.otakureader.core.ui.R
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
-
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
@@ -22,17 +33,25 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -40,8 +59,7 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.modifiers.bottomGradientScrim
 
 /**
- * Enhanced manga card with loading states, error handling, selection overlay,
- * reading progress bar, and Mihon-style title-on-gradient layout.
+ * Premium manga card with hover/press animations, depth, shimmer, and physical book feel.
  *
  * @param title The manga title to display
  * @param coverUrl The URL of the manga cover image
@@ -67,17 +85,87 @@ fun MangaCard(
     onLongClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-
     val otaku = LocalOtakuColors.current
 
-    Card(
-        modifier = modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick
+    // Hover + Press detection — both trigger same animations (DeX + touch)
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isActive = isHovered || isPressed
+
+    val scale by animateFloatAsState(
+        targetValue = if (isActive) 1.03f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        label = "mangaCardScale"
+    )
+
+    val tilt by animateFloatAsState(
+        targetValue = if (isActive) -1.5f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessVeryLow
+        ),
+        label = "mangaCardTilt"
+    )
+
+    // Shimmer sweep on hover/press
+    val shimmerProgress by rememberInfiniteTransition(label = "shimmer").animateFloat(
+        initialValue = -1f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerProgress"
+    )
+
+    Card(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+                rotationZ = tilt
+                shadowElevation = if (isActive) 16f else 6f
+            }
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        shape = RoundedCornerShape(2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF12121A))
     ) {
-        Box {
+        Box(
+            modifier = if (isActive) {
+                Modifier.drawWithContent {
+                    drawContent()
+                    // Shimmer sweep overlay
+                    val shimmerBrush = Brush.linearGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.White.copy(alpha = 0.12f),
+                            Color.Transparent
+                        ),
+                        start = androidx.compose.ui.geometry.Offset(
+                            shimmerProgress * size.width,
+                            0f
+                        ),
+                        end = androidx.compose.ui.geometry.Offset(
+                            (shimmerProgress + 0.5f) * size.width,
+                            size.height
+                        )
+                    )
+                    drawRect(brush = shimmerBrush, blendMode = BlendMode.Plus)
+                }
+            } else {
+                Modifier
+            }
+        ) {
             // Cover image
             SubcomposeAsyncImage(
                 model = ImageRequest.Builder(context)
@@ -122,10 +210,18 @@ fun MangaCard(
                     )
             )
 
-            // Title overlaid at bottom
+            // Title overlaid at bottom with shadow for readability
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 11.sp,
+                    shadow = Shadow(
+                        color = Color.Black.copy(alpha = 0.8f),
+                        offset = androidx.compose.ui.geometry.Offset(1f, 1f),
+                        blurRadius = 4f
+                    )
+                ),
                 color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -135,12 +231,12 @@ fun MangaCard(
                     .fillMaxWidth(),
             )
 
-            // Unread / custom badge
+            // Unread / custom badge — offset so it "floats" off the card edge
             badge?.let {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(4.dp)
+                        .offset(x = 4.dp, y = (-4).dp)
                 ) {
                     it()
                 }
@@ -178,6 +274,30 @@ fun MangaCard(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun MangaCardPreview() {
+    MangaCard(
+        title = "Attack on Titan",
+        coverUrl = null,
+        onClick = {},
+        badge = { HankoBadge(count = 5) },
+        readProgress = 0.6f
+    )
+}
+
+@Preview
+@Composable
+private fun MangaCardSelectedPreview() {
+    MangaCard(
+        title = "Demon Slayer",
+        coverUrl = null,
+        onClick = {},
+        isSelected = true,
+        readProgress = 0.3f
+    )
 }
 
 @Composable

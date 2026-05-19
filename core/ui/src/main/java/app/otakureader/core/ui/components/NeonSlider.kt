@@ -1,7 +1,10 @@
 package app.otakureader.core.ui.components
 
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -20,7 +23,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import kotlin.random.Random
 
@@ -46,7 +48,7 @@ fun NeonSlider(
             Sparkle(
                 offset = sparkleRandom.nextFloat(),
                 size = 2f + sparkleRandom.nextFloat() * 3f,
-                phase = (sparkleRandom.nextFloat() * 1000).toLong()
+                phase = sparkleRandom.nextFloat() * 1000
             )
         }
     }
@@ -55,6 +57,16 @@ fun NeonSlider(
         targetValue = if (isDragging) 1f else 0.7f,
         animationSpec = tween(200),
         label = "neonPulse"
+    )
+
+    val infiniteTransition = rememberInfiniteTransition(label = "sparklePulse")
+    val sparklePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (kotlin.math.PI * 2).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = LinearEasing)
+        ),
+        label = "sparklePhase"
     )
 
     Box(
@@ -122,9 +134,9 @@ fun NeonSlider(
 
             // Particle sparkles near thumb
             if (isDragging || animatedValue > 0.05f) {
-                sparkles.forEach { sparkle ->
+                sparkles.forEachIndexed { index, sparkle ->
                     val sparkleAlpha = ((kotlin.math.sin(
-                        (System.currentTimeMillis() + sparkle.phase) * 0.005
+                        sparklePhase + index * 0.8f + sparkle.offset * 2f
                     ) + 1) / 2).toFloat() * 0.8f * pulseAlpha
 
                     val sparkleX = (filledWidth - 20.dp.toPx() + sparkle.offset * 40.dp.toPx())
