@@ -6,10 +6,12 @@ import android.content.pm.PackageManager
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Bundle
-import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import eu.kanade.tachiyomi.source.Source
-import eu.kanade.tachiyomi.source.SourceFactory
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -17,11 +19,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -39,14 +36,13 @@ import org.robolectric.annotation.Config
 @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class TachiyomiExtensionLoaderTest {
 
-    @Mock
-    private lateinit var packageManager: PackageManager
+    private val packageManager: PackageManager = mockk()
 
     private lateinit var loader: TachiyomiExtensionLoader
 
     @Before
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
+        MockKAnnotations.init(this)
         loader = TachiyomiExtensionLoader(packageManager)
     }
 
@@ -165,12 +161,9 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension by package name returns null when package not found`() {
         // Given
         val packageName = "nonexistent.package"
-        Mockito.`when`(
-            packageManager.getPackageInfo(
-                eq(packageName),
-                anyInt(),
-            ),
-        ).thenThrow(PackageManager.NameNotFoundException("Package not found"))
+        every {
+            packageManager.getPackageInfo(packageName, any())
+        } throws PackageManager.NameNotFoundException("Package not found")
 
         // When
         val result = loader.loadExtension(packageName)
@@ -448,9 +441,9 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension handles SecurityException gracefully`() {
         // Given: PackageManager throws SecurityException
         val packageName = "eu.kanade.tachiyomi.extension.en.secure"
-        Mockito.`when`(
-            packageManager.getPackageInfo(eq(packageName), anyInt()),
-        ).thenThrow(SecurityException("Not allowed"))
+        every {
+            packageManager.getPackageInfo(packageName, any())
+        } throws SecurityException("Not allowed")
 
         // When
         val result = loader.loadExtension(packageName)
@@ -463,9 +456,9 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtensionFromApk returns null for invalid APK path`() {
         // Given: PackageManager returns null for archive info
         val apkPath = "/invalid/path/to/extension.apk"
-        Mockito.`when`(
-            packageManager.getPackageArchiveInfo(eq(apkPath), anyInt()),
-        ).thenReturn(null)
+        every {
+            packageManager.getPackageArchiveInfo(apkPath, any())
+        } returns null
 
         // When
         val result = loader.loadExtensionFromApk(apkPath)
@@ -478,9 +471,9 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtensionFromApk handles exception during parsing`() {
         // Given: PackageManager throws exception
         val apkPath = "/fake/bad.apk"
-        Mockito.`when`(
-            packageManager.getPackageArchiveInfo(eq(apkPath), anyInt()),
-        ).thenThrow(RuntimeException("Corrupted APK"))
+        every {
+            packageManager.getPackageArchiveInfo(apkPath, any())
+        } throws RuntimeException("Corrupted APK")
 
         // When
         val result = loader.loadExtensionFromApk(apkPath)
@@ -493,9 +486,9 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension handles package manager NameNotFoundException`() {
         // Given
         val packageName = "missing.package"
-        Mockito.`when`(
-            packageManager.getPackageInfo(eq(packageName), anyInt()),
-        ).thenThrow(PackageManager.NameNotFoundException())
+        every {
+            packageManager.getPackageInfo(packageName, any())
+        } throws PackageManager.NameNotFoundException()
 
         // When
         val result = loader.loadExtension(packageName)
@@ -621,20 +614,19 @@ class TachiyomiExtensionLoaderTest {
                 this.sourceDir = "/fake/$packageName.apk"
                 this.nativeLibraryDir = "/fake/lib"
                 this.metaData = bundle
-                this.loadLabel(packageManager) // Will be mocked
             }
         }
     }
 
     private fun mockInstalledPackages(packages: List<PackageInfo>) {
-        Mockito.`when`(
-            packageManager.getInstalledPackages(anyInt()),
-        ).thenReturn(packages)
+        every {
+            packageManager.getInstalledPackages(any())
+        } returns packages
     }
 
     private fun mockPackageInfo(packageName: String, packageInfo: PackageInfo) {
-        Mockito.`when`(
-            packageManager.getPackageInfo(eq(packageName), anyInt()),
-        ).thenReturn(packageInfo)
+        every {
+            packageManager.getPackageInfo(packageName, any())
+        } returns packageInfo
     }
 }
