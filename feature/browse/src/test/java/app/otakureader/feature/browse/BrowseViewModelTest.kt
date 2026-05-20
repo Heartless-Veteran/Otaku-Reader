@@ -3,6 +3,8 @@ package app.otakureader.feature.browse
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.repository.FeedRepository
+import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
@@ -16,17 +18,23 @@ import app.otakureader.sourceapi.SourceManga
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -34,26 +42,44 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrowseViewModelTest {
 
-    private val getSourcesUseCase: GetSourcesUseCase = mockk()
-    private val getPopularMangaUseCase: GetPopularMangaUseCase = mockk()
-    private val getLatestUpdatesUseCase: GetLatestUpdatesUseCase = mockk()
-    private val searchMangaUseCase: SearchMangaUseCase = mockk()
-    private val getSourceFiltersUseCase: GetSourceFiltersUseCase = mockk()
-    private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase = mockk()
+    // Repository mocks — coEvery works correctly with interface mocks
+    private val sourceRepository: SourceRepository = mockk()
+    private val mangaRepository: MangaRepository = mockk()
     private val feedRepository: FeedRepository = mockk()
     private val generalPreferences: GeneralPreferences = mockk()
+
+    // Real use cases wired to repository mocks
+    private val getSourcesUseCase = GetSourcesUseCase(sourceRepository)
+    private val getPopularMangaUseCase = GetPopularMangaUseCase(sourceRepository)
+    private val getLatestUpdatesUseCase = GetLatestUpdatesUseCase(sourceRepository)
+    private val searchMangaUseCase = SearchMangaUseCase(sourceRepository)
+    private val getSourceFiltersUseCase = GetSourceFiltersUseCase(sourceRepository)
+    private val addMangaToLibraryUseCase = AddMangaToLibraryUseCase(mangaRepository)
 
     private lateinit var viewModel: BrowseViewModel
     private val testDispatcher = StandardTestDispatcher()
 
+    // Separate scope used to subscribe to state so that stateIn(WhileSubscribed) starts collecting.
+    private lateinit var collectScope: CoroutineScope
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        collectScope = CoroutineScope(testDispatcher)
 
-        // Default stubs
-        every { getSourcesUseCase() } returns flowOf(emptyList())
+        // Default stubs — applied before ViewModel creation
+        every { sourceRepository.getSources() } returns flowOf(emptyList())
         every { generalPreferences.showNsfwContent } returns flowOf(false)
         every { feedRepository.getSavedSearches() } returns flowOf(emptyList())
+
+        // Fallback stubs for suspend calls that may be triggered by SelectSource even in search tests.
+        // Individual tests can override with more specific stubs as needed.
+        coEvery { sourceRepository.getPopularManga(any(), any()) } returns Result.success(MangaPage(emptyList(), false))
+        coEvery { sourceRepository.getLatestUpdates(any(), any()) } returns Result.success(MangaPage(emptyList(), false))
+        coEvery { sourceRepository.searchManga(any(), any(), any(), any()) } returns Result.success(MangaPage(emptyList(), false))
+        coEvery { sourceRepository.getSourceFilters(any()) } returns FilterList()
+        coEvery { mangaRepository.getMangaBySourceAndUrl(any(), any()) } returns null
+        coEvery { mangaRepository.insertManga(any()) } returns 1L
 
         viewModel = BrowseViewModel(
             getSourcesUseCase = getSourcesUseCase,
@@ -65,12 +91,30 @@ class BrowseViewModelTest {
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
+        // Subscribe to activate stateIn(WhileSubscribed); will start collecting on first advanceUntilIdle.
+        collectScope.launch { viewModel.state.collect { } }
     }
 
     @After
     fun teardown() {
+        collectScope.cancel()
         Dispatchers.resetMain()
     }
+
+    // Called after reassigning viewModel inside a test to re-activate stateIn for the new instance.
+    private fun activateStateCollection() {
+        collectScope.launch { viewModel.state.collect { } }
+    }
+
+    private fun createMangaSource(id: String, name: String = "Test Source", lang: String = "en", isNsfw: Boolean = false) =
+        mockk<MangaSource> {
+            every { this@mockk.id } returns id
+            every { this@mockk.name } returns name
+            every { this@mockk.lang } returns lang
+            every { this@mockk.baseUrl } returns ""
+            every { this@mockk.isNsfw } returns isNsfw
+            every { this@mockk.supportsLatest } returns true
+        }
 
     @Test
     fun `initial state has empty sources and no loading`() = runTest {
@@ -82,15 +126,15 @@ class BrowseViewModelTest {
 
     @Test
     fun `select source loads popular manga`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)),
             hasNextPage = true
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { getPopularMangaUseCase("1", 1) } returns Result.success(mangaPage)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getPopularManga("1", 1) } returns Result.success(mangaPage)
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -112,7 +156,7 @@ class BrowseViewModelTest {
 
     @Test
     fun `search performs search with query`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(
                 SourceManga(title = "One Piece", url = "url1", thumbnailUrl = null),
@@ -121,9 +165,9 @@ class BrowseViewModelTest {
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { searchMangaUseCase("1", "One", 1, any()) } returns Result.success(mangaPage)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.searchManga("1", "One", 1, any()) } returns Result.success(mangaPage)
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -139,45 +183,51 @@ class BrowseViewModelTest {
 
     @Test
     fun `toggle filter sheet changes visibility`() = runTest {
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(false, viewModel.state.value.showFilterSheet)
 
         viewModel.onEvent(BrowseEvent.ToggleFilterSheet)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(true, viewModel.state.value.showFilterSheet)
 
         viewModel.onEvent(BrowseEvent.ToggleFilterSheet)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(false, viewModel.state.value.showFilterSheet)
     }
 
     @Test
     fun `clear selection resets state`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val manga = SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { getPopularMangaUseCase("1", 1) } returns Result.success(MangaPage(listOf(manga), false))
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getPopularManga("1", 1) } returns Result.success(MangaPage(listOf(manga), false))
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(BrowseEvent.OnMangaLongClick(manga))
+        testDispatcher.scheduler.advanceUntilIdle()
         assertTrue(viewModel.state.value.isBulkSelectionMode)
         assertEquals(1, viewModel.state.value.selectedManga.size)
 
         viewModel.onEvent(BrowseEvent.ClearSelection)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertFalse(viewModel.state.value.isBulkSelectionMode)
         assertEquals(0, viewModel.state.value.selectedManga.size)
     }
 
     @Test
     fun `add selected to library sends success effect`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val manga = SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { getPopularMangaUseCase("1", 1) } returns Result.success(MangaPage(listOf(manga), false))
-        coEvery { addMangaToLibraryUseCase(listOf(manga), "1") } returns Result.success(1)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getPopularManga("1", 1) } returns Result.success(MangaPage(listOf(manga), false))
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
+        coEvery { mangaRepository.getMangaBySourceAndUrl(any(), any()) } returns null
+        coEvery { mangaRepository.insertManga(any()) } returns 1L
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -186,13 +236,14 @@ class BrowseViewModelTest {
         viewModel.onEvent(BrowseEvent.AddSelectedToLibrary)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val effect = viewModel.effect.first()
+        val effect = withTimeoutOrNull(1000) { viewModel.effect.first() }
+        assertNotNull(effect)
         assertTrue(effect is BrowseEffect.ShowSnackbar)
     }
 
     @Test
     fun `load next page appends results`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val page1 = MangaPage(
             mangas = listOf(SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)),
             hasNextPage = true
@@ -202,10 +253,10 @@ class BrowseViewModelTest {
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { getPopularMangaUseCase("1", 1) } returns Result.success(page1)
-        coEvery { getPopularMangaUseCase("1", 2) } returns Result.success(page2)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getPopularManga("1", 1) } returns Result.success(page1)
+        coEvery { sourceRepository.getPopularManga("1", 2) } returns Result.success(page2)
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -225,21 +276,22 @@ class BrowseViewModelTest {
         viewModel.onEvent(BrowseEvent.RefreshSources)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val effect = viewModel.effect.first()
+        val effect = withTimeoutOrNull(1000) { viewModel.effect.first() }
+        assertNotNull(effect)
         assertTrue(effect is BrowseEffect.ShowSnackbar)
     }
 
     @Test
     fun `search results remain visible after search completes`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(SourceManga(title = "Naruto", url = "url1", thumbnailUrl = null)),
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { searchMangaUseCase("1", "Naruto", 1, any()) } returns Result.success(mangaPage)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.searchManga("1", "Naruto", 1, any()) } returns Result.success(mangaPage)
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -256,17 +308,17 @@ class BrowseViewModelTest {
 
     @Test
     fun `selecting source resets search results`() = runTest {
-        val source1 = MangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
-        val source2 = MangaSource(id = "2", name = "Source 2", lang = "en", isNsfw = false)
+        val source1 = createMangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
+        val source2 = createMangaSource(id = "2", name = "Source 2", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)),
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source1, source2))
-        coEvery { searchMangaUseCase("1", "query", 1, any()) } returns Result.success(mangaPage)
-        coEvery { getPopularMangaUseCase("2", 1) } returns Result.success(MangaPage(emptyList(), false))
-        every { getSourceFiltersUseCase(any()) } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source1, source2))
+        coEvery { sourceRepository.searchManga("1", "query", 1, any()) } returns Result.success(mangaPage)
+        coEvery { sourceRepository.getPopularManga("2", 1) } returns Result.success(MangaPage(emptyList(), false))
+        coEvery { sourceRepository.getSourceFilters(any()) } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -284,15 +336,15 @@ class BrowseViewModelTest {
 
     @Test
     fun `clearing query resets hasSearchResults`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(SourceManga(title = "Manga", url = "url1", thumbnailUrl = null)),
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        coEvery { searchMangaUseCase("1", "query", 1, any()) } returns Result.success(mangaPage)
-        every { getSourceFiltersUseCase("1") } returns FilterList()
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.searchManga("1", "query", 1, any()) } returns Result.success(mangaPage)
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -302,6 +354,7 @@ class BrowseViewModelTest {
         assertTrue("hasSearchResults must be true after search", viewModel.state.value.hasSearchResults)
 
         viewModel.onEvent(BrowseEvent.OnSearchQueryChange(""))
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("hasSearchResults must be false when query cleared", false, viewModel.state.value.hasSearchResults)
     }
 
@@ -309,12 +362,12 @@ class BrowseViewModelTest {
     fun `saved searches filtered to selected source`() = runTest {
         val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "1", query = "one piece", filters = emptyMap())
         val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "2", query = "naruto", filters = emptyMap())
-        val source = MangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
 
         every { feedRepository.getSavedSearches() } returns flowOf(listOf(search1, search2))
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        every { getSourceFiltersUseCase("1") } returns FilterList()
-        coEvery { getPopularMangaUseCase("1", 1) } returns Result.success(MangaPage(emptyList(), false))
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
+        coEvery { sourceRepository.getPopularManga("1", 1) } returns Result.success(MangaPage(emptyList(), false))
 
         viewModel = BrowseViewModel(
             getSourcesUseCase = getSourcesUseCase,
@@ -326,6 +379,7 @@ class BrowseViewModelTest {
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
+        activateStateCollection()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -339,14 +393,14 @@ class BrowseViewModelTest {
     fun `saved searches update when source changes`() = runTest {
         val search1 = FeedSavedSearch(id = 1L, sourceId = 1L, sourceName = "1", query = "one piece", filters = emptyMap())
         val search2 = FeedSavedSearch(id = 2L, sourceId = 2L, sourceName = "2", query = "naruto", filters = emptyMap())
-        val source1 = MangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
-        val source2 = MangaSource(id = "2", name = "Source 2", lang = "en", isNsfw = false)
+        val source1 = createMangaSource(id = "1", name = "Source 1", lang = "en", isNsfw = false)
+        val source2 = createMangaSource(id = "2", name = "Source 2", lang = "en", isNsfw = false)
 
         val savedSearchFlow = MutableStateFlow(listOf(search1, search2))
         every { feedRepository.getSavedSearches() } returns savedSearchFlow
-        every { getSourcesUseCase() } returns flowOf(listOf(source1, source2))
-        every { getSourceFiltersUseCase(any()) } returns FilterList()
-        coEvery { getPopularMangaUseCase(any(), 1) } returns Result.success(MangaPage(emptyList(), false))
+        every { sourceRepository.getSources() } returns flowOf(listOf(source1, source2))
+        coEvery { sourceRepository.getSourceFilters(any()) } returns FilterList()
+        coEvery { sourceRepository.getPopularManga(any(), 1) } returns Result.success(MangaPage(emptyList(), false))
 
         viewModel = BrowseViewModel(
             getSourcesUseCase = getSourcesUseCase,
@@ -358,6 +412,7 @@ class BrowseViewModelTest {
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
+        activateStateCollection()
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -372,20 +427,21 @@ class BrowseViewModelTest {
 
     @Test
     fun `apply filters hides sheet and searches`() = runTest {
-        val source = MangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
+        val source = createMangaSource(id = "1", name = "Test Source", lang = "en", isNsfw = false)
         val mangaPage = MangaPage(
             mangas = listOf(SourceManga(title = "Manga 1", url = "url1", thumbnailUrl = null)),
             hasNextPage = false
         )
 
-        every { getSourcesUseCase() } returns flowOf(listOf(source))
-        every { getSourceFiltersUseCase("1") } returns FilterList()
-        coEvery { searchMangaUseCase("1", "", 1, any()) } returns Result.success(mangaPage)
+        every { sourceRepository.getSources() } returns flowOf(listOf(source))
+        coEvery { sourceRepository.getSourceFilters("1") } returns FilterList()
+        coEvery { sourceRepository.searchManga("1", "", 1, any()) } returns Result.success(mangaPage)
 
         viewModel.onEvent(BrowseEvent.SelectSource("1"))
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(BrowseEvent.ToggleFilterSheet)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertTrue(viewModel.state.value.showFilterSheet)
 
         viewModel.onEvent(BrowseEvent.ApplyFilters)

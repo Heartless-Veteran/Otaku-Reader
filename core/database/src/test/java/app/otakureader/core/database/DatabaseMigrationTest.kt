@@ -442,14 +442,3 @@ private fun SupportSQLiteDatabase.indexNames(table: String): Set<String> {
     }
     return names
 }
-
-private fun SupportSQLiteDatabase.columnDefaultValue(table: String, column: String): String? {
-    query("PRAGMA table_info(`$table`)").use { cursor ->
-        val nameIdx = cursor.getColumnIndex("name")
-        val dfltIdx = cursor.getColumnIndex("dflt_value")
-        while (cursor.moveToNext()) {
-            if (cursor.getString(nameIdx) == column) return cursor.getString(dfltIdx)
-        }
-    }
-    return null
-}

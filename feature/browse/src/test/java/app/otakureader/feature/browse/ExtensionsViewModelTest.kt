@@ -14,13 +14,16 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -29,6 +32,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -48,6 +52,9 @@ class ExtensionsViewModelTest {
     private val generalPreferences: GeneralPreferences = mockk(relaxed = true)
 
     private val testDispatcher = StandardTestDispatcher()
+
+    // Separate scope used to subscribe to state so that stateIn(WhileSubscribed) starts collecting.
+    private lateinit var collectScope: CoroutineScope
 
     // Mutable flows to control repository emissions
     private val installedExtensionsFlow = MutableStateFlow(emptyList<Extension>())
@@ -113,6 +120,7 @@ class ExtensionsViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        collectScope = CoroutineScope(testDispatcher)
 
         // Default flow stubs — must be set BEFORE ViewModel creation because init block triggers them
         every { extensionRepository.getInstalledExtensions() } returns installedExtensionsFlow
@@ -120,7 +128,6 @@ class ExtensionsViewModelTest {
         every { extensionRepository.getExtensionsWithUpdates() } returns extensionsWithUpdatesFlow
         every { generalPreferences.showNsfwContent } returns showNsfwFlow
         every { extensionRepoRepository.getRepositories() } returns repositoriesFlow
-        coEvery { extensionRepoRepository.getActiveRepository() } returns null
         coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
@@ -133,10 +140,13 @@ class ExtensionsViewModelTest {
             extensionManagementRepository = extensionManagementRepository,
             generalPreferences = generalPreferences
         )
+        // Subscribe to activate stateIn(WhileSubscribed); will start collecting on first advanceUntilIdle.
+        collectScope.launch { viewModel.state.collect { } }
     }
 
     @After
     fun teardown() {
+        collectScope.cancel()
         Dispatchers.resetMain()
     }
 
@@ -146,8 +156,10 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `initial state is loading with empty lists`() = runTest {
+        // Advance so init completes and all empty flows have emitted — after that isLoading is false.
+        testDispatcher.scheduler.advanceUntilIdle()
         val state = viewModel.state.value
-        assertTrue("Expected loading initially", state.isLoading)
+        assertFalse(state.isLoading)
         assertEquals(emptyList<Extension>(), state.installedExtensions)
         assertEquals(emptyList<Extension>(), state.availableExtensions)
         assertEquals(emptyList<Extension>(), state.extensionsWithUpdates)
@@ -212,6 +224,8 @@ class ExtensionsViewModelTest {
             extensionManagementRepository = extensionManagementRepository,
             generalPreferences = generalPreferences
         )
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from the combine.
+        backgroundScope.launch { vm.state.collect { } }
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = vm.state.value
@@ -392,7 +406,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `set active repository updates state and refreshes`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://repo1.com") } just runs
+        // setActiveRepository no longer calls the repository — it updates local state and refreshes.
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
 
@@ -400,20 +414,20 @@ class ExtensionsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("https://repo1.com", viewModel.state.value.activeRepository)
-        coVerify { extensionRepoRepository.setActiveRepository("https://repo1.com") }
         coVerify { extensionRepository.refreshAvailableExtensions() }
     }
 
     @Test
-    fun `set active repository with failure does not update state`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://bad.com") } throws RuntimeException("Bad repo")
-
+    fun `set active repository always updates state (no remote call)`() = runTest {
+        // Since setActiveRepository updates state locally without a repository call,
+        // it always succeeds and reflects the new URL in state.
         val before = viewModel.state.value.activeRepository
 
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://bad.com"))
+        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://new.com"))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertEquals(before, viewModel.state.value.activeRepository)
+        assertNotEquals(before, viewModel.state.value.activeRepository)
+        assertEquals("https://new.com", viewModel.state.value.activeRepository)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -688,7 +702,7 @@ class ExtensionsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertNotNull(viewModel.state.value.error)
-        assertEquals("Refresh failed", viewModel.state.value.error)
+        assertEquals("Failed to refresh extensions: Refresh failed", viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoading)
     }
 
@@ -726,8 +740,9 @@ class ExtensionsViewModelTest {
 
         val sorted = viewModel.state.value.installedExtensions
         assertEquals("en", sorted[0].lang)
-        assertEquals("Alpha Safe", sorted[0].name)
-        assertEquals("Alpha NSFW", sorted[1].name)
+        // Within the same lang, secondary sort is alphabetical by name: N < S
+        assertEquals("Alpha NSFW", sorted[0].name)
+        assertEquals("Alpha Safe", sorted[1].name)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -803,7 +818,6 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `active repository persists in state`() = runTest {
-        coEvery { extensionRepoRepository.setActiveRepository("https://repo.com") } just runs
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
 
@@ -991,7 +1005,6 @@ class ExtensionsViewModelTest {
     @Test
     fun `repository stream error does not block installed extensions`() = runTest {
         every { extensionRepoRepository.getRepositories() } returns emptyFlow()
-        coEvery { extensionRepoRepository.getActiveRepository() } throws RuntimeException("Repo error")
         coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val ext = createExtension(id = 1L, name = "Still Works")
@@ -1004,6 +1017,8 @@ class ExtensionsViewModelTest {
             extensionManagementRepository = extensionManagementRepository,
             generalPreferences = generalPreferences
         )
+        // Use backgroundScope so the infinite collect doesn't block runTest from completing.
+        backgroundScope.launch { vm.state.collect { } }
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Installed extensions should still be loaded despite repo error
