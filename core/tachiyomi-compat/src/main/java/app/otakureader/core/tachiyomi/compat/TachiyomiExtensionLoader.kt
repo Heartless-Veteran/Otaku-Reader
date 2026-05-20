@@ -191,7 +191,7 @@ class TachiyomiExtensionLoader(
 
         val extension = LoadedExtension(
             packageName = packageName,
-            name = appInfo.loadLabel(packageManager).toString().substringAfter("Tachiyomi: "),
+            name = (appInfo.loadLabel(packageManager)?.toString() ?: packageName).substringAfter("Tachiyomi: "),
             versionName = packageInfo.versionName ?: "unknown",
             versionCode = incomingVersionCode,
             lang = lang,

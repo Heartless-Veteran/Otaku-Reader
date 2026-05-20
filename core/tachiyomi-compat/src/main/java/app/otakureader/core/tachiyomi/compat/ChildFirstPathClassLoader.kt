@@ -26,6 +26,11 @@ internal class ChildFirstPathClassLoader(
     parent: ClassLoader,
 ) : PathClassLoader(dexPath, librarySearchPath, parent) {
 
+    // Store the parent explicitly: in unit-test environments the Android stub's
+    // BaseDexClassLoader constructor may not call super(parent), leaving the
+    // ClassLoader.parent field unset and breaking the standard delegation chain.
+    // Using this field directly ensures we always reach the host app classloader.
+    private val hostClassLoader: ClassLoader = parent
     private val systemClassLoader: ClassLoader? = getSystemClassLoader()
 
     override fun loadClass(name: String?, resolve: Boolean): Class<*> {
@@ -39,9 +44,15 @@ internal class ChildFirstPathClassLoader(
 
         if (c == null) {
             c = try {
-                findClass(name)
+                findClass(name) ?: hostClassLoader.loadClass(name)
             } catch (_: ClassNotFoundException) {
-                super.loadClass(name, resolve)
+                hostClassLoader.loadClass(name)
+            } catch (_: Throwable) {
+                // In unit-test environments the PathClassLoader stub may throw
+                // RuntimeException instead of ClassNotFoundException for missing
+                // classes. Fall back to the host app classloader so test-classpath
+                // stubs are still reachable.
+                hostClassLoader.loadClass(name)
             }
         }
 

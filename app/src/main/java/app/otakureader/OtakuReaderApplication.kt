@@ -14,6 +14,7 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
+import coil3.request.crossfade
 import com.google.android.material.color.DynamicColors
 import dagger.hilt.android.HiltAndroidApp
 import okhttp3.OkHttpClient

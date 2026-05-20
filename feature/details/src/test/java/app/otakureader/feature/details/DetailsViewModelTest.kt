@@ -2,6 +2,7 @@ package app.otakureader.feature.details
 
 import androidx.lifecycle.SavedStateHandle
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
@@ -43,6 +44,7 @@ class DetailsViewModelTest {
     private lateinit var downloadRepository: DownloadRepository
     private lateinit var sourceRepository: SourceRepository
     private lateinit var downloadPreferences: DownloadPreferences
+    private lateinit var generalPreferences: GeneralPreferences
     private lateinit var updateMangaNote: UpdateMangaNoteUseCase
     private lateinit var setMangaNotifications: SetMangaNotificationsUseCase
     private lateinit var savedStateHandle: SavedStateHandle
@@ -71,6 +73,7 @@ class DetailsViewModelTest {
         downloadRepository = mockk()
         sourceRepository = mockk(relaxed = true)
         downloadPreferences = mockk()
+        generalPreferences = mockk(relaxed = true)
         updateMangaNote = mockk()
         setMangaNotifications = mockk()
         savedStateHandle = SavedStateHandle(mapOf(DetailsViewModel.MANGA_ID_ARG to mangaId))
@@ -89,6 +92,7 @@ class DetailsViewModelTest {
             downloadRepository,
             sourceRepository,
             downloadPreferences,
+            generalPreferences,
             updateMangaNote,
             setMangaNotifications,
         )
