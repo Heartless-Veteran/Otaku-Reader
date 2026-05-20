@@ -52,6 +52,8 @@
     <string name="settings_grid_layout_staggered">Staggered</string>
     <string name="settings_show_unread_badges">Show Unread Badges</string>
     <string name="settings_show_unread_badges_description">Display unread chapter count on covers</string>
+    <string name="settings_show_download_badge">Show Download Badge</string>
+    <string name="settings_show_download_badge_description">Show downloaded chapter count on library covers</string>
 
     <!-- Browse -->
     <string name="settings_browse">Browse</string>

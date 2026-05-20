@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -85,6 +86,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.components.DownloadBadge
+import app.otakureader.core.ui.components.IncognitoBanner
 import app.otakureader.core.ui.components.MangaCard
 import app.otakureader.core.ui.components.ManhwaCard
 import app.otakureader.core.ui.components.OtakuChip
@@ -223,6 +226,16 @@ fun LibraryScreen(
                 else -> TopAppBar(
                     title = { Text(stringResource(R.string.library_title)) },
                     actions = {
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleIncognito) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.VisibilityOff,
+                                contentDescription = "Toggle incognito mode",
+                                tint = if (state.incognitoMode)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
@@ -301,10 +314,15 @@ private fun LibraryContent(
     }
     var detailManga by remember { mutableStateOf<LibraryMangaItem?>(null) }
 
+    Column(modifier = modifier.fillMaxSize()) {
+        if (state.incognitoMode) {
+            IncognitoBanner()
+        }
+
     PullToRefreshBox(
         isRefreshing = state.isRefreshing,
         onRefresh = { onEvent(LibraryEvent.Refresh) },
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.weight(1f)
     ) {
         when {
             state.isLoading && state.mangaList.isEmpty() -> {
@@ -348,6 +366,7 @@ private fun LibraryContent(
             }
         }
     }
+    } // end Column
 }
 
 /** Returns true when a manga item belongs to the manhwa/webtoon content type. */
@@ -476,6 +495,7 @@ private fun MangaGrid(
                                 .coerceAtLeast(0)
                                 .toFloat() / manga.totalChapterCount
                         } else null
+                        val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                         MangaCard(
                             title = manga.title,
                             coverUrl = manga.thumbnailUrl,
@@ -486,9 +506,23 @@ private fun MangaGrid(
                             onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
                             isSelected = manga.id in state.selectedManga,
                             readProgress = readProgress,
-                            badge = if (state.showBadges && manga.unreadCount > 0) {
-                                { UnreadBadge(count = manga.unreadCount) }
-                            } else null,
+                            badge = when {
+                                state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
+                                    {
+                                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                            UnreadBadge(count = manga.unreadCount)
+                                            DownloadBadge(count = downloadCount)
+                                        }
+                                    }
+                                }
+                                state.showBadges && manga.unreadCount > 0 -> {
+                                    { UnreadBadge(count = manga.unreadCount) }
+                                }
+                                state.showDownloadBadge && downloadCount > 0 -> {
+                                    { DownloadBadge(count = downloadCount) }
+                                }
+                                else -> null
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -533,6 +567,7 @@ private fun MangaGrid(
                         .coerceAtLeast(0)
                         .toFloat() / manga.totalChapterCount
                 } else null
+                val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                 val cardContent: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
@@ -544,9 +579,23 @@ private fun MangaGrid(
                         onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
                         isSelected = manga.id in state.selectedManga,
                         readProgress = readProgress,
-                        badge = if (state.showBadges && manga.unreadCount > 0) {
-                            { UnreadBadge(count = manga.unreadCount) }
-                        } else null,
+                        badge = when {
+                            state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
+                                {
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        UnreadBadge(count = manga.unreadCount)
+                                        DownloadBadge(count = downloadCount)
+                                    }
+                                }
+                            }
+                            state.showBadges && manga.unreadCount > 0 -> {
+                                { UnreadBadge(count = manga.unreadCount) }
+                            }
+                            state.showDownloadBadge && downloadCount > 0 -> {
+                                { DownloadBadge(count = downloadCount) }
+                            }
+                            else -> null
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

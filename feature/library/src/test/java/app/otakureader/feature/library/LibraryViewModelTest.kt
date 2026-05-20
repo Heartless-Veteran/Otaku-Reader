@@ -9,8 +9,10 @@ import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.ReadingList
 import app.otakureader.domain.model.ReadingListMangaItem
+import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.tracking.TrackRepository
@@ -51,6 +53,7 @@ class LibraryViewModelTest {
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var downloadRepository: DownloadRepository
+    private lateinit var settingsRepository: ReaderSettingsRepository
     private lateinit var trackRepository: TrackRepository
     private lateinit var getCategories: GetCategoriesUseCase
     private lateinit var getContinueReading: GetContinueReadingUseCase
@@ -73,19 +76,26 @@ class LibraryViewModelTest {
         libraryPreferences = mockk {
             every { gridSize } returns flowOf(3)
             every { showBadges } returns flowOf(true)
+            every { showDownloadBadge } returns flowOf(true)
             every { librarySortMode } returns flowOf(0)
             every { libraryFilterMode } returns flowOf(0)
             every { libraryFilterSourceId } returns flowOf(null)
+            every { isStaggeredGrid } returns flowOf(false)
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
             every { lastUpdatesViewedAt } returns flowOf(0L)
+            every { visualEffectsEnabled } returns flowOf(true)
         }
         chapterRepository = mockk {
             every { countNewUpdatesSince(any()) } returns flowOf(0)
         }
         downloadRepository = mockk {
             coEvery { hasMangaDownloads(any(), any()) } returns false
+            every { observeDownloads() } returns flowOf(emptyList())
+        }
+        settingsRepository = mockk {
+            every { incognitoMode } returns flowOf(false)
         }
         trackRepository = mockk {
             every { observeEntriesForManga(any()) } returns flowOf(emptyList())
@@ -127,6 +137,7 @@ class LibraryViewModelTest {
             generalPreferences,
             chapterRepository,
             downloadRepository,
+            settingsRepository,
             trackRepository,
             getCategories,
             getContinueReading,
@@ -572,5 +583,60 @@ class LibraryViewModelTest {
         val mangaList = viewModel.state.value.mangaList
         assertEquals(1, mangaList.size)
         assertEquals(mangaInList.id, mangaList[0].id)
+    }
+
+    // --- #864 Download Badge tests ---
+
+    @Test
+    fun downloadCountByManga_derivedCorrectly_fromObserveDownloads() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val downloads = listOf(
+            DownloadItem(id = 1L, mangaId = 10L, chapterId = 100L, mangaTitle = "Naruto", chapterTitle = "Ch 1"),
+            DownloadItem(id = 2L, mangaId = 10L, chapterId = 101L, mangaTitle = "Naruto", chapterTitle = "Ch 2"),
+            DownloadItem(id = 3L, mangaId = 20L, chapterId = 200L, mangaTitle = "Bleach", chapterTitle = "Ch 1"),
+        )
+        every { downloadRepository.observeDownloads() } returns flowOf(downloads)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val countMap = viewModel.state.value.downloadCountByManga
+        assertEquals(2, countMap[10L])
+        assertEquals(1, countMap[20L])
+        assertNull(countMap[99L])
+    }
+
+    // --- #867 Incognito Mode tests ---
+
+    @Test
+    fun toggleIncognito_callsSetIncognitoMode_withNegatedCurrent() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        val incognitoFlow = MutableStateFlow(false)
+        every { settingsRepository.incognitoMode } returns incognitoFlow
+        coEvery { settingsRepository.setIncognitoMode(any()) } answers {
+            incognitoFlow.value = firstArg()
+        }
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.incognitoMode)
+
+        viewModel.onEvent(LibraryEvent.ToggleIncognito)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        io.mockk.coVerify { settingsRepository.setIncognitoMode(true) }
+        assertTrue(viewModel.state.value.incognitoMode)
+    }
+
+    @Test
+    fun incognitoMode_stateReflectsRepositoryValue() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+        every { settingsRepository.incognitoMode } returns flowOf(true)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.incognitoMode)
     }
 }

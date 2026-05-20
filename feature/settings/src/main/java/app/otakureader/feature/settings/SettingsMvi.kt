@@ -110,6 +110,7 @@ data class SettingsState(
     val libraryGridSize get() = library.libraryGridSize
     val isStaggeredGrid get() = library.isStaggeredGrid
     val showBadges get() = library.showBadges
+    val showDownloadBadge get() = library.showDownloadBadge
     val updateOnlyOnWifi get() = library.updateOnlyOnWifi
     val updateOnlyPinnedCategories get() = library.updateOnlyPinnedCategories
     val autoRefreshOnStart get() = library.autoRefreshOnStart
@@ -209,6 +210,7 @@ sealed interface SettingsEvent : UiEvent {
     data class SetLibraryGridSize(val size: Int) : SettingsEvent
     data class SetStaggeredGrid(val staggered: Boolean) : SettingsEvent
     data class SetShowBadges(val enabled: Boolean) : SettingsEvent
+    data class SetShowDownloadBadge(val enabled: Boolean) : SettingsEvent
     data class SetUpdateOnlyOnWifi(val enabled: Boolean) : SettingsEvent
     data class SetUpdateOnlyPinnedCategories(val enabled: Boolean) : SettingsEvent
     data class SetAutoRefreshOnStart(val enabled: Boolean) : SettingsEvent

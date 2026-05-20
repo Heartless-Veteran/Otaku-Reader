@@ -10,6 +10,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.tracking.TrackRepository
@@ -52,6 +53,7 @@ class LibraryViewModel @Inject constructor(
     private val generalPreferences: GeneralPreferences,
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
+    private val settingsRepository: ReaderSettingsRepository,
     private val trackRepository: TrackRepository,
     private val getCategories: GetCategoriesUseCase,
     private val getContinueReading: GetContinueReadingUseCase,
@@ -82,6 +84,8 @@ class LibraryViewModel @Inject constructor(
         observeContinueReading()
         observeGoalProgress()
         observeReadingLists()
+        observeDownloadCounts()
+        observeIncognitoMode()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -100,6 +104,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterSource,
             is LibraryEvent.ToggleNsfw,
             is LibraryEvent.SetFilterReadingList -> handleFilterSortEvent(event)
+            is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.ToggleFavorite,
             is LibraryEvent.MarkSelectedAsRead,
             is LibraryEvent.MarkSelectedAsUnread,
@@ -162,6 +167,9 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.showBadges
             .onEach { showBadges -> _state.update { it.copy(showBadges = showBadges) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showDownloadBadge
+            .onEach { show -> _state.update { it.copy(showDownloadBadge = show) } }
             .launchIn(viewModelScope)
         libraryPreferences.librarySortMode
             .onEach { sortModeInt ->
@@ -611,6 +619,29 @@ class LibraryViewModel @Inject constructor(
 
     private fun onSetFilterReadingList(listId: Long?) {
         _state.update { it.copy(filterReadingListId = listId) }
+    }
+
+    private fun observeDownloadCounts() {
+        downloadRepository.observeDownloads()
+            .map { downloads ->
+                downloads.groupingBy { it.mangaId }.eachCount()
+            }
+            .onEach { counts -> _state.update { it.copy(downloadCountByManga = counts) } }
+            .catch { e -> android.util.Log.w("LibraryViewModel", "observeDownloadCounts failed", e) }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeIncognitoMode() {
+        settingsRepository.incognitoMode
+            .onEach { enabled -> _state.update { it.copy(incognitoMode = enabled) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun toggleIncognitoMode() {
+        viewModelScope.launch {
+            val current = _state.value.incognitoMode
+            settingsRepository.setIncognitoMode(!current)
+        }
     }
 
     private fun Manga.toLibraryItem(
