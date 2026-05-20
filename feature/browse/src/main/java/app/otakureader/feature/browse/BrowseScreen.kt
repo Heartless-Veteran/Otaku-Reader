@@ -1,7 +1,9 @@
 package app.otakureader.feature.browse
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -266,7 +268,8 @@ private fun BrowseContent(
                 onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
                 onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                 hasNextPage = state.hasNextPage,
-                isLoading = state.isSearching || state.isLoading
+                isLoading = state.isSearching || state.isLoading,
+                onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
             )
         } else {
             // Show sources and popular manga
@@ -282,6 +285,7 @@ private fun BrowseContent(
                     onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                     hasNextPage = state.hasNextPage,
                     isLoading = state.isLoading,
+                    onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
                 )
             }
         }
@@ -344,6 +348,7 @@ private fun SourcesContent(
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
     isLoading: Boolean,
+    onMangaLongClick: ((SourceManga) -> Unit)? = null,
 ) {
     // Determine if the currently selected source is manga or manhwa for the accent bar
     val isMangaSection = currentSourceId == null || !isManhwaSource(currentSourceId)
@@ -412,7 +417,8 @@ private fun SourcesContent(
                 onLoadMore = onLoadMore,
                 hasNextPage = hasNextPage,
                 isLoading = isLoading,
-                currentSourceId = currentSourceId
+                currentSourceId = currentSourceId,
+                onMangaLongClick = onMangaLongClick,
             )
         }
     }
@@ -425,7 +431,8 @@ private fun MangaGrid(
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
     isLoading: Boolean,
-    currentSourceId: String? = null
+    currentSourceId: String? = null,
+    onMangaLongClick: ((SourceManga) -> Unit)? = null,
 ) {
     val otaku = LocalOtakuColors.current
     LazyVerticalGrid(
@@ -438,7 +445,8 @@ private fun MangaGrid(
             MangaCard(
                 manga = mangaItem,
                 onClick = { onMangaClick(mangaItem) },
-                currentSourceId = currentSourceId
+                currentSourceId = currentSourceId,
+                onLongClick = onMangaLongClick?.let { { it(mangaItem) } },
             )
         }
 
@@ -465,17 +473,19 @@ private fun MangaGrid(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MangaCard(
     manga: SourceManga,
     onClick: () -> Unit,
-    currentSourceId: String? = null
+    currentSourceId: String? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val isManga = currentSourceId == null || !isManhwaSource(currentSourceId)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         Column {
             Box {
@@ -529,7 +539,8 @@ private fun SearchResultsContent(
     onMangaClick: (SourceManga) -> Unit,
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
-    isLoading: Boolean
+    isLoading: Boolean,
+    onMangaLongClick: ((SourceManga) -> Unit)? = null,
 ) {
     if (results.isEmpty() && !isLoading) {
         Box(
@@ -547,7 +558,8 @@ private fun SearchResultsContent(
             onMangaClick = onMangaClick,
             onLoadMore = onLoadMore,
             hasNextPage = hasNextPage,
-            isLoading = isLoading
+            isLoading = isLoading,
+            onMangaLongClick = onMangaLongClick,
         )
     }
 }
