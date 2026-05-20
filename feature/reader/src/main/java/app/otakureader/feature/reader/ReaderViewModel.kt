@@ -668,7 +668,21 @@ class ReaderViewModel @Inject constructor(
                 _state.update { it.copy(cropBordersEnabled = newValue) }
                 viewModelScope.launch { settingsRepository.setCropBordersEnabled(newValue) }
             }
-            else -> { /* Other settings not yet implemented */ }
+            ReaderSetting.SKIP_READ_CHAPTERS -> {
+                val newValue = !_state.value.skipReadChapters
+                _state.update { it.copy(skipReadChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipReadChapters(newValue) }
+            }
+            ReaderSetting.SKIP_FILTERED_CHAPTERS -> {
+                val newValue = !_state.value.skipFilteredChapters
+                _state.update { it.copy(skipFilteredChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipFilteredChapters(newValue) }
+            }
+            ReaderSetting.SKIP_DUPLICATE_CHAPTERS -> {
+                val newValue = !_state.value.skipDuplicateChapters
+                _state.update { it.copy(skipDuplicateChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipDuplicateChapters(newValue) }
+            }
         }
     }
 
