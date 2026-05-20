@@ -860,7 +860,14 @@ class ReaderViewModel @Inject constructor(
         val isManhwaByGenre = "manhwa" in genreText || "webtoon" in genreText || "korean" in genreText
         generalPreferences.getMangaContentType(mangaId)
             .onEach { userSetsManhwa ->
-                _state.update { it.copy(isManhwaContent = userSetsManhwa || isManhwaByGenre) }
+                val isWebtoon = userSetsManhwa || isManhwaByGenre
+                _state.update { it.copy(isManhwaContent = isWebtoon) }
+                // Auto-switch to WEBTOON mode only when mode is still the default (SINGLE_PAGE)
+                // so we never override a mode the user explicitly chose.
+                if (isWebtoon && _state.value.mode == ReaderMode.SINGLE_PAGE) {
+                    _state.update { it.copy(mode = ReaderMode.WEBTOON) }
+                    viewModelScope.launch { settingsRepository.setReaderMode(ReaderMode.WEBTOON) }
+                }
             }
             .launchIn(viewModelScope)
     }

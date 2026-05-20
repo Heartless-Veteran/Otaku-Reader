@@ -378,6 +378,16 @@ private fun DataManagementSection(state: SettingsState, onEvent: (SettingsEvent)
     )
 
     ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_refresh_covers)) },
+        supportingContent = { Text(stringResource(R.string.settings_refresh_covers_desc)) },
+        trailingContent = {
+            OutlinedButton(onClick = { onEvent(SettingsEvent.RefreshLibraryCovers) }) {
+                Text(stringResource(R.string.settings_refresh_button))
+            }
+        },
+    )
+
+    ListItem(
         headlineContent = { Text(stringResource(R.string.settings_clear_history)) },
         supportingContent = { Text(stringResource(R.string.settings_clear_history_desc)) },
         trailingContent = {

@@ -281,6 +281,7 @@ sealed interface SettingsEvent : UiEvent {
 
     // Data management
     data object ClearImageCache : SettingsEvent
+    data object RefreshLibraryCovers : SettingsEvent
     data object ClearHistory : SettingsEvent
     data class SetCoilDiskCacheSizeMb(val sizeMb: Int) : SettingsEvent
 

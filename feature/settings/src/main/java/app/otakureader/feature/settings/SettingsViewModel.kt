@@ -115,6 +115,7 @@ class SettingsViewModel @Inject constructor(
 
             // Data management
             SettingsEvent.ClearImageCache -> clearImageCache()
+            SettingsEvent.RefreshLibraryCovers -> refreshLibraryCovers()
             SettingsEvent.ClearHistory -> clearHistory()
             is SettingsEvent.SetCoilDiskCacheSizeMb ->
                 generalPreferences.setCoilDiskCacheSizeMb(event.sizeMb)
@@ -208,6 +209,13 @@ class SettingsViewModel @Inject constructor(
             } catch (_: Exception) {
                 _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_clear_cache_failed)))
             }
+        }
+    }
+
+    private fun refreshLibraryCovers() {
+        app.otakureader.data.worker.CoverRefreshWorker.enqueue(context)
+        viewModelScope.launch {
+            _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_refresh_covers_started)))
         }
     }
 
