@@ -6,6 +6,7 @@ import android.os.Build
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Loads Tachiyomi-compatible extension APKs and instantiates their Source classes.
@@ -48,7 +49,7 @@ class TachiyomiExtensionLoader(
         const val METADATA_NSFW = "tachiyomi.extension.nsfw"
     }
 
-    private val loadedExtensions = mutableMapOf<String, LoadedExtension>()
+    private val loadedExtensions = ConcurrentHashMap<String, LoadedExtension>()
 
     /**
      * Data class representing a loaded extension.
@@ -149,7 +150,8 @@ class TachiyomiExtensionLoader(
         // An updated APK with the same package name must be reloaded from disk.
         loadedExtensions[packageName]?.let { cached ->
             if (cached.versionCode == incomingVersionCode) return cached
-            loadedExtensions.remove(packageName)
+            // Conditional remove to avoid racing with another thread's load
+            loadedExtensions.remove(packageName, cached)
         }
 
         // Must declare the Tachiyomi extension feature flag

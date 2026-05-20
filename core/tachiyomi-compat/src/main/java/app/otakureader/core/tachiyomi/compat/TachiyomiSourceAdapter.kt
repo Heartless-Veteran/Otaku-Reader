@@ -264,8 +264,8 @@ class TachiyomiSourceAdapter(
     private suspend fun <T> Observable<T>.awaitFirst(): T =
         suspendCancellableCoroutine { cont ->
             val subscription = first().subscribe(
-                { value -> try { cont.resume(value) } catch (_: IllegalStateException) { } },
-                { error -> try { cont.resumeWithException(error) } catch (_: IllegalStateException) { } }
+                { value -> cont.resume(value) },
+                { error -> cont.resumeWithException(error) }
             )
             cont.invokeOnCancellation { subscription.unsubscribe() }
         }

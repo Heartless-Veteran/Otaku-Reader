@@ -30,9 +30,11 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -234,7 +236,8 @@ class BrowseViewModelTest {
         viewModel.onEvent(BrowseEvent.AddSelectedToLibrary)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val effect = viewModel.effect.first()
+        val effect = withTimeoutOrNull(1000) { viewModel.effect.first() }
+        assertNotNull(effect)
         assertTrue(effect is BrowseEffect.ShowSnackbar)
     }
 
@@ -273,7 +276,8 @@ class BrowseViewModelTest {
         viewModel.onEvent(BrowseEvent.RefreshSources)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val effect = viewModel.effect.first()
+        val effect = withTimeoutOrNull(1000) { viewModel.effect.first() }
+        assertNotNull(effect)
         assertTrue(effect is BrowseEffect.ShowSnackbar)
     }
 
