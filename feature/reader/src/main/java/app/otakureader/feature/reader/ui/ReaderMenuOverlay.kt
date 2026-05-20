@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.FitScreen
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
@@ -100,6 +101,7 @@ fun ReaderMenuOverlay(
     onToggleGallery: () -> Unit,
     onNavigateBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
+    onToggleChapterFilter: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -138,6 +140,11 @@ fun ReaderMenuOverlay(
                         }
                     },
                     actions = {
+                        if (onToggleChapterFilter != null) {
+                            IconButton(onClick = onToggleChapterFilter) {
+                                Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
+                            }
+                        }
                         IconButton(onClick = onToggleFullscreen) {
                             Icon(Icons.Default.Fullscreen, contentDescription = stringResource(R.string.reader_fullscreen))
                         }
