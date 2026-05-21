@@ -23,7 +23,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 
 private const val COVER_REFRESH_CHANNEL_ID = "cover_refresh_channel"
-private const val COVER_REFRESH_PROGRESS_ID = Int.MAX_VALUE - 2
+private const val COVER_REFRESH_PROGRESS_ID = 5001
 private const val COVER_BATCH_SIZE = 10
 private const val TAG = "CoverRefreshWorker"
 private const val WORK_NAME = "cover_refresh_work"

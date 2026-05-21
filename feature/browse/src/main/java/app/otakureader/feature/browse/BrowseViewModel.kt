@@ -15,6 +15,7 @@ import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.toSourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -376,7 +377,7 @@ class BrowseViewModel @Inject constructor(
             if (alreadyFavorited) {
                 // Look up the DB record to get the ID needed for toggleFavorite
                 val dbManga = mangaRepository.getMangaBySourceAndUrl(
-                    sourceId = sourceId.hashCode().toLong(),
+                    sourceId = sourceId.toSourceId(),
                     url = manga.url
                 )
                 if (dbManga != null) {

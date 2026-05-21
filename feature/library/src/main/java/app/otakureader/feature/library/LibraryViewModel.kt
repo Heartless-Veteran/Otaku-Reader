@@ -626,6 +626,7 @@ class LibraryViewModel @Inject constructor(
             .map { downloads ->
                 downloads.groupingBy { it.mangaId }.eachCount()
             }
+            .distinctUntilChanged()
             .onEach { counts -> _state.update { it.copy(downloadCountByManga = counts) } }
             .catch { e -> android.util.Log.w("LibraryViewModel", "observeDownloadCounts failed", e) }
             .launchIn(viewModelScope)
