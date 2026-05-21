@@ -16,7 +16,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.R
 
 @Composable
 fun IncognitoBanner(modifier: Modifier = Modifier) {
@@ -37,7 +39,7 @@ fun IncognitoBanner(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = "Incognito — history paused",
+                text = stringResource(R.string.incognito_banner_text),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
