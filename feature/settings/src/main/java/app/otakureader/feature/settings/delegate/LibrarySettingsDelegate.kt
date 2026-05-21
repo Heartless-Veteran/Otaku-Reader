@@ -52,6 +52,11 @@ class LibrarySettingsDelegate @Inject constructor(
             }
         }
         scope.launch {
+            libraryPreferences.showDownloadBadge.collect { show ->
+                updateState { it.copy(library = it.library.copy(showDownloadBadge = show)) }
+            }
+        }
+        scope.launch {
             libraryPreferences.showUpdateProgress.collect { showProgress ->
                 updateState { it.copy(library = it.library.copy(showUpdateProgress = showProgress)) }
             }
@@ -71,6 +76,7 @@ class LibrarySettingsDelegate @Inject constructor(
         is SettingsEvent.SetLibraryGridSize -> { libraryPreferences.setGridSize(event.size); true }
         is SettingsEvent.SetStaggeredGrid -> { libraryPreferences.setStaggeredGrid(event.staggered); true }
         is SettingsEvent.SetShowBadges -> { libraryPreferences.setShowBadges(event.enabled); true }
+        is SettingsEvent.SetShowDownloadBadge -> { libraryPreferences.setShowDownloadBadge(event.enabled); true }
         is SettingsEvent.SetUpdateOnlyOnWifi -> {
             libraryPreferences.setUpdateOnlyOnWifi(event.enabled)
             latestUpdateOnlyOnWifi = event.enabled

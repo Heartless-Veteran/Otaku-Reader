@@ -8,4 +8,7 @@
     <string name="feed_empty">No feed items yet. Add sources to see the latest chapters here.</string>
     <string name="feed_error_unknown">An unknown error occurred.</string>
     <string name="feed_mark_as_read">Mark as read</string>
+    <string name="feed_in_library">In library</string>
+    <string name="feed_added_to_library">Added to library</string>
+    <string name="feed_removed_from_library">Removed from library</string>
 </resources>

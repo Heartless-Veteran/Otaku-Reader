@@ -7,6 +7,12 @@
     <string name="reader_gallery">Gallery</string>
     <string name="reader_tap_to_hide">Tap center to hide menu</string>
 
+    <!-- Chapter filter bottom sheet (#865) -->
+    <string name="reader_chapter_filter_title">Chapter Filters</string>
+    <string name="reader_skip_read_chapters">Skip Read Chapters</string>
+    <string name="reader_skip_filtered_chapters">Skip Filtered Chapters</string>
+    <string name="reader_skip_duplicate_chapters">Skip Duplicate Chapters</string>
+
     <!-- Reading mode -->
     <string name="reader_mode_title">Reading Mode</string>
     <string name="reader_mode_single">Single</string>

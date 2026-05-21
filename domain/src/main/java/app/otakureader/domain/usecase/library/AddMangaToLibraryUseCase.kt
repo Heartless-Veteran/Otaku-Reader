@@ -4,6 +4,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.toSourceId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -22,7 +23,7 @@ class AddMangaToLibraryUseCase(
         try {
             // Check if manga already exists by source URL
             val existingManga = mangaRepository.getMangaBySourceAndUrl(
-                sourceId = sourceId.hashCode().toLong(), // Convert sourceId to long hash
+                sourceId = sourceId.toSourceId(),
                 url = sourceManga.url
             )
             
@@ -37,7 +38,7 @@ class AddMangaToLibraryUseCase(
             // Create new manga from SourceManga
             val newManga = Manga(
                 id = 0, // Will be auto-generated
-                sourceId = sourceId.hashCode().toLong(),
+                sourceId = sourceId.toSourceId(),
                 url = sourceManga.url,
                 title = sourceManga.title,
                 artist = sourceManga.artist,

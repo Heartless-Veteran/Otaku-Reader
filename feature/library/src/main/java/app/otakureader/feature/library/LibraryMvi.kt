@@ -34,6 +34,8 @@ data class LibraryState(
     val selectedCategory: Long? = null,
     val gridSize: Int = 3,
     val showBadges: Boolean = true,
+    val showDownloadBadge: Boolean = true,
+    val downloadCountByManga: Map<Long, Int> = emptyMap(),
     val isStaggeredGrid: Boolean = false,
     val visualEffectsEnabled: Boolean = true,
     val filterHasNotes: Boolean = false,
@@ -42,6 +44,7 @@ data class LibraryState(
     val filterSourceId: Long? = null,
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
+    val incognitoMode: Boolean = false,
     val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
     // Reading list filter
     val readingLists: List<ReadingListFilterItem> = emptyList(),
@@ -107,6 +110,7 @@ sealed class LibraryEvent {
     data class ContinueReadingClick(val mangaId: Long, val chapterId: Long) : LibraryEvent()
     // Reading list filter (null = clear/show all)
     data class SetFilterReadingList(val listId: Long?) : LibraryEvent()
+    data object ToggleIncognito : LibraryEvent()
 }
 
 sealed class LibraryEffect {

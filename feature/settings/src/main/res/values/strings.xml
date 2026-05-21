@@ -52,6 +52,8 @@
     <string name="settings_grid_layout_staggered">Staggered</string>
     <string name="settings_show_unread_badges">Show Unread Badges</string>
     <string name="settings_show_unread_badges_description">Display unread chapter count on covers</string>
+    <string name="settings_show_download_badge">Show Download Badge</string>
+    <string name="settings_show_download_badge_description">Show downloaded chapter count on library covers</string>
 
     <!-- Browse -->
     <string name="settings_browse">Browse</string>
@@ -151,6 +153,10 @@
     <string name="settings_image_cache_size_desc">%d MB — takes effect on next app launch</string>
     <string name="settings_clear_image_cache">Clear image cache</string>
     <string name="settings_clear_image_cache_desc">Free up space used by cached cover and page images</string>
+    <string name="settings_refresh_covers">Refresh library covers</string>
+    <string name="settings_refresh_covers_desc">Re-download all cover images to update stale or missing covers</string>
+    <string name="settings_refresh_button">Refresh</string>
+    <string name="settings_refresh_covers_started">Cover refresh started in the background</string>
     <string name="settings_clear_history">Clear reading history</string>
     <string name="settings_clear_history_desc">Remove all reading history and progress from the database</string>
     <string name="settings_clear_button">Clear</string>
