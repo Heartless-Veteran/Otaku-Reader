@@ -7,3 +7,5 @@ data class SChapter(
     var chapterNumber: Float = -1f,
     var scanlator: String = "",
 )
+
+typealias SourceChapter = SChapter

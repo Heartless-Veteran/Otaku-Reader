@@ -212,7 +212,7 @@ class DetailsViewModel @Inject constructor(
                                 name = chapter.name,
                                 dateUpload = chapter.dateUpload,
                                 chapterNumber = chapter.chapterNumber,
-                                scanlator = chapter.scanlator
+                                scanlator = chapter.scanlator ?: ""
                             )
 
                             // Use repository instead of calling source directly (#587)
@@ -868,7 +868,7 @@ class DetailsViewModel @Inject constructor(
                     name = chapter.name,
                     dateUpload = chapter.dateUpload,
                     chapterNumber = chapter.chapterNumber,
-                    scanlator = chapter.scanlator
+                    scanlator = chapter.scanlator ?: ""
                 )
 
                 // Use repository to respect caching and abstraction layers (#587)

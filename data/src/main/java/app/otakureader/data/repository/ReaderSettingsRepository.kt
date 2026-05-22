@@ -508,7 +508,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SKIP_READ_CHAPTERS] ?: false
     }
 
-    suspend fun setSkipReadChapters(enabled: Boolean) {
+    override suspend fun setSkipReadChapters(enabled: Boolean) {
         safeEdit { it[Keys.SKIP_READ_CHAPTERS] = enabled }
     }
 
@@ -516,7 +516,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true
     }
 
-    suspend fun setSkipFilteredChapters(enabled: Boolean) {
+    override suspend fun setSkipFilteredChapters(enabled: Boolean) {
         safeEdit { it[Keys.SKIP_FILTERED_CHAPTERS] = enabled }
     }
 
@@ -524,7 +524,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SKIP_DUPLICATE_CHAPTERS] ?: false
     }
 
-    suspend fun setSkipDuplicateChapters(enabled: Boolean) {
+    override suspend fun setSkipDuplicateChapters(enabled: Boolean) {
         safeEdit { it[Keys.SKIP_DUPLICATE_CHAPTERS] = enabled }
     }
 

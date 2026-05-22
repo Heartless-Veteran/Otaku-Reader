@@ -48,7 +48,7 @@ class CategoryRepositoryImpl @Inject constructor(
     
     override suspend fun createCategory(name: String, frequency: CategoryUpdateFrequency): Long {
         val maxOrder = categoryDao.getMaxCategoryOrder()
-        val entity = CategoryEntity(name = name, order = maxOrder + 1, update_frequency = frequency.value)
+        val entity = CategoryEntity(name = name, order = maxOrder + 1, updateFrequency = frequency.value)
         return categoryDao.insert(entity)
     }
     
@@ -58,7 +58,7 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun updateCategoryFrequency(categoryId: Long, frequency: CategoryUpdateFrequency) {
         val existing = categoryDao.getCategoryById(categoryId) ?: return
-        categoryDao.update(existing.copy(update_frequency = frequency.value))
+        categoryDao.update(existing.copy(updateFrequency = frequency.value))
     }
 
     override suspend fun deleteCategory(id: Long) {
@@ -83,14 +83,14 @@ class CategoryRepositoryImpl @Inject constructor(
         order = order,
         isHidden = isHidden,
         isNsfw = isNsfw,
-        updateFrequency = CategoryUpdateFrequency.fromInt(update_frequency),
+        updateFrequency = CategoryUpdateFrequency.fromInt(updateFrequency),
     )
 
     private fun Category.toEntity() = CategoryEntity(
         id = id,
         name = name,
         order = order,
-        update_frequency = updateFrequency.value,
+        updateFrequency = updateFrequency.value,
         flags = (if (isHidden) CategoryEntity.FLAG_HIDDEN else 0) or
                 (if (isNsfw) CategoryEntity.FLAG_NSFW else 0)
     )
