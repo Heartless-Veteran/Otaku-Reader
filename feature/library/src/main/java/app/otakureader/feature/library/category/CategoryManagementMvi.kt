@@ -3,13 +3,15 @@ package app.otakureader.feature.library.category
 import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
+import app.otakureader.domain.model.CategoryUpdateFrequency
 
 data class CategoryUiItem(
     val id: Long,
     val name: String,
     val mangaCount: Int,
     val isHidden: Boolean,
-    val isNsfw: Boolean
+    val isNsfw: Boolean,
+    val updateFrequency: CategoryUpdateFrequency = CategoryUpdateFrequency.DAILY,
 )
 
 data class CategoryManagementState(
@@ -18,8 +20,15 @@ data class CategoryManagementState(
 ) : UiState
 
 sealed interface CategoryEvent : UiEvent {
-    data class CreateCategory(val name: String) : CategoryEvent
-    data class UpdateCategory(val categoryId: Long, val name: String) : CategoryEvent
+    data class CreateCategory(
+        val name: String,
+        val frequency: CategoryUpdateFrequency = CategoryUpdateFrequency.DAILY,
+    ) : CategoryEvent
+    data class UpdateCategory(
+        val categoryId: Long,
+        val name: String,
+        val frequency: CategoryUpdateFrequency,
+    ) : CategoryEvent
     data class DeleteCategory(val categoryId: Long) : CategoryEvent
     data class ToggleHidden(val categoryId: Long) : CategoryEvent
     data class ToggleNsfw(val categoryId: Long) : CategoryEvent

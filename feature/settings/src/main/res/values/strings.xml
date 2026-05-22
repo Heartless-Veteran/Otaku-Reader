@@ -361,6 +361,15 @@
     <string name="settings_show_update_progress">Show Update Progress</string>
     <string name="settings_show_update_progress_description">Display notification during library update</string>
 
+    <!-- Smart Update Skip -->
+    <string name="settings_smart_update_skip">Smart Update Skip</string>
+    <string name="settings_skip_updates_unread">Skip Manga with Unread Chapters</string>
+    <string name="settings_skip_updates_unread_description">Don\'t check for new chapters when unread ones already exist</string>
+    <string name="settings_skip_updates_completed">Skip Completed Manga</string>
+    <string name="settings_skip_updates_completed_description">Don\'t check for updates on manga marked as Completed</string>
+    <string name="settings_skip_updates_never_started">Skip Never-Started Manga</string>
+    <string name="settings_skip_updates_never_started_description">Don\'t check updates for manga you haven\'t read yet</string>
+
     <!-- Download Settings -->
     <string name="settings_download_location">Download Location</string>
     <string name="settings_download_location_default">Default location</string>

@@ -115,6 +115,9 @@ data class SettingsState(
     val updateOnlyPinnedCategories get() = library.updateOnlyPinnedCategories
     val autoRefreshOnStart get() = library.autoRefreshOnStart
     val showUpdateProgress get() = library.showUpdateProgress
+    val skipUpdatesWithUnread get() = library.skipUpdatesWithUnread
+    val skipUpdatesWithCompleted get() = library.skipUpdatesWithCompleted
+    val skipUpdatesNeverStarted get() = library.skipUpdatesNeverStarted
 
     // --- Downloads ---
     val deleteAfterReading get() = downloads.deleteAfterReading
@@ -215,6 +218,9 @@ sealed interface SettingsEvent : UiEvent {
     data class SetUpdateOnlyPinnedCategories(val enabled: Boolean) : SettingsEvent
     data class SetAutoRefreshOnStart(val enabled: Boolean) : SettingsEvent
     data class SetShowUpdateProgress(val enabled: Boolean) : SettingsEvent
+    data class SetSkipUpdatesWithUnread(val enabled: Boolean) : SettingsEvent
+    data class SetSkipUpdatesWithCompleted(val enabled: Boolean) : SettingsEvent
+    data class SetSkipUpdatesNeverStarted(val enabled: Boolean) : SettingsEvent
 
     // Downloads
     data class SetDeleteAfterReading(val enabled: Boolean) : SettingsEvent

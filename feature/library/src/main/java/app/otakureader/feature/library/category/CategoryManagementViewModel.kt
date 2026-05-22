@@ -55,7 +55,8 @@ class CategoryManagementViewModel @Inject constructor(
                             name = category.name,
                             mangaCount = mangaIds.size,
                             isHidden = category.isHidden,
-                            isNsfw = category.isNsfw
+                            isNsfw = category.isNsfw,
+                            updateFrequency = category.updateFrequency,
                         )
                     }.sortedBy { it.name }
 
@@ -69,18 +70,18 @@ class CategoryManagementViewModel @Inject constructor(
 
     fun onEvent(event: CategoryEvent) {
         when (event) {
-            is CategoryEvent.CreateCategory -> createCategory(event.name)
-            is CategoryEvent.UpdateCategory -> updateCategory(event.categoryId, event.name)
+            is CategoryEvent.CreateCategory -> createCategory(event)
+            is CategoryEvent.UpdateCategory -> updateCategory(event)
             is CategoryEvent.DeleteCategory -> deleteCategory(event.categoryId)
             is CategoryEvent.ToggleHidden -> toggleHidden(event.categoryId)
             is CategoryEvent.ToggleNsfw -> toggleNsfw(event.categoryId)
         }
     }
 
-    private fun createCategory(name: String) {
+    private fun createCategory(event: CategoryEvent.CreateCategory) {
         viewModelScope.launch {
             try {
-                createCategoryUseCase(name)
+                createCategoryUseCase(event.name, event.frequency)
                 _effect.emit(CategoryEffect.DismissDialog)
                 _effect.emit(CategoryEffect.ShowSnackbar("Category created"))
             } catch (e: CancellationException) {
@@ -91,10 +92,10 @@ class CategoryManagementViewModel @Inject constructor(
         }
     }
 
-    private fun updateCategory(categoryId: Long, name: String) {
+    private fun updateCategory(event: CategoryEvent.UpdateCategory) {
         viewModelScope.launch {
             try {
-                updateCategoryUseCase(categoryId, name)
+                updateCategoryUseCase(event.categoryId, event.name, event.frequency)
                 _effect.emit(CategoryEffect.DismissDialog)
                 _effect.emit(CategoryEffect.ShowSnackbar("Category updated"))
             } catch (e: CancellationException) {

@@ -4,6 +4,7 @@ import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.domain.model.Category
+import app.otakureader.domain.model.CategoryUpdateFrequency
 import app.otakureader.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -45,16 +46,21 @@ class CategoryRepositoryImpl @Inject constructor(
         return categoryDao.getCategoryById(id)?.toDomain()
     }
     
-    override suspend fun createCategory(name: String): Long {
+    override suspend fun createCategory(name: String, frequency: CategoryUpdateFrequency): Long {
         val maxOrder = categoryDao.getMaxCategoryOrder()
-        val entity = CategoryEntity(name = name, order = maxOrder + 1)
+        val entity = CategoryEntity(name = name, order = maxOrder + 1, update_frequency = frequency.value)
         return categoryDao.insert(entity)
     }
     
     override suspend fun updateCategory(category: Category) {
         categoryDao.update(category.toEntity())
     }
-    
+
+    override suspend fun updateCategoryFrequency(categoryId: Long, frequency: CategoryUpdateFrequency) {
+        val existing = categoryDao.getCategoryById(categoryId) ?: return
+        categoryDao.update(existing.copy(update_frequency = frequency.value))
+    }
+
     override suspend fun deleteCategory(id: Long) {
         categoryDao.deleteById(id)
     }
@@ -76,13 +82,15 @@ class CategoryRepositoryImpl @Inject constructor(
         name = name,
         order = order,
         isHidden = isHidden,
-        isNsfw = isNsfw
+        isNsfw = isNsfw,
+        updateFrequency = CategoryUpdateFrequency.fromInt(update_frequency),
     )
 
     private fun Category.toEntity() = CategoryEntity(
         id = id,
         name = name,
         order = order,
+        update_frequency = updateFrequency.value,
         flags = (if (isHidden) CategoryEntity.FLAG_HIDDEN else 0) or
                 (if (isNsfw) CategoryEntity.FLAG_NSFW else 0)
     )

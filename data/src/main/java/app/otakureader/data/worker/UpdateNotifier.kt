@@ -257,4 +257,30 @@ class UpdateNotifier(private val context: Context) {
     fun cancelProgress() {
         notificationManager.cancel(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID)
     }
+
+    /**
+     * Shows a dismissible summary notification listing how many manga were skipped during
+     * the library update due to smart-skip conditions.
+     */
+    @SuppressLint("MissingPermission")
+    fun showSkippedSummaryNotification(skippedCount: Int) {
+        if (skippedCount <= 0) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return
+        }
+        val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_more)
+            .setContentTitle("Library update — $skippedCount skipped")
+            .setContentText("Some manga were skipped based on your smart-update settings.")
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("$skippedCount manga were skipped (unread, completed, or never started). Adjust this in Settings → Library."))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setContentIntent(buildLaunchIntent())
+            .build()
+        notificationManager.notify(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID - 1, notification)
+    }
 }

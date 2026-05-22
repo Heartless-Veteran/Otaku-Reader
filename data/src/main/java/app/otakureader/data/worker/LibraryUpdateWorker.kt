@@ -17,6 +17,9 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
+import app.otakureader.domain.model.CategoryUpdateFrequency
+import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.UpdateLibraryMangaUseCase
@@ -42,6 +45,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val generalPreferences: GeneralPreferences,
     private val downloadManager: DownloadManager,
     private val chapterRepository: ChapterRepository,
+    private val categoryRepository: CategoryRepository,
     private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences
 ) : CoroutineWorker(context, workerParams) {
 
@@ -70,14 +74,56 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 }
             }
 
+            // Smart skip: exclude manga based on configurable conditions
+            val skipWithUnread = libraryPreferences.skipUpdatesWithUnread.first()
+            val skipCompleted = libraryPreferences.skipUpdatesWithCompleted.first()
+            val skipNeverStarted = libraryPreferences.skipUpdatesNeverStarted.first()
+            val skippedManga = mutableListOf<app.otakureader.domain.model.Manga>()
+            if (skipWithUnread || skipCompleted || skipNeverStarted) {
+                libraryManga = libraryManga.filter { manga ->
+                    when {
+                        skipWithUnread && manga.unreadCount > 0 -> { skippedManga += manga; false }
+                        skipCompleted && manga.status == MangaStatus.COMPLETED -> { skippedManga += manga; false }
+                        skipNeverStarted && (manga.lastRead == null || manga.lastRead == 0L) -> { skippedManga += manga; false }
+                        else -> true
+                    }
+                }
+            }
+
+            // Per-category frequency filter: skip categories whose interval has not elapsed
+            val now = System.currentTimeMillis()
+            val categoryFrequencyMap = categoryRepository.getCategories().first()
+                .associate { it.id to it.updateFrequency }
+            val categoryLastUpdate = libraryPreferences.categoryLastUpdateMs.first()
+            val updatedCategoryIds = mutableSetOf<Long>()
+            libraryManga = libraryManga.filter { manga ->
+                val catIds = manga.categoryIds
+                catIds.isEmpty() || catIds.any { catId ->
+                    val freq = categoryFrequencyMap[catId] ?: CategoryUpdateFrequency.DAILY
+                    val elapsed = now - (categoryLastUpdate[catId] ?: 0L)
+                    val include = when (freq) {
+                        CategoryUpdateFrequency.NEVER -> false
+                        CategoryUpdateFrequency.DAILY -> elapsed >= 24 * 3_600_000L
+                        CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= 3 * 24 * 3_600_000L
+                        CategoryUpdateFrequency.WEEKLY -> elapsed >= 7 * 24 * 3_600_000L
+                    }
+                    if (include) updatedCategoryIds.add(catId)
+                    include
+                }
+            }
+
+            val notificationsEnabled = generalPreferences.notificationsEnabled.first()
+
             if (libraryManga.isEmpty()) {
+                if (notificationsEnabled && skippedManga.isNotEmpty()) {
+                    try { UpdateNotifier(applicationContext).showSkippedSummaryNotification(skippedManga.size) } catch (_: Exception) { }
+                }
                 return Result.success()
             }
 
             val autoDownloadEnabled = downloadPreferences.autoDownloadEnabled.first()
             val downloadOnlyOnWifi = downloadPreferences.downloadOnlyOnWifi.first()
             val autoDownloadLimit = downloadPreferences.autoDownloadLimit.first()
-            val notificationsEnabled = generalPreferences.notificationsEnabled.first()
             val showUpdateProgress = libraryPreferences.showUpdateProgress.first()
 
             // Check if Wi-Fi is available for downloads requiring Wi-Fi
@@ -141,6 +187,20 @@ class LibraryUpdateWorker @AssistedInject constructor(
             // Cancel progress notification
             if (showUpdateProgress) {
                 progressNotifier?.cancelProgress()
+            }
+
+            // Persist per-category last-update timestamps
+            if (updatedCategoryIds.isNotEmpty()) {
+                val updated = categoryLastUpdate.toMutableMap()
+                updatedCategoryIds.forEach { catId -> updated[catId] = now }
+                libraryPreferences.setCategoryLastUpdateMs(updated)
+            }
+
+            // Send skipped-summary notification if any manga were skipped
+            if (notificationsEnabled && skippedManga.isNotEmpty()) {
+                try {
+                    UpdateNotifier(applicationContext).showSkippedSummaryNotification(skippedManga.size)
+                } catch (_: Exception) { }
             }
 
             // Send notification if new chapters were found and notifications are enabled

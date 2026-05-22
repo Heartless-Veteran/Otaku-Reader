@@ -9,7 +9,8 @@ data class CategoryEntity(
     val id: Long = 0,
     val name: String,
     val order: Int = 0,
-    val flags: Int = 0
+    val flags: Int = 0,
+    val update_frequency: Int = 1,
 ) {
     companion object {
         // Bit flags for category options
