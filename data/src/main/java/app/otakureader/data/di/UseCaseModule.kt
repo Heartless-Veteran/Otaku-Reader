@@ -1,10 +1,6 @@
 package app.otakureader.data.di
 
-import app.otakureader.domain.repository.ChapterRepository
-import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
-import app.otakureader.domain.usecase.GetHistoryUseCase
-import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.opds.BrowseOpdsCatalogUseCase
 import app.otakureader.domain.usecase.opds.DeleteOpdsServerUseCase
 import app.otakureader.domain.usecase.opds.GetOpdsServersUseCase
@@ -16,20 +12,12 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 
 /**
- * Hilt module that provides use case instances.
- * Use cases are provided (not bound) because they are not interfaces.
+ * OPDS use cases require explicit @Provides because they do not have @Inject constructors.
+ * All other use cases are resolved via @Inject and do not need entries here.
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
-
-    @Provides
-    fun provideGetHistoryUseCase(chapterRepository: ChapterRepository): GetHistoryUseCase =
-        GetHistoryUseCase(chapterRepository)
-
-    @Provides
-    fun provideSearchLibraryMangaUseCase(mangaRepository: MangaRepository): SearchLibraryMangaUseCase =
-        SearchLibraryMangaUseCase(mangaRepository)
 
     @Provides
     fun provideGetOpdsServersUseCase(opdsRepository: OpdsRepository): GetOpdsServersUseCase =
