@@ -204,6 +204,42 @@ private fun LibraryContent(state: SettingsState, onEvent: (SettingsEvent) -> Uni
     )
 
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+    SectionHeader(title = stringResource(R.string.settings_smart_update_skip))
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_skip_updates_unread)) },
+        supportingContent = { Text(stringResource(R.string.settings_skip_updates_unread_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.skipUpdatesWithUnread,
+                onCheckedChange = { onEvent(SettingsEvent.SetSkipUpdatesWithUnread(it)) },
+            )
+        },
+    )
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_skip_updates_completed)) },
+        supportingContent = { Text(stringResource(R.string.settings_skip_updates_completed_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.skipUpdatesWithCompleted,
+                onCheckedChange = { onEvent(SettingsEvent.SetSkipUpdatesWithCompleted(it)) },
+            )
+        },
+    )
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_skip_updates_never_started)) },
+        supportingContent = { Text(stringResource(R.string.settings_skip_updates_never_started_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.skipUpdatesNeverStarted,
+                onCheckedChange = { onEvent(SettingsEvent.SetSkipUpdatesNeverStarted(it)) },
+            )
+        },
+    )
+
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
     SectionHeader(title = stringResource(R.string.settings_update_check_interval))
 
     Column(modifier = Modifier.selectableGroup()) {

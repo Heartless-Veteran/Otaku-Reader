@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.toBitmap
+import app.otakureader.data.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -256,5 +257,31 @@ class UpdateNotifier(private val context: Context) {
      */
     fun cancelProgress() {
         notificationManager.cancel(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID)
+    }
+
+    /**
+     * Shows a dismissible summary notification listing how many manga were skipped during
+     * the library update due to smart-skip conditions.
+     */
+    @SuppressLint("MissingPermission")
+    fun showSkippedSummaryNotification(skippedCount: Int) {
+        if (skippedCount <= 0) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return
+        }
+        val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_more)
+            .setContentTitle(context.getString(R.string.update_notifier_skipped_title, skippedCount))
+            .setContentText(context.getString(R.string.update_notifier_skipped_text))
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText(context.getString(R.string.update_notifier_skipped_big_text, skippedCount)))
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
+            .setContentIntent(buildLaunchIntent())
+            .build()
+        notificationManager.notify(UPDATE_NOTIFICATION_TAG, PROGRESS_NOTIFICATION_ID - 1, notification)
     }
 }

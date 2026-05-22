@@ -55,6 +55,12 @@
     <string name="category_mark_nsfw">Mark as NSFW</string>
     <string name="category_remove_nsfw">Remove NSFW</string>
     <string name="category_nsfw_toggled">NSFW status updated</string>
+    <string name="category_update_frequency_label">Update frequency</string>
+    <string name="category_update_freq_label">Update: %1$s</string>
+    <string name="category_freq_never">Never</string>
+    <string name="category_freq_daily">Daily</string>
+    <string name="category_freq_3days">3 days</string>
+    <string name="category_freq_weekly">Weekly</string>
     <!-- Search -->
     <string name="library_search">Search library</string>
     <string name="library_search_placeholder">Search…</string>

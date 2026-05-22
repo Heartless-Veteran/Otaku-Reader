@@ -24,6 +24,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,12 +32,16 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import app.otakureader.domain.model.CategoryUpdateFrequency
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -144,12 +149,12 @@ fun CategoryManagementScreen(
                 showCreateDialog = false
                 editingCategory = null
             },
-            onConfirm = { name ->
+            onConfirm = { name, frequency ->
                 val editing = editingCategory
                 if (editing != null) {
-                    viewModel.onEvent(CategoryEvent.UpdateCategory(editing.id, name))
+                    viewModel.onEvent(CategoryEvent.UpdateCategory(editing.id, name, frequency))
                 } else {
-                    viewModel.onEvent(CategoryEvent.CreateCategory(name))
+                    viewModel.onEvent(CategoryEvent.CreateCategory(name, frequency))
                 }
             }
         )
@@ -181,6 +186,14 @@ fun CategoryManagementScreen(
 }
 
 @Composable
+private fun CategoryUpdateFrequency.label(): String = when (this) {
+    CategoryUpdateFrequency.NEVER -> stringResource(R.string.category_freq_never)
+    CategoryUpdateFrequency.DAILY -> stringResource(R.string.category_freq_daily)
+    CategoryUpdateFrequency.EVERY_3_DAYS -> stringResource(R.string.category_freq_3days)
+    CategoryUpdateFrequency.WEEKLY -> stringResource(R.string.category_freq_weekly)
+}
+
+@Composable
 private fun CategoryListItem(
     category: CategoryUiItem,
     onEdit: () -> Unit,
@@ -205,6 +218,11 @@ private fun CategoryListItem(
                     Text(
                         text = stringResource(R.string.category_manga_count, category.mangaCount),
                         style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = stringResource(R.string.category_update_freq_label, category.updateFrequency.label()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (category.isHidden) {
                         Icon(
@@ -284,13 +302,16 @@ private fun CategoryListItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CategoryDialog(
     category: CategoryUiItem?,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
+    onConfirm: (String, CategoryUpdateFrequency) -> Unit,
 ) {
     var name by remember { mutableStateOf(category?.name ?: "") }
+    var frequency by remember { mutableStateOf(category?.updateFrequency ?: CategoryUpdateFrequency.DAILY) }
+    val freqOptions = CategoryUpdateFrequency.entries
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -303,18 +324,34 @@ private fun CategoryDialog(
             )
         },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.category_name_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.category_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = stringResource(R.string.category_update_frequency_label),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    freqOptions.forEachIndexed { index, option ->
+                        SegmentedButton(
+                            selected = frequency == option,
+                            onClick = { frequency = option },
+                            shape = SegmentedButtonDefaults.itemShape(index, freqOptions.size),
+                            label = { Text(option.label(), style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name) },
-                enabled = name.isNotBlank()
+                onClick = { onConfirm(name, frequency) },
+                enabled = name.isNotBlank(),
             ) {
                 Text(stringResource(R.string.category_save))
             }
@@ -323,7 +360,7 @@ private fun CategoryDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.category_cancel))
             }
-        }
+        },
     )
 }
 

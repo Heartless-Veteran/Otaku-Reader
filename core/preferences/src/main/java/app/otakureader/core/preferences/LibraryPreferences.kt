@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -98,6 +99,40 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val newUpdatesCount: Flow<Int> = dataStore.data.map { it[Keys.NEW_UPDATES_COUNT] ?: 0 }
     suspend fun setNewUpdatesCount(value: Int) = dataStore.edit { it[Keys.NEW_UPDATES_COUNT] = value }
 
+    // --- Smart Update Skip ---
+
+    /** Skip manga that still have unread chapters during global library update. */
+    val skipUpdatesWithUnread: Flow<Boolean> = dataStore.data.map { it[Keys.SKIP_UPDATES_WITH_UNREAD] ?: false }
+    suspend fun setSkipUpdatesWithUnread(value: Boolean) = dataStore.edit { it[Keys.SKIP_UPDATES_WITH_UNREAD] = value }
+
+    /** Skip manga whose status is Completed during global library update. */
+    val skipUpdatesWithCompleted: Flow<Boolean> = dataStore.data.map { it[Keys.SKIP_UPDATES_WITH_COMPLETED] ?: false }
+    suspend fun setSkipUpdatesWithCompleted(value: Boolean) = dataStore.edit { it[Keys.SKIP_UPDATES_WITH_COMPLETED] = value }
+
+    /** Skip manga that have never been started (lastRead == null) during global library update. */
+    val skipUpdatesNeverStarted: Flow<Boolean> = dataStore.data.map { it[Keys.SKIP_UPDATES_NEVER_STARTED] ?: false }
+    suspend fun setSkipUpdatesNeverStarted(value: Boolean) = dataStore.edit { it[Keys.SKIP_UPDATES_NEVER_STARTED] = value }
+
+    // --- Per-Category Last Update Tracking ---
+
+    /** Serialized map of "categoryId:timestampMs" pairs for per-category frequency filtering. */
+    val categoryLastUpdateMs: Flow<Map<Long, Long>> = dataStore.data.map { prefs ->
+        val raw = prefs[Keys.CATEGORY_LAST_UPDATE_MS] ?: ""
+        if (raw.isEmpty()) emptyMap()
+        else raw.split(",").mapNotNull { entry ->
+            val parts = entry.split(":")
+            if (parts.size == 2) parts[0].toLongOrNull()?.let { id -> id to (parts[1].toLongOrNull() ?: 0L) }
+            else null
+        }.toMap()
+    }
+
+    suspend fun setCategoryLastUpdateMs(map: Map<Long, Long>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.CATEGORY_LAST_UPDATE_MS] =
+                if (map.isEmpty()) "" else map.entries.joinToString(",") { "${it.key}:${it.value}" }
+        }
+    }
+
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
@@ -116,5 +151,9 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val AUTO_REFRESH_ON_START = booleanPreferencesKey("library_auto_refresh_on_start")
         val SHOW_UPDATE_PROGRESS = booleanPreferencesKey("library_show_update_progress")
         val NEW_UPDATES_COUNT = intPreferencesKey("library_new_updates_count")
+        val SKIP_UPDATES_WITH_UNREAD = booleanPreferencesKey("skip_updates_with_unread")
+        val SKIP_UPDATES_WITH_COMPLETED = booleanPreferencesKey("skip_updates_with_completed")
+        val SKIP_UPDATES_NEVER_STARTED = booleanPreferencesKey("skip_updates_never_started")
+        val CATEGORY_LAST_UPDATE_MS = stringPreferencesKey("category_last_update_ms")
     }
 }

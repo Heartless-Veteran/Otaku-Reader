@@ -11,4 +11,7 @@ data class LibrarySettingsState(
     val updateOnlyPinnedCategories: Boolean = false,
     val autoRefreshOnStart: Boolean = false,
     val showUpdateProgress: Boolean = true,
+    val skipUpdatesWithUnread: Boolean = false,
+    val skipUpdatesWithCompleted: Boolean = false,
+    val skipUpdatesNeverStarted: Boolean = false,
 )

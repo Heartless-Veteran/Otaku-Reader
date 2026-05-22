@@ -62,6 +62,21 @@ class LibrarySettingsDelegate @Inject constructor(
             }
         }
         scope.launch {
+            libraryPreferences.skipUpdatesWithUnread.collect { v ->
+                updateState { it.copy(library = it.library.copy(skipUpdatesWithUnread = v)) }
+            }
+        }
+        scope.launch {
+            libraryPreferences.skipUpdatesWithCompleted.collect { v ->
+                updateState { it.copy(library = it.library.copy(skipUpdatesWithCompleted = v)) }
+            }
+        }
+        scope.launch {
+            libraryPreferences.skipUpdatesNeverStarted.collect { v ->
+                updateState { it.copy(library = it.library.copy(skipUpdatesNeverStarted = v)) }
+            }
+        }
+        scope.launch {
             generalPreferences.updateCheckInterval.collect { interval ->
                 latestUpdateCheckInterval = interval
                 updateState { it.copy(updateCheckInterval = interval) }
@@ -89,6 +104,9 @@ class LibrarySettingsDelegate @Inject constructor(
         }
         is SettingsEvent.SetAutoRefreshOnStart -> { libraryPreferences.setAutoRefreshOnStart(event.enabled); true }
         is SettingsEvent.SetShowUpdateProgress -> { libraryPreferences.setShowUpdateProgress(event.enabled); true }
+        is SettingsEvent.SetSkipUpdatesWithUnread -> { libraryPreferences.setSkipUpdatesWithUnread(event.enabled); true }
+        is SettingsEvent.SetSkipUpdatesWithCompleted -> { libraryPreferences.setSkipUpdatesWithCompleted(event.enabled); true }
+        is SettingsEvent.SetSkipUpdatesNeverStarted -> { libraryPreferences.setSkipUpdatesNeverStarted(event.enabled); true }
         is SettingsEvent.SetUpdateInterval -> {
             generalPreferences.setUpdateCheckInterval(event.hours)
             latestUpdateCheckInterval = event.hours

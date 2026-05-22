@@ -56,7 +56,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Download queue persistence
         DownloadQueueEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
