@@ -24,6 +24,7 @@ import app.otakureader.data.backup.BackupScheduler as BackupSchedulerImpl
 import app.otakureader.data.backup.repository.BackupRepository as BackupRepositoryImpl
 import app.otakureader.data.backup.tachiyomi.TachiyomiBackupImporter as TachiyomiBackupImporterImpl
 import app.otakureader.data.tracking.TrackManager as TrackManagerImpl
+import app.otakureader.data.tracking.repository.TrackRepositoryImpl
 import app.otakureader.data.updater.AppUpdateChecker as AppUpdateCheckerImpl
 import app.otakureader.data.worker.LibraryUpdateScheduler as LibraryUpdateSchedulerImpl
 import app.otakureader.data.worker.ReadingReminderScheduler as ReadingReminderSchedulerImpl
@@ -40,6 +41,7 @@ import app.otakureader.data.repository.StatisticsRepositoryImpl
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.tracking.TrackManager
+import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.updater.AppUpdateChecker
 import dagger.Binds
 import dagger.Module
@@ -107,6 +109,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTachiyomiBackupImporter(impl: TachiyomiBackupImporterImpl): TachiyomiBackupImporter
+
+    @Binds
+    abstract fun bindTrackRepository(impl: TrackRepositoryImpl): TrackRepository
 
     @Binds
     abstract fun bindTrackManager(impl: TrackManagerImpl): TrackManager

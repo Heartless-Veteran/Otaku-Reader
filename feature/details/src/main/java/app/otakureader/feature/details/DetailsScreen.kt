@@ -79,7 +79,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -518,12 +517,15 @@ private fun MangaHeader(
     }
     val contentType = if (isOverriddenManhwa) ContentType.MANHWA else ContentType.MANGA
 
-    // Bloom enter animation — fades the hero in on first composition
-    var bloomProgress by remember { mutableFloatStateOf(0f) }
+    // Bloom enter animation — fades the hero in on first composition.
+    // The Animatable is remembered so Compose reads its `value` as observable state,
+    // driving recomposition on every animation frame. Previously, the Animatable was
+    // created inside LaunchedEffect and its value was only copied after animateTo()
+    // completed, so the hero jumped from alpha=0 to alpha=1 with no visible transition.
+    val bloomAnimatable = remember(manga.id) { Animatable(0f) }
     LaunchedEffect(manga.id) {
-        val animatable = Animatable(0f)
-        animatable.animateTo(1f, animationSpec = tween(800, easing = FastOutSlowInEasing))
-        bloomProgress = animatable.value
+        bloomAnimatable.snapTo(0f)
+        bloomAnimatable.animateTo(1f, animationSpec = tween(800, easing = FastOutSlowInEasing))
     }
 
     // Derive splash colors from the Material theme primary/secondary driven by MangaDynamicTheme
@@ -564,7 +566,7 @@ private fun MangaHeader(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(360.dp)
-                    .graphicsLayer { alpha = bloomProgress }
+                    .graphicsLayer { alpha = bloomAnimatable.value }
             ) {
                 // Background layer: CoverSplashBackground when cover URL available,
                 // fallback gradient otherwise
