@@ -7,6 +7,7 @@ import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.scheduler.CoverRefreshScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.feature.settings.delegate.AppearanceSettingsDelegate
@@ -42,6 +43,7 @@ class SettingsViewModel @Inject constructor(
     private val readingGoalPreferences: ReadingGoalPreferences,
     private val generalPreferences: GeneralPreferences,
     private val readingReminderScheduler: ReminderScheduler,
+    private val coverRefreshScheduler: CoverRefreshScheduler,
     private val chapterRepository: ChapterRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -213,7 +215,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun refreshLibraryCovers() {
-        app.otakureader.data.worker.CoverRefreshWorker.enqueue(context)
+        coverRefreshScheduler.schedule(context)
         viewModelScope.launch {
             _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_refresh_covers_started)))
         }
