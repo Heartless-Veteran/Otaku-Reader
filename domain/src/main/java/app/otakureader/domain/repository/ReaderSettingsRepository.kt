@@ -83,6 +83,9 @@ interface ReaderSettingsRepository {
     suspend fun setPreloadPagesAfter(count: Int)
     suspend fun setImageQuality(quality: ImageQuality)
     suspend fun setDataSaverEnabled(enabled: Boolean)
+    suspend fun setSkipReadChapters(enabled: Boolean)
+    suspend fun setSkipFilteredChapters(enabled: Boolean)
+    suspend fun setSkipDuplicateChapters(enabled: Boolean)
 
     companion object {
         const val DEFAULT_PRELOAD_PAGES = 3

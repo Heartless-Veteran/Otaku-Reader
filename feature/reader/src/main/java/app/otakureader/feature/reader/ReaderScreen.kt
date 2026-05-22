@@ -54,6 +54,7 @@ import app.otakureader.feature.reader.modes.WebtoonReader
 import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
+import app.otakureader.feature.reader.ui.ChapterFilterBottomSheet
 import app.otakureader.feature.reader.ui.FullPageGallery
 import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
@@ -64,6 +65,7 @@ import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
 import app.otakureader.feature.reader.ReaderEffect
 import app.otakureader.feature.reader.ReaderEvent
+import app.otakureader.feature.reader.ReaderSetting
 import app.otakureader.feature.reader.TapZone
 import app.otakureader.feature.reader.ReaderViewModel
 import kotlinx.coroutines.delay
@@ -99,6 +101,7 @@ fun ReaderScreen(
     // UI state for overlays
     var showZoomIndicator by remember { mutableStateOf(false) }
     var showBrightnessSlider by remember { mutableStateOf(false) }
+    var showChapterFilterSheet by remember { mutableStateOf(false) }
     
     // Handle effects
     LaunchedEffect(Unit) {
@@ -309,8 +312,21 @@ fun ReaderScreen(
             onResetZoom = { viewModel.onEvent(ReaderEvent.ResetZoom) },
             onToggleGallery = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
             onNavigateBack = onNavigateBack,
-            onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) }
+            onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
+            onToggleChapterFilter = { showChapterFilterSheet = true },
         )
+
+        if (showChapterFilterSheet) {
+            ChapterFilterBottomSheet(
+                skipReadChapters = state.skipReadChapters,
+                skipFilteredChapters = state.skipFilteredChapters,
+                skipDuplicateChapters = state.skipDuplicateChapters,
+                onToggleSkipRead = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SKIP_READ_CHAPTERS)) },
+                onToggleSkipFiltered = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SKIP_FILTERED_CHAPTERS)) },
+                onToggleSkipDuplicate = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SKIP_DUPLICATE_CHAPTERS)) },
+                onDismiss = { showChapterFilterSheet = false },
+            )
+        }
         
         // Bottom thumbnail strip — shows alongside menu/controls
         PageThumbnailStrip(

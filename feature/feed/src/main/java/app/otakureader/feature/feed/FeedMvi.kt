@@ -10,7 +10,9 @@ data class FeedState(
     val isLoading: Boolean = false,
     val feedItems: List<FeedItem> = emptyList(),
     val feedSources: List<FeedSource> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    /** IDs of manga currently in the library. Used to indicate favorite status on long-click. */
+    val favoritedMangaIds: Set<Long> = emptySet(),
 ) : UiState
 
 sealed interface FeedEvent : UiEvent {
@@ -19,6 +21,8 @@ sealed interface FeedEvent : UiEvent {
     data class OnMarkAsRead(val feedItemId: Long) : FeedEvent
     data class OnToggleSource(val sourceId: Long, val enabled: Boolean) : FeedEvent
     data object ClearHistory : FeedEvent
+    /** Long-click on a feed item: quickly add to or remove from the library. */
+    data class LongClickManga(val mangaId: Long) : FeedEvent
 }
 
 sealed interface FeedEffect : UiEffect {

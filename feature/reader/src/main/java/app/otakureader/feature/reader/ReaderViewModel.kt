@@ -668,7 +668,21 @@ class ReaderViewModel @Inject constructor(
                 _state.update { it.copy(cropBordersEnabled = newValue) }
                 viewModelScope.launch { settingsRepository.setCropBordersEnabled(newValue) }
             }
-            else -> { /* Other settings not yet implemented */ }
+            ReaderSetting.SKIP_READ_CHAPTERS -> {
+                val newValue = !_state.value.skipReadChapters
+                _state.update { it.copy(skipReadChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipReadChapters(newValue) }
+            }
+            ReaderSetting.SKIP_FILTERED_CHAPTERS -> {
+                val newValue = !_state.value.skipFilteredChapters
+                _state.update { it.copy(skipFilteredChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipFilteredChapters(newValue) }
+            }
+            ReaderSetting.SKIP_DUPLICATE_CHAPTERS -> {
+                val newValue = !_state.value.skipDuplicateChapters
+                _state.update { it.copy(skipDuplicateChapters = newValue) }
+                viewModelScope.launch { settingsRepository.setSkipDuplicateChapters(newValue) }
+            }
         }
     }
 
@@ -846,7 +860,18 @@ class ReaderViewModel @Inject constructor(
         val isManhwaByGenre = "manhwa" in genreText || "webtoon" in genreText || "korean" in genreText
         generalPreferences.getMangaContentType(mangaId)
             .onEach { userSetsManhwa ->
-                _state.update { it.copy(isManhwaContent = userSetsManhwa || isManhwaByGenre) }
+                val isWebtoon = userSetsManhwa || isManhwaByGenre
+                var switchedToWebtoon = false
+                _state.update { current ->
+                    switchedToWebtoon = isWebtoon && current.mode == ReaderMode.SINGLE_PAGE
+                    current.copy(
+                        isManhwaContent = isWebtoon,
+                        mode = if (switchedToWebtoon) ReaderMode.WEBTOON else current.mode
+                    )
+                }
+                if (switchedToWebtoon) {
+                    viewModelScope.launch { settingsRepository.setReaderMode(ReaderMode.WEBTOON) }
+                }
             }
             .launchIn(viewModelScope)
     }

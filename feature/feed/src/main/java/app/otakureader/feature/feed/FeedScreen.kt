@@ -1,6 +1,8 @@
 package app.otakureader.feature.feed
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
@@ -156,6 +159,7 @@ fun FeedScreen(
                     FeedItemRow(
                         item = item,
                         formatter = formatter,
+                        isFavorited = item.mangaId in state.favoritedMangaIds,
                         onClick = {
                             viewModel.onEvent(
                                 FeedEvent.OnFeedItemClick(item.mangaId, item.chapterId)
@@ -163,7 +167,10 @@ fun FeedScreen(
                         },
                         onMarkAsRead = {
                             viewModel.onEvent(FeedEvent.OnMarkAsRead(item.id))
-                        }
+                        },
+                        onLongClick = {
+                            viewModel.onEvent(FeedEvent.LongClickManga(item.mangaId))
+                        },
                     )
                     HorizontalDivider()
                 }
@@ -172,18 +179,21 @@ fun FeedScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FeedItemRow(
     item: FeedItem,
     formatter: DateTimeFormatter,
     onClick: () -> Unit,
     onMarkAsRead: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isFavorited: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
@@ -214,6 +224,15 @@ private fun FeedItemRow(
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
+        if (isFavorited) {
+            Icon(
+                imageVector = Icons.Default.Bookmark,
+                contentDescription = stringResource(R.string.feed_in_library),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
         if (!item.isRead) {
             IconButton(onClick = onMarkAsRead, modifier = Modifier.size(36.dp)) {
                 Icon(

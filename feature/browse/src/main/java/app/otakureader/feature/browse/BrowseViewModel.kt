@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.FeedRepository
+import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
@@ -13,6 +15,7 @@ import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.toSourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +39,8 @@ class BrowseViewModel @Inject constructor(
     private val searchMangaUseCase: SearchMangaUseCase,
     private val getSourceFiltersUseCase: GetSourceFiltersUseCase,
     private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase,
+    private val toggleFavoriteMangaUseCase: ToggleFavoriteMangaUseCase,
+    private val mangaRepository: MangaRepository,
     private val feedRepository: FeedRepository,
     private val generalPreferences: GeneralPreferences,
 ) : ViewModel() {
@@ -70,6 +75,7 @@ class BrowseViewModel @Inject constructor(
             }
         }
         observeSavedSearches()
+        observeLibraryFavorites()
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -141,6 +147,7 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ExitBulkSelectionMode -> {
                 _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
             }
+            is BrowseEvent.LongClickManga -> quickToggleFavorite(event.manga)
             is BrowseEvent.SaveCurrentSearch -> saveCurrentSearch()
             is BrowseEvent.DeleteSavedSearch -> deleteSavedSearch(event.searchId)
             is BrowseEvent.ApplySavedSearch -> applySavedSearch(event.search)
@@ -343,6 +350,45 @@ class BrowseViewModel @Inject constructor(
                 .onFailure { error ->
                     _effect.send(BrowseEffect.ShowSnackbar("Failed to add manga: ${error.message}"))
                 }
+        }
+    }
+
+    // --- Quick Favorite Toggle (long-click) ---
+
+    /**
+     * Keeps [BrowseState.favoritedMangaUrls] up-to-date by observing the library.
+     * This lets the UI indicate which browse results are already in the library.
+     */
+    private fun observeLibraryFavorites() {
+        mangaRepository.getLibraryManga()
+            .map { mangaList -> mangaList.map { it.url }.toSet() }
+            .onEach { urls -> _state.update { it.copy(favoritedMangaUrls = urls) } }
+            .launchIn(viewModelScope)
+    }
+
+    /**
+     * Quickly adds or removes a single [SourceManga] from the library without
+     * entering bulk selection mode. Shows a snackbar confirming the action.
+     */
+    private fun quickToggleFavorite(manga: app.otakureader.sourceapi.SourceManga) {
+        val sourceId = _state.value.currentSourceId ?: return
+        viewModelScope.launch {
+            val alreadyFavorited = manga.url in _state.value.favoritedMangaUrls
+            if (alreadyFavorited) {
+                // Look up the DB record to get the ID needed for toggleFavorite
+                val dbManga = mangaRepository.getMangaBySourceAndUrl(
+                    sourceId = sourceId.toSourceId(),
+                    url = manga.url
+                )
+                if (dbManga != null) {
+                    toggleFavoriteMangaUseCase(dbManga.id)
+                    _effect.send(BrowseEffect.ShowSnackbar("Removed from library"))
+                }
+            } else {
+                addMangaToLibraryUseCase(manga, sourceId)
+                    .onSuccess { _effect.send(BrowseEffect.ShowSnackbar("Added to library")) }
+                    .onFailure { _effect.send(BrowseEffect.ShowSnackbar("Failed to add to library")) }
+            }
         }
     }
 

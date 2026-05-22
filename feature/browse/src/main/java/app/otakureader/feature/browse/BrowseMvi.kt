@@ -28,6 +28,8 @@ data class BrowseState(
     val isBulkSelectionMode: Boolean = false,
     /** Saved searches for the current source, loaded from the database. */
     val savedSearches: List<FeedSavedSearch> = emptyList(),
+    /** URLs of manga that are currently in the library (favorited). Used for long-click toggle. */
+    val favoritedMangaUrls: Set<String> = emptySet(),
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -49,6 +51,12 @@ sealed interface BrowseEvent : UiEvent {
     data object ClearSelection : BrowseEvent
     data object AddSelectedToLibrary : BrowseEvent
     data object ExitBulkSelectionMode : BrowseEvent
+
+    /**
+     * Long-click on a manga card in Browse: quickly add to or remove from the library
+     * without entering bulk selection mode.
+     */
+    data class LongClickManga(val manga: SourceManga) : BrowseEvent
 
     /** Saves the current search query + filters for the active source. */
     data object SaveCurrentSearch : BrowseEvent

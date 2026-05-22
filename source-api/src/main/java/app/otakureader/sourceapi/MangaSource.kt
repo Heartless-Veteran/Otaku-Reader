@@ -75,12 +75,11 @@ data class SourceManga(
     val contentRating: Int? = null,
 )
 
-/** Chapter data as returned by a remote source. */
-@Serializable
-data class SourceChapter(
-    val url: String,
-    val name: String,
-    val dateUpload: Long = 0L,
-    val chapterNumber: Float = -1f,
-    val scanlator: String? = null
-)
+/**
+ * Converts a string source identifier to the stable Long key used by the database.
+ *
+ * Tachiyomi conventions store source IDs as Longs derived from the package name.
+ * This helper centralises the conversion so the intent is explicit and consistent
+ * across all call sites.
+ */
+fun String.toSourceId(): Long = hashCode().toLong()

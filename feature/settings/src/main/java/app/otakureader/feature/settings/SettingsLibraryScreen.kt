@@ -145,6 +145,17 @@ private fun LibraryContent(state: SettingsState, onEvent: (SettingsEvent) -> Uni
         },
     )
 
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_show_download_badge)) },
+        supportingContent = { Text(stringResource(R.string.settings_show_download_badge_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.showDownloadBadge,
+                onCheckedChange = { onEvent(SettingsEvent.SetShowDownloadBadge(it)) },
+            )
+        },
+    )
+
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
     SectionHeader(title = stringResource(R.string.settings_library_updates))
 

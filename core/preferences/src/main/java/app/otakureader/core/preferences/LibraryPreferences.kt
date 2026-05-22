@@ -32,6 +32,10 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val showBadges: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_BADGES] ?: true }
     suspend fun setShowBadges(value: Boolean) = dataStore.edit { it[Keys.SHOW_BADGES] = value }
 
+    /** Whether to show downloaded-chapter count badges on library covers. */
+    val showDownloadBadge: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_DOWNLOAD_BADGE] ?: true }
+    suspend fun setShowDownloadBadge(value: Boolean) = dataStore.edit { it[Keys.SHOW_DOWNLOAD_BADGE] = value }
+
     // --- Sort and Display ---
 
     val librarySortMode: Flow<Int> = dataStore.data.map { it[Keys.LIBRARY_SORT_MODE] ?: 0 }
@@ -98,6 +102,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
+        val SHOW_DOWNLOAD_BADGE = booleanPreferencesKey("show_download_badge")
         val LIBRARY_SORT_MODE = intPreferencesKey("library_sort_mode")
         val LIBRARY_DISPLAY_MODE = intPreferencesKey("library_display_mode")
         val LIBRARY_FILTER_MODE = intPreferencesKey("library_filter_mode")
