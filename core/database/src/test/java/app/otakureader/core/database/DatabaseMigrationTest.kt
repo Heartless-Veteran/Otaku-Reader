@@ -17,6 +17,8 @@ import app.otakureader.core.database.migrations.MIGRATION_19_20
 import app.otakureader.core.database.migrations.MIGRATION_20_21
 import app.otakureader.core.database.migrations.MIGRATION_21_22
 import app.otakureader.core.database.migrations.MIGRATION_22_23
+import app.otakureader.core.database.migrations.MIGRATION_23_24
+import app.otakureader.core.database.migrations.MIGRATION_24_25
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -42,7 +44,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 23", 23, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 25", 25, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -69,7 +71,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 21 migrations (v2→v23)", 21, ALL_MIGRATIONS.size)
+        assertEquals("Expected 23 migrations (v2→v25)", 23, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -378,21 +380,104 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Full chain v9 → v23 ─────────────────────────────────────────────────
-    // Starts from v9 (oldest exported schema JSON). Runs v9→v21 via
-    // runMigrationsAndValidate (which validates against 9.json and 21.json),
-    // then applies MIGRATION_21_22 and MIGRATION_22_23 directly.
+    // ── Migration 23 → 24 ───────────────────────────────────────────────────
+    // Adds: categories.update_frequency (INTEGER NOT NULL DEFAULT 1)
 
     @Test
-    fun fullMigrationChain_v9ToV23() {
+    fun migration23To24_addsCategoryUpdateFrequency() {
+        helper.createDatabase(TEST_DB, 23).close()
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 24, true, MIGRATION_23_24)
+        assertTrue(
+            "categories.update_frequency must exist after 23→24",
+            "update_frequency" in db.columnNames("categories"),
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration23To24_updateFrequencyDefaultsToOne() {
+        val db23 = helper.createDatabase(TEST_DB, 23)
+        db23.execSQL("INSERT INTO categories (`name`, `order`, `flags`) VALUES ('Test Category', 0, 0)")
+        db23.close()
+
+        val db24 = helper.runMigrationsAndValidate(TEST_DB, 24, true, MIGRATION_23_24)
+        val cursor = db24.query("SELECT update_frequency FROM categories WHERE name = 'Test Category'")
+        assertTrue("Row must survive migration", cursor.moveToFirst())
+        assertEquals("update_frequency default must be 1", 1, cursor.getInt(0))
+        cursor.close()
+        db24.close()
+    }
+
+    // ── Migration 24 → 25 ───────────────────────────────────────────────────
+    // Adds: track_entries table with indexes
+
+    @Test
+    fun migration24To25_createsTrackEntries() {
+        val db = helper.createDatabase(TEST_DB, 24)
+        assertFalse("track_entries must NOT exist at v24", "track_entries" in db.tableNames())
+        MIGRATION_24_25.migrate(db)
+        assertTrue("track_entries must exist after 24→25", "track_entries" in db.tableNames())
+        val cols = db.columnNames("track_entries")
+        assertTrue("id must exist", "id" in cols)
+        assertTrue("manga_id must exist", "manga_id" in cols)
+        assertTrue("tracker_id must exist", "tracker_id" in cols)
+        assertTrue("remote_id must exist", "remote_id" in cols)
+        assertTrue("remote_url must exist", "remote_url" in cols)
+        assertTrue("title must exist", "title" in cols)
+        assertTrue("status must exist", "status" in cols)
+        assertTrue("last_chapter_read must exist", "last_chapter_read" in cols)
+        assertTrue("total_chapters must exist", "total_chapters" in cols)
+        assertTrue("score must exist", "score" in cols)
+        assertTrue("start_date must exist", "start_date" in cols)
+        assertTrue("finish_date must exist", "finish_date" in cols)
+        val indexes = db.indexNames("track_entries")
+        assertTrue("index_track_entries_manga_id must exist", "index_track_entries_manga_id" in indexes)
+        assertTrue("index_track_entries_tracker_id must exist", "index_track_entries_tracker_id" in indexes)
+        assertTrue(
+            "index_track_entries_manga_id_tracker_id (unique) must exist",
+            "index_track_entries_manga_id_tracker_id" in indexes,
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration24To25_trackEntriesUniqueConstraint() {
+        val db = helper.createDatabase(TEST_DB, 24)
+        MIGRATION_24_25.migrate(db)
+        db.execSQL(
+            "INSERT INTO track_entries (manga_id, tracker_id, remote_id, remote_url, title, " +
+                "status, last_chapter_read, total_chapters, score, start_date, finish_date) " +
+                "VALUES (1, 2, 100, '', 'Test', 0, 1.0, 10, 5.0, 0, 0)",
+        )
+        var threw = false
+        try {
+            db.execSQL(
+                "INSERT INTO track_entries (manga_id, tracker_id, remote_id, remote_url, title, " +
+                    "status, last_chapter_read, total_chapters, score, start_date, finish_date) " +
+                    "VALUES (1, 2, 200, '', 'Duplicate', 0, 2.0, 10, 5.0, 0, 0)",
+            )
+        } catch (_: Exception) {
+            threw = true
+        }
+        assertTrue("Inserting duplicate (manga_id, tracker_id) must throw", threw)
+        db.close()
+    }
+
+    // ── Full chain v9 → v25 ─────────────────────────────────────────────────
+    // Starts from v9 (oldest exported schema JSON). Runs v9→v24 via
+    // runMigrationsAndValidate (which validates against 9.json and 24.json),
+    // then applies MIGRATION_24_25 directly (no 25.json export yet).
+
+    @Test
+    fun fullMigrationChain_v9ToV25() {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(
-            TEST_DB, 21, true,
-            *ALL_MIGRATIONS.filter { it.startVersion in 9..20 }.toTypedArray(),
+            TEST_DB, 24, true,
+            *ALL_MIGRATIONS.filter { it.startVersion in 9..23 }.toTypedArray(),
         )
-        assertFalse("download_queue must NOT exist at v21", "download_queue" in db.tableNames())
-        MIGRATION_21_22.migrate(db)
-        MIGRATION_22_23.migrate(db)
+        assertFalse("track_entries must NOT exist at v24", "track_entries" in db.tableNames())
+        MIGRATION_24_25.migrate(db)
         val tables = db.tableNames()
         assertTrue("manga must exist after full chain", "manga" in tables)
         assertTrue("chapters must exist after full chain", "chapters" in tables)
@@ -402,11 +487,20 @@ class DatabaseMigrationTest {
         assertTrue("download_queue must exist after full chain", "download_queue" in tables)
         assertTrue("page_bookmarks must exist after full chain", "page_bookmarks" in tables)
         assertTrue("tracker_sync_state must exist after full chain", "tracker_sync_state" in tables)
+        assertTrue("track_entries must exist after full chain", "track_entries" in tables)
         assertTrue("contentRating must exist in manga after full chain", "contentRating" in db.columnNames("manga"))
         assertTrue("userNotes must exist in chapters after full chain", "userNotes" in db.columnNames("chapters"))
         assertTrue(
+            "update_frequency must exist in categories after full chain",
+            "update_frequency" in db.columnNames("categories"),
+        )
+        assertTrue(
             "index_chapters_mangaId_read_sourceOrder must exist after full chain",
             "index_chapters_mangaId_read_sourceOrder" in db.indexNames("chapters"),
+        )
+        assertTrue(
+            "index_track_entries_manga_id must exist after full chain",
+            "index_track_entries_manga_id" in db.indexNames("track_entries"),
         )
         db.close()
     }
