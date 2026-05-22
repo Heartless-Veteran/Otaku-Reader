@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.toBitmap
+import app.otakureader.data.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -273,10 +274,10 @@ class UpdateNotifier(private val context: Context) {
         }
         val notification = NotificationCompat.Builder(context, UPDATE_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_more)
-            .setContentTitle("Library update — $skippedCount skipped")
-            .setContentText("Some manga were skipped based on your smart-update settings.")
+            .setContentTitle(context.getString(R.string.update_notifier_skipped_title, skippedCount))
+            .setContentText(context.getString(R.string.update_notifier_skipped_text))
             .setStyle(NotificationCompat.BigTextStyle()
-                .bigText("$skippedCount manga were skipped (unread, completed, or never started). Adjust this in Settings → Library."))
+                .bigText(context.getString(R.string.update_notifier_skipped_big_text, skippedCount)))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(true)
             .setContentIntent(buildLaunchIntent())

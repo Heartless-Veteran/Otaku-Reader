@@ -18,6 +18,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.CategoryUpdateFrequency
+import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
@@ -78,7 +79,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val skipWithUnread = libraryPreferences.skipUpdatesWithUnread.first()
             val skipCompleted = libraryPreferences.skipUpdatesWithCompleted.first()
             val skipNeverStarted = libraryPreferences.skipUpdatesNeverStarted.first()
-            val skippedManga = mutableListOf<app.otakureader.domain.model.Manga>()
+            val skippedManga = mutableListOf<Manga>()
             if (skipWithUnread || skipCompleted || skipNeverStarted) {
                 libraryManga = libraryManga.filter { manga ->
                     when {
@@ -98,18 +99,21 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val updatedCategoryIds = mutableSetOf<Long>()
             libraryManga = libraryManga.filter { manga ->
                 val catIds = manga.categoryIds
-                catIds.isEmpty() || catIds.any { catId ->
+                if (catIds.isEmpty()) return@filter true
+                // Evaluate ALL categories so every due category's timestamp is refreshed,
+                // not just the first one found by short-circuit evaluation.
+                val dueCatIds = catIds.filter { catId ->
                     val freq = categoryFrequencyMap[catId] ?: CategoryUpdateFrequency.DAILY
                     val elapsed = now - (categoryLastUpdate[catId] ?: 0L)
-                    val include = when (freq) {
+                    when (freq) {
                         CategoryUpdateFrequency.NEVER -> false
-                        CategoryUpdateFrequency.DAILY -> elapsed >= 24 * 3_600_000L
-                        CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= 3 * 24 * 3_600_000L
-                        CategoryUpdateFrequency.WEEKLY -> elapsed >= 7 * 24 * 3_600_000L
+                        CategoryUpdateFrequency.DAILY -> elapsed >= TimeUnit.DAYS.toMillis(1)
+                        CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= TimeUnit.DAYS.toMillis(3)
+                        CategoryUpdateFrequency.WEEKLY -> elapsed >= TimeUnit.DAYS.toMillis(7)
                     }
-                    if (include) updatedCategoryIds.add(catId)
-                    include
                 }
+                updatedCategoryIds.addAll(dueCatIds)
+                dueCatIds.isNotEmpty()
             }
 
             val notificationsEnabled = generalPreferences.notificationsEnabled.first()
