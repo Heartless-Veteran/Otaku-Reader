@@ -54,10 +54,12 @@ fun NavGraphBuilder.sourceDetailScreen(
 
 fun NavGraphBuilder.sourceMangaDetailScreen(
     onNavigateToMangaDetail: (mangaId: Long) -> Unit,
+    onNavigateBack: () -> Unit,
 ) {
     composable<Route.SourceMangaDetail> {
         SourceMangaDetailScreen(
-            onNavigateToMangaDetail = onNavigateToMangaDetail
+            onNavigateToMangaDetail = onNavigateToMangaDetail,
+            onNavigateBack = onNavigateBack,
         )
     }
 }

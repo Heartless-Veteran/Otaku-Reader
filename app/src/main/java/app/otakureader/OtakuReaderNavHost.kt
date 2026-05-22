@@ -222,7 +222,10 @@ fun OtakuReaderNavHost(
                 navController.navigate(Route.MangaDetails(mangaId)) {
                     popUpTo<Route.SourceMangaDetail> { inclusive = true }
                 }
-            }
+            },
+            onNavigateBack = {
+                navController.popBackStack()
+            },
         )
 
         // Extensions bottom sheet

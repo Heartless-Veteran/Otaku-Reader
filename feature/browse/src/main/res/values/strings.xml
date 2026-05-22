@@ -127,4 +127,8 @@
     <string name="search_history_title">Recent searches</string>
     <string name="search_history_clear">Clear</string>
     <string name="search_history_remove">Remove from history</string>
+
+    <!-- SourceMangaDetailScreen redirect states (#901) -->
+    <string name="source_manga_detail_not_found">Manga not available offline</string>
+    <string name="source_manga_detail_error_prefix">Could not open manga</string>
 </resources>
