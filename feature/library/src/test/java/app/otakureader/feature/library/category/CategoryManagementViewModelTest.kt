@@ -156,6 +156,27 @@ class CategoryManagementViewModelTest {
     }
 
     @Test
+    fun onEvent_CreateCategory_withWeeklyFrequency_passesFrequencyToUseCase() = runTest {
+        every { categoryRepository.getCategories() } returns flowOf(emptyList())
+        coEvery { createCategoryUseCase("Weekly Cat", CategoryUpdateFrequency.WEEKLY) } returns 10L
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(CategoryEvent.CreateCategory("Weekly Cat", CategoryUpdateFrequency.WEEKLY))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val first = awaitItem()
+            assertTrue(first is CategoryEffect.DismissDialog)
+            val second = awaitItem()
+            assertEquals("Category created", (second as CategoryEffect.ShowSnackbar).message)
+        }
+
+        coVerify(exactly = 1) { createCategoryUseCase("Weekly Cat", CategoryUpdateFrequency.WEEKLY) }
+    }
+
+    @Test
     fun onEvent_UpdateCategory_callsUseCaseAndEmitsEffects() = runTest {
         every { categoryRepository.getCategories() } returns flowOf(emptyList())
         coEvery { updateCategoryUseCase(1L, "Updated", CategoryUpdateFrequency.DAILY) } returns Unit

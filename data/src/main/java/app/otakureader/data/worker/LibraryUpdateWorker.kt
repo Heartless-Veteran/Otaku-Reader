@@ -75,6 +75,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 }
             }
 
+            // TODO: extract skip-filter + per-category-frequency logic into a LibraryUpdateFilter
+            //  class if this worker gains another feature; it's already at ~340 lines.
             // Smart skip: exclude manga based on configurable conditions
             val skipWithUnread = libraryPreferences.skipUpdatesWithUnread.first()
             val skipCompleted = libraryPreferences.skipUpdatesWithCompleted.first()
@@ -85,6 +87,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     when {
                         skipWithUnread && manga.unreadCount > 0 -> { skippedManga += manga; false }
                         skipCompleted && manga.status == MangaStatus.COMPLETED -> { skippedManga += manga; false }
+                        // lastRead is null when the Manga domain model is created without reading
+                        // history (current mapping). The 0L guard covers any future join that
+                        // returns epoch-zero instead of null for unread manga.
                         skipNeverStarted && (manga.lastRead == null || manga.lastRead == 0L) -> { skippedManga += manga; false }
                         else -> true
                     }
