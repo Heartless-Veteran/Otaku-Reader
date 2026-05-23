@@ -3,25 +3,18 @@ package app.otakureader.feature.details
 
 import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
@@ -31,7 +24,6 @@ import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,7 +32,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -60,7 +51,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -74,7 +64,6 @@ import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.core.ui.theme.MangaDynamicTheme
 import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
@@ -524,122 +513,6 @@ private fun MangaDescription(
     }
 }
 
-@Composable
-private fun SourceSuggestionsSection(
-    suggestions: List<SourceSuggestion>,
-    isLoading: Boolean,
-    error: String?,
-    onSuggestionClick: (SourceSuggestion) -> Unit,
-    onLoadClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (suggestions.isEmpty() && !isLoading && error == null) {
-        // Show load button when no suggestions loaded yet
-        OutlinedButton(
-            onClick = onLoadClick,
-            modifier = modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.details_load_suggestions))
-        }
-        return
-    }
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.details_source_suggestions_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            if (!isLoading && suggestions.isNotEmpty()) {
-                TextButton(onClick = onLoadClick) {
-                    Text(stringResource(R.string.details_refresh))
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        when {
-            isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-            error != null -> {
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-            suggestions.isNotEmpty() -> {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp),
-                    modifier = Modifier.height(160.dp)
-                ) {
-                    items(suggestions, key = { it.mangaUrl }) { suggestion ->
-                        SuggestionItem(
-                            suggestion = suggestion,
-                            onClick = { onSuggestionClick(suggestion) }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SuggestionItem(
-    suggestion: SourceSuggestion,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .width(100.dp)
-            .clickable(onClick = onClick)
-    ) {
-        AsyncImage(
-            model = suggestion.thumbnailUrl,
-            contentDescription = suggestion.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.7f)
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = suggestion.title,
-            style = MaterialTheme.typography.bodySmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        suggestion.reason?.let { reason ->
-            Text(
-                text = reason,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
 
 @Preview(showBackground = true, backgroundColor = 0xFF12121A)
 @Composable
