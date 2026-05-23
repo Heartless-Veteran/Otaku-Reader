@@ -4,6 +4,8 @@ package app.otakureader.feature.details
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,6 +72,7 @@ internal fun ChapterListHeader(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ChapterFilterDialog(
     filter: DetailsContract.ChapterFilter,
@@ -141,18 +144,19 @@ internal fun ChapterFilterDialog(
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    // "All scanlators" chip
-                    FilterChip(
-                        selected = selectedScanlator == null,
-                        onClick = { selectedScanlator = null },
-                        label = { Text(stringResource(R.string.details_filter_all)) }
-                    )
-                    scanlators.forEach { s ->
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
-                            selected = selectedScanlator == s,
-                            onClick = { selectedScanlator = if (selectedScanlator == s) null else s },
-                            label = { Text(s) }
+                            selected = selectedScanlator == null,
+                            onClick = { selectedScanlator = null },
+                            label = { Text(stringResource(R.string.details_filter_all)) }
                         )
+                        scanlators.forEach { s ->
+                            FilterChip(
+                                selected = selectedScanlator == s,
+                                onClick = { selectedScanlator = if (selectedScanlator == s) null else s },
+                                label = { Text(s) }
+                            )
+                        }
                     }
                 }
             }

@@ -218,7 +218,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
             }
 
             if (useLocal) {
-                val localEntry = trackRepository.getEntry(trackerId, remoteId)
+                val localEntry = trackRepository.getEntry(mangaId, trackerId)
                 if (localEntry != null) {
                     val updated = tracker.update(localEntry)
                     trackerSyncDao.updateSyncState(
@@ -234,7 +234,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
                     )
                 }
             } else {
-                val localEntry = trackRepository.getEntry(trackerId, remoteId)
+                val localEntry = trackRepository.getEntry(mangaId, trackerId)
                 val entryToUpsert = (localEntry ?: remoteEntry).copy(
                     lastChapterRead = remoteEntry.lastChapterRead,
                     totalChapters = remoteEntry.totalChapters,
@@ -299,7 +299,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         val now = Instant.now()
 
         if (useLocal) {
-            val localEntry = trackRepository.getEntry(trackerId, remoteId) ?: return
+            val localEntry = trackRepository.getEntry(mangaId, trackerId) ?: return
             try {
                 val updated = tracker.update(localEntry)
                 trackerSyncDao.updateSyncState(
@@ -327,7 +327,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         } else {
             try {
                 val remoteEntry = tracker.find(remoteId) ?: return
-                val localEntry = trackRepository.getEntry(trackerId, remoteId)
+                val localEntry = trackRepository.getEntry(mangaId, trackerId)
                 val entryToUpsert = (localEntry ?: remoteEntry).copy(
                     lastChapterRead = remoteEntry.lastChapterRead,
                     totalChapters = remoteEntry.totalChapters,
@@ -382,7 +382,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         val remoteId = syncState.remoteId.toLongOrNull()
             ?: return TrackerSyncRepository.SyncResult(false, "Invalid remote ID")
 
-        val localEntry = trackRepository.getEntry(trackerId, remoteId)
+        val localEntry = trackRepository.getEntry(mangaId, trackerId)
             ?: return TrackerSyncRepository.SyncResult(false, "No local entry found")
 
         val now = Instant.now()
@@ -434,7 +434,7 @@ class TrackerSyncRepositoryImpl @Inject constructor(
             val remoteEntry = tracker.find(remoteId)
                 ?: return TrackerSyncRepository.SyncResult(false, "Entry not found on tracker")
 
-            val localEntry = trackRepository.getEntry(trackerId, remoteId)
+            val localEntry = trackRepository.getEntry(mangaId, trackerId)
             val entryToUpsert = (localEntry ?: remoteEntry).copy(
                 lastChapterRead = remoteEntry.lastChapterRead,
                 totalChapters = remoteEntry.totalChapters,

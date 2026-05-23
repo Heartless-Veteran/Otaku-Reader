@@ -134,6 +134,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val onWifi = !downloadOnlyOnWifi || isConnectedToWifi()
 
             val mangaWithNewChapters = mutableListOf<NotificationManga>()
+            val successfullyUpdatedCategoryIds = mutableSetOf<Long>()
             var failedUpdates = 0
             var processedCount = 0
             val totalCount = libraryManga.size
@@ -157,6 +158,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 val result = updateLibraryManga(manga)
 
                 result.onSuccess { newChapterCount ->
+                    successfullyUpdatedCategoryIds.addAll(manga.categoryIds.filter { it in updatedCategoryIds })
                     if (newChapterCount > 0) {
                         // Only add to notification list if notifications enabled for this manga
                         if (manga.notifyNewChapters) {
@@ -193,10 +195,11 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 progressNotifier?.cancelProgress()
             }
 
-            // Persist per-category last-update timestamps
-            if (updatedCategoryIds.isNotEmpty()) {
+            // Persist per-category last-update timestamps only for categories where
+            // at least one manga was successfully fetched (failures should not advance the clock).
+            if (successfullyUpdatedCategoryIds.isNotEmpty()) {
                 val updated = categoryLastUpdate.toMutableMap()
-                updatedCategoryIds.forEach { catId -> updated[catId] = now }
+                successfullyUpdatedCategoryIds.forEach { catId -> updated[catId] = now }
                 libraryPreferences.setCategoryLastUpdateMs(updated)
             }
 
