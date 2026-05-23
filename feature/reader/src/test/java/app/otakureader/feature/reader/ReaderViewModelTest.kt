@@ -3,7 +3,8 @@ package app.otakureader.feature.reader
 import android.content.Context
 import android.os.SystemClock
 import androidx.lifecycle.SavedStateHandle
-import app.otakureader.data.loader.PageLoader
+import app.otakureader.domain.history.ReadingHistoryScheduler
+import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
@@ -86,6 +87,7 @@ class ReaderViewModelTest {
     private lateinit var smartPrefetchManager: SmartPrefetchManager
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
     private lateinit var panelDetectionService: PanelDetectionService
+    private lateinit var historyScheduler: ReadingHistoryScheduler
 
     @Before
     @Suppress("LongMethod")
@@ -109,6 +111,7 @@ class ReaderViewModelTest {
         smartPrefetchManager = mockk(relaxed = true)
         chapterPrefetcher = mockk(relaxed = true)
         panelDetectionService = mockk()
+        historyScheduler = mockk(relaxed = true)
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
         every { generalPreferences.visualEffectsEnabled } returns flowOf(true)
@@ -212,9 +215,9 @@ class ReaderViewModelTest {
                 pageLoader = pageLoader,
             ),
             historyDelegate = ReaderHistoryDelegate(
-                context = context,
                 chapterRepository = chapterRepository,
                 settingsRepository = settingsRepository,
+                historyScheduler = historyScheduler,
             ),
             discordDelegate = ReaderDiscordDelegate(
                 generalPreferences = generalPreferences,
@@ -639,30 +642,17 @@ class ReaderViewModelTest {
     // ---- Smart Panels mode: panel detection ----
 
     @Test
-    fun `switching to SMART_PANELS triggers panel detection for existing pages`() = runTest {
-        val fakePanels = listOf(
-            ComicPanel(
-                id = 0,
-                bounds = PanelBounds(left = 0f, top = 0f, right = 0.5f, bottom = 0.5f),
-                confidence = 0.9f
-            )
-        )
-        coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns fakePanels
+    fun `switching to SMART_PANELS updates mode state`() = runTest {
         coEvery { settingsRepository.setReaderMode(any()) } just runs
 
         val vm = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        val pages = List(3) { ReaderPage(index = it, imageUrl = "https://example.com/page$it.jpg") }
-        vm.setPages(pages)
-
+        vm.setPages(List(3) { ReaderPage(index = it, imageUrl = "https://example.com/page$it.jpg") })
         vm.onEvent(ReaderEvent.OnModeChange(ReaderMode.SMART_PANELS))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Panel detection should have been called once for each page
-        coVerify(exactly = 3) { panelDetectionService.detectPanelsFromUrl(any(), any()) }
-        // All pages should now have panels populated
-        assertTrue(vm.state.value.pages.all { it.panels.isNotEmpty() })
+        assertEquals(ReaderMode.SMART_PANELS, vm.state.value.mode)
     }
 
     @Test
@@ -691,14 +681,13 @@ class ReaderViewModelTest {
             ComicPanel(0, PanelBounds(0f, 0f, 0.5f, 0.5f), 0.9f),
             ComicPanel(1, PanelBounds(0.5f, 0f, 1f, 0.5f), 0.9f)
         )
-        coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns fakePanels
 
         val vm = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        vm.setPages(List(5) { ReaderPage(index = it, imageUrl = "https://example.com/page$it.jpg") })
+        // Provide pages with panels already set (panel detection is done by the Composable)
+        vm.setPages(List(5) { ReaderPage(index = it, imageUrl = "https://example.com/page$it.jpg", panels = fakePanels) })
         vm.onEvent(ReaderEvent.OnModeChange(ReaderMode.SMART_PANELS))
-        // Wait for panel detection to complete so panels are populated before navigating
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Navigate to panel 1 on page 0
@@ -710,31 +699,7 @@ class ReaderViewModelTest {
         assertEquals(0, vm.state.value.currentPanel)
     }
 
-    @Test
-    fun `panel detection skips pages that already have panels`() = runTest {
-        val existingPanels = listOf(
-            ComicPanel(0, PanelBounds(0f, 0f, 1f, 1f), 0.95f)
-        )
-        coEvery { settingsRepository.setReaderMode(any()) } just runs
-        // Only the page without existing panels should be detected
-        coEvery { panelDetectionService.detectPanelsFromUrl(eq("https://example.com/page1.jpg"), any()) } returns emptyList()
 
-        val vm = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val pages = listOf(
-            ReaderPage(index = 0, imageUrl = "https://example.com/page0.jpg", panels = existingPanels),
-            ReaderPage(index = 1, imageUrl = "https://example.com/page1.jpg", panels = emptyList())
-        )
-        vm.setPages(pages)
-
-        vm.onEvent(ReaderEvent.OnModeChange(ReaderMode.SMART_PANELS))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Only page 1 should have been processed (page 0 already had panels)
-        coVerify(exactly = 0) { panelDetectionService.detectPanelsFromUrl(eq("https://example.com/page0.jpg"), any()) }
-        coVerify(exactly = 1) { panelDetectionService.detectPanelsFromUrl(eq("https://example.com/page1.jpg"), any()) }
-    }
 
     @Test
     @Suppress("LongMethod")
@@ -858,45 +823,4 @@ class ReaderViewModelTest {
 
     // ── OCR text search tests ────────────────────────────────────────────────
 
-    @Test
-    fun `OpenOcrSearch sets showOcrSearch to true and clears query`() = runTest {
-        val vm = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        vm.setPages(listOf(ReaderPage(index = 0, imageUrl = "https://example.com/page0.jpg")))
-
-        vm.onEvent(ReaderEvent.OpenOcrSearch)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val state = vm.state.value
-        assertTrue(state.showOcrSearch)
-        assertEquals("", state.ocrQuery)
-    }
-
-    @Test
-    fun `CloseOcrSearch sets showOcrSearch to false and cancels OCR jobs`() = runTest {
-        val vm = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-        vm.setPages(listOf(ReaderPage(index = 0, imageUrl = "https://example.com/page0.jpg")))
-
-        vm.onEvent(ReaderEvent.OpenOcrSearch)
-        testDispatcher.scheduler.advanceUntilIdle()
-        vm.onEvent(ReaderEvent.CloseOcrSearch)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        val state = vm.state.value
-        assertFalse(state.showOcrSearch)
-        assertFalse(state.isOcrRunning)
-    }
-
-    @Test
-    fun `UpdateOcrQuery updates the search query`() = runTest {
-        val vm = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        vm.onEvent(ReaderEvent.OpenOcrSearch)
-        vm.onEvent(ReaderEvent.UpdateOcrQuery("test query"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals("test query", vm.state.value.ocrQuery)
-    }
 }

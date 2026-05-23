@@ -37,9 +37,8 @@ class MigrationEntryViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        getLibraryManga = mockk {
-            every { invoke() } returns flowOf(emptyList())
-        }
+        getLibraryManga = mockk()
+        every { getLibraryManga.invoke() } returns flowOf(emptyList<Manga>())
     }
 
     @After

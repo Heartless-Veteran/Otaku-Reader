@@ -1,5 +1,6 @@
 package app.otakureader.feature.browse
 
+import app.cash.turbine.test
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.repository.FeedRepository
@@ -55,7 +56,8 @@ class BrowseViewModelTest {
     private val getLatestUpdatesUseCase = GetLatestUpdatesUseCase(sourceRepository)
     private val searchMangaUseCase = SearchMangaUseCase(sourceRepository)
     private val getSourceFiltersUseCase = GetSourceFiltersUseCase(sourceRepository)
-    private val addMangaToLibraryUseCase = AddMangaToLibraryUseCase(mangaRepository)
+    // Mocked to avoid withContext(Dispatchers.IO) racing against the test scheduler
+    private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase = mockk()
     private val toggleFavoriteMangaUseCase = ToggleFavoriteMangaUseCase(mangaRepository)
 
     private lateinit var viewModel: BrowseViewModel
@@ -74,6 +76,9 @@ class BrowseViewModelTest {
         every { generalPreferences.showNsfwContent } returns flowOf(false)
         every { feedRepository.getSavedSearches() } returns flowOf(emptyList())
 
+        // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
+        every { mangaRepository.getLibraryManga() } returns flowOf(emptyList())
+
         // Fallback stubs for suspend calls that may be triggered by SelectSource even in search tests.
         // Individual tests can override with more specific stubs as needed.
         coEvery { sourceRepository.getPopularManga(any(), any()) } returns Result.success(MangaPage(emptyList(), false))
@@ -82,6 +87,8 @@ class BrowseViewModelTest {
         coEvery { sourceRepository.getSourceFilters(any()) } returns FilterList()
         coEvery { mangaRepository.getMangaBySourceAndUrl(any(), any()) } returns null
         coEvery { mangaRepository.insertManga(any()) } returns 1L
+        coEvery { addMangaToLibraryUseCase(any<List<app.otakureader.sourceapi.SourceManga>>(), any()) } returns Result.success(1)
+        coEvery { addMangaToLibraryUseCase(any<app.otakureader.sourceapi.SourceManga>(), any()) } returns Result.success(1L)
 
         viewModel = BrowseViewModel(
             getSourcesUseCase = getSourcesUseCase,
@@ -237,12 +244,17 @@ class BrowseViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(BrowseEvent.OnMangaLongClick(manga))
-        viewModel.onEvent(BrowseEvent.AddSelectedToLibrary)
-        testDispatcher.scheduler.advanceUntilIdle()
 
-        val effect = withTimeoutOrNull(1000) { viewModel.effect.first() }
-        assertNotNull(effect)
-        assertTrue(effect is BrowseEffect.ShowSnackbar)
+        // Use Turbine to collect effects; it handles the IO dispatcher resume correctly.
+        // addSelectedToLibrary sends ShowSnackbar then NavigateToLibrary — consume both.
+        viewModel.effect.test {
+            viewModel.onEvent(BrowseEvent.AddSelectedToLibrary)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val firstEffect = awaitItem()
+            assertTrue(firstEffect is BrowseEffect.ShowSnackbar)
+            awaitItem() // NavigateToLibrary — consume to avoid TurbineAssertionError
+        }
     }
 
     @Test

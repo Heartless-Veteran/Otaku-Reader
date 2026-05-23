@@ -211,10 +211,13 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `repository failure sets error state`() = runTest {
-        // Create fresh ViewModel with failing installed extensions flow
+        // Create fresh ViewModel with failing installed extensions flow.
+        // Also make refreshAvailableExtensions fail so that refreshExtensions() does not
+        // clear the error set by the failing getInstalledExtensions() stream.
         every { extensionRepository.getInstalledExtensions() } returns flow {
             throw RuntimeException("Network error")
         }
+        coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.failure(RuntimeException("Network error"))
         coEvery { extensionRepoRepository.ensureDefaultRepository() } returns Unit
 
         val vm = ExtensionsViewModel(

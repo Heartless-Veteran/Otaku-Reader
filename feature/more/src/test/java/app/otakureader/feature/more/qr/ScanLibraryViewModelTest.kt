@@ -9,6 +9,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -146,16 +147,26 @@ class ScanLibraryViewModelTest {
     @Test
     fun `calling importLibrary while importing is a no-op`() = runTest {
         val item = shareableManga("Test", "100", "/m/test")
-        coEvery { mangaRepository.getMangaBySourceAndUrl(any(), any()) } returns manga(1L)
+        // Gate that lets us control when the first import's DB call completes, so the
+        // second importLibrary() call happens while the first is still in progress.
+        val gate = CompletableDeferred<app.otakureader.domain.model.Manga>()
+        coEvery { mangaRepository.getMangaBySourceAndUrl(any(), any()) } coAnswers { gate.await() }
 
         val viewModel = createViewModel()
         viewModel.importLibrary(libraryWith(item))
 
-        // Second call before idle — should be ignored
-        viewModel.importLibrary(libraryWith(item))
-        advanceUntilIdle()
+        // Advance to the point where the first coroutine has set _importState = Importing
+        // and is now suspended waiting on gate.await().
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        // Only one pass happened
+        // Now _importState is Importing — second call must be a no-op.
+        viewModel.importLibrary(libraryWith(item))
+
+        // Release the gate so the first import can complete.
+        gate.complete(manga(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Only one pass through getMangaBySourceAndUrl (the second call was blocked).
         coVerify(exactly = 1) { mangaRepository.getMangaBySourceAndUrl(any(), any()) }
     }
 }
