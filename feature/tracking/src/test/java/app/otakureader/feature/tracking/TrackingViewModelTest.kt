@@ -16,10 +16,13 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.runs
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -98,6 +101,8 @@ class TrackingViewModelTest {
         every { trackerSyncRepository.getSyncStateForManga(10L) } returns flowOf(emptyList())
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.LoadTrackers(mangaId = 10L, mangaTitle = "Naruto"))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -114,6 +119,8 @@ class TrackingViewModelTest {
         every { trackerSyncRepository.getSyncStateForManga(any()) } returns flowOf(emptyList())
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.LoadTrackers(mangaId = 1L, mangaTitle = "Test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -122,6 +129,11 @@ class TrackingViewModelTest {
 
     @Test
     fun onEvent_InitiateLogin_oauthTracker_emitsOpenOAuthEffect() = runTest {
+        // android.util.Base64 is not available in JVM unit tests — mock the static method
+        // so that generateCodeVerifier() doesn't throw RuntimeException.
+        mockkStatic(android.util.Base64::class)
+        every { android.util.Base64.encodeToString(any(), any()) } returns "mocked_code_verifier"
+
         val oauthTracker = mockk<Tracker> {
             every { id } returns TrackerType.MY_ANIME_LIST
             every { name } returns "MyAnimeList"
@@ -131,13 +143,17 @@ class TrackingViewModelTest {
 
         val viewModel = createViewModel(trackers = setOf(oauthTracker))
 
-        viewModel.effect.test {
-            viewModel.onEvent(TrackingEvent.InitiateLogin(trackerId = TrackerType.MY_ANIME_LIST))
-            testDispatcher.scheduler.advanceUntilIdle()
+        try {
+            viewModel.effect.test {
+                viewModel.onEvent(TrackingEvent.InitiateLogin(trackerId = TrackerType.MY_ANIME_LIST))
+                testDispatcher.scheduler.advanceUntilIdle()
 
-            val effect = awaitItem()
-            assertTrue(effect is TrackingEffect.OpenOAuth)
-            assertEquals(TrackerType.MY_ANIME_LIST, (effect as TrackingEffect.OpenOAuth).trackerId)
+                val effect = awaitItem()
+                assertTrue(effect is TrackingEffect.OpenOAuth)
+                assertEquals(TrackerType.MY_ANIME_LIST, (effect as TrackingEffect.OpenOAuth).trackerId)
+            }
+        } finally {
+            unmockkStatic(android.util.Base64::class)
         }
     }
 
@@ -150,6 +166,8 @@ class TrackingViewModelTest {
         }
 
         val viewModel = createViewModel(trackers = setOf(kitsuTracker))
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.InitiateLogin(trackerId = TrackerType.KITSU))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -165,11 +183,14 @@ class TrackingViewModelTest {
         }
 
         val viewModel = createViewModel(trackers = setOf(kitsuTracker))
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.InitiateLogin(trackerId = TrackerType.KITSU))
         testDispatcher.scheduler.advanceUntilIdle()
         assertNotNull(viewModel.state.value.loginDialogTrackerId)
 
         viewModel.onEvent(TrackingEvent.DismissLoginDialog)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertNull(viewModel.state.value.loginDialogTrackerId)
     }
 
@@ -244,6 +265,8 @@ class TrackingViewModelTest {
         coEvery { mockTracker.search(any()) } returns results
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.Search(trackerId = trackerId, query = "Naruto"))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -267,9 +290,12 @@ class TrackingViewModelTest {
     }
 
     @Test
-    fun onEvent_OnSearchQueryChange_updatesQuery() {
+    fun onEvent_OnSearchQueryChange_updatesQuery() = runTest {
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.OnSearchQueryChange("One Piece"))
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("One Piece", viewModel.state.value.searchQuery)
     }
 
@@ -302,11 +328,10 @@ class TrackingViewModelTest {
 
     @Test
     fun onEvent_SyncTracker_onConflict_setsConflictState() = runTest {
-        val syncState = mockk<TrackerSyncState>(relaxed = true) {
-            every { this@mockk.trackerId } returns trackerId
-            every { localLastChapterRead } returns 5f
-            every { remoteLastChapterRead } returns 10f
-        }
+        val syncState = mockk<TrackerSyncState>(relaxed = true)
+        every { syncState.trackerId } returns trackerId
+        every { syncState.localLastChapterRead } returns 5f
+        every { syncState.remoteLastChapterRead } returns 10f
         every { trackerSyncRepository.getSyncStateForManga(any()) } returns flowOf(listOf(syncState))
         every { trackRepository.observeEntriesForManga(any()) } returns flowOf(emptyList())
         coEvery { trackerSyncRepository.syncManga(any(), any()) } returns TrackerSyncRepository.SyncResult(
@@ -314,6 +339,8 @@ class TrackingViewModelTest {
         )
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.LoadTrackers(mangaId = 1L, mangaTitle = "Test"))
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -353,6 +380,8 @@ class TrackingViewModelTest {
         )
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.LoadTrackers(mangaId = 1L, mangaTitle = "Test"))
         viewModel.onEvent(TrackingEvent.SyncTracker(trackerId = trackerId))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -360,6 +389,7 @@ class TrackingViewModelTest {
         assertNotNull(viewModel.state.value.conflictState)
 
         viewModel.onEvent(TrackingEvent.DismissConflict)
+        testDispatcher.scheduler.advanceUntilIdle()
         assertNull(viewModel.state.value.conflictState)
     }
 
@@ -370,6 +400,8 @@ class TrackingViewModelTest {
         coEvery { trackerSyncRepository.resolveConflict(any(), any(), any()) } just runs
 
         val viewModel = createViewModel()
+        // Subscribe so stateIn(WhileSubscribed) starts collecting from _state.
+        backgroundScope.launch { viewModel.state.collect { } }
         viewModel.onEvent(TrackingEvent.LoadTrackers(mangaId = 5L, mangaTitle = "Test"))
         testDispatcher.scheduler.advanceUntilIdle()
 

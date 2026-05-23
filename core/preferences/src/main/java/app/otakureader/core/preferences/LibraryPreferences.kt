@@ -115,6 +115,10 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     // --- Per-Category Last Update Tracking ---
 
+    // TODO: Replace comma-separated "id:timestamp" encoding with JSON (or a separate DataStore
+    //  key per category). This is fine for typical libraries (5–20 categories) but will
+    //  produce an unbounded string and silently corrupt entries if a category id or timestamp
+    //  contains "," or ":". Refactor before supporting 100+ categories.
     /** Serialized map of "categoryId:timestampMs" pairs for per-category frequency filtering. */
     val categoryLastUpdateMs: Flow<Map<Long, Long>> = dataStore.data.map { prefs ->
         val raw = prefs[Keys.CATEGORY_LAST_UPDATE_MS] ?: ""

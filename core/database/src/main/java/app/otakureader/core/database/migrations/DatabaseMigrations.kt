@@ -265,6 +265,7 @@ internal val MIGRATION_24_25 = object : Migration(24, 25) {
     }
 }
 
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,

@@ -1,6 +1,7 @@
 package app.otakureader.feature.library.category
 
 import app.otakureader.domain.model.Category
+import app.otakureader.domain.model.CategoryUpdateFrequency
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.usecase.CreateCategoryUseCase
 import app.otakureader.domain.usecase.DeleteCategoryUseCase
@@ -155,15 +156,36 @@ class CategoryManagementViewModelTest {
     }
 
     @Test
-    fun onEvent_UpdateCategory_callsUseCaseAndEmitsEffects() = runTest {
+    fun onEvent_CreateCategory_withWeeklyFrequency_passesFrequencyToUseCase() = runTest {
         every { categoryRepository.getCategories() } returns flowOf(emptyList())
-        coEvery { updateCategoryUseCase(1L, "Updated") } returns Unit
+        coEvery { createCategoryUseCase("Weekly Cat", CategoryUpdateFrequency.WEEKLY) } returns 10L
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.effect.test {
-            viewModel.onEvent(CategoryEvent.UpdateCategory(1L, "Updated"))
+            viewModel.onEvent(CategoryEvent.CreateCategory("Weekly Cat", CategoryUpdateFrequency.WEEKLY))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val first = awaitItem()
+            assertTrue(first is CategoryEffect.DismissDialog)
+            val second = awaitItem()
+            assertEquals("Category created", (second as CategoryEffect.ShowSnackbar).message)
+        }
+
+        coVerify(exactly = 1) { createCategoryUseCase("Weekly Cat", CategoryUpdateFrequency.WEEKLY) }
+    }
+
+    @Test
+    fun onEvent_UpdateCategory_callsUseCaseAndEmitsEffects() = runTest {
+        every { categoryRepository.getCategories() } returns flowOf(emptyList())
+        coEvery { updateCategoryUseCase(1L, "Updated", CategoryUpdateFrequency.DAILY) } returns Unit
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(CategoryEvent.UpdateCategory(1L, "Updated", CategoryUpdateFrequency.DAILY))
             testDispatcher.scheduler.advanceUntilIdle()
 
             val first = awaitItem()
@@ -172,7 +194,7 @@ class CategoryManagementViewModelTest {
             assertEquals("Category updated", (second as CategoryEffect.ShowSnackbar).message)
         }
 
-        coVerify(exactly = 1) { updateCategoryUseCase(1L, "Updated") }
+        coVerify(exactly = 1) { updateCategoryUseCase(1L, "Updated", CategoryUpdateFrequency.DAILY) }
     }
 
     @Test
