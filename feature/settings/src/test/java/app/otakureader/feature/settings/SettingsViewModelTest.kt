@@ -6,6 +6,7 @@ import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.scheduler.CoverRefreshScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.feature.settings.delegate.AppearanceSettingsDelegate
@@ -49,6 +50,7 @@ class SettingsViewModelTest {
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var readingReminderScheduler: ReminderScheduler
+    private lateinit var coverRefreshScheduler: CoverRefreshScheduler
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var context: Context
 
@@ -87,6 +89,7 @@ class SettingsViewModelTest {
             every { coilDiskCacheSizeMb } returns flowOf(512)
         }
         readingReminderScheduler = mockk(relaxed = true)
+        coverRefreshScheduler = mockk(relaxed = true)
         chapterRepository = mockk(relaxed = true)
         context = mockk(relaxed = true) {
             every { cacheDir } returns mockk(relaxed = true)
@@ -112,6 +115,7 @@ class SettingsViewModelTest {
         readingGoalPreferences = readingGoalPreferences,
         generalPreferences = generalPreferences,
         readingReminderScheduler = readingReminderScheduler,
+        coverRefreshScheduler = coverRefreshScheduler,
         chapterRepository = chapterRepository,
         context = context,
     )

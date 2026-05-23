@@ -14,6 +14,7 @@ import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.UpdateLibraryMangaUseCase
@@ -52,6 +53,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var downloadManager: DownloadManager
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var categoryRepository: CategoryRepository
     private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var worker: LibraryUpdateWorker
 
@@ -117,6 +119,7 @@ class LibraryUpdateWorkerTest {
         libraryPreferences = mockk()
         downloadManager = mockk(relaxed = true)
         chapterRepository = mockk()
+        categoryRepository = mockk()
         notificationPreferences = mockk(relaxed = true)
 
         connectivityManager = mockk()
@@ -130,7 +133,13 @@ class LibraryUpdateWorkerTest {
         every { generalPreferences.notificationsEnabled } returns flowOf(true)
         every { libraryPreferences.updateOnlyOnWifi } returns flowOf(false)
         every { libraryPreferences.skipUpdateCategoryIds } returns flowOf(emptySet())
+        every { libraryPreferences.skipUpdatesWithUnread } returns flowOf(false)
+        every { libraryPreferences.skipUpdatesWithCompleted } returns flowOf(false)
+        every { libraryPreferences.skipUpdatesNeverStarted } returns flowOf(false)
+        every { libraryPreferences.categoryLastUpdateMs } returns flowOf(emptyMap())
         every { libraryPreferences.showUpdateProgress } returns flowOf(false)
+        coEvery { categoryRepository.getCategories() } returns flowOf(emptyList())
+        coEvery { libraryPreferences.setCategoryLastUpdateMs(any()) } just runs
 
         // Mock connectivity
         every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
@@ -148,6 +157,7 @@ class LibraryUpdateWorkerTest {
             generalPreferences,
             downloadManager,
             chapterRepository,
+            categoryRepository,
             notificationPreferences
         )
     }

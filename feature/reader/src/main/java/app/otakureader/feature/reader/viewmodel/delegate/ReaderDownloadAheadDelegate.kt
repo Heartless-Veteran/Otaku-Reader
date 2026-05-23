@@ -74,7 +74,7 @@ class ReaderDownloadAheadDelegate @Inject constructor(
             name = chapter.name,
             dateUpload = chapter.dateUpload,
             chapterNumber = chapter.chapterNumber,
-            scanlator = chapter.scanlator,
+            scanlator = chapter.scanlator ?: "",
         )
         val pageListResult = sourceRepository.getPageList(sourceName, sourceChapter)
         pageListResult.onFailure { throwable ->

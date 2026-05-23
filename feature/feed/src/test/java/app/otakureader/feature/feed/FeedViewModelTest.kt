@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import app.otakureader.domain.model.FeedItem
 import app.otakureader.domain.model.FeedSource
 import app.otakureader.domain.repository.FeedRepository
+import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -30,6 +32,8 @@ class FeedViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var feedRepository: FeedRepository
+    private lateinit var mangaRepository: MangaRepository
+    private lateinit var toggleFavoriteMangaUseCase: ToggleFavoriteMangaUseCase
 
     private val sampleFeedItems = listOf(
         FeedItem(
@@ -50,6 +54,8 @@ class FeedViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        mangaRepository = mockk(relaxed = true)
+        toggleFavoriteMangaUseCase = ToggleFavoriteMangaUseCase(mangaRepository)
         feedRepository = mockk {
             every { getFeedItems(any()) } returns flowOf(emptyList())
             every { getFeedSources() } returns flowOf(emptyList())
@@ -61,7 +67,7 @@ class FeedViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel() = FeedViewModel(feedRepository)
+    private fun createViewModel() = FeedViewModel(feedRepository, mangaRepository, toggleFavoriteMangaUseCase)
 
     @Test
     fun init_stateStartsWithLoadingTrue() {

@@ -1,5 +1,6 @@
 package app.otakureader.core.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -10,7 +11,8 @@ data class CategoryEntity(
     val name: String,
     val order: Int = 0,
     val flags: Int = 0,
-    val update_frequency: Int = 1,
+    @ColumnInfo(name = "update_frequency")
+    val updateFrequency: Int = 1,
 ) {
     companion object {
         // Bit flags for category options
