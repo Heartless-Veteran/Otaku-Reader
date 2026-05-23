@@ -63,5 +63,5 @@ interface CategoryDao {
     suspend fun toggleNsfwFlag(categoryId: Long)
 
     @Query("UPDATE categories SET update_frequency = :updateFrequency WHERE id = :categoryId")
-    suspend fun updateFrequency(categoryId: Long, updateFrequency: String)
+    suspend fun updateFrequency(categoryId: Long, updateFrequency: Int)
 }
