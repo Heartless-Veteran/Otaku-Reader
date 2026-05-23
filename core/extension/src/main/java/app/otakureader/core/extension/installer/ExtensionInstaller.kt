@@ -235,68 +235,22 @@ class ExtensionInstaller(
                 val destFile = File(extensionsDir, "$pkgName.ext")
                 tempFile = File(extensionsDir, "$pkgName.ext.tmp")
 
-                // 1. Write to temp file — never touch the permanent artifact yet.
                 apkFile.copyTo(tempFile, overwrite = true)
                 tempFile.setReadOnly()
 
-                // 2. Load and validate from the temp file.
                 val loadResult = loader.loadExtension(tempFile.absolutePath)
+                val extension = resolveLoadResult(loadResult, trustedHash)
+                    .getOrElse { return@withContext Result.failure(it) }
 
-                // 3. Resolve whether the loaded extension is acceptable.
-                val extension = when (loadResult) {
-                    is ExtensionLoadResult.Success -> loadResult.extension
-                    is ExtensionLoadResult.Untrusted -> {
-                        val extHash = loadResult.extension.signatureHash
-                        if (trustedHash != null && extHash == trustedHash) {
-                            // Caller already verified this hash against a known-good source;
-                            // allow the untrusted result to proceed.
-                            loadResult.extension
-                        } else {
-                            _installationState.value = InstallationState.Error(
-                                "Extension is not trusted. Please verify its signature before installing.",
-                                null
-                            )
-                            return@withContext Result.failure(
-                                IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}")
-                            )
-                        }
-                    }
-                    is ExtensionLoadResult.Error -> {
-                        _installationState.value = InstallationState.Error(
-                            loadResult.message, loadResult.throwable
-                        )
-                        return@withContext Result.failure(
-                            loadResult.throwable ?: IllegalStateException(loadResult.message)
-                        )
-                    }
-                }
-
-                // 4. If caller supplied a trusted hash, the loaded extension must match it.
-                if (trustedHash != null && extension.signatureHash != trustedHash) {
-                    return@withContext Result.failure(
-                        SecurityException(
-                            "Trust hash mismatch for ${extension.pkgName}: " +
-                                "expected $trustedHash, got ${extension.signatureHash}"
-                        )
-                    )
-                }
-
-                // 5. Atomic rename temp → permanent.
                 if (!replaceAtomically(tempFile, destFile)) {
                     return@withContext Result.failure(
-                        IllegalStateException(
-                            "Failed to move extension to permanent location: ${destFile.absolutePath}"
-                        )
+                        IllegalStateException("Failed to move extension to permanent location: ${destFile.absolutePath}")
                     )
                 }
-                tempFile = null // Ownership transferred to destFile
+                tempFile = null
 
-                // 6. Trust ONLY after successful load + atomic move.
-                extension.signatureHash?.let { hash ->
-                    loader.trustExtension(hash)
-                }
+                extension.signatureHash?.let { loader.trustExtension(it) }
 
-                // 7. Update repository state.
                 _installationState.value = InstallationState.Installing
                 val finalExtension = extension.copy(apkPath = destFile.absolutePath)
                 val result = repository.installExtension(finalExtension.pkgName, destFile.absolutePath)
@@ -304,9 +258,7 @@ class ExtensionInstaller(
                     _installationState.value = InstallationState.Success(ext)
                     ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
                 }.onFailure { error ->
-                    _installationState.value = InstallationState.Error(
-                        "Failed to save extension: ${error.message}", error
-                    )
+                    _installationState.value = InstallationState.Error("Failed to save extension: ${error.message}", error)
                 }
                 result
             } catch (e: CancellationException) {
@@ -315,12 +267,40 @@ class ExtensionInstaller(
                 _installationState.value = InstallationState.Error("Installation failed", e)
                 Result.failure(e)
             } finally {
-                // Clean up temp file if the atomic rename never happened.
                 tempFile?.delete()
-                // Clean up the download artifact.
                 if (apkFile.exists() && apkFile.parentFile == downloadsDir) apkFile.delete()
             }
         }
+
+    private fun resolveLoadResult(
+        loadResult: ExtensionLoadResult,
+        trustedHash: String?
+    ): Result<Extension> = when (loadResult) {
+        is ExtensionLoadResult.Success -> {
+            val ext = loadResult.extension
+            if (trustedHash != null && ext.signatureHash != trustedHash) {
+                _installationState.value = InstallationState.Error("Extension trust hash mismatch", null)
+                Result.failure(SecurityException("Trust hash mismatch for ${ext.pkgName}"))
+            } else {
+                Result.success(ext)
+            }
+        }
+        is ExtensionLoadResult.Untrusted -> {
+            val ext = loadResult.extension
+            if (trustedHash != null && ext.signatureHash == trustedHash) {
+                Result.success(ext)
+            } else {
+                _installationState.value = InstallationState.Error(
+                    "Extension is not trusted. Please verify its signature before installing.", null
+                )
+                Result.failure(IllegalStateException("Untrusted extension: ${ext.pkgName}"))
+            }
+        }
+        is ExtensionLoadResult.Error -> {
+            _installationState.value = InstallationState.Error(loadResult.message, loadResult.throwable)
+            Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
+        }
+    }
     
     /**
      * Update an existing extension.

@@ -92,8 +92,7 @@ object ExtensionModule {
         repository: ExtensionRepository,
         loader: ExtensionLoader,
         remoteDataSource: ExtensionRemoteDataSource,
-        trustedSignatureStore: TrustedSignatureStore,
     ): ExtensionInstaller {
-        return ExtensionInstaller(context, repository, loader, remoteDataSource, trustedSignatureStore)
+        return ExtensionInstaller(context, repository, loader, remoteDataSource)
     }
 }

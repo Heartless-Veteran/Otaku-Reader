@@ -215,7 +215,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun refreshLibraryCovers() {
-        coverRefreshScheduler.schedule(context)
+        coverRefreshScheduler.schedule()
         viewModelScope.launch {
             _effect.send(SettingsEffect.ShowSnackbar(context.getString(R.string.settings_refresh_covers_started)))
         }
