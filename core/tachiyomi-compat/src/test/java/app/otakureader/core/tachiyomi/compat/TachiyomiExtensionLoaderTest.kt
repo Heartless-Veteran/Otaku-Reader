@@ -161,9 +161,7 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension by package name returns null when package not found`() {
         // Given
         val packageName = "nonexistent.package"
-        every {
-            packageManager.getPackageInfo(packageName, any())
-        } throws PackageManager.NameNotFoundException("Package not found")
+        stubGetPackageInfoThrows(packageName, PackageManager.NameNotFoundException("Package not found"))
 
         // When
         val result = loader.loadExtension(packageName)
@@ -441,9 +439,7 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension handles SecurityException gracefully`() {
         // Given: PackageManager throws SecurityException
         val packageName = "eu.kanade.tachiyomi.extension.en.secure"
-        every {
-            packageManager.getPackageInfo(packageName, any())
-        } throws SecurityException("Not allowed")
+        stubGetPackageInfoThrows(packageName, SecurityException("Not allowed"))
 
         // When
         val result = loader.loadExtension(packageName)
@@ -457,7 +453,7 @@ class TachiyomiExtensionLoaderTest {
         // Given: PackageManager returns null for archive info
         val apkPath = "/invalid/path/to/extension.apk"
         every {
-            packageManager.getPackageArchiveInfo(apkPath, any())
+            packageManager.getPackageArchiveInfo(apkPath, any<Int>())
         } returns null
 
         // When
@@ -472,7 +468,7 @@ class TachiyomiExtensionLoaderTest {
         // Given: PackageManager throws exception
         val apkPath = "/fake/bad.apk"
         every {
-            packageManager.getPackageArchiveInfo(apkPath, any())
+            packageManager.getPackageArchiveInfo(apkPath, any<Int>())
         } throws RuntimeException("Corrupted APK")
 
         // When
@@ -486,9 +482,7 @@ class TachiyomiExtensionLoaderTest {
     fun `loadExtension handles package manager NameNotFoundException`() {
         // Given
         val packageName = "missing.package"
-        every {
-            packageManager.getPackageInfo(packageName, any())
-        } throws PackageManager.NameNotFoundException()
+        stubGetPackageInfoThrows(packageName, PackageManager.NameNotFoundException())
 
         // When
         val result = loader.loadExtension(packageName)
@@ -619,14 +613,17 @@ class TachiyomiExtensionLoaderTest {
     }
 
     private fun mockInstalledPackages(packages: List<PackageInfo>) {
-        every {
-            packageManager.getInstalledPackages(any())
-        } returns packages
+        every { packageManager.getInstalledPackages(any<Int>()) } returns packages
+        every { packageManager.getInstalledPackages(any<PackageManager.PackageInfoFlags>()) } returns packages
     }
 
     private fun mockPackageInfo(packageName: String, packageInfo: PackageInfo) {
-        every {
-            packageManager.getPackageInfo(packageName, any())
-        } returns packageInfo
+        every { packageManager.getPackageInfo(packageName, any<Int>()) } returns packageInfo
+        every { packageManager.getPackageInfo(packageName, any<PackageManager.PackageInfoFlags>()) } returns packageInfo
+    }
+
+    private fun stubGetPackageInfoThrows(packageName: String, ex: Exception) {
+        every { packageManager.getPackageInfo(packageName, any<Int>()) } throws ex
+        every { packageManager.getPackageInfo(packageName, any<PackageManager.PackageInfoFlags>()) } throws ex
     }
 }
