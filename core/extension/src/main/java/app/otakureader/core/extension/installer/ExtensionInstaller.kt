@@ -146,79 +146,172 @@ class ExtensionInstaller(
     }
 
     /**
+     * Atomically replace [targetFile] with [tempFile].
+     *
+     * Tries API 26+ [java.nio.file.Files.move] with [ATOMIC_MOVE] + [REPLACE_EXISTING]
+     * first. On older Android or when the atomic move fails, falls back to a
+     * backup-then-rename strategy that preserves the original file if anything
+     * goes wrong. Last resort is copy-overwrite.
+     *
+     * @return true on success. On failure [targetFile] is left untouched if possible.
+     */
+    private fun replaceAtomically(tempFile: File, targetFile: File): Boolean {
+        if (!tempFile.exists()) return false
+
+        // API 26+: true atomic move with replace
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                java.nio.file.Files.move(
+                    tempFile.toPath(),
+                    targetFile.toPath(),
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                )
+                return true
+            } catch (_: Exception) {
+                // Fall through to fallback
+            }
+        }
+
+        // Pre-API 26: try renameTo first (fast, atomic on same filesystem).
+        // renameTo does not overwrite an existing file on Android.
+        if (!targetFile.exists()) {
+            if (tempFile.renameTo(targetFile)) {
+                return true
+            }
+        } else {
+            // Backup the existing file, then rename temp into place.
+            val backupFile = File(targetFile.parentFile, "${targetFile.name}.bak")
+            if (targetFile.renameTo(backupFile)) {
+                if (tempFile.renameTo(targetFile)) {
+                    backupFile.delete() // Commit: discard backup
+                    return true
+                }
+                // Rollback: restore original file
+                backupFile.renameTo(targetFile)
+                return false
+            }
+        }
+
+        // Last resort: copy temp over target, then delete temp.
+        // Not atomic, but keeps target valid if the copy throws.
+        return try {
+            tempFile.copyTo(targetFile, overwrite = true)
+            targetFile.setReadOnly()
+            tempFile.delete()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /**
      * Install an extension from a downloaded APK file.
+     *
+     * **Transactional contract**: writes to a temp file (`$pkgName.ext.tmp`), loads and
+     * validates the extension from that temp file, and only after every check passes
+     * atomically renames the temp file to the permanent location (`$pkgName.ext`).
+     * If any step fails the original extension (if any) is left untouched and the temp
+     * file is deleted.
      *
      * @param apkFile The downloaded APK file.
      * @param trustedHash When non-null this hash was already verified by the caller against
-     *   a repository-sourced expected hash. The extension is added to the trust store before
-     *   loading so the universal trust gate inside [ExtensionLoader] passes.  When null (e.g.
-     *   user-sideloaded APK), the extension must already be trusted or [ExtensionLoadResult.Untrusted]
-     *   is returned and the caller must present a user-facing trust confirmation dialog.
+     *   a repository-sourced expected hash. The extension's actual loaded hash is compared
+     *   against this value; the trust store is only updated **after** the extension has been
+     *   successfully loaded and moved to its permanent location.
      */
     suspend fun install(apkFile: File, trustedHash: String? = null): Result<Extension> =
         withContext(Dispatchers.IO) {
-        try {
-            _installationState.value = InstallationState.Verifying
+            var tempFile: File? = null
+            try {
+                _installationState.value = InstallationState.Verifying
 
-            // Pre-trust when the caller has already verified the hash against a known-good source.
-            if (trustedHash != null) {
-                loader.trustExtension(trustedHash)
+                val packageInfo = parseApkInfo(apkFile)
+                    ?: return@withContext Result.failure(
+                        IllegalStateException("Failed to parse APK: ${apkFile.absolutePath}")
+                    )
+
+                val pkgName = packageInfo.packageName
+                val destFile = File(extensionsDir, "$pkgName.ext")
+                tempFile = File(extensionsDir, "$pkgName.ext.tmp")
+
+                apkFile.copyTo(tempFile, overwrite = true)
+                tempFile.setReadOnly()
+
+                val loadResult = loader.loadExtension(tempFile.absolutePath)
+                val extension = resolveLoadResult(loadResult, trustedHash)
+                    .getOrElse { return@withContext Result.failure(it) }
+
+                if (!replaceAtomically(tempFile, destFile)) {
+                    return@withContext Result.failure(
+                        IllegalStateException("Failed to move extension to permanent location: ${destFile.absolutePath}")
+                    )
+                }
+                tempFile = null
+
+                extension.signatureHash?.let { loader.trustExtension(it) }
+
+                _installationState.value = InstallationState.Installing
+                val finalExtension = extension.copy(apkPath = destFile.absolutePath)
+                val result = repository.installExtension(finalExtension.pkgName, destFile.absolutePath)
+                result.onSuccess { ext ->
+                    _installationState.value = InstallationState.Success(ext)
+                    ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
+                }.onFailure { error ->
+                    _installationState.value = InstallationState.Error("Failed to save extension: ${error.message}", error)
+                }
+                result
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _installationState.value = InstallationState.Error("Installation failed", e)
+                Result.failure(e)
+            } finally {
+                tempFile?.delete()
+                if (apkFile.exists() && apkFile.parentFile == downloadsDir) apkFile.delete()
             }
+        }
 
-            val packageInfo = parseApkInfo(apkFile)
-                ?: return@withContext Result.failure(
-                    IllegalStateException("Failed to parse APK: ${apkFile.absolutePath}")
+    private fun resolveLoadResult(
+        loadResult: ExtensionLoadResult,
+        trustedHash: String?
+    ): Result<Extension> = when (loadResult) {
+        is ExtensionLoadResult.Success -> {
+            val ext = loadResult.extension
+            if (trustedHash != null && ext.signatureHash != trustedHash) {
+                _installationState.value = InstallationState.Error("Extension trust hash mismatch", null)
+                Result.failure(SecurityException("Trust hash mismatch for ${ext.pkgName}"))
+            } else {
+                Result.success(ext)
+            }
+        }
+        is ExtensionLoadResult.Untrusted -> {
+            val ext = loadResult.extension
+            if (trustedHash != null && ext.signatureHash == trustedHash) {
+                Result.success(ext)
+            } else {
+                _installationState.value = InstallationState.Error(
+                    "Extension is not trusted. Please verify its signature before installing.", null
                 )
-
-            // Move to permanent location first — Android 14+ requires read-only in filesDir
-            val destFile = File(extensionsDir, "${packageInfo.packageName}.ext")
-            apkFile.copyTo(destFile, overwrite = true)
-            destFile.setReadOnly()
-
-            val loadResult = loader.loadExtension(destFile.absolutePath)
-            when (loadResult) {
-                is ExtensionLoadResult.Error -> {
-                    _installationState.value = InstallationState.Error(
-                        loadResult.message, loadResult.throwable
-                    )
-                    Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
-                }
-                is ExtensionLoadResult.Success -> {
-                    _installationState.value = InstallationState.Installing
-                    val finalExtension = loadResult.extension.copy(apkPath = destFile.absolutePath)
-                    val result = repository.installExtension(
-                        finalExtension.pkgName, destFile.absolutePath
-                    )
-                    result.onSuccess { ext ->
-                        _installationState.value = InstallationState.Success(ext)
-                        // Notify the receiver so private extensions appear in the catalogue
-                        ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
-                    }.onFailure { error ->
-                        _installationState.value = InstallationState.Error(
-                            "Failed to save extension: ${error.message}", error
-                        )
-                    }
-                    result
-                }
-                is ExtensionLoadResult.Untrusted -> {
-                    _installationState.value = InstallationState.Error(
-                        "Extension is not trusted. Please verify its signature before installing.", null
-                    )
-                    Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
-                }
+                Result.failure(IllegalStateException("Untrusted extension: ${ext.pkgName}"))
             }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            _installationState.value = InstallationState.Error("Installation failed", e)
-            Result.failure(e)
-        } finally {
-            if (apkFile.exists() && apkFile.parentFile == downloadsDir) apkFile.delete()
+        }
+        is ExtensionLoadResult.Error -> {
+            _installationState.value = InstallationState.Error(loadResult.message, loadResult.throwable)
+            Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
         }
     }
     
     /**
      * Update an existing extension.
+     *
+     * **Transactional contract**: writes the new APK to a temp file (`$pkgName.ext.tmp`),
+     * parses it, loads the extension from the temp file, and verifies signer continuity
+     * against the currently installed version. Only after every validation step passes
+     * is the temp file atomically promoted to the permanent location (`$pkgName.ext`).
+     * If any step fails the original extension remains untouched and the temp file is
+     * cleaned up.
+     *
      * @param pkgName Package name of the extension to update
      * @param newApkFile The new APK file
      * @return Result containing the updated Extension
@@ -226,6 +319,7 @@ class ExtensionInstaller(
     @Suppress("LongMethod")
     suspend fun update(pkgName: String, newApkFile: File): Result<Extension> =
         withContext(Dispatchers.IO) {
+            var tempFile: File? = null
             try {
                 _installationState.value = InstallationState.Verifying
 
@@ -242,55 +336,79 @@ class ExtensionInstaller(
                     )
                 }
 
-                // Move to permanent location first — Android 14+ requires read-only in filesDir
                 val destFile = File(extensionsDir, "$pkgName.ext")
-                newApkFile.copyTo(destFile, overwrite = true)
-                destFile.setReadOnly()
+                tempFile = File(extensionsDir, "$pkgName.ext.tmp")
 
-                when (val loadResult = loader.loadExtension(destFile.absolutePath)) {
+                // 1. Write to temp file — preserve the working artifact until validation passes.
+                newApkFile.copyTo(tempFile, overwrite = true)
+                tempFile.setReadOnly()
+
+                // 2. Load and validate from the temp file.
+                val loadResult = loader.loadExtension(tempFile.absolutePath)
+
+                val extension = when (loadResult) {
+                    is ExtensionLoadResult.Success -> loadResult.extension
+                    is ExtensionLoadResult.Untrusted -> {
+                        _installationState.value = InstallationState.Error(
+                            "Extension is not trusted. Please verify its signature before updating.",
+                            null
+                        )
+                        return@withContext Result.failure(
+                            IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}")
+                        )
+                    }
                     is ExtensionLoadResult.Error -> {
                         _installationState.value = InstallationState.Error(
                             loadResult.message, loadResult.throwable
                         )
-                        Result.failure(loadResult.throwable ?: IllegalStateException(loadResult.message))
-                    }
-                    is ExtensionLoadResult.Success -> {
-                        // Signer continuity: reject if signing certificate changed — a compromised
-                        // repository could swap a trusted extension for a differently-signed one.
-                        val oldExtension = repository.getExtension(pkgName)
-                        val newHash = loadResult.extension.signatureHash
-                        if (oldExtension?.signatureHash != null && newHash != oldExtension.signatureHash) {
-                            return@withContext Result.failure(
-                                SecurityException("Extension update rejected: signing certificate changed for $pkgName")
-                            )
-                        }
-                        _installationState.value = InstallationState.Installing
-                        oldExtension?.apkPath?.let { File(it).delete() }
-                        val result = repository.updateExtension(pkgName, destFile.absolutePath)
-                        result.onSuccess { ext ->
-                            _installationState.value = InstallationState.Success(ext)
-                            // Notify the receiver so private extensions appear in the catalogue
-                            ExtensionInstallReceiver.notifyReplaced(context, pkgName)
-                        }.onFailure { error ->
-                            _installationState.value = InstallationState.Error(
-                                "Failed to update extension: ${error.message}", error
-                            )
-                        }
-                        result
-                    }
-                    is ExtensionLoadResult.Untrusted -> {
-                        _installationState.value = InstallationState.Error(
-                            "Extension is not trusted. Please verify its signature before updating.", null
+                        return@withContext Result.failure(
+                            loadResult.throwable ?: IllegalStateException(loadResult.message)
                         )
-                        Result.failure(IllegalStateException("Untrusted extension: ${loadResult.extension.pkgName}"))
                     }
                 }
+                // 3. Signer continuity: reject if signing certificate changed — a compromised
+                // repository could swap a trusted extension for a differently-signed one.
+                val oldExtension = repository.getExtension(pkgName)
+                val newHash = extension.signatureHash
+                if (oldExtension?.signatureHash != null && newHash != oldExtension.signatureHash) {
+                    return@withContext Result.failure(
+                        SecurityException(
+                            "Extension update rejected: signing certificate changed for $pkgName"
+                        )
+                    )
+                }
+
+                // 4. Atomic rename temp → permanent.
+                if (!replaceAtomically(tempFile, destFile)) {
+                    return@withContext Result.failure(
+                        IllegalStateException(
+                            "Failed to move extension to permanent location: ${destFile.absolutePath}"
+                        )
+                    )
+                }
+                tempFile = null // Ownership transferred to destFile
+
+                // 5. Update repository state. The old file has already been replaced atomically.
+                _installationState.value = InstallationState.Installing
+                val result = repository.updateExtension(pkgName, destFile.absolutePath)
+                result.onSuccess { ext ->
+                    _installationState.value = InstallationState.Success(ext)
+                    ExtensionInstallReceiver.notifyReplaced(context, pkgName)
+                }.onFailure { error ->
+                    _installationState.value = InstallationState.Error(
+                        "Failed to update extension: ${error.message}", error
+                    )
+                }
+                result
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _installationState.value = InstallationState.Error("Update failed", e)
                 Result.failure(e)
             } finally {
+                // Clean up temp file if the atomic rename never happened.
+                tempFile?.delete()
+                // Clean up the download artifact.
                 if (newApkFile.exists() && newApkFile.parentFile == downloadsDir) newApkFile.delete()
             }
         }

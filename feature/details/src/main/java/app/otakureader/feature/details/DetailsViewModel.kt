@@ -126,6 +126,7 @@ class DetailsViewModel @Inject constructor(
             // Page preloading settings (#264)
             is DetailsContract.Event.SetPreloadPagesBefore -> setPreloadPagesBefore(event.count)
             is DetailsContract.Event.SetPreloadPagesAfter -> setPreloadPagesAfter(event.count)
+            is DetailsContract.Event.ResetReaderSettings -> resetReaderSettings()
             
             // Chapter thumbnail loading
             is DetailsContract.Event.LoadChapterThumbnail -> loadChapterThumbnail(event.chapterId)
@@ -212,7 +213,7 @@ class DetailsViewModel @Inject constructor(
                                 name = chapter.name,
                                 dateUpload = chapter.dateUpload,
                                 chapterNumber = chapter.chapterNumber,
-                                scanlator = chapter.scanlator
+                                scanlator = chapter.scanlator ?: ""
                             )
 
                             // Use repository instead of calling source directly (#587)
@@ -848,6 +849,25 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    private fun resetReaderSettings() {
+        viewModelScope.launch {
+            try {
+                mangaRepository.updateReaderDirection(mangaId, null)
+                mangaRepository.updateReaderMode(mangaId, null)
+                mangaRepository.updateReaderColorFilter(mangaId, null)
+                mangaRepository.updateReaderCustomTintColor(mangaId, null)
+                mangaRepository.updateReaderBackgroundColor(mangaId, null)
+                mangaRepository.updatePreloadPagesBefore(mangaId, null)
+                mangaRepository.updatePreloadPagesAfter(mangaId, null)
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Reader settings reset to defaults"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to reset reader settings"))
+            }
+        }
+    }
+
     /**
      * Load thumbnail for a specific chapter on demand.
      * Called when user taps "Load preview" on a chapter without a thumbnail.
@@ -868,7 +888,7 @@ class DetailsViewModel @Inject constructor(
                     name = chapter.name,
                     dateUpload = chapter.dateUpload,
                     chapterNumber = chapter.chapterNumber,
-                    scanlator = chapter.scanlator
+                    scanlator = chapter.scanlator ?: ""
                 )
 
                 // Use repository to respect caching and abstraction layers (#587)

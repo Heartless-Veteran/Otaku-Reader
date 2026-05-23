@@ -11,12 +11,12 @@ interface TrackRepository {
     /** Observe all entries for a given local manga. */
     fun observeEntriesForManga(mangaId: Long): Flow<List<TrackEntry>>
 
-    /** Retrieve a single entry by tracker + remote ID. */
-    suspend fun getEntry(trackerId: Int, remoteId: Long): TrackEntry?
+    /** Retrieve a single entry by the unique (manga, tracker) key. */
+    suspend fun getEntry(mangaId: Long, trackerId: Int): TrackEntry?
 
     /** Insert or replace a track entry. */
     suspend fun upsertEntry(entry: TrackEntry)
 
-    /** Remove an entry from local storage. */
-    suspend fun deleteEntry(trackerId: Int, remoteId: Long)
+    /** Remove an entry from local storage by the unique (manga, tracker) key. */
+    suspend fun deleteEntry(mangaId: Long, trackerId: Int)
 }

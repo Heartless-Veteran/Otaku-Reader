@@ -6,6 +6,7 @@ import androidx.room.Room
 import app.otakureader.core.database.BuildConfig
 import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.migrations.ALL_MIGRATIONS
 import dagger.Module
 import dagger.Provides
@@ -77,4 +78,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDownloadQueueDao(database: OtakuReaderDatabase): DownloadQueueDao = database.downloadQueueDao()
+
+    @Provides
+    fun provideTrackEntryDao(database: OtakuReaderDatabase): TrackEntryDao = database.trackEntryDao()
 }

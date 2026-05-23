@@ -56,7 +56,7 @@ object TachiyomiModelsAdapter {
             name = sChapter.name,
             dateUpload = sChapter.date_upload,
             chapterNumber = sChapter.chapter_number,
-            scanlator = sChapter.scanlator
+            scanlator = sChapter.scanlator ?: ""
         )
     }
 

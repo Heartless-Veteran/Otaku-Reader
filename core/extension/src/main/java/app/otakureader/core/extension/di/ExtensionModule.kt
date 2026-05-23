@@ -91,7 +91,7 @@ object ExtensionModule {
         @ApplicationContext context: Context,
         repository: ExtensionRepository,
         loader: ExtensionLoader,
-        remoteDataSource: ExtensionRemoteDataSource
+        remoteDataSource: ExtensionRemoteDataSource,
     ): ExtensionInstaller {
         return ExtensionInstaller(context, repository, loader, remoteDataSource)
     }

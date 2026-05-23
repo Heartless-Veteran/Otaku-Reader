@@ -15,8 +15,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.otakureader.domain.repository.MangaRepository
 import coil3.ImageLoader
-import coil3.disk.DiskCachePolicy
-import coil3.memory.MemoryCachePolicy
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -53,8 +52,8 @@ class CoverRefreshWorker @AssistedInject constructor(
                     }
                     val request = ImageRequest.Builder(context)
                         .data(url)
-                        .memoryCachePolicy(MemoryCachePolicy.DISABLED)
-                        .diskCachePolicy(DiskCachePolicy.WRITE_ONLY)
+                        .memoryCachePolicy(CachePolicy.DISABLED)
+                        .diskCachePolicy(CachePolicy.WRITE_ONLY)
                         .build()
                     try {
                         imageLoader.execute(request)

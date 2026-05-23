@@ -14,6 +14,7 @@ import app.otakureader.core.database.dao.PageBookmarkDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingListDao
 import app.otakureader.core.database.dao.ReadingStreakDao
+import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
@@ -30,6 +31,7 @@ import app.otakureader.core.database.entity.ReadingListEntity
 import app.otakureader.core.database.entity.ReadingListItemEntity
 import app.otakureader.core.database.entity.ReadingStreakEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
+import app.otakureader.core.database.entity.TrackEntryEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
 
 @Database(
@@ -55,8 +57,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         ReadingListItemEntity::class,
         // Download queue persistence
         DownloadQueueEntity::class,
+        // Track entries (persisted tracker state)
+        TrackEntryEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -75,6 +79,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun trackerSyncDao(): TrackerSyncDao
     abstract fun readingListDao(): ReadingListDao
     abstract fun downloadQueueDao(): DownloadQueueDao
+    abstract fun trackEntryDao(): TrackEntryDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

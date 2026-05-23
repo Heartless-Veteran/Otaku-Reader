@@ -250,7 +250,7 @@ class TrackingViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                trackRepository.deleteEntry(trackerId, entry.remoteId)
+                trackRepository.deleteEntry(_state.value.mangaId, trackerId)
                 _effect.trySend(TrackingEffect.ShowMessage(
                     context.getString(R.string.tracking_unlink_success, tracker.name)
                 ))

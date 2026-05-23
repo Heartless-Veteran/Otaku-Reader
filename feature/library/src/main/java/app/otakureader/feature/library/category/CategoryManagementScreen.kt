@@ -302,7 +302,7 @@ private fun CategoryListItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CategoryDialog(
     category: CategoryUiItem?,

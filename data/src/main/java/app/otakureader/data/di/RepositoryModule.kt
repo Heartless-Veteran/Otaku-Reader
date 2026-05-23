@@ -25,6 +25,7 @@ import app.otakureader.data.backup.repository.BackupRepository as BackupReposito
 import app.otakureader.data.backup.tachiyomi.TachiyomiBackupImporter as TachiyomiBackupImporterImpl
 import app.otakureader.data.tracking.TrackManager as TrackManagerImpl
 import app.otakureader.data.updater.AppUpdateChecker as AppUpdateCheckerImpl
+import app.otakureader.data.worker.CoverRefreshSchedulerImpl
 import app.otakureader.data.worker.LibraryUpdateScheduler as LibraryUpdateSchedulerImpl
 import app.otakureader.data.worker.ReadingReminderScheduler as ReadingReminderSchedulerImpl
 import app.otakureader.domain.backup.BackupRepository
@@ -37,6 +38,7 @@ import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
+import app.otakureader.domain.scheduler.CoverRefreshScheduler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.tracking.TrackManager
@@ -113,4 +115,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindAppUpdateChecker(impl: AppUpdateCheckerImpl): AppUpdateChecker
+
+    @Binds
+    abstract fun bindCoverRefreshScheduler(impl: CoverRefreshSchedulerImpl): CoverRefreshScheduler
 }

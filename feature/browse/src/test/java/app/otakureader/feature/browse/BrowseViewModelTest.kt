@@ -6,6 +6,7 @@ import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
@@ -55,6 +56,7 @@ class BrowseViewModelTest {
     private val searchMangaUseCase = SearchMangaUseCase(sourceRepository)
     private val getSourceFiltersUseCase = GetSourceFiltersUseCase(sourceRepository)
     private val addMangaToLibraryUseCase = AddMangaToLibraryUseCase(mangaRepository)
+    private val toggleFavoriteMangaUseCase = ToggleFavoriteMangaUseCase(mangaRepository)
 
     private lateinit var viewModel: BrowseViewModel
     private val testDispatcher = StandardTestDispatcher()
@@ -88,6 +90,8 @@ class BrowseViewModelTest {
             searchMangaUseCase = searchMangaUseCase,
             getSourceFiltersUseCase = getSourceFiltersUseCase,
             addMangaToLibraryUseCase = addMangaToLibraryUseCase,
+            toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
+            mangaRepository = mangaRepository,
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
@@ -376,6 +380,8 @@ class BrowseViewModelTest {
             searchMangaUseCase = searchMangaUseCase,
             getSourceFiltersUseCase = getSourceFiltersUseCase,
             addMangaToLibraryUseCase = addMangaToLibraryUseCase,
+            toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
+            mangaRepository = mangaRepository,
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
@@ -409,6 +415,8 @@ class BrowseViewModelTest {
             searchMangaUseCase = searchMangaUseCase,
             getSourceFiltersUseCase = getSourceFiltersUseCase,
             addMangaToLibraryUseCase = addMangaToLibraryUseCase,
+            toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
+            mangaRepository = mangaRepository,
             feedRepository = feedRepository,
             generalPreferences = generalPreferences
         )
