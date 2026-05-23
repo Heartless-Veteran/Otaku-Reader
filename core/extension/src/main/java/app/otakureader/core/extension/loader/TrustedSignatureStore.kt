@@ -40,7 +40,7 @@ class TrustedSignatureStore @Inject constructor(@ApplicationContext context: Con
     }
 
     fun isTrusted(signatureHash: String): Boolean =
-        prefs.getStringSet(KEY_TRUSTED_HASHES, emptySet())?.contains(signatureHash) == true
+        prefs.getStringSet(KEY_TRUSTED_HASHES, emptySet()).orEmpty().contains(signatureHash)
 
     fun trust(signatureHash: String) {
         val current = prefs.getStringSet(KEY_TRUSTED_HASHES, emptySet()).orEmpty().toMutableSet()
