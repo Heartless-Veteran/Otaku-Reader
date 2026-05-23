@@ -465,19 +465,16 @@ class DatabaseMigrationTest {
     }
 
     // ── Full chain v9 → v25 ─────────────────────────────────────────────────
-    // Starts from v9 (oldest exported schema JSON). Runs v9→v24 via
-    // runMigrationsAndValidate (which validates against 9.json and 24.json),
-    // then applies MIGRATION_24_25 directly (no 25.json export yet).
+    // Starts from v9 (oldest exported schema JSON). Runs all migrations v9→v25 via
+    // runMigrationsAndValidate, which validates the final schema against 25.json.
 
     @Test
     fun fullMigrationChain_v9ToV25() {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(
-            TEST_DB, 24, true,
-            *ALL_MIGRATIONS.filter { it.startVersion in 9..23 }.toTypedArray(),
+            TEST_DB, 25, true,
+            *ALL_MIGRATIONS.filter { it.startVersion in 9..24 }.toTypedArray(),
         )
-        assertFalse("track_entries must NOT exist at v24", "track_entries" in db.tableNames())
-        MIGRATION_24_25.migrate(db)
         val tables = db.tableNames()
         assertTrue("manga must exist after full chain", "manga" in tables)
         assertTrue("chapters must exist after full chain", "chapters" in tables)

@@ -273,17 +273,9 @@ internal fun ReaderSettingsSection(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Reset button
+                // Reset button — single atomic event to avoid multiple snackbars
                 TextButton(
-                    onClick = {
-                        onEvent(DetailsContract.Event.SetReaderDirection(null))
-                        onEvent(DetailsContract.Event.SetReaderMode(null))
-                        onEvent(DetailsContract.Event.SetReaderColorFilter(null))
-                        onEvent(DetailsContract.Event.SetReaderCustomTintColor(null))
-                        onEvent(DetailsContract.Event.SetReaderBackgroundColor(null))
-                        onEvent(DetailsContract.Event.SetPreloadPagesBefore(null))
-                        onEvent(DetailsContract.Event.SetPreloadPagesAfter(null))
-                    },
+                    onClick = { onEvent(DetailsContract.Event.ResetReaderSettings) },
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Text(stringResource(R.string.details_reset_defaults))

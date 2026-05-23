@@ -60,7 +60,7 @@ internal fun SourceSuggestionsSection(
                 text = stringResource(R.string.details_source_suggestions_title),
                 style = MaterialTheme.typography.titleMedium
             )
-            if (!isLoading && suggestions.isNotEmpty()) {
+            if (!isLoading && (suggestions.isNotEmpty() || error != null)) {
                 TextButton(onClick = onLoadClick) {
                     Text(stringResource(R.string.details_refresh))
                 }

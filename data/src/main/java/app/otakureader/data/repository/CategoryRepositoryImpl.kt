@@ -57,8 +57,7 @@ class CategoryRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateCategoryFrequency(categoryId: Long, frequency: CategoryUpdateFrequency) {
-        val existing = categoryDao.getCategoryById(categoryId) ?: return
-        categoryDao.update(existing.copy(updateFrequency = frequency.value))
+        categoryDao.updateFrequency(categoryId, frequency.value)
     }
 
     override suspend fun deleteCategory(id: Long) {

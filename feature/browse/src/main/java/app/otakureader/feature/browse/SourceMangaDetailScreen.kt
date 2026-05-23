@@ -3,14 +3,11 @@ package app.otakureader.feature.browse
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -31,26 +28,12 @@ fun SourceMangaDetailScreen(
     viewModel: SourceMangaDetailViewModel = hiltViewModel(),
 ) {
     val redirectState by viewModel.redirectState.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
-
-    val notFoundMessage = stringResource(R.string.source_manga_detail_not_found)
-    val errorPrefix = stringResource(R.string.source_manga_detail_error_prefix)
 
     LaunchedEffect(redirectState) {
         when (val state = redirectState) {
-            is RedirectState.Success -> {
-                onNavigateToMangaDetail(state.mangaId)
-            }
-            is RedirectState.NotFound -> {
-                snackbarHostState.showSnackbar(notFoundMessage)
-                onNavigateBack()
-            }
-            is RedirectState.Error -> {
-                // Concatenate prefix with detail message for a user-readable string.
-                // TODO: replace with a proper string resource once UX copy is finalised.
-                snackbarHostState.showSnackbar("$errorPrefix: ${state.message}")
-                onNavigateBack()
-            }
+            is RedirectState.Success -> onNavigateToMangaDetail(state.mangaId)
+            is RedirectState.NotFound -> onNavigateBack()
+            is RedirectState.Error -> onNavigateBack()
             RedirectState.Loading -> Unit
         }
     }

@@ -8,6 +8,7 @@ import app.otakureader.core.navigation.Route
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.MangaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -75,12 +76,14 @@ class SourceMangaDetailViewModel @Inject constructor(
     private fun resolveAndNavigate(sourceId: String, mangaUrl: String, mangaTitle: String) {
         viewModelScope.launch {
             try {
-                val mangaId = withTimeout(10_000L) {
-                    val sourceIdLong = sourceId.toLongOrNull() ?: 0L
-                    val existing = runCatching {
-                        mangaRepository.getMangaBySourceAndUrl(sourceIdLong, mangaUrl)
-                    }.getOrNull()
+                val sourceIdLong = sourceId.toLongOrNull()
+                if (sourceIdLong == null) {
+                    _redirectState.value = RedirectState.NotFound
+                    return@launch
+                }
 
+                val mangaId = withTimeout(10_000L) {
+                    val existing = mangaRepository.getMangaBySourceAndUrl(sourceIdLong, mangaUrl)
                     if (existing != null) {
                         existing.id
                     } else {
@@ -92,7 +95,7 @@ class SourceMangaDetailViewModel @Inject constructor(
                             title = mangaTitle.ifBlank { mangaUrl },
                             initialized = false
                         )
-                        runCatching { mangaRepository.insertManga(stub) }.getOrDefault(0L)
+                        mangaRepository.insertManga(stub)
                     }
                 }
 
@@ -108,6 +111,8 @@ class SourceMangaDetailViewModel @Inject constructor(
                 // The DB lookup took longer than 10 seconds — treat as not-found so the
                 // screen can navigate back instead of spinning forever.
                 _redirectState.value = RedirectState.NotFound
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _redirectState.value = RedirectState.Error(e.message ?: "Unknown error")
             }
