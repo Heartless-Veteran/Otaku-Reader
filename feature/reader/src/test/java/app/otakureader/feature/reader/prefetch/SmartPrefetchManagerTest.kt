@@ -8,7 +8,10 @@ import app.otakureader.domain.model.ReadingBehavior
 import app.otakureader.feature.reader.model.ReaderPage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
-import io.mockk.*
+import io.mockk.any
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertFalse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
