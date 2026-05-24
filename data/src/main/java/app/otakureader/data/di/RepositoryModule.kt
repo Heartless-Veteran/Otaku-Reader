@@ -38,9 +38,11 @@ import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
+import app.otakureader.data.worker.TrackerSyncSchedulerImpl
 import app.otakureader.domain.scheduler.CoverRefreshScheduler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
+import app.otakureader.domain.scheduler.TrackerSyncScheduler
 import app.otakureader.domain.tracking.TrackManager
 import app.otakureader.domain.updater.AppUpdateChecker
 import dagger.Binds
@@ -118,4 +120,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCoverRefreshScheduler(impl: CoverRefreshSchedulerImpl): CoverRefreshScheduler
+
+    @Binds
+    abstract fun bindTrackerSyncScheduler(impl: TrackerSyncSchedulerImpl): TrackerSyncScheduler
 }

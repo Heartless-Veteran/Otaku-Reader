@@ -210,7 +210,11 @@ private fun MangaReaderOverlayContent(
                         .fillMaxHeight()
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else LocalOtakuColors.current.unselectedPageIndicator,
+                            color = if (isSelected) {
+                                LocalOtakuColors.current.selectedPageIndicator
+                            } else {
+                                LocalOtakuColors.current.unselectedPageIndicator
+                            },
                             shape = RoundedCornerShape(2.dp)
                         )
                         .clickable { onThumbnailClick(page) },
