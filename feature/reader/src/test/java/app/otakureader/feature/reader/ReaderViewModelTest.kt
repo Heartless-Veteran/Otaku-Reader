@@ -12,6 +12,7 @@ import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
+import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.DownloadPreferences
@@ -87,6 +88,7 @@ class ReaderViewModelTest {
     private lateinit var smartPrefetchManager: SmartPrefetchManager
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
     private lateinit var panelDetectionService: PanelDetectionService
+    private lateinit var trackerSyncRepository: TrackerSyncRepository
     private lateinit var historyScheduler: ReadingHistoryScheduler
 
     @Before
@@ -112,6 +114,7 @@ class ReaderViewModelTest {
         chapterPrefetcher = mockk(relaxed = true)
         panelDetectionService = mockk()
         historyScheduler = mockk(relaxed = true)
+        trackerSyncRepository = mockk(relaxed = true)
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
         every { generalPreferences.visualEffectsEnabled } returns flowOf(true)
@@ -232,6 +235,7 @@ class ReaderViewModelTest {
                 chapterRepository = chapterRepository,
                 mangaRepository = mangaRepository,
             ),
+            trackerSyncRepository = trackerSyncRepository,
             savedStateHandle = SavedStateHandle(
                 mapOf("mangaId" to mangaId, "chapterId" to chapterId)
             )

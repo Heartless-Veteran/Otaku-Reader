@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 26,
-    "identityHash": "c539a0abbfdc9db6df3586b72f3f98d8",
+    "identityHash": "5888ae2268e3fca47d9f2e11c31fd518",
     "entities": [
       {
         "tableName": "manga",
@@ -1316,7 +1316,7 @@
       },
       {
         "tableName": "download_queue",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`chapter_id` INTEGER NOT NULL, `manga_id` INTEGER NOT NULL, `manga_title` TEXT NOT NULL, `chapter_title` TEXT NOT NULL, `source_name` TEXT NOT NULL, `page_urls_json` TEXT NOT NULL, `priority` INTEGER NOT NULL, `status` TEXT NOT NULL, `added_at` INTEGER NOT NULL, PRIMARY KEY(`chapter_id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`chapter_id` INTEGER NOT NULL, `manga_id` INTEGER NOT NULL, `manga_title` TEXT NOT NULL, `chapter_title` TEXT NOT NULL, `source_name` TEXT NOT NULL, `page_urls_json` TEXT NOT NULL, `priority` INTEGER NOT NULL DEFAULT 1, `status` TEXT NOT NULL DEFAULT 'QUEUED', `added_at` INTEGER NOT NULL, PRIMARY KEY(`chapter_id`))",
         "fields": [
           {
             "fieldPath": "chapterId",
@@ -1358,13 +1358,15 @@
             "fieldPath": "priority",
             "columnName": "priority",
             "affinity": "INTEGER",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "1"
           },
           {
             "fieldPath": "status",
             "columnName": "status",
             "affinity": "TEXT",
-            "notNull": true
+            "notNull": true,
+            "defaultValue": "'QUEUED'"
           },
           {
             "fieldPath": "addedAt",
@@ -1378,7 +1380,19 @@
           "columnNames": [
             "chapter_id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_download_queue_manga_id_status",
+            "unique": false,
+            "columnNames": [
+              "manga_id",
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_download_queue_manga_id_status` ON `${TABLE_NAME}` (`manga_id`, `status`)"
+          }
+        ]
       },
       {
         "tableName": "track_entries",
@@ -1497,7 +1511,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c539a0abbfdc9db6df3586b72f3f98d8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5888ae2268e3fca47d9f2e11c31fd518')"
     ]
   }
 }
