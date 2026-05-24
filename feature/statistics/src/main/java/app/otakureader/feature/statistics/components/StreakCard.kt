@@ -25,7 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.otakureader.feature.statistics.R
 import kotlin.math.max
 
 /**
@@ -57,7 +59,7 @@ fun StreakCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.LocalFireDepartment,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.statistics_reading_streak),
                     tint = if (currentStreak > 0) {
                         MaterialTheme.colorScheme.primary
                     } else {

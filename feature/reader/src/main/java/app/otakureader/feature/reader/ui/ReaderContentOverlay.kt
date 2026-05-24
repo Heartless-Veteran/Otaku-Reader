@@ -42,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import app.otakureader.feature.reader.R
 import app.otakureader.core.ui.components.GlassmorphismSheet
 import app.otakureader.core.ui.components.GlowButton
 import app.otakureader.core.ui.components.InkButton
@@ -256,7 +258,7 @@ private fun MangaReaderOverlayContent(
                     InkButton(onClick = onPrevChapter) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_previous_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
@@ -267,7 +269,7 @@ private fun MangaReaderOverlayContent(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_next_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -426,7 +428,7 @@ private fun ManhwaReaderOverlayContent(
                     GlowButton(onClick = onPrevChapter, glowColor = accentColor) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_previous_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
@@ -437,7 +439,7 @@ private fun ManhwaReaderOverlayContent(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_next_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                     }

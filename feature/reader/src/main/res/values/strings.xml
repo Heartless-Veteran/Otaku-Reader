@@ -148,4 +148,8 @@
 
     <!-- Settings error -->
     <string name="reader_settings_save_failed">Failed to save reader settings. Please try again.</string>
+
+    <!-- Chapter navigation accessibility -->
+    <string name="reader_previous_chapter">Previous chapter</string>
+    <string name="reader_next_chapter">Next chapter</string>
 </resources>
