@@ -126,13 +126,13 @@ jobs:
         run: chmod +x gradlew
 
       - name: 📊 Verify coverage ≥60% on :domain and :data
-        run: ./gradlew :domain:koverVerify :data:koverVerifyDebug --no-daemon
+        run: ./gradlew :domain:koverVerify :data:koverVerify --no-daemon
         env:
           CI: true
 
       - name: 📈 Generate Kover HTML reports
         if: always()
-        run: ./gradlew :domain:koverHtmlReport :data:koverHtmlReportDebug --no-daemon
+        run: ./gradlew :domain:koverHtmlReport :data:koverHtmlReport --no-daemon
         env:
           CI: true
 
