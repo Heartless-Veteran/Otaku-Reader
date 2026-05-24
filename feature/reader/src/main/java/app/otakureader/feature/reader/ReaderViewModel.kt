@@ -845,7 +845,7 @@ class ReaderViewModel @Inject constructor(
             val chapter = currentChapter
             val manga = currentManga
             if (chapter != null && manga != null) {
-                runCatching {
+                try {
                     trackerSyncRepository.getSyncStateForManga(mangaId).first()
                         .forEach { syncState ->
                             trackerSyncRepository.recordLocalChange(
@@ -855,8 +855,10 @@ class ReaderViewModel @Inject constructor(
                                 status = manga.status
                             )
                         }
-                }.onFailure { e ->
-                    if (e is CancellationException) throw e
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    // non-fatal: tracker sync failure must not interrupt reader exit
                 }
             }
         }
