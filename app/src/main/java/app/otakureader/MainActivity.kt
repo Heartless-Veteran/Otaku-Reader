@@ -47,6 +47,7 @@ import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.crash.CrashHandler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
+import app.otakureader.domain.scheduler.TrackerSyncScheduler
 import app.otakureader.util.DeepLinkHandler
 import app.otakureader.util.DeepLinkResult
 import dagger.hilt.android.AndroidEntryPoint
@@ -74,6 +75,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var generalPreferences: GeneralPreferences
     @Inject lateinit var libraryPreferences: LibraryPreferences
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
+    @Inject lateinit var trackerSyncScheduler: TrackerSyncScheduler
 
     // Hold deep link result across recompositions for the current Activity instance
     private var pendingDeepLinkResult by mutableStateOf<DeepLinkResult?>(null)
@@ -105,6 +107,7 @@ class MainActivity : ComponentActivity() {
                     interval to wifiOnly
                 }.first()
                 libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
+                trackerSyncScheduler.schedule()
 
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {

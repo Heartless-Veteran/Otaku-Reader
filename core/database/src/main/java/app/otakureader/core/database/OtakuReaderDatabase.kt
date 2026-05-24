@@ -60,7 +60,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Track entries (persisted tracker state)
         TrackEntryEntity::class,
     ],
-    version = 25,
+    version = 26,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

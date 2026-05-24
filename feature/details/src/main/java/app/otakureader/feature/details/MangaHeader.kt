@@ -371,7 +371,7 @@ internal fun MangaHeader(
                     Text(
                         text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = manga.status.colorValue()
+                        color = manga.status.colorValue(LocalOtakuColors.current)
                     )
                 }
 

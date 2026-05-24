@@ -323,6 +323,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 .setRequiredNetworkType(
                     if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED
                 )
+                .setRequiresBatteryNotLow(true)
                 .build()
 
             val workRequest = PeriodicWorkRequestBuilder<LibraryUpdateWorker>(

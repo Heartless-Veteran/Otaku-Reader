@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.feature.reader.PageRotation
 import app.otakureader.feature.reader.TapZone
 import java.text.SimpleDateFormat
@@ -143,7 +144,7 @@ fun BatteryTimeOverlay(
                 contentDescription = "Battery level",
                 modifier = Modifier.size(18.dp),
                 tint = when {
-                    batteryLevel <= 15f -> Color.Red
+                    batteryLevel <= 15f -> LocalOtakuColors.current.batteryLowCritical
                     batteryLevel <= 30f -> MaterialTheme.colorScheme.error
                     else -> MaterialTheme.colorScheme.onSurface
                 }
@@ -152,7 +153,7 @@ fun BatteryTimeOverlay(
                 text = "${batteryLevel.toInt()}%",
                 style = MaterialTheme.typography.bodySmall,
                 color = when {
-                    batteryLevel <= 15f -> Color.Red
+                    batteryLevel <= 15f -> LocalOtakuColors.current.batteryLowCritical
                     else -> MaterialTheme.colorScheme.onSurface
                 }
             )

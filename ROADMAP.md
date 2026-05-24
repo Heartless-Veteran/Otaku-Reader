@@ -1,8 +1,22 @@
 # ROADMAP.md — Otaku-Reader 90-Day Improvement Plan
 
-**Generated:** 2026-05-18  
-**Baseline:** Audit commit `28a13cdd6e`  
+**Updated:** 2026-05-24 (full 7-phase audit)
+**Previous baseline:** Audit commit `28a13cdd6e`
 **Priority basis:** AUDIT_MASTER.md impact × effort rankings
+
+## Alpha Launch Criteria (New — from 2026-05-24 audit)
+
+> Alpha is **blocked** until both items below ship. Everything else is beta-track or later.
+
+- [ ] **Notification system** — Implement `NotificationChannelManager` + `NewChapterNotifier` wired to `LibraryUpdateWorker`. Without this, users have no way to know when new chapters are available.  
+  _Effort: 3 days_
+
+- [ ] **Tracker auto-sync trigger** — Wire `ReaderViewModel` chapter-completion event → `TrackerSyncUseCase` → all 5 trackers. OAuth login already works; only the trigger is missing.  
+  _Effort: 2 days_
+
+**Once these two ship, all other alpha gates are already green (build ✅, security ✅, tests ✅, architecture ✅).**
+
+---
 
 ---
 

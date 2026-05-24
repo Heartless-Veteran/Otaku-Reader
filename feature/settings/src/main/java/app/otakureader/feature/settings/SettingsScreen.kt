@@ -492,7 +492,7 @@ private fun AboutSection(onEvent: (SettingsEvent) -> Unit) {
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_about_title)) },
         supportingContent = { Text(stringResource(R.string.settings_about_description)) },
-        leadingContent = { Icon(Icons.Default.Info, contentDescription = null) },
+        leadingContent = { Icon(Icons.Default.Info, contentDescription = stringResource(R.string.settings_about)) },
         modifier = Modifier.clickable { onEvent(SettingsEvent.NavigateToAbout) },
     )
 }

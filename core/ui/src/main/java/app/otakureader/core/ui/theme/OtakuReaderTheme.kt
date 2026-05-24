@@ -44,6 +44,17 @@ data class OtakuColors(
     val warning: Color,
     val danger: Color,
     val isDark: Boolean,
+    val statusOngoing: Color,
+    val statusCompleted: Color,
+    val statusLicensed: Color,
+    val statusPublishingFinished: Color,
+    val statusCancelled: Color,
+    val statusOnHiatus: Color,
+    val contentFilterManga: Color,
+    val contentFilterManhwa: Color,
+    val selectedPageIndicator: Color,
+    val unselectedPageIndicator: Color,
+    val batteryLowCritical: Color,
 )
 
 val LocalOtakuColors = staticCompositionLocalOf { darkOtakuColors() }
@@ -73,6 +84,17 @@ fun darkOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     warning = Color(0xFFFBBF24),
     danger = Color(0xFFF87171),
     isDark = true,
+    statusOngoing = Color(0xFF4CAF50),
+    statusCompleted = Color(0xFF2196F3),
+    statusLicensed = Color(0xFFFF9800),
+    statusPublishingFinished = Color(0xFF9C27B0),
+    statusCancelled = Color(0xFFF44336),
+    statusOnHiatus = Color(0xFFFFC107),
+    contentFilterManga = Color(0xFFFF4757),
+    contentFilterManhwa = Color(0xFF9B59B6),
+    selectedPageIndicator = Color(0xFFFF4757),
+    unselectedPageIndicator = Color(0xFF3A3A4A),
+    batteryLowCritical = Color(0xFFFF0000),
 )
 
 fun oledOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
@@ -93,6 +115,17 @@ fun oledOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     warning = Color(0xFFFBBF24),
     danger = Color(0xFFF87171),
     isDark = true,
+    statusOngoing = Color(0xFF4CAF50),
+    statusCompleted = Color(0xFF2196F3),
+    statusLicensed = Color(0xFFFF9800),
+    statusPublishingFinished = Color(0xFF9C27B0),
+    statusCancelled = Color(0xFFF44336),
+    statusOnHiatus = Color(0xFFFFC107),
+    contentFilterManga = Color(0xFFFF4757),
+    contentFilterManhwa = Color(0xFF9B59B6),
+    selectedPageIndicator = Color(0xFFFF4757),
+    unselectedPageIndicator = Color(0xFF2D2D42),
+    batteryLowCritical = Color(0xFFFF0000),
 )
 
 fun lightOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
@@ -113,6 +146,17 @@ fun lightOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     warning = Color(0xFFD97706),
     danger = Color(0xFFDC2626),
     isDark = false,
+    statusOngoing = Color(0xFF16A34A),
+    statusCompleted = Color(0xFF1E40AF),
+    statusLicensed = Color(0xFFD97706),
+    statusPublishingFinished = Color(0xFF7C3AED),
+    statusCancelled = Color(0xFFDC2626),
+    statusOnHiatus = Color(0xFFD97706),
+    contentFilterManga = Color(0xFFDC2626),
+    contentFilterManhwa = Color(0xFF7C3AED),
+    selectedPageIndicator = Color(0xFFDC2626),
+    unselectedPageIndicator = Color(0xFF9999B0),
+    batteryLowCritical = Color(0xFFDC2626),
 )
 
 fun sepiaOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
@@ -133,6 +177,17 @@ fun sepiaOtakuColors(accent: Color = Color(0xFF6B4EFF)) = OtakuColors(
     warning = Color(0xFFD97706),
     danger = Color(0xFFDC2626),
     isDark = false,
+    statusOngoing = Color(0xFF16A34A),
+    statusCompleted = Color(0xFF1E40AF),
+    statusLicensed = Color(0xFFD97706),
+    statusPublishingFinished = Color(0xFF7C3AED),
+    statusCancelled = Color(0xFFDC2626),
+    statusOnHiatus = Color(0xFFD97706),
+    contentFilterManga = Color(0xFFDC2626),
+    contentFilterManhwa = Color(0xFF7C3AED),
+    selectedPageIndicator = Color(0xFFDC2626),
+    unselectedPageIndicator = Color(0xFF9B8A7A),
+    batteryLowCritical = Color(0xFFDC2626),
 )
 
 val OtakuShapes = Shapes(

@@ -19,6 +19,7 @@ import app.otakureader.core.database.migrations.MIGRATION_21_22
 import app.otakureader.core.database.migrations.MIGRATION_22_23
 import app.otakureader.core.database.migrations.MIGRATION_23_24
 import app.otakureader.core.database.migrations.MIGRATION_24_25
+import app.otakureader.core.database.migrations.MIGRATION_25_26
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -44,7 +45,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 25", 25, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 26", 26, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -71,7 +72,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 23 migrations (v2→v25)", 23, ALL_MIGRATIONS.size)
+        assertEquals("Expected 24 migrations (v2→v26)", 24, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -464,16 +465,51 @@ class DatabaseMigrationTest {
         db.close()
     }
 
-    // ── Full chain v9 → v25 ─────────────────────────────────────────────────
-    // Starts from v9 (oldest exported schema JSON). Runs all migrations v9→v25 via
-    // runMigrationsAndValidate, which validates the final schema against 25.json.
+    // ── Migration 25 → 26 ───────────────────────────────────────────────────
+    // Adds: composite index (manga_id, status) on download_queue.
+    // chapter_id is already the PK (auto-indexed); manga_id alone is covered by the composite prefix.
 
     @Test
-    fun fullMigrationChain_v9ToV25() {
+    fun migration25To26_createsCompositeIndex() {
+        val db = helper.createDatabase(TEST_DB, 24)
+        MIGRATION_24_25.migrate(db)
+        MIGRATION_25_26.migrate(db)
+        val indexes = db.indexNames("download_queue")
+        assertTrue(
+            "index_download_queue_manga_id_status must exist after 25→26",
+            "index_download_queue_manga_id_status" in indexes,
+        )
+        assertFalse(
+            "index_download_queue_chapter_id must NOT be created (PK is already indexed)",
+            "index_download_queue_chapter_id" in indexes,
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration25To26_isIdempotent() {
+        val db = helper.createDatabase(TEST_DB, 24)
+        MIGRATION_24_25.migrate(db)
+        MIGRATION_25_26.migrate(db)
+        // CREATE INDEX IF NOT EXISTS — re-running must not throw
+        MIGRATION_25_26.migrate(db)
+        assertTrue(
+            "download_queue must still exist after idempotent 25→26",
+            "download_queue" in db.tableNames(),
+        )
+        db.close()
+    }
+
+    // ── Full chain v9 → v26 ─────────────────────────────────────────────────
+    // Starts from v9 (oldest exported schema JSON). Runs all migrations v9→v26 via
+    // runMigrationsAndValidate, which validates the final schema against 26.json.
+
+    @Test
+    fun fullMigrationChain_v9ToV26() {
         helper.createDatabase(TEST_DB, 9).close()
         val db = helper.runMigrationsAndValidate(
-            TEST_DB, 25, true,
-            *ALL_MIGRATIONS.filter { it.startVersion in 9..24 }.toTypedArray(),
+            TEST_DB, 26, true,
+            *ALL_MIGRATIONS.filter { it.startVersion in 9..25 }.toTypedArray(),
         )
         val tables = db.tableNames()
         assertTrue("manga must exist after full chain", "manga" in tables)
@@ -498,6 +534,10 @@ class DatabaseMigrationTest {
         assertTrue(
             "index_track_entries_manga_id must exist after full chain",
             "index_track_entries_manga_id" in db.indexNames("track_entries"),
+        )
+        assertTrue(
+            "index_download_queue_manga_id_status must exist after full chain",
+            "index_download_queue_manga_id_status" in db.indexNames("download_queue"),
         )
         db.close()
     }

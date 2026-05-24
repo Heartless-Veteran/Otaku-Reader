@@ -35,3 +35,8 @@
 -keep class * extends androidx.glance.appwidget.GlanceAppWidget { *; }
 -keep class * extends androidx.glance.appwidget.GlanceAppWidgetReceiver { *; }
 -keep @dagger.hilt.EntryPoint interface * { *; }
+
+# Extension system — classloaded dynamically at runtime
+-keep class app.otakureader.core.extension.** { *; }
+-keep class * implements app.otakureader.domain.extension.Extension { *; }
+-keep class app.otakureader.core.tachiyomi.compat.** { *; }

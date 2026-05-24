@@ -254,7 +254,7 @@ private fun AppLogoCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.more_app_name),
                         tint = Color.White,
                         modifier = Modifier.size(28.dp),
                     )
@@ -302,7 +302,7 @@ private fun MoreListItem(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = headline,
                     tint = iconTint,
                     modifier = Modifier.size(22.dp)
                 )

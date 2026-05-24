@@ -42,12 +42,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import app.otakureader.feature.reader.R
 import app.otakureader.core.ui.components.GlassmorphismSheet
 import app.otakureader.core.ui.components.GlowButton
 import app.otakureader.core.ui.components.InkButton
 import app.otakureader.core.ui.components.InkSlider
 import app.otakureader.core.ui.components.NeonSlider
 import app.otakureader.core.ui.theme.ContentType
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.theme.manhwaAccent
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
@@ -207,7 +210,11 @@ private fun MangaReaderOverlayContent(
                         .fillMaxHeight()
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) Color(0xFFFF4757) else Color(0xFF3A3A4A),
+                            color = if (isSelected) {
+                                LocalOtakuColors.current.selectedPageIndicator
+                            } else {
+                                LocalOtakuColors.current.unselectedPageIndicator
+                            },
                             shape = RoundedCornerShape(2.dp)
                         )
                         .clickable { onThumbnailClick(page) },
@@ -216,7 +223,7 @@ private fun MangaReaderOverlayContent(
                     Text(
                         text = "$page",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) Color(0xFFFF4757) else Color(0xFFB0B0BE),
+                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else Color(0xFFB0B0BE),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -255,7 +262,7 @@ private fun MangaReaderOverlayContent(
                     InkButton(onClick = onPrevChapter) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_previous_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
@@ -266,7 +273,7 @@ private fun MangaReaderOverlayContent(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_next_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -425,7 +432,7 @@ private fun ManhwaReaderOverlayContent(
                     GlowButton(onClick = onPrevChapter, glowColor = accentColor) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_previous_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(Modifier.width(4.dp))
@@ -436,7 +443,7 @@ private fun ManhwaReaderOverlayContent(
                         Spacer(Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.reader_next_chapter),
                             modifier = Modifier.size(16.dp)
                         )
                     }

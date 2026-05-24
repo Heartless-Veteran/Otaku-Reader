@@ -19,6 +19,7 @@ import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
 import java.time.ZoneId
@@ -56,6 +57,8 @@ class ReadingReminderWorker @AssistedInject constructor(
 
             showNotification(dailyGoal, chaptersToday)
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.success() // Non-critical; don't retry
         }

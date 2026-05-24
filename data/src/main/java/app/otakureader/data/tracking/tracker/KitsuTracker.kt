@@ -13,6 +13,7 @@ import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import app.otakureader.domain.tracking.Tracker
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -84,6 +85,8 @@ class KitsuTracker(
                 }
                 false
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             tokenMutex.withLock {
                 accessToken = null
@@ -185,6 +188,8 @@ class KitsuTracker(
     private suspend fun fetchCurrentUserId(): Long? {
         return try {
             api.getCurrentUser().data.firstOrNull()?.id?.toLongOrNull()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }

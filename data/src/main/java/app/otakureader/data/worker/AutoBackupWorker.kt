@@ -14,6 +14,7 @@ import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.data.backup.BackupCreator
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -63,6 +64,8 @@ class AutoBackupWorker @AssistedInject constructor(
             cleanupOldBackups(backupDir)
 
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Auto-backup failed", e)
             Result.retry()

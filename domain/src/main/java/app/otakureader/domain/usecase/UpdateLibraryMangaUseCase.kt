@@ -6,6 +6,7 @@ import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 
@@ -60,6 +61,8 @@ class UpdateLibraryMangaUseCase @Inject constructor(
             chapterRepository.insertChapters(newChapters)
 
             Result.success(newChapters.size)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

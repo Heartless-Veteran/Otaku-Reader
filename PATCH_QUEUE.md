@@ -1,8 +1,132 @@
-# PATCH_QUEUE.md — P0 Ready-to-Apply Patches
+# PATCH_QUEUE.md — P0 / P1 Ready-to-Apply Patches
 
-**Generated:** 2026-05-18  
-**Baseline:** Commit `28a13cdd6e`  
-**Scope:** All P0 items from AUDIT_MASTER.md. Each patch is self-contained and can be applied independently.
+**Updated:** 2026-05-24 (full 7-phase audit additions)
+**Previous baseline:** Commit `28a13cdd6e`
+**Scope:** All P0 and new P1 items. Each patch is self-contained and can be applied independently.
+
+---
+
+## NEW — Patch A: CancellationException Guard (P1 — 33 coroutine-context sites)
+
+**Files:** 8 Workers, 3 Use Cases, 5 Tracker impls, 3 ViewModels, 4 Extension files  
+**Full list:** `AUDIT_CODE_SMELLS.md` — P1 section
+
+**Pattern — apply to every unguarded block in a suspend context:**
+```kotlin
+// BEFORE
+try { ... }
+catch (e: Exception) { handleError(e) }
+
+// AFTER
+try { ... }
+catch (e: CancellationException) { throw e }  // ← add this line
+catch (e: Exception) { handleError(e) }
+```
+
+**Priority files (Workers — highest risk):**
+- `data/worker/FeedRefreshWorker.kt:48`
+- `data/worker/RecordReadingHistoryWorker.kt:72,76`
+- `data/worker/CoverRefreshWorker.kt:60,66`
+- `data/worker/TrackerSyncWorker.kt:40`
+- `data/worker/AutoBackupWorker.kt:66`
+- `data/worker/BackupWorker.kt:40`
+- `data/worker/ReadingReminderWorker.kt:59`
+- `data/worker/UpdateNotifier.kt:164`
+
+---
+
+## NEW — Patch B: DownloadQueueEntity Indices (P1)
+
+**File:** `core/database/src/main/java/app/otakureader/core/database/entity/DownloadQueueEntity.kt`
+
+```kotlin
+// In @Entity annotation — add indices array:
+@Entity(
+    tableName = "download_queue",
+    foreignKeys = [/* existing */],
+    indices = [
+        Index("chapter_id"),
+        Index("manga_id"),
+        Index(value = ["manga_id", "status"])
+    ]
+)
+```
+
+**Migration (MIGRATION_25_26):**
+```kotlin
+val MIGRATION_25_26 = object : Migration(25, 26) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_chapter_id ON download_queue(chapter_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_manga_id ON download_queue(manga_id)")
+        database.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_manga_id_status ON download_queue(manga_id, status)")
+    }
+}
+```
+
+---
+
+## NEW — Patch C: LibraryUpdateWorker Battery Constraint (P1)
+
+**File:** `data/src/main/java/app/otakureader/data/worker/LibraryUpdateWorker.kt:322`
+
+```kotlin
+// BEFORE
+val constraints = Constraints.Builder()
+    .setRequiredNetworkType(
+        if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED
+    )
+    .build()
+
+// AFTER
+val constraints = Constraints.Builder()
+    .setRequiredNetworkType(
+        if (wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED
+    )
+    .setRequiresBatteryNotLow(true)
+    .build()
+```
+
+---
+
+## NEW — Patch D: CoverRefreshWorker Network Constraint (P1)
+
+**File:** `data/src/main/java/app/otakureader/data/worker/CoverRefreshWorker.kt:106`
+
+```kotlin
+// BEFORE
+WorkManager.getInstance(context).enqueueUniqueWork(
+    WORK_NAME,
+    ExistingWorkPolicy.KEEP,
+    OneTimeWorkRequestBuilder<CoverRefreshWorker>().build(),
+)
+
+// AFTER
+val constraints = Constraints.Builder()
+    .setRequiredNetworkType(NetworkType.CONNECTED)
+    .build()
+WorkManager.getInstance(context).enqueueUniqueWork(
+    WORK_NAME,
+    ExistingWorkPolicy.KEEP,
+    OneTimeWorkRequestBuilder<CoverRefreshWorker>()
+        .setConstraints(constraints)
+        .build(),
+)
+```
+
+---
+
+## NEW — Patch E: ProGuard Extension Keep Rules (P2 — pre-release)
+
+**File:** `app/proguard-rules.pro`
+
+```
+# Extension classloader entry points — must survive R8 obfuscation
+-keep class app.otakureader.core.extension.** { *; }
+-keep class * implements app.otakureader.domain.extension.Extension { *; }
+-keep class app.otakureader.core.tachiyomi.compat.** { *; }
+```
+
+---
 
 ---
 

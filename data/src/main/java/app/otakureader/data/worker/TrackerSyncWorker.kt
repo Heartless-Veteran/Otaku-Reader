@@ -13,6 +13,7 @@ import app.otakureader.domain.repository.TrackerSyncRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 
 /**
  * Background worker that performs periodic 2-way sync between the local library
@@ -37,6 +38,8 @@ class TrackerSyncWorker @AssistedInject constructor(
             val summary = trackerSyncRepository.syncAllPending()
             // Retry if any hard failures occurred; conflicts are handled by the user
             if (summary.failed > 0) Result.retry() else Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.retry()
         }

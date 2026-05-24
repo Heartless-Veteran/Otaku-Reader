@@ -7,6 +7,7 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.util.TitleNormalizer
 import app.otakureader.sourceapi.SourceManga
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 
 /**
  * Use case for searching migration targets in a specific source.
@@ -66,6 +67,8 @@ class SearchMigrationTargetsUseCase @Inject constructor(
             }.sortedByDescending { it.similarityScore }
 
             Result.success(candidates)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -16,6 +16,7 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.toBitmap
 import app.otakureader.data.R
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -161,6 +162,8 @@ class UpdateNotifier(private val context: Context) {
                     val result = context.imageLoader.execute(request)
                     result.image?.toBitmap()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 // Catches both timeout exceptions and image loading failures
                 null
