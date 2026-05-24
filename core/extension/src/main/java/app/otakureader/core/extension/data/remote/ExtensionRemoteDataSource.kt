@@ -4,6 +4,7 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.ExtensionSource
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -223,6 +224,8 @@ class ExtensionRemoteDataSourceImpl(
                     }
 
                 Result.success(merged)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -241,6 +244,8 @@ class ExtensionRemoteDataSourceImpl(
         // Try index.min.json first (more common in third-party repos)
         try {
             return fetchMinifiedIndex(trimmedBaseUrl)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Fall back to standard index.json
             try {
@@ -326,6 +331,8 @@ class ExtensionRemoteDataSourceImpl(
                     }
                 }
                 Result.success(destination)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Result.failure(e)
             }

@@ -8,6 +8,7 @@ import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
+import app.otakureader.core.ui.theme.OtakuColors
 import androidx.annotation.StringRes
 
 /**
@@ -273,12 +274,12 @@ fun MangaStatus.displayTextResId(): Int = when (this) {
 /**
  * Extension to get status color
  */
-fun MangaStatus.colorValue(): androidx.compose.ui.graphics.Color = when (this) {
+fun MangaStatus.colorValue(colors: OtakuColors): androidx.compose.ui.graphics.Color = when (this) {
     MangaStatus.UNKNOWN -> androidx.compose.ui.graphics.Color.Gray
-    MangaStatus.ONGOING -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
-    MangaStatus.COMPLETED -> androidx.compose.ui.graphics.Color(0xFF2196F3)
-    MangaStatus.LICENSED -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-    MangaStatus.PUBLISHING_FINISHED -> androidx.compose.ui.graphics.Color(0xFF9C27B0)
-    MangaStatus.CANCELLED -> androidx.compose.ui.graphics.Color(0xFFF44336)
-    MangaStatus.ON_HIATUS -> androidx.compose.ui.graphics.Color(0xFFFFC107)
+    MangaStatus.ONGOING -> colors.statusOngoing
+    MangaStatus.COMPLETED -> colors.statusCompleted
+    MangaStatus.LICENSED -> colors.statusLicensed
+    MangaStatus.PUBLISHING_FINISHED -> colors.statusPublishingFinished
+    MangaStatus.CANCELLED -> colors.statusCancelled
+    MangaStatus.ON_HIATUS -> colors.statusOnHiatus
 }

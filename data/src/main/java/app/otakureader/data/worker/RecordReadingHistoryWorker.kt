@@ -12,6 +12,7 @@ import androidx.work.workDataOf
 import app.otakureader.domain.repository.ChapterRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 
 /**
  * One-shot WorkManager task that persists a reading-session history record and
@@ -69,10 +70,14 @@ class RecordReadingHistoryWorker @AssistedInject constructor(
             // Isolate notifier failures so they don't cause the worker to retry.
             try {
                 goalCompletionNotifier.checkAndNotify()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w("RecordReadingHistoryWorker", "Goal completion check failed", e)
             }
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Retry on transient errors (e.g., DB locked).  WorkManager will back off
             // automatically; after the maximum retry count it will mark the work as failed.

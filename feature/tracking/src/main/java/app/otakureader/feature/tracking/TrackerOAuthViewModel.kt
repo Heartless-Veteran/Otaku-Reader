@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.PendingOAuthStore
 import app.otakureader.domain.tracking.TrackManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -76,6 +77,8 @@ class TrackerOAuthViewModel @Inject constructor(
                         )
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 pendingOAuthStore.clear()
                 _state.update {

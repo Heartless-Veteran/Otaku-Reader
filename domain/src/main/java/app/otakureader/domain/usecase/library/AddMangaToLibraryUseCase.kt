@@ -5,6 +5,7 @@ import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.sourceapi.SourceManga
 import app.otakureader.sourceapi.toSourceId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -66,11 +67,13 @@ class AddMangaToLibraryUseCase(
             
             val mangaId = mangaRepository.insertManga(newManga)
             Result.success(mangaId)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-    
+
     /**
      * Add multiple SourceManga entries to the library.
      * Returns count of successfully added manga.
@@ -82,6 +85,8 @@ class AddMangaToLibraryUseCase(
                 invoke(sourceManga, sourceId).onSuccess { addedCount++ }
             }
             Result.success(addedCount)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

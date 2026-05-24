@@ -19,6 +19,7 @@ import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.repository.ReaderSettingsRepository
+import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderChapterLoaderDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDiscordDelegate
@@ -27,6 +28,7 @@ import app.otakureader.feature.reader.viewmodel.delegate.ReaderHistoryDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderPrefetchDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderSettingsLoaderDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -80,6 +83,7 @@ class ReaderViewModel @Inject constructor(
     private val discordDelegate: ReaderDiscordDelegate,
     private val prefetchDelegate: ReaderPrefetchDelegate,
     private val downloadAheadDelegate: ReaderDownloadAheadDelegate,
+    private val trackerSyncRepository: TrackerSyncRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -837,6 +841,25 @@ class ReaderViewModel @Inject constructor(
             durationMs = durationMs,
             currentState = currentState,
         )
+        if (currentState.isLastPage) {
+            val chapter = currentChapter
+            val manga = currentManga
+            if (chapter != null && manga != null) {
+                runCatching {
+                    trackerSyncRepository.getSyncStateForManga(mangaId).first()
+                        .forEach { syncState ->
+                            trackerSyncRepository.recordLocalChange(
+                                mangaId = mangaId,
+                                trackerId = syncState.trackerId,
+                                chapterRead = chapter.chapterNumber,
+                                status = manga.status
+                            )
+                        }
+                }.onFailure { e ->
+                    if (e is CancellationException) throw e
+                }
+            }
+        }
     }
 
 

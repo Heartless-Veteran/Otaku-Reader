@@ -10,6 +10,7 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.migration.MigrateMangaUseCase
 import app.otakureader.domain.usecase.migration.SearchMigrationTargetsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,6 +88,8 @@ class MigrationViewModel @Inject constructor(
                         availableSources = sources
                     )
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _state.update {
                     it.copy(

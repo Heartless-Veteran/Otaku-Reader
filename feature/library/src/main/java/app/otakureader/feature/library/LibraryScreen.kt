@@ -435,9 +435,10 @@ private fun MangaGrid(
             contentColor = MaterialTheme.colorScheme.onSurface,
             indicator = { tabPositions ->
                 if (selectedContentFilter < tabPositions.size) {
+                    val otakuColors = LocalOtakuColors.current
                     val indicatorColor = when (selectedContentFilter) {
-                        1 -> Color(0xFFFF4757)
-                        2 -> Color(0xFF9B59B6)
+                        1 -> otakuColors.contentFilterManga
+                        2 -> otakuColors.contentFilterManhwa
                         else -> MaterialTheme.colorScheme.primary
                     }
                     Box(

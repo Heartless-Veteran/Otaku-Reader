@@ -48,6 +48,7 @@ import app.otakureader.core.ui.components.InkButton
 import app.otakureader.core.ui.components.InkSlider
 import app.otakureader.core.ui.components.NeonSlider
 import app.otakureader.core.ui.theme.ContentType
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.theme.manhwaAccent
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
@@ -207,7 +208,7 @@ private fun MangaReaderOverlayContent(
                         .fillMaxHeight()
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) Color(0xFFFF4757) else Color(0xFF3A3A4A),
+                            color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else LocalOtakuColors.current.unselectedPageIndicator,
                             shape = RoundedCornerShape(2.dp)
                         )
                         .clickable { onThumbnailClick(page) },
@@ -216,7 +217,7 @@ private fun MangaReaderOverlayContent(
                     Text(
                         text = "$page",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) Color(0xFFFF4757) else Color(0xFFB0B0BE),
+                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else Color(0xFFB0B0BE),
                         textAlign = TextAlign.Center
                     )
                 }

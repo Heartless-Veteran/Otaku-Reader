@@ -46,6 +46,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.crash.CrashHandler
+import app.otakureader.data.worker.TrackerSyncWorker
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.util.DeepLinkHandler
 import app.otakureader.util.DeepLinkResult
@@ -105,6 +106,7 @@ class MainActivity : ComponentActivity() {
                     interval to wifiOnly
                 }.first()
                 libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
+                TrackerSyncWorker.schedule(this@MainActivity)
 
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {

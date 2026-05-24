@@ -7,6 +7,7 @@ import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -128,6 +129,8 @@ class LibrarySettingsDelegate @Inject constructor(
     ) {
         try {
             libraryUpdateScheduler.schedule(intervalHours = intervalHours, wifiOnly = wifiOnly)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("LibrarySettingsDelegate", "Failed to schedule library update (intervalHours=$intervalHours, wifiOnly=$wifiOnly)", e)
             sendEffect(SettingsEffect.ShowSnackbar("Failed to update library scheduler settings"))

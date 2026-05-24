@@ -8,8 +8,10 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -19,6 +21,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
 private const val COVER_REFRESH_CHANNEL_ID = "cover_refresh_channel"
@@ -57,12 +60,16 @@ class CoverRefreshWorker @AssistedInject constructor(
                         .build()
                     try {
                         imageLoader.execute(request)
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Log.w(TAG, "Failed to refresh cover: $url", e)
                     }
                 }
 
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Cover refresh failed", e)
             Result.failure()
@@ -104,10 +111,15 @@ class CoverRefreshWorker @AssistedInject constructor(
 
     companion object {
         fun enqueue(context: Context) {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 WORK_NAME,
                 ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequestBuilder<CoverRefreshWorker>().build(),
+                OneTimeWorkRequestBuilder<CoverRefreshWorker>()
+                    .setConstraints(constraints)
+                    .build(),
             )
         }
     }

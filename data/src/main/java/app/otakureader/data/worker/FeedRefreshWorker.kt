@@ -14,6 +14,7 @@ import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.domain.repository.FeedRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.util.concurrent.TimeUnit
@@ -45,6 +46,8 @@ class FeedRefreshWorker @AssistedInject constructor(
             feedDao.clearOldFeedItems(cutoff)
 
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "Feed refresh worker failed, will retry", e)
             Result.retry()

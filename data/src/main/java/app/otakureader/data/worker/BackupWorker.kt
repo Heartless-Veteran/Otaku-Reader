@@ -8,6 +8,7 @@ import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.data.backup.repository.BackupRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 
 /**
@@ -37,6 +38,8 @@ class BackupWorker @AssistedInject constructor(
 
             notifier.notifySuccess(file.name)
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             notifier.notifyFailure(e.message)
             Result.failure()

@@ -7,6 +7,7 @@ import app.otakureader.domain.model.TrackEntry
 import app.otakureader.domain.model.TrackStatus
 import app.otakureader.domain.model.TrackerType
 import app.otakureader.domain.tracking.Tracker
+import kotlinx.coroutines.CancellationException
 
 /**
  * Tracker implementation for [AniList](https://anilist.co/).
@@ -42,6 +43,8 @@ class AniListTracker(
             accessToken = password
             tokenStore.saveTokens(trackerId = id, accessToken = password)
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             accessToken = null
             false
@@ -100,6 +103,8 @@ class AniListTracker(
                 totalChapters = media.chapters ?: 0,
                 score = listEntry.score
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }
@@ -122,6 +127,8 @@ class AniListTracker(
         return try {
             api.query(AniListGraphQlQuery(gqlMutation, variables))
             entry
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             entry
         }

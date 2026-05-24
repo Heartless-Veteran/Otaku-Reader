@@ -12,6 +12,7 @@ import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.loader.ExtensionLoadResult
 import app.otakureader.core.extension.loader.ExtensionLoader
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -99,6 +100,8 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
                 }
                 extensionRepository.installExtension(packageName, apkPath)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to install extension for package $packageName", e)
         }
@@ -107,6 +110,8 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
     private suspend fun handlePackageRemoved(packageName: String) {
         try {
             extensionRepository.uninstallExtension(packageName)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.d(TAG, "Package $packageName was not a tracked extension; nothing to remove")
         }
