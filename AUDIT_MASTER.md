@@ -16,11 +16,11 @@
 | Security | No unencrypted creds | ✅ AES-256-GCM throughout |
 | Crash safety | No `!!` in hot paths | ✅ 1 `!!` (safe, post-retry) |
 | Extension compat | Tachiyomi API intact | ✅ All interfaces unchanged |
-| DB migrations | No destructive migration | ✅ 25 clean migrations |
-| **Notification system** | Functional | ❌ **0% implemented** |
-| **Tracker auto-sync** | Chapter read triggers sync | ❌ **Trigger logic incomplete** |
+| DB migrations | No destructive migration | ✅ 26 clean migrations |
+| **Notification system** | Functional | ✅ **Implemented** (UpdateNotifier, DownloadNotifier, ReadingReminderWorker) |
+| **Tracker auto-sync** | Chapter read triggers sync | ✅ **Wired** (ReaderViewModel → TrackerSyncRepository) |
 
-**Alpha = READY** when: notification system ships (even minimal) + tracker sync trigger wired + existing gates hold.
+**Alpha = READY.** All gates now pass. Remaining items are P1/P2 polish (see Beta section below).
 
 ---
 
@@ -41,21 +41,17 @@
 
 ## Top 10 Findings — Ranked by Impact × Effort
 
-### #1 — Notification System: Not Implemented ❌
-**Phase:** Features | **Severity:** Alpha Blocker | **Effort:** High (~3 days)
+### #1 — Notification System ✅ Implemented
+**Phase:** Features | **Severity:** Resolved | **Effort:** N/A
 
-No `NotificationManager` setup, no notification channels, no `BroadcastReceiver` for new chapter alerts or download completion. Users have no way to know when new chapters are available without manually opening the app.
-
-**Fix:** Implement `NotificationChannelManager`, `NewChapterNotifier`, and wire both to `LibraryUpdateWorker` results. Reuse existing `UpdateNotifier` pattern.
+`UpdateNotifier` (library updates, grouped by source), `DownloadNotifier` (download progress/completion), and `ReadingReminderWorker` (reading reminders) are all implemented with proper `NotificationChannel` setup, permission handling, and batching via `SmartNotificationBatcher`. The original audit incorrectly assessed this as "0% implemented".
 
 ---
 
-### #2 — Tracker Auto-Sync: Trigger Logic Incomplete ❌
-**Phase:** Features | **Severity:** Alpha Blocker | **Effort:** High (~2 days)
+### #2 — Tracker Auto-Sync ✅ Wired
+**Phase:** Features | **Severity:** Resolved | **Effort:** N/A
 
-OAuth login flows for all 5 trackers (AniList, Kitsu, MAL, MangaUpdates, Shikimori) are implemented. `ConflictUiState` is defined. But the trigger that fires a sync when the user finishes reading a chapter is missing or stubbed.
-
-**Fix:** Wire `ReaderViewModel`'s chapter completion event → `TrackerSyncUseCase`. Add `TrackerSyncWorker` call on chapter mark-as-read.
+`ReaderViewModel.cleanupOnExit()` now calls `TrackerSyncRepository.recordLocalChange()` when the last page is reached, and `TrackerSyncWorker` is scheduled from `MainActivity` alongside `LibraryUpdateWorker`. The periodic worker syncs all pending changes on a 15-minute interval.
 
 ---
 
@@ -148,8 +144,8 @@ No domain-specific `<pin-set>` for tracker OAuth endpoints (MAL, AniList, Kitsu)
 ### Must Fix Before Alpha
 | # | Finding | Files |
 |---|---------|-------|
-| 1 | Notification system (0% implemented) | New files needed |
-| 2 | Tracker auto-sync trigger | `ReaderViewModel`, `TrackerSyncUseCase` |
+| ~~1~~ | ~~Notification system~~ | ✅ Already implemented — audit error |
+| ~~2~~ | ~~Tracker auto-sync trigger~~ | ✅ Wired in this PR |
 
 ### Must Fix Before Beta
 | # | Finding | Effort |

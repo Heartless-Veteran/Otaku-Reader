@@ -466,25 +466,22 @@ class DatabaseMigrationTest {
     }
 
     // ── Migration 25 → 26 ───────────────────────────────────────────────────
-    // Adds: indices on download_queue (manga_id, chapter_id, manga_id+status)
+    // Adds: composite index (manga_id, status) on download_queue.
+    // chapter_id is already the PK (auto-indexed); manga_id alone is covered by the composite prefix.
 
     @Test
-    fun migration25To26_createsDownloadQueueIndices() {
+    fun migration25To26_createsCompositeIndex() {
         val db = helper.createDatabase(TEST_DB, 24)
         MIGRATION_24_25.migrate(db)
         MIGRATION_25_26.migrate(db)
         val indexes = db.indexNames("download_queue")
         assertTrue(
-            "index_download_queue_manga_id must exist after 25→26",
-            "index_download_queue_manga_id" in indexes,
-        )
-        assertTrue(
-            "index_download_queue_chapter_id must exist after 25→26",
-            "index_download_queue_chapter_id" in indexes,
-        )
-        assertTrue(
             "index_download_queue_manga_id_status must exist after 25→26",
             "index_download_queue_manga_id_status" in indexes,
+        )
+        assertFalse(
+            "index_download_queue_chapter_id must NOT be created (PK is already indexed)",
+            "index_download_queue_chapter_id" in indexes,
         )
         db.close()
     }
@@ -537,10 +534,6 @@ class DatabaseMigrationTest {
         assertTrue(
             "index_track_entries_manga_id must exist after full chain",
             "index_track_entries_manga_id" in db.indexNames("track_entries"),
-        )
-        assertTrue(
-            "index_download_queue_manga_id must exist after full chain",
-            "index_download_queue_manga_id" in db.indexNames("download_queue"),
         )
         assertTrue(
             "index_download_queue_manga_id_status must exist after full chain",

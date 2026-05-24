@@ -268,8 +268,7 @@ internal val MIGRATION_24_25 = object : Migration(24, 25) {
 
 internal val MIGRATION_25_26 = object : Migration(25, 26) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_manga_id ON download_queue(manga_id)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_chapter_id ON download_queue(chapter_id)")
+        // chapter_id is already indexed as PK; manga_id alone is covered by the composite prefix.
         db.execSQL("CREATE INDEX IF NOT EXISTS index_download_queue_manga_id_status ON download_queue(manga_id, status)")
     }
 }
