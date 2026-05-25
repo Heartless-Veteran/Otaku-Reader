@@ -22,8 +22,8 @@ data class BrowseState(
     val availableFilters: FilterList = FilterList(),
     val activeFilters: FilterList = FilterList(),
     val showFilterSheet: Boolean = false,
-    /** Currently selected manga for bulk favorite (IDs mapped to manga). */
-    val selectedManga: Map<String, SourceManga> = emptyMap(),
+    /** Currently selected manga URLs for bulk favorite. */
+    val selectedManga: Set<String> = emptySet(),
     /** True when bulk selection mode is active. */
     val isBulkSelectionMode: Boolean = false,
     /** Saved searches for the current source, loaded from the database. */

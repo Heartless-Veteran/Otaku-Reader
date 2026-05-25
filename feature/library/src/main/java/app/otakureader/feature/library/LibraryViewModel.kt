@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.core.ui.selection.SelectionManager
 import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
@@ -65,6 +66,9 @@ class LibraryViewModel @Inject constructor(
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
 
+    /** Atomic selection manager — keys are manga IDs. */
+    private val selection = SelectionManager<Long>()
+
     private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
     val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
 
@@ -86,6 +90,10 @@ class LibraryViewModel @Inject constructor(
         observeReadingLists()
         observeDownloadCounts()
         observeIncognitoMode()
+        // Sync selection manager into state so UI recomposes
+        selection.selected
+            .onEach { ids -> _state.update { it.copy(selectedManga = ids) } }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -420,9 +428,24 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaClick(mangaId: Long) {
-        if (_state.value.selectedManga.isNotEmpty()) {
-            toggleSelection(mangaId)
-        } else {
+        // Atomic check-and-toggle: if selection is active, toggle inside update block
+        // to prevent race between read and write.
+        _state.update { state ->
+            if (state.selectedManga.isNotEmpty()) {
+                // Selection mode is active — toggle this manga and stay in selection mode
+                val newSelection = if (state.selectedManga.contains(mangaId)) {
+                    state.selectedManga - mangaId
+                } else {
+                    state.selectedManga + mangaId
+                }
+                state.copy(selectedManga = newSelection)
+            } else {
+                // No selection active — navigate (effect is fired after update)
+                state
+            }
+        }
+        // Only navigate if we did NOT toggle (selection was empty before click)
+        if (_state.value.selectedManga.isEmpty()) {
             viewModelScope.launch {
                 _effect.send(LibraryEffect.NavigateToManga(mangaId))
             }
@@ -430,19 +453,11 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaLongClick(mangaId: Long) {
-        toggleSelection(mangaId)
+        selection.toggle(mangaId)
     }
 
     private fun toggleSelection(mangaId: Long) {
-        _state.update { state ->
-            val currentSelection = state.selectedManga
-            val newSelection = if (currentSelection.contains(mangaId)) {
-                currentSelection - mangaId
-            } else {
-                currentSelection + mangaId
-            }
-            state.copy(selectedManga = newSelection)
-        }
+        selection.toggle(mangaId)
     }
 
     private fun onSearchQueryChange(query: String) {
@@ -479,7 +494,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun clearSelection() {
-        _state.update { it.copy(selectedManga = emptySet()) }
+        selection.clear()
     }
 
     private fun markSelectedAsRead() = markChaptersForSelectedManga(read = true)
@@ -487,7 +502,7 @@ class LibraryViewModel @Inject constructor(
     private fun markSelectedAsUnread() = markChaptersForSelectedManga(read = false)
 
     private fun markChaptersForSelectedManga(read: Boolean) {
-        val mangaIds = _state.value.selectedManga
+        val mangaIds = selection.snapshotAndClear()
         if (mangaIds.isEmpty()) return
         viewModelScope.launch {
             val chapterIds = mangaIds.flatMap { mangaId ->
@@ -496,21 +511,19 @@ class LibraryViewModel @Inject constructor(
             if (chapterIds.isNotEmpty()) {
                 chapterRepository.updateChapterProgress(chapterIds, read = read, lastPageRead = 0)
             }
-            clearSelection()
         }
     }
 
     private fun removeSelectedFromLibrary() {
-        val ids = _state.value.selectedManga
+        val ids = selection.snapshotAndClear()
         if (ids.isEmpty()) return
         viewModelScope.launch {
             ids.forEach { mangaId -> toggleFavoriteManga(mangaId) }
-            clearSelection()
         }
     }
 
     private fun downloadSelected() {
-        val mangaIds = _state.value.selectedManga
+        val mangaIds = selection.snapshotAndClear()
         if (mangaIds.isEmpty()) return
         viewModelScope.launch {
             val mangaById = _allItems.value.associateBy { it.id }
@@ -526,7 +539,6 @@ class LibraryViewModel @Inject constructor(
                     )
                 }
             }
-            clearSelection()
         }
     }
 

@@ -73,6 +73,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -387,10 +389,14 @@ private fun MangaGrid(
     var selectedContentFilter by remember { mutableIntStateOf(0) }
     val contentTabs = listOf("All", "Manga", "Manhwa")
 
-    val displayedManga = when (selectedContentFilter) {
-        1 -> state.mangaList.filter { !isManhwa(it) }
-        2 -> state.mangaList.filter { isManhwa(it) }
-        else -> state.mangaList
+    val displayedManga by remember(state.mangaList, selectedContentFilter) {
+        derivedStateOf {
+            when (selectedContentFilter) {
+                1 -> state.mangaList.filter { !isManhwa(it) }
+                2 -> state.mangaList.filter { isManhwa(it) }
+                else -> state.mangaList
+            }
+        }
     }
 
     // Header items shared by both grid variants
