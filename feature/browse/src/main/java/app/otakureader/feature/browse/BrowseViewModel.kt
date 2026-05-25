@@ -11,6 +11,7 @@ import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaSource
@@ -43,6 +44,7 @@ class BrowseViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val feedRepository: FeedRepository,
     private val generalPreferences: GeneralPreferences,
+    private val searchLibraryMangaUseCase: SearchLibraryMangaUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowseState())
@@ -76,6 +78,7 @@ class BrowseViewModel @Inject constructor(
         }
         observeSavedSearches()
         observeLibraryFavorites()
+        observeSearchHistory()
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -151,6 +154,8 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.SaveCurrentSearch -> saveCurrentSearch()
             is BrowseEvent.DeleteSavedSearch -> deleteSavedSearch(event.searchId)
             is BrowseEvent.ApplySavedSearch -> applySavedSearch(event.search)
+            is BrowseEvent.SetSearchScope -> _state.update { it.copy(searchScope = event.scope, searchResults = emptyList(), hasSearchResults = false) }
+            is BrowseEvent.ClearSearchHistory -> viewModelScope.launch { generalPreferences.clearBrowseSearchHistory() }
         }
     }
 
@@ -194,7 +199,15 @@ class BrowseViewModel @Inject constructor(
 
     private fun performSearch() {
         val query = _state.value.searchQuery
+        if (_state.value.searchScope == BrowseSearchScope.LIBRARY) {
+            performLibrarySearch(query)
+            return
+        }
         val sourceId = _state.value.currentSourceId ?: return
+
+        if (query.isNotBlank()) {
+            viewModelScope.launch { generalPreferences.addBrowseSearchHistory(query) }
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isSearching = true, hasSearchResults = true, error = null) }
@@ -393,6 +406,29 @@ class BrowseViewModel @Inject constructor(
     }
 
     // --- Saved Searches ---
+
+    private fun observeSearchHistory() {
+        generalPreferences.browseSearchHistory
+            .onEach { history -> _state.update { it.copy(searchHistory = history) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun performLibrarySearch(query: String) {
+        if (query.isBlank()) {
+            _state.update { it.copy(searchResults = emptyList(), hasSearchResults = false, isSearching = false) }
+            return
+        }
+        viewModelScope.launch {
+            if (query.isNotBlank()) generalPreferences.addBrowseSearchHistory(query)
+            _state.update { it.copy(isSearching = true, hasSearchResults = true, error = null) }
+            searchLibraryMangaUseCase(query).collect { mangas ->
+                val results = mangas.map { manga ->
+                    SourceManga(url = manga.id.toString(), title = manga.title, thumbnailUrl = manga.thumbnailUrl)
+                }
+                _state.update { it.copy(searchResults = results, isSearching = false) }
+            }
+        }
+    }
 
     private fun observeSavedSearches() {
         combine(

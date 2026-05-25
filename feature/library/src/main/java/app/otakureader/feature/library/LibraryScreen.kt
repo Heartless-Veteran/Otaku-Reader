@@ -13,15 +13,20 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +39,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -170,6 +176,16 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) }) {
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = stringResource(R.string.filter_sheet_title),
+                                tint = if (state.filterGenres.isNotEmpty() || state.filterMode != LibraryFilterMode.ALL)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.library_more))
                         }
@@ -227,9 +243,17 @@ fun LibraryScreen(
             modifier = Modifier.padding(padding)
         )
     }
+
+    if (state.showFilterSheet) {
+        LibraryFilterSheet(
+            state = state,
+            onEvent = viewModel::onEvent,
+            onDismiss = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) },
+        )
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun LibraryContent(
     state: LibraryState,
@@ -248,6 +272,33 @@ private fun LibraryContent(
     Column(modifier = modifier.fillMaxSize()) {
         if (state.incognitoMode) {
             IncognitoBanner()
+        }
+
+        val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL || state.filterGenres.isNotEmpty()
+        if (hasActiveFilters) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (state.filterMode != LibraryFilterMode.ALL) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterMode(LibraryFilterMode.ALL)) },
+                        label = { Text(state.filterMode.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                state.filterGenres.forEach { genre ->
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetGenreFilter(state.filterGenres - genre)) },
+                        label = { Text(genre) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+            }
         }
 
         PullToRefreshBox(

@@ -7,6 +7,8 @@ import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.SourceManga
 
+enum class BrowseSearchScope { SOURCES, LIBRARY }
+
 data class BrowseState(
     val isLoading: Boolean = false,
     val sources: List<String> = emptyList(),
@@ -30,6 +32,10 @@ data class BrowseState(
     val savedSearches: List<FeedSavedSearch> = emptyList(),
     /** URLs of manga that are currently in the library (favorited). Used for long-click toggle. */
     val favoritedMangaUrls: Set<String> = emptySet(),
+    /** Scope for the search bar: SOURCES searches the selected source, LIBRARY searches the local library. */
+    val searchScope: BrowseSearchScope = BrowseSearchScope.SOURCES,
+    /** Recent search history (last 10 queries). */
+    val searchHistory: List<String> = emptyList(),
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -64,6 +70,8 @@ sealed interface BrowseEvent : UiEvent {
     data class DeleteSavedSearch(val searchId: Long) : BrowseEvent
     /** Applies a previously saved search (restores query, filters, runs search). */
     data class ApplySavedSearch(val search: app.otakureader.domain.model.FeedSavedSearch) : BrowseEvent
+    data class SetSearchScope(val scope: BrowseSearchScope) : BrowseEvent
+    data object ClearSearchHistory : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

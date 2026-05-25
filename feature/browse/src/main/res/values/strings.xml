@@ -137,4 +137,8 @@
     <string name="extension_unverified_body">"%s" comes from an unverified source with no signature hash. Extensions run code inside the app with full app privileges. Only install extensions you trust.</string>
     <string name="extension_install_anyway">Install Anyway</string>
     <string name="extension_repo_warning">Extension repositories contain executable code that runs inside Otaku Reader with full app privileges. Only add repositories you trust.</string>
+    <string name="browse_scope_sources">Sources</string>
+    <string name="browse_scope_library">Library</string>
+    <string name="browse_search_history">Recent searches</string>
+    <string name="filter_sheet_clear_all">Clear all</string>
 </resources>
