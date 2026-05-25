@@ -59,6 +59,9 @@ data class LibraryState(
     val sortAscending: Boolean = true,
     val availableGenres: List<String> = emptyList(),
     val showFilterSheet: Boolean = false,
+    // Recommendations carousel
+    val recommendations: List<LibraryMangaItem> = emptyList(),
+    val showRecommendations: Boolean = true,
 )
 
 data class LibraryMangaItem(
@@ -121,6 +124,7 @@ sealed class LibraryEvent {
     data class SetSortAscending(val ascending: Boolean) : LibraryEvent()
     data object ClearAllFilters : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
+    data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
 }
 
 sealed class LibraryEffect {
