@@ -408,6 +408,9 @@ fun OtakuReaderNavHost(
             onNavigateToUpdateErrors = {
                 navController.navigate(Route.Updates)
             },
+            onNavigateToBackup = {
+                navController.navigate(Route.SettingsBackup)
+            },
         )
 
         // QR Library Sharing
