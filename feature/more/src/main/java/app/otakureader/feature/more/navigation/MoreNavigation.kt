@@ -18,6 +18,7 @@ fun NavGraphBuilder.moreScreen(
     onNavigateToFeed: () -> Unit = {},
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
+    onNavigateToBackup: () -> Unit = {},
     onNavigateToUpdateErrors: () -> Unit = {},
 ) {
     composable<Route.More> {
@@ -30,6 +31,7 @@ fun NavGraphBuilder.moreScreen(
             onNavigateToFeed = onNavigateToFeed,
             onNavigateToShareLibrary = onNavigateToShareLibrary,
             onNavigateToScanLibrary = onNavigateToScanLibrary,
+            onNavigateToBackup = onNavigateToBackup,
             onNavigateToUpdateErrors = onNavigateToUpdateErrors,
         )
     }
