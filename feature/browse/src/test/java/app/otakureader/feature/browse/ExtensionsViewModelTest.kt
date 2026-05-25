@@ -439,7 +439,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `install extension success emits snackbar and refreshes sources`() = runTest {
-        val ext = createExtension(id = 1L, name = "New Ext", apkUrl = "https://example.com/ext.apk")
+        val ext = createExtension(id = 1L, name = "New Ext", apkUrl = "https://example.com/ext.apk", signatureHash = "abc123")
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } returns Result.success(ext)
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
@@ -457,7 +457,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `install extension failure emits error effect`() = runTest {
-        val ext = createExtension(id = 1L, name = "Bad Ext", apkUrl = "https://example.com/bad.apk")
+        val ext = createExtension(id = 1L, name = "Bad Ext", apkUrl = "https://example.com/bad.apk", signatureHash = "abc123")
         val error = RuntimeException("Download failed")
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } returns Result.failure(error)
@@ -472,7 +472,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `install extension exception emits error effect`() = runTest {
-        val ext = createExtension(id = 1L, name = "Crash Ext", apkUrl = "https://example.com/crash.apk")
+        val ext = createExtension(id = 1L, name = "Crash Ext", apkUrl = "https://example.com/crash.apk", signatureHash = "abc123")
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } throws RuntimeException("Crash!")
 
@@ -836,7 +836,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `install extension completes refreshSources before emitting snackbar`() = runTest {
-        val ext = createExtension(id = 1L, name = "Race Ext", apkUrl = "https://example.com/race.apk")
+        val ext = createExtension(id = 1L, name = "Race Ext", apkUrl = "https://example.com/race.apk", signatureHash = "abc123")
         var refreshCalled = false
 
         coEvery { extensionInstaller.downloadAndInstall(ext) } returns Result.success(ext)

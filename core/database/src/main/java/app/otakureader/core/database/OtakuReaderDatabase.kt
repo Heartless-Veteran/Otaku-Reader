@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.database.dao.DynamicCategoryRuleDao
 import app.otakureader.core.database.dao.FeedDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
@@ -14,11 +15,13 @@ import app.otakureader.core.database.dao.PageBookmarkDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingListDao
 import app.otakureader.core.database.dao.ReadingStreakDao
+import app.otakureader.core.database.dao.RecommendationDao
 import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.DownloadQueueEntity
+import app.otakureader.core.database.entity.DynamicCategoryRuleEntity
 import app.otakureader.core.database.entity.FeedItemEntity
 import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
@@ -30,6 +33,7 @@ import app.otakureader.core.database.entity.ReadingHistoryEntity
 import app.otakureader.core.database.entity.ReadingListEntity
 import app.otakureader.core.database.entity.ReadingListItemEntity
 import app.otakureader.core.database.entity.ReadingStreakEntity
+import app.otakureader.core.database.entity.RecommendationEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
 import app.otakureader.core.database.entity.TrackEntryEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
@@ -59,8 +63,12 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         DownloadQueueEntity::class,
         // Track entries (persisted tracker state)
         TrackEntryEntity::class,
+        // Dynamic category rules (#881)
+        DynamicCategoryRuleEntity::class,
+        // Recommendation cache (#895)
+        RecommendationEntity::class,
     ],
-    version = 26,
+    version = 28,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -80,6 +88,8 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun readingListDao(): ReadingListDao
     abstract fun downloadQueueDao(): DownloadQueueDao
     abstract fun trackEntryDao(): TrackEntryDao
+    abstract fun dynamicCategoryRuleDao(): DynamicCategoryRuleDao
+    abstract fun recommendationDao(): RecommendationDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

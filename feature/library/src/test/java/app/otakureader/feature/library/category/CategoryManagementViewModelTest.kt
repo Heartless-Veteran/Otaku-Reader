@@ -3,9 +3,11 @@ package app.otakureader.feature.library.category
 import app.otakureader.domain.model.Category
 import app.otakureader.domain.model.CategoryUpdateFrequency
 import app.otakureader.domain.repository.CategoryRepository
+import app.otakureader.domain.repository.DynamicCategoryRepository
 import app.otakureader.domain.usecase.CreateCategoryUseCase
 import app.otakureader.domain.usecase.DeleteCategoryUseCase
 import app.otakureader.domain.usecase.ToggleCategoryHiddenUseCase
+import app.otakureader.domain.usecase.ToggleCategoryLockedUseCase
 import app.otakureader.domain.usecase.ToggleCategoryNsfwUseCase
 import app.otakureader.domain.usecase.UpdateCategoryUseCase
 import app.cash.turbine.test
@@ -33,11 +35,13 @@ class CategoryManagementViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var categoryRepository: CategoryRepository
+    private lateinit var dynamicCategoryRepository: DynamicCategoryRepository
     private lateinit var createCategoryUseCase: CreateCategoryUseCase
     private lateinit var updateCategoryUseCase: UpdateCategoryUseCase
     private lateinit var deleteCategoryUseCase: DeleteCategoryUseCase
     private lateinit var toggleCategoryHiddenUseCase: ToggleCategoryHiddenUseCase
     private lateinit var toggleCategoryNsfwUseCase: ToggleCategoryNsfwUseCase
+    private lateinit var toggleCategoryLockedUseCase: ToggleCategoryLockedUseCase
 
     private val sampleCategories = listOf(
         Category(id = 1L, name = "Romance", order = 0, isHidden = false, isNsfw = false),
@@ -49,13 +53,16 @@ class CategoryManagementViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         categoryRepository = mockk()
+        dynamicCategoryRepository = mockk()
         createCategoryUseCase = mockk()
         updateCategoryUseCase = mockk()
         deleteCategoryUseCase = mockk()
         toggleCategoryHiddenUseCase = mockk()
         toggleCategoryNsfwUseCase = mockk()
+        toggleCategoryLockedUseCase = mockk()
 
         every { categoryRepository.getMangaIdsByCategoryId(any()) } returns flowOf(emptyList())
+        coEvery { dynamicCategoryRepository.hasDynamicRules(any()) } returns false
     }
 
     @After
@@ -66,11 +73,13 @@ class CategoryManagementViewModelTest {
     private fun createViewModel(): CategoryManagementViewModel {
         return CategoryManagementViewModel(
             categoryRepository,
+            dynamicCategoryRepository,
             createCategoryUseCase,
             updateCategoryUseCase,
             deleteCategoryUseCase,
             toggleCategoryHiddenUseCase,
             toggleCategoryNsfwUseCase,
+            toggleCategoryLockedUseCase,
         )
     }
 

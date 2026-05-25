@@ -15,5 +15,8 @@ data class Category(
     val mangaCount: Int = 0,
     val isHidden: Boolean = false,
     val isNsfw: Boolean = false,
+    val isLocked: Boolean = false,
+    val lockType: String? = null,
     val updateFrequency: CategoryUpdateFrequency = CategoryUpdateFrequency.DAILY,
+    val isDynamic: Boolean = false,
 )

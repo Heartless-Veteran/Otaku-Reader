@@ -179,14 +179,14 @@ private fun MangaReaderOverlayContent(
                 Text(
                     chapterTitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB0B0BE)
+                    color = LocalOtakuColors.current.unselectedPageIndicator
                 )
             }
             IconButton(onClick = onSettingsClick) {
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "Settings",
-                    tint = Color(0xFFB0B0BE)
+                    tint = LocalOtakuColors.current.unselectedPageIndicator
                 )
             }
         }
@@ -223,7 +223,8 @@ private fun MangaReaderOverlayContent(
                     Text(
                         text = "$page",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else Color(0xFFB0B0BE),
+                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator
+                                else LocalOtakuColors.current.unselectedPageIndicator,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -240,7 +241,7 @@ private fun MangaReaderOverlayContent(
             Text(
                 "Page $currentPage / $totalPages",
                 style = MaterialTheme.typography.labelMedium,
-                color = Color(0xFFB0B0BE)
+                color = LocalOtakuColors.current.unselectedPageIndicator
             )
             val sliderValue = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
             if (visualEffectsEnabled) {
@@ -352,7 +353,7 @@ private fun ManhwaReaderOverlayContent(
                 Text(
                     chapterTitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB0B0BE)
+                    color = LocalOtakuColors.current.unselectedPageIndicator
                 )
             }
             IconButton(onClick = onSettingsClick) {
@@ -404,7 +405,7 @@ private fun ManhwaReaderOverlayContent(
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         ),
-                        color = if (isSelected) accentColor else Color(0xFFB0B0BE),
+                        color = if (isSelected) accentColor else LocalOtakuColors.current.unselectedPageIndicator,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -418,7 +419,7 @@ private fun ManhwaReaderOverlayContent(
                 Text(
                     "Page $currentPage / $totalPages",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFB0B0BE)
+                    color = LocalOtakuColors.current.unselectedPageIndicator
                 )
                 NeonSlider(
                     value = sliderValue,
@@ -459,7 +460,7 @@ private fun ManhwaReaderOverlayContent(
                 Text(
                     "Page $currentPage / $totalPages",
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFB0B0BE)
+                    color = LocalOtakuColors.current.unselectedPageIndicator
                 )
                 Slider(
                     value = sliderValue,

@@ -15,6 +15,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -132,7 +135,13 @@ fun CategoryManagementScreen(
                             },
                             onToggleNsfw = {
                                 viewModel.onEvent(CategoryEvent.ToggleNsfw(category.id))
-                            }
+                            },
+                            onToggleLocked = {
+                                viewModel.onEvent(CategoryEvent.ToggleLocked(category.id))
+                            },
+                            onToggleDynamic = {
+                                viewModel.onEvent(CategoryEvent.SetDynamic(category.id, !category.isDynamic))
+                            },
                         )
                     }
                 }
@@ -198,7 +207,9 @@ private fun CategoryListItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleHidden: () -> Unit,
-    onToggleNsfw: () -> Unit
+    onToggleNsfw: () -> Unit,
+    onToggleLocked: () -> Unit,
+    onToggleDynamic: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -227,6 +238,20 @@ private fun CategoryListItem(
                         Icon(
                             imageVector = Icons.Default.VisibilityOff,
                             contentDescription = stringResource(R.string.category_hidden),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    if (category.isLocked) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = stringResource(R.string.category_locked),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    if (category.isDynamic) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = stringResource(R.string.category_dynamic),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -282,6 +307,43 @@ private fun CategoryListItem(
                                     imageVector = if (category.isNsfw) Icons.Default.VisibilityOff else Icons.Default.Warning,
                                     contentDescription = null,
                                 )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (category.isLocked)
+                                        stringResource(R.string.category_unlock_label)
+                                    else
+                                        stringResource(R.string.category_lock_label)
+                                )
+                            },
+                            onClick = {
+                                onToggleLocked()
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (category.isLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (category.isDynamic)
+                                        stringResource(R.string.category_remove_dynamic)
+                                    else
+                                        stringResource(R.string.category_make_dynamic)
+                                )
+                            },
+                            onClick = {
+                                onToggleDynamic()
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.AutoAwesome, contentDescription = null)
                             }
                         )
                         DropdownMenuItem(

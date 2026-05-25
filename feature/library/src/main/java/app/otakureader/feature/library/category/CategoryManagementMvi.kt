@@ -11,6 +11,8 @@ data class CategoryUiItem(
     val mangaCount: Int,
     val isHidden: Boolean,
     val isNsfw: Boolean,
+    val isLocked: Boolean = false,
+    val isDynamic: Boolean = false,
     val updateFrequency: CategoryUpdateFrequency = CategoryUpdateFrequency.DAILY,
 )
 
@@ -32,6 +34,8 @@ sealed interface CategoryEvent : UiEvent {
     data class DeleteCategory(val categoryId: Long) : CategoryEvent
     data class ToggleHidden(val categoryId: Long) : CategoryEvent
     data class ToggleNsfw(val categoryId: Long) : CategoryEvent
+    data class ToggleLocked(val categoryId: Long) : CategoryEvent
+    data class SetDynamic(val categoryId: Long, val enabled: Boolean) : CategoryEvent
 }
 
 sealed interface CategoryEffect : UiEffect {
