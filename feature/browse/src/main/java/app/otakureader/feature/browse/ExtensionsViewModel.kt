@@ -37,7 +37,10 @@ data class ExtensionsState(
     val showNsfw: Boolean = false,
     val sortMode: SortMode = SortMode.NAME,
     val isUpdatingAll: Boolean = false,
-    val selectedTab: Int = 0
+    val selectedTab: Int = 0,
+    val showUnverifiedInstallDialog: Boolean = false,
+    val pendingUnverifiedExtension: Extension? = null,
+    val hasUnverifiedExtensions: Boolean = false,
 ) : UiState
 
 enum class SortMode {
@@ -60,6 +63,8 @@ sealed interface ExtensionsEvent : UiEvent {
     data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
     data class SetSortMode(val mode: SortMode) : ExtensionsEvent
     data class SelectTab(val tab: Int) : ExtensionsEvent
+    data object DismissUnverifiedDialog : ExtensionsEvent
+    data object ConfirmUnverifiedInstall : ExtensionsEvent
 }
 
 sealed interface ExtensionsEffect : UiEffect {
@@ -165,6 +170,8 @@ class ExtensionsViewModel @Inject constructor(
             }
             is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
             is ExtensionsEvent.SelectTab -> _state.update { it.copy(selectedTab = event.tab) }
+            is ExtensionsEvent.DismissUnverifiedDialog -> dismissUnverifiedDialog()
+            is ExtensionsEvent.ConfirmUnverifiedInstall -> confirmUnverifiedInstall()
         }
     }
 
@@ -199,7 +206,13 @@ class ExtensionsViewModel @Inject constructor(
             try {
                 extensionRepository.getAvailableExtensions()
                     .collect { extensions ->
-                        _state.update { it.copy(availableExtensions = extensions) }
+                        val hasUnverified = extensions.any { it.signatureHash == null }
+                        _state.update {
+                            it.copy(
+                                availableExtensions = extensions,
+                                hasUnverifiedExtensions = hasUnverified
+                            )
+                        }
                     }
             } catch (e: CancellationException) {
                 throw e
@@ -302,6 +315,19 @@ class ExtensionsViewModel @Inject constructor(
     }
 
     private fun installExtension(extension: Extension) {
+        if (extension.signatureHash == null) {
+            _state.update {
+                it.copy(
+                    showUnverifiedInstallDialog = true,
+                    pendingUnverifiedExtension = extension
+                )
+            }
+            return
+        }
+        doInstallExtension(extension)
+    }
+
+    private fun doInstallExtension(extension: Extension) {
         viewModelScope.launch {
             // Show loading spinner immediately before the download starts
             _state.update { s ->
@@ -330,6 +356,21 @@ class ExtensionsViewModel @Inject constructor(
             } catch (e: Exception) {
                 _effect.send(ExtensionsEffect.ShowError("Failed to install: ${e.message}"))
             }
+        }
+    }
+
+    private fun confirmUnverifiedInstall() {
+        val extension = _state.value.pendingUnverifiedExtension ?: return
+        dismissUnverifiedDialog()
+        doInstallExtension(extension)
+    }
+
+    private fun dismissUnverifiedDialog() {
+        _state.update {
+            it.copy(
+                showUnverifiedInstallDialog = false,
+                pendingUnverifiedExtension = null
+            )
         }
     }
 

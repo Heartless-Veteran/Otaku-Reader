@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -238,16 +239,21 @@ private fun ExtensionsContent(
                     },
                     onRefresh = { onEvent(ExtensionsEvent.Refresh) }
                 )
-                1 -> ExtensionsList(
-                    extensions = state.availableExtensions,
-                    isLoading = state.isLoading,
-                    error = state.error,
-                    onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
-                    onUninstall = { /* Not installed */ },
-                    onUpdate = { /* No update */ },
-                    onToggleEnabled = { _, _ -> },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) }
-                )
+                1 -> Column {
+                    if (state.hasUnverifiedExtensions) {
+                        TrustBanner(visible = true)
+                    }
+                    ExtensionsList(
+                        extensions = state.availableExtensions,
+                        isLoading = state.isLoading,
+                        error = state.error,
+                        onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
+                        onUninstall = { /* Not installed */ },
+                        onUpdate = { /* No update */ },
+                        onToggleEnabled = { _, _ -> },
+                        onRefresh = { onEvent(ExtensionsEvent.Refresh) }
+                    )
+                }
                 2 -> ExtensionsList(
                     extensions = state.extensionsWithUpdates,
                     isLoading = state.isLoading,
@@ -259,6 +265,15 @@ private fun ExtensionsContent(
                         onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
                     },
                     onRefresh = { onEvent(ExtensionsEvent.Refresh) }
+                )
+            }
+
+            // Unverified install confirmation dialog
+            if (state.showUnverifiedInstallDialog) {
+                UnverifiedInstallDialog(
+                    extension = state.pendingUnverifiedExtension,
+                    onDismiss = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
+                    onConfirm = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }
                 )
             }
         }
@@ -672,5 +687,82 @@ private fun RepositoryManager(
         }
 
         HorizontalDivider()
+    }
+}
+
+
+@Composable
+private fun UnverifiedInstallDialog(
+    extension: Extension?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    if (extension == null) return
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.extension_unverified_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.extension_unverified_body))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = extension.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text(stringResource(R.string.extension_install_anyway))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.extension_cancel))
+            }
+        }
+    )
+}
+
+@Composable
+private fun TrustBanner(
+    visible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (!visible) return
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = stringResource(R.string.extension_repo_warning),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 }
