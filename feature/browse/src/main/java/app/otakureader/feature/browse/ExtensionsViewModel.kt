@@ -37,7 +37,11 @@ data class ExtensionsState(
     val showNsfw: Boolean = false,
     val sortMode: SortMode = SortMode.NAME,
     val isUpdatingAll: Boolean = false,
-    val selectedTab: Int = 0
+    val selectedTab: Int = 0,
+    /** True when the user tapped Install on an extension with no verified signature hash. */
+    val showUnverifiedInstallDialog: Boolean = false,
+    /** The extension awaiting user confirmation before install proceeds. */
+    val pendingUnverifiedExtension: Extension? = null,
 ) : UiState
 
 enum class SortMode {
@@ -60,6 +64,10 @@ sealed interface ExtensionsEvent : UiEvent {
     data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
     data class SetSortMode(val mode: SortMode) : ExtensionsEvent
     data class SelectTab(val tab: Int) : ExtensionsEvent
+    /** User dismissed the unverified-source warning dialog without installing. */
+    data object DismissUnverifiedDialog : ExtensionsEvent
+    /** User confirmed they want to install the unverified extension. */
+    data object ConfirmUnverifiedInstall : ExtensionsEvent
 }
 
 sealed interface ExtensionsEffect : UiEffect {
@@ -165,6 +173,14 @@ class ExtensionsViewModel @Inject constructor(
             }
             is ExtensionsEvent.SetSortMode -> _sortMode.value = event.mode
             is ExtensionsEvent.SelectTab -> _state.update { it.copy(selectedTab = event.tab) }
+            is ExtensionsEvent.DismissUnverifiedDialog -> _state.update {
+                it.copy(showUnverifiedInstallDialog = false, pendingUnverifiedExtension = null)
+            }
+            is ExtensionsEvent.ConfirmUnverifiedInstall -> {
+                val pending = _state.value.pendingUnverifiedExtension ?: return
+                _state.update { it.copy(showUnverifiedInstallDialog = false, pendingUnverifiedExtension = null) }
+                installExtension(pending, skipTrustCheck = true)
+            }
         }
     }
 
@@ -301,7 +317,13 @@ class ExtensionsViewModel @Inject constructor(
         refreshExtensions()
     }
 
-    private fun installExtension(extension: Extension) {
+    private fun installExtension(extension: Extension, skipTrustCheck: Boolean = false) {
+        // Extensions with no signature hash come from unverified sources. Show a warning
+        // before proceeding so the user understands the code-execution risk.
+        if (!skipTrustCheck && extension.signatureHash == null) {
+            _state.update { it.copy(showUnverifiedInstallDialog = true, pendingUnverifiedExtension = extension) }
+            return
+        }
         viewModelScope.launch {
             // Show loading spinner immediately before the download starts
             _state.update { s ->

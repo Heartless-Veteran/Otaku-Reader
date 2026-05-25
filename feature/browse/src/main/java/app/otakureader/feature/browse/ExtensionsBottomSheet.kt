@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -130,6 +132,25 @@ private fun ExtensionsContent(
 ) {
     val selectedTab = state.selectedTab
     val tabs = listOf("Installed", "Available", "Updates")
+
+    if (state.showUnverifiedInstallDialog) {
+        AlertDialog(
+            onDismissRequest = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
+            icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(stringResource(R.string.extension_unverified_title)) },
+            text = { Text(stringResource(R.string.extension_unverified_body, state.pendingUnverifiedExtension?.name ?: "")) },
+            confirmButton = {
+                TextButton(onClick = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }) {
+                    Text(stringResource(R.string.extension_install_anyway))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -645,6 +666,31 @@ private fun RepositoryManager(
                 IconButton(onClick = { onRemove(repo) }) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_remove_repo))
                 }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = stringResource(R.string.extension_repo_warning),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
 
