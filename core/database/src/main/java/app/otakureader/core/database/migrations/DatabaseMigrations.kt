@@ -274,6 +274,22 @@ internal val MIGRATION_25_26 = object : Migration(25, 26) {
 }
 
 
+internal val MIGRATION_26_27 = object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE categories ADD COLUMN lock_type TEXT DEFAULT NULL")
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS `dynamic_category_rules` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `category_id` INTEGER NOT NULL,
+                `rule_type` TEXT NOT NULL,
+                `rule_params_json` TEXT NOT NULL,
+                FOREIGN KEY(`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
+            )
+        """.trimIndent())
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_dynamic_category_rules_category_id` ON `dynamic_category_rules` (`category_id`)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -281,5 +297,6 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
     MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
-    MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26
+    MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
+    MIGRATION_26_27
 )

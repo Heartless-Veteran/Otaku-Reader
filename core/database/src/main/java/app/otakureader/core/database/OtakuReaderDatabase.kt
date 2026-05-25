@@ -31,6 +31,8 @@ import app.otakureader.core.database.entity.ReadingListEntity
 import app.otakureader.core.database.entity.ReadingListItemEntity
 import app.otakureader.core.database.entity.ReadingStreakEntity
 import app.otakureader.core.database.entity.SyncConfigurationEntity
+import app.otakureader.core.database.dao.DynamicCategoryRuleDao
+import app.otakureader.core.database.entity.DynamicCategoryRuleEntity
 import app.otakureader.core.database.entity.TrackEntryEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
 
@@ -59,8 +61,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         DownloadQueueEntity::class,
         // Track entries (persisted tracker state)
         TrackEntryEntity::class,
+        // Dynamic category rules (#881)
+        DynamicCategoryRuleEntity::class,
     ],
-    version = 26,
+    version = 27,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -80,6 +84,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun readingListDao(): ReadingListDao
     abstract fun downloadQueueDao(): DownloadQueueDao
     abstract fun trackEntryDao(): TrackEntryDao
+    abstract fun dynamicCategoryRuleDao(): DynamicCategoryRuleDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

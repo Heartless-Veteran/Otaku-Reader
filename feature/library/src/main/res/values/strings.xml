@@ -107,4 +107,12 @@
     <string name="manga_status_on_hiatus">On Hiatus</string>
     <string name="library_filter_reading_list">Reading List</string>
     <string name="library_reading_list_all">All Lists</string>
+    <string name="category_lock_label">Lock with biometrics</string>
+    <string name="category_unlock_label">Unlock category</string>
+    <string name="category_locked">Locked</string>
+    <string name="category_dynamic">Dynamic</string>
+    <string name="category_make_dynamic">Make dynamic</string>
+    <string name="category_remove_dynamic">Remove dynamic</string>
+    <string name="category_show_hidden">Show hidden</string>
+    <string name="category_unlock_prompt">Unlock to view hidden category</string>
 </resources>

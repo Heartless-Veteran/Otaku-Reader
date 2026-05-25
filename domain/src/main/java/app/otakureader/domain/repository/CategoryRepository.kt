@@ -18,4 +18,5 @@ interface CategoryRepository {
     fun getMangaIdsByCategoryId(categoryId: Long): Flow<List<Long>>
     suspend fun toggleCategoryHidden(categoryId: Long)
     suspend fun toggleCategoryNsfw(categoryId: Long)
+    suspend fun toggleCategoryLocked(categoryId: Long)
 }
