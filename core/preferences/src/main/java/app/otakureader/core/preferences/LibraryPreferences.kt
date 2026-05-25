@@ -106,7 +106,8 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     val dismissedRecommendations: Flow<Set<String>> = dataStore.data.map { it[Keys.DISMISSED_RECOMMENDATIONS] ?: emptySet() }
     suspend fun dismissRecommendation(mangaId: Long) = dataStore.edit {
-        it[Keys.DISMISSED_RECOMMENDATIONS] = (it[Keys.DISMISSED_RECOMMENDATIONS] ?: emptySet()) + mangaId.toString()
+        val updated = (it[Keys.DISMISSED_RECOMMENDATIONS] ?: emptySet()) + mangaId.toString()
+        it[Keys.DISMISSED_RECOMMENDATIONS] = if (updated.size > 200) updated.drop(1).toSet() else updated
     }
 
     // --- Smart Update Skip ---

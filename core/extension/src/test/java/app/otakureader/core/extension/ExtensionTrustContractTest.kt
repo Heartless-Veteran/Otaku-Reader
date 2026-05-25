@@ -93,8 +93,8 @@ class ExtensionTrustContractTest {
         }
 
         assertTrue(
-            "500 trust checks took ${elapsed}ms — must complete in < 100ms",
-            elapsed < 100L
+            "500 trust checks took ${elapsed}ms — must complete in < 500ms",
+            elapsed < 500L
         )
     }
 

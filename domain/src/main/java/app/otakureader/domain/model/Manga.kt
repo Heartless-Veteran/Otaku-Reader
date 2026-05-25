@@ -27,6 +27,8 @@ data class Manga(
     val unreadCount: Int = 0,
     val totalChapters: Int = 0,
     val lastRead: Long? = null,
+    /** Epoch millis when a new chapter was last published for this manga. */
+    val lastUpdate: Long = 0L,
     val categoryIds: List<Long> = emptyList(),
     val autoDownload: Boolean = false,
     val notes: String? = null,

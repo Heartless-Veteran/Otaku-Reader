@@ -25,6 +25,7 @@ fun MangaEntity.toManga(): Manga = Manga(
     notes = notes,
     notifyNewChapters = notifyNewChapters,
     dateAdded = dateAdded,
+    lastUpdate = lastUpdate,
     // Per-manga reader settings (#260)
     readerDirection = readerDirection,
     readerMode = readerMode,

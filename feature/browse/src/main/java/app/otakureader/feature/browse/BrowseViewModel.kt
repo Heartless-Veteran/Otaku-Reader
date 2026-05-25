@@ -414,12 +414,15 @@ class BrowseViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
+    private var librarySearchJob: kotlinx.coroutines.Job? = null
+
     private fun performLibrarySearch(query: String) {
+        librarySearchJob?.cancel()
         if (query.isBlank()) {
             _state.update { it.copy(searchResults = emptyList(), hasSearchResults = false, isSearching = false) }
             return
         }
-        viewModelScope.launch {
+        librarySearchJob = viewModelScope.launch {
             if (query.isNotBlank()) generalPreferences.addBrowseSearchHistory(query)
             _state.update { it.copy(isSearching = true, hasSearchResults = true, error = null) }
             searchLibraryMangaUseCase(query).collect { mangas ->

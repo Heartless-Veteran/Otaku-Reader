@@ -283,7 +283,7 @@ internal val MIGRATION_26_27 = object : Migration(26, 27) {
                 `category_id` INTEGER NOT NULL,
                 `rule_type` TEXT NOT NULL,
                 `rule_params_json` TEXT NOT NULL,
-                FOREIGN KEY(`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
+                FOREIGN KEY(`category_id`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
             )
         """.trimIndent())
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_dynamic_category_rules_category_id` ON `dynamic_category_rules` (`category_id`)")

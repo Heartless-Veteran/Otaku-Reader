@@ -40,7 +40,7 @@ class GetDynamicCategoryMembersUseCase @Inject constructor(
                 is DynamicCategoryRule.UnreadAtLeast -> unreadCount >= rule.count
                 is DynamicCategoryRule.RecentlyUpdated -> {
                     val cutoff = System.currentTimeMillis() - rule.withinDays * DAY_MS
-                    (lastRead ?: 0L) >= cutoff
+                    lastUpdate >= cutoff
                 }
                 is DynamicCategoryRule.GenreContains ->
                     genre.any { it.contains(rule.genre, ignoreCase = true) }

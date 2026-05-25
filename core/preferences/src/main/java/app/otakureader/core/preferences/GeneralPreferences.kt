@@ -162,9 +162,11 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     }
 
     suspend fun addBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val normalized = query.trim()
+        if (normalized.isBlank()) return@edit
         val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() }?.toMutableList() ?: mutableListOf()
-        current.remove(query)
-        current.add(0, query)
+        current.remove(normalized)
+        current.add(0, normalized)
         prefs[Keys.BROWSE_SEARCH_HISTORY] = current.take(10).joinToString("\n")
     }
 
