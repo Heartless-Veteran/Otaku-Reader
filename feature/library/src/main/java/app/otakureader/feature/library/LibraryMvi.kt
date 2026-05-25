@@ -53,7 +53,12 @@ data class LibraryState(
     // Continue Reading
     val continueReadingItems: List<ContinueReadingItem> = emptyList(),
     // Daily reading goal progress (shown in header when a goal is set)
-    val readingGoal: ReadingGoal = ReadingGoal()
+    val readingGoal: ReadingGoal = ReadingGoal(),
+    // Advanced filtering
+    val filterGenres: Set<String> = emptySet(),
+    val sortAscending: Boolean = true,
+    val availableGenres: List<String> = emptyList(),
+    val showFilterSheet: Boolean = false,
 )
 
 data class LibraryMangaItem(
@@ -72,7 +77,8 @@ data class LibraryMangaItem(
     val status: MangaStatus = MangaStatus.UNKNOWN,
     val totalChapterCount: Int = 0,
     val userCompleted: Boolean = false,
-    val userDropped: Boolean = false
+    val userDropped: Boolean = false,
+    val genres: List<String> = emptyList(),
 )
 
 data class CategoryItem(
@@ -111,6 +117,10 @@ sealed class LibraryEvent {
     // Reading list filter (null = clear/show all)
     data class SetFilterReadingList(val listId: Long?) : LibraryEvent()
     data object ToggleIncognito : LibraryEvent()
+    data class SetGenreFilter(val genres: Set<String>) : LibraryEvent()
+    data class SetSortAscending(val ascending: Boolean) : LibraryEvent()
+    data object ClearAllFilters : LibraryEvent()
+    data object ToggleFilterSheet : LibraryEvent()
 }
 
 sealed class LibraryEffect {

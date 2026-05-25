@@ -111,7 +111,11 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterMode,
             is LibraryEvent.SetFilterSource,
             is LibraryEvent.ToggleNsfw,
-            is LibraryEvent.SetFilterReadingList -> handleFilterSortEvent(event)
+            is LibraryEvent.SetFilterReadingList,
+            is LibraryEvent.SetGenreFilter,
+            is LibraryEvent.SetSortAscending,
+            is LibraryEvent.ClearAllFilters -> handleFilterSortEvent(event)
+            is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showFilterSheet = !it.showFilterSheet) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.ToggleFavorite,
             is LibraryEvent.MarkSelectedAsRead,
@@ -149,6 +153,18 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterSource -> onSetFilterSource(event.sourceId)
             is LibraryEvent.ToggleNsfw -> onToggleNsfw(event.show)
             is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
+            is LibraryEvent.SetGenreFilter -> _state.update { it.copy(filterGenres = event.genres) }
+            is LibraryEvent.SetSortAscending -> _state.update { it.copy(sortAscending = event.ascending) }
+            is LibraryEvent.ClearAllFilters -> _state.update {
+                it.copy(
+                    filterMode = LibraryFilterMode.ALL,
+                    filterGenres = emptySet(),
+                    filterHasNotes = false,
+                    filterSourceId = null,
+                    filterReadingListId = null,
+                    sortAscending = true,
+                )
+            }
             else -> Unit // unreachable due to outer when
         }
     }
@@ -254,7 +270,8 @@ class LibraryViewModel @Inject constructor(
             }
             .onEach { items ->
                 _allItems.value = items
-                _state.update { it.copy(isLoading = false, isRefreshing = false, error = null) }
+                val genres = items.flatMap { it.genres }.distinct().sorted()
+                _state.update { it.copy(isLoading = false, isRefreshing = false, error = null, availableGenres = genres) }
             }
             .catch { error ->
                 _state.update {
@@ -296,7 +313,9 @@ class LibraryViewModel @Inject constructor(
         val selectedCategory: Long?,
         val categoryMangaIds: Set<Long> = emptySet(),
         val filterReadingListId: Long? = null,
-        val readingListMangaIds: Set<Long> = emptySet()
+        val readingListMangaIds: Set<Long> = emptySet(),
+        val filterGenres: Set<String> = emptySet(),
+        val sortAscending: Boolean = true,
     )
 
     private fun observeFilteredItems() {
@@ -344,7 +363,9 @@ class LibraryViewModel @Inject constructor(
                     selectedCategory = it.selectedCategory,
                     categoryMangaIds = it.categoryFilterMangaIds,
                     filterReadingListId = it.filterReadingListId,
-                    readingListMangaIds = it.readingListMangaIds
+                    readingListMangaIds = it.readingListMangaIds,
+                    filterGenres = it.filterGenres,
+                    sortAscending = it.sortAscending,
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
@@ -364,8 +385,9 @@ class LibraryViewModel @Inject constructor(
             .let { applyHasNotesFilter(it, params) }
             .let { applySourceFilter(it, params) }
             .let { applyReadingListFilter(it, params) }
+            .let { applyGenreFilter(it, params.filterGenres) }
             .let { applyFilterMode(it, params.filterMode) }
-        return applySort(filtered, params.sortMode)
+        return applySort(filtered, params.sortMode, params.sortAscending)
     }
 
     private fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
@@ -405,6 +427,11 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    private fun applyGenreFilter(items: List<LibraryMangaItem>, filterGenres: Set<String>): List<LibraryMangaItem> {
+        return if (filterGenres.isEmpty()) items
+        else items.filter { manga -> manga.genres.any { it in filterGenres } }
+    }
+
     private fun applyFilterMode(items: List<LibraryMangaItem>, filterMode: LibraryFilterMode): List<LibraryMangaItem> {
         return when (filterMode) {
             LibraryFilterMode.DOWNLOADED -> items.filter { it.isDownloaded }
@@ -417,14 +444,15 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode): List<LibraryMangaItem> {
-        return when (sortMode) {
+    private fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode, ascending: Boolean): List<LibraryMangaItem> {
+        val sorted = when (sortMode) {
             LibrarySortMode.ALPHABETICAL -> items.sortedBy { it.title }
             LibrarySortMode.LAST_READ -> items.sortedByDescending { it.lastRead ?: 0L }
             LibrarySortMode.DATE_ADDED -> items.sortedByDescending { it.dateAdded }
             LibrarySortMode.UNREAD_COUNT -> items.sortedByDescending { it.unreadCount }
             LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         }
+        return if (ascending) sorted else sorted.reversed()
     }
 
     private fun onMangaClick(mangaId: Long) {
@@ -677,5 +705,6 @@ class LibraryViewModel @Inject constructor(
         totalChapterCount = totalChapters,
         userCompleted = userCompleted,
         userDropped = userDropped,
+        genres = genre,
     )
 }

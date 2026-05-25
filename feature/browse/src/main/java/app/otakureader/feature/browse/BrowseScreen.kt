@@ -43,6 +43,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -219,6 +222,66 @@ private fun BrowseContent(
                     activeCount = countActiveFilters(state.activeFilters),
                     onClick = { onEvent(BrowseEvent.ToggleFilterSheet) }
                 )
+            }
+        }
+
+        // Search scope segmented button
+        SingleChoiceSegmentedButtonRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            BrowseSearchScope.entries.forEachIndexed { index, scope ->
+                SegmentedButton(
+                    selected = state.searchScope == scope,
+                    onClick = { onEvent(BrowseEvent.SetSearchScope(scope)) },
+                    shape = SegmentedButtonDefaults.itemShape(index, BrowseSearchScope.entries.size),
+                    label = {
+                        Text(
+                            when (scope) {
+                                BrowseSearchScope.SOURCES -> stringResource(R.string.browse_scope_sources)
+                                BrowseSearchScope.LIBRARY -> stringResource(R.string.browse_scope_library)
+                            }
+                        )
+                    }
+                )
+            }
+        }
+
+        // Search history (shown when query is blank and scope is SOURCES)
+        if (state.searchQuery.isBlank() && state.searchHistory.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.browse_search_history),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(onClick = { onEvent(BrowseEvent.ClearSearchHistory) }) {
+                    Text(stringResource(R.string.filter_sheet_clear_all))
+                }
+            }
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.searchHistory) { query ->
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            onEvent(BrowseEvent.OnSearchQueryChange(query))
+                            onEvent(BrowseEvent.Search)
+                        },
+                        label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    )
+                }
             }
         }
 
