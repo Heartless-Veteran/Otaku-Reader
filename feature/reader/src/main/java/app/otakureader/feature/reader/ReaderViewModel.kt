@@ -12,8 +12,6 @@ import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.SourceRepository
-import app.otakureader.domain.model.PageBookmark
-import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.model.ReaderPage
@@ -23,6 +21,7 @@ import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderChapterLoaderDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDiscordDelegate
+import app.otakureader.feature.reader.viewmodel.delegate.ReaderDisplayDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDownloadAheadDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderHistoryDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderPrefetchDelegate
@@ -83,6 +82,7 @@ class ReaderViewModel @Inject constructor(
     private val discordDelegate: ReaderDiscordDelegate,
     private val prefetchDelegate: ReaderPrefetchDelegate,
     private val downloadAheadDelegate: ReaderDownloadAheadDelegate,
+    private val displayDelegate: ReaderDisplayDelegate,
     private val trackerSyncRepository: TrackerSyncRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -317,13 +317,20 @@ class ReaderViewModel @Inject constructor(
     fun onEvent(event: ReaderEvent) {
         when (event) {
             is ReaderEvent.Navigation -> handleNavigation(event)
-            is ReaderEvent.ZoomControl -> handleZoom(event)
-            is ReaderEvent.DisplayControl -> handleDisplay(event)
-            is ReaderEvent.OverlayControl -> handleOverlay(event)
-            is ReaderEvent.BrightnessControl -> handleBrightness(event)
-            is ReaderEvent.AutoScrollControl -> handleAutoScroll(event)
-            is ReaderEvent.SettingsControl -> handleSettings(event)
-            is ReaderEvent.ColorFilterControl -> handleColorFilter(event)
+            is ReaderEvent.ZoomControl ->
+                displayDelegate.handleZoom(event, _state.value) { _state.update(it) }
+            is ReaderEvent.DisplayControl ->
+                displayDelegate.handleDisplay(event, { _state.update(it) }, viewModelScope)
+            is ReaderEvent.OverlayControl ->
+                displayDelegate.handleOverlay(event, { _state.update(it) }, viewModelScope)
+            is ReaderEvent.BrightnessControl ->
+                displayDelegate.handleBrightness(event, _state.value, { _state.update(it) }, viewModelScope)
+            is ReaderEvent.AutoScrollControl ->
+                displayDelegate.handleAutoScroll(event, _state.value, { _state.update(it) }, viewModelScope)
+            is ReaderEvent.SettingsControl ->
+                displayDelegate.handleSettings(event, { _state.update(it) }, viewModelScope)
+            is ReaderEvent.ColorFilterControl ->
+                displayDelegate.handleColorFilter(event, { _state.update(it) }, viewModelScope, { currentManga }, { currentManga = it })
             is ReaderEvent.ActionEvent -> handleAction(event)
         }
     }
@@ -371,72 +378,16 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private fun handleZoom(event: ReaderEvent.ZoomControl) {
-        when (event) {
-            is ReaderEvent.OnZoomChange -> updateZoom(event.zoom)
-            ReaderEvent.ZoomIn -> updateZoom(_state.value.zoomLevel + ZOOM_INCREMENT)
-            ReaderEvent.ZoomOut -> updateZoom(_state.value.zoomLevel - ZOOM_INCREMENT)
-            ReaderEvent.ResetZoom -> updateZoom(1f)
-            ReaderEvent.ZoomToWidth -> updateZoom(1.5f)
-            ReaderEvent.ZoomToHeight -> updateZoom(1.2f)
-        }
-    }
-
-    private fun handleDisplay(event: ReaderEvent.DisplayControl) {
-        when (event) {
-            is ReaderEvent.OnModeChange -> changeReaderMode(event.mode)
-            is ReaderEvent.OnDirectionChange -> updateReadingDirection(event.direction)
-            ReaderEvent.RotateCW -> cyclePageRotation()
-            ReaderEvent.ResetRotation -> _state.update { it.copy(pageRotation = PageRotation.NONE) }
-        }
-    }
-
-    private fun handleOverlay(event: ReaderEvent.OverlayControl) {
-        when (event) {
-            ReaderEvent.ToggleMenu -> toggleMenu()
-            ReaderEvent.ToggleGallery -> toggleGallery()
-            is ReaderEvent.SetGalleryColumns -> setGalleryColumns(event.columns)
-            ReaderEvent.ToggleFullscreen -> toggleFullscreen()
-        }
-    }
-
-    private fun handleBrightness(event: ReaderEvent.BrightnessControl) {
-        when (event) {
-            is ReaderEvent.OnBrightnessChange -> updateBrightness(event.brightness)
-            ReaderEvent.BrightnessUp -> updateBrightness(_state.value.brightness + BRIGHTNESS_INCREMENT)
-            ReaderEvent.BrightnessDown -> updateBrightness(_state.value.brightness - BRIGHTNESS_INCREMENT)
-        }
-    }
-
-    private fun handleAutoScroll(event: ReaderEvent.AutoScrollControl) {
-        when (event) {
-            ReaderEvent.ToggleAutoScroll -> toggleAutoScroll()
-            is ReaderEvent.OnAutoScrollSpeedChange -> updateAutoScrollSpeed(event.speed)
-            ReaderEvent.AutoScrollSpeedUp ->
-                updateAutoScrollSpeed(_state.value.autoScrollSpeed + AUTO_SCROLL_INCREMENT)
-            ReaderEvent.AutoScrollSpeedDown ->
-                updateAutoScrollSpeed(_state.value.autoScrollSpeed - AUTO_SCROLL_INCREMENT)
-        }
-    }
-
-    private fun handleSettings(event: ReaderEvent.SettingsControl) {
-        when (event) {
-            is ReaderEvent.ToggleSetting -> toggleSetting(event.setting)
-            is ReaderEvent.UpdateTapZones -> updateTapZones(event.config)
-        }
-    }
-
-    private fun handleColorFilter(event: ReaderEvent.ColorFilterControl) {
-        when (event) {
-            is ReaderEvent.SetColorFilterMode -> updateColorFilterMode(event.mode)
-            is ReaderEvent.SetCustomTintColor -> updateCustomTintColor(event.color)
-            is ReaderEvent.SetReaderBackgroundColor -> updateReaderBackgroundColor(event.color)
-        }
-    }
 
     private fun handleAction(event: ReaderEvent.ActionEvent) {
         when (event) {
-            ReaderEvent.ToggleBookmark -> toggleBookmark()
+            ReaderEvent.ToggleBookmark -> displayDelegate.toggleBookmark(
+                state = _state.value,
+                chapterId = chapterId,
+                mangaId = mangaId,
+                scope = viewModelScope,
+                sendEffect = { _effect.send(it) }
+            )
             ReaderEvent.SharePage -> sharePage()
             ReaderEvent.DismissError -> dismissError()
             ReaderEvent.Retry -> loadChapter()
@@ -532,170 +483,6 @@ class ReaderViewModel @Inject constructor(
         changePanel(_state.value.currentPanel + delta)
     }
 
-    private fun updateZoom(zoom: Float) {
-        val clampedZoom = zoom.coerceIn(MIN_ZOOM, MAX_ZOOM)
-        _state.update { it.copy(zoomLevel = clampedZoom) }
-    }
-
-    private fun updateBrightness(brightness: Float) {
-        val clampedBrightness = brightness.coerceIn(0.1f, 1.5f)
-        _state.update { it.copy(brightness = clampedBrightness) }
-
-        // Save brightness setting
-        viewModelScope.launch {
-            settingsRepository.setBrightness(clampedBrightness)
-        }
-    }
-
-    private fun updateColorFilterMode(mode: ColorFilterMode) {
-        _state.update { it.copy(colorFilterMode = mode) }
-        viewModelScope.launch {
-            settingsRepository.setColorFilterMode(mode)
-        }
-    }
-
-    private fun updateCustomTintColor(color: Long) {
-        _state.update { it.copy(customTintColor = color) }
-        viewModelScope.launch {
-            settingsRepository.setCustomTintColor(color)
-        }
-    }
-
-    /**
-     * Updates the per-manga reader background color and persists it to the database.
-     * Pass null to reset to the default background.
-     */
-    private fun updateReaderBackgroundColor(color: Long?) {
-        _state.update { it.copy(readerBackgroundColor = color) }
-        viewModelScope.launch {
-            currentManga?.let { manga ->
-                mangaRepository.updateManga(manga.copy(readerBackgroundColor = color))
-                currentManga = manga.copy(readerBackgroundColor = color)
-            }
-        }
-    }
-
-    private fun updateReadingDirection(direction: ReadingDirection) {
-        _state.update { it.copy(readingDirection = direction) }
-        viewModelScope.launch {
-            settingsRepository.setReadingDirection(direction)
-        }
-    }
-
-    private fun cyclePageRotation() {
-        _state.update { it.copy(pageRotation = it.pageRotation.next()) }
-    }
-
-    private fun changeReaderMode(mode: ReaderMode) {
-        _state.update { it.copy(mode = mode) }
-
-        // Adjust current page for dual page mode
-        if (mode == ReaderMode.DUAL_PAGE && _state.value.currentPage % 2 != 0) {
-            _state.update { it.copy(currentPage = it.currentPage - 1) }
-        }
-
-        // Save mode setting
-        viewModelScope.launch {
-            settingsRepository.setReaderMode(mode)
-        }
-    }
-
-    private fun toggleMenu() {
-        _state.update { it.copy(isMenuVisible = !it.isMenuVisible) }
-    }
-
-    private fun toggleGallery() {
-        _state.update { it.copy(isGalleryOpen = !it.isGalleryOpen) }
-    }
-
-    private fun setGalleryColumns(columns: Int) {
-        val clamped = columns.coerceIn(2, 4)
-        _state.update { it.copy(galleryColumns = clamped) }
-    }
-
-    private fun toggleFullscreen() {
-        val newFullscreen = !_state.value.isFullscreen
-        _state.update { it.copy(isFullscreen = newFullscreen) }
-
-        viewModelScope.launch {
-            settingsRepository.setFullscreen(newFullscreen)
-        }
-    }
-
-    private fun toggleAutoScroll() {
-        _state.update { it.copy(isAutoScrollEnabled = !it.isAutoScrollEnabled) }
-    }
-
-    private fun updateAutoScrollSpeed(speed: Float) {
-        val clampedSpeed = speed.coerceIn(10f, 500f)
-        _state.update { it.copy(autoScrollSpeed = clampedSpeed) }
-
-        viewModelScope.launch {
-            settingsRepository.setAutoScrollSpeed(clampedSpeed)
-        }
-    }
-
-    private fun toggleSetting(setting: ReaderSetting) {
-        when (setting) {
-            ReaderSetting.KEEP_SCREEN_ON -> {
-                val newValue = !_state.value.keepScreenOn
-                _state.update { it.copy(keepScreenOn = newValue) }
-                viewModelScope.launch { settingsRepository.setKeepScreenOn(newValue) }
-            }
-            ReaderSetting.SHOW_PAGE_NUMBER -> {
-                val newValue = !_state.value.showPageNumber
-                _state.update { it.copy(showPageNumber = newValue) }
-                viewModelScope.launch { settingsRepository.setShowPageNumber(newValue) }
-            }
-            ReaderSetting.DOUBLE_TAP_ZOOM -> {
-                val newValue = !_state.value.doubleTapZoomEnabled
-                _state.update { it.copy(doubleTapZoomEnabled = newValue) }
-                viewModelScope.launch { settingsRepository.setDoubleTapZoomEnabled(newValue) }
-            }
-            ReaderSetting.VOLUME_KEY_NAVIGATION -> {
-                val newValue = !_state.value.volumeKeysEnabled
-                _state.update { it.copy(volumeKeysEnabled = newValue) }
-                viewModelScope.launch { settingsRepository.setVolumeKeysEnabled(newValue) }
-            }
-            ReaderSetting.VOLUME_KEYS_INVERTED -> {
-                val newValue = !_state.value.volumeKeysInverted
-                _state.update { it.copy(volumeKeysInverted = newValue) }
-                viewModelScope.launch { settingsRepository.setVolumeKeysInverted(newValue) }
-            }
-            ReaderSetting.INCOGNITO_MODE -> {
-                val newValue = !_state.value.incognitoMode
-                _state.update { it.copy(incognitoMode = newValue) }
-                viewModelScope.launch { settingsRepository.setIncognitoMode(newValue) }
-            }
-            ReaderSetting.CROP_BORDERS -> {
-                val newValue = !_state.value.cropBordersEnabled
-                _state.update { it.copy(cropBordersEnabled = newValue) }
-                viewModelScope.launch { settingsRepository.setCropBordersEnabled(newValue) }
-            }
-            ReaderSetting.SKIP_READ_CHAPTERS -> {
-                val newValue = !_state.value.skipReadChapters
-                _state.update { it.copy(skipReadChapters = newValue) }
-                viewModelScope.launch { settingsRepository.setSkipReadChapters(newValue) }
-            }
-            ReaderSetting.SKIP_FILTERED_CHAPTERS -> {
-                val newValue = !_state.value.skipFilteredChapters
-                _state.update { it.copy(skipFilteredChapters = newValue) }
-                viewModelScope.launch { settingsRepository.setSkipFilteredChapters(newValue) }
-            }
-            ReaderSetting.SKIP_DUPLICATE_CHAPTERS -> {
-                val newValue = !_state.value.skipDuplicateChapters
-                _state.update { it.copy(skipDuplicateChapters = newValue) }
-                viewModelScope.launch { settingsRepository.setSkipDuplicateChapters(newValue) }
-            }
-        }
-    }
-
-    private fun updateTapZones(config: app.otakureader.domain.model.TapZoneConfig) {
-        viewModelScope.launch {
-            settingsRepository.setTapZoneConfig(config)
-        }
-    }
-
     private fun dismissError() {
         _state.update { it.copy(error = null) }
     }
@@ -703,26 +490,6 @@ class ReaderViewModel @Inject constructor(
     private fun loadChapterById(chapterId: Long) {
         viewModelScope.launch {
             _effect.send(ReaderEffect.NavigateToChapter(chapterId))
-        }
-    }
-
-    private fun toggleBookmark() {
-        val state = _state.value
-        val currentPage = state.currentPage
-        viewModelScope.launch {
-            if (state.isCurrentPageBookmarked) {
-                pageBookmarkRepository.removeBookmark(chapterId, currentPage)
-                _effect.send(ReaderEffect.ShowSnackbar("Page bookmark removed"))
-            } else {
-                pageBookmarkRepository.addBookmark(
-                    PageBookmark(
-                        mangaId = mangaId,
-                        chapterId = chapterId,
-                        pageIndex = currentPage
-                    )
-                )
-                _effect.send(ReaderEffect.ShowSnackbar("Page bookmarked"))
-            }
         }
     }
 
@@ -787,7 +554,7 @@ class ReaderViewModel @Inject constructor(
                 ReadingDirection.RTL -> navigatePage(-1)
                 else -> navigatePage(1)
             }
-            TapZone.CENTER -> toggleMenu()
+            TapZone.CENTER -> _state.update { it.copy(isMenuVisible = !it.isMenuVisible) }
         }
     }
 
@@ -866,12 +633,10 @@ class ReaderViewModel @Inject constructor(
 
 
     companion object {
-        private const val MIN_ZOOM = 0.5f
-        private const val MAX_ZOOM = 5f
-        private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
-        const val ZOOM_INCREMENT = 0.25f
-        const val BRIGHTNESS_INCREMENT = 0.1f
-        const val AUTO_SCROLL_INCREMENT = 50f
+        private const val PROGRESS_SAVE_DELAY = 3000L
+        const val ZOOM_INCREMENT = ReaderDisplayDelegate.ZOOM_INCREMENT
+        const val BRIGHTNESS_INCREMENT = ReaderDisplayDelegate.BRIGHTNESS_INCREMENT
+        const val AUTO_SCROLL_INCREMENT = ReaderDisplayDelegate.AUTO_SCROLL_INCREMENT
     }
 
     private fun observeVisualEffects() {
