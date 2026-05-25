@@ -114,7 +114,10 @@ fun LibraryScreen(
                             Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.library_mark_selected_read))
                         }
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.MarkSelectedAsUnread) }) {
-                            Icon(Icons.Default.RadioButtonUnchecked, contentDescription = stringResource(R.string.library_mark_selected_unread))
+                            Icon(
+                                Icons.Default.RadioButtonUnchecked,
+                                contentDescription = stringResource(R.string.library_mark_selected_unread)
+                            )
                         }
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.DownloadSelected) }) {
                             Icon(Icons.Default.Download, contentDescription = stringResource(R.string.library_download_selected))

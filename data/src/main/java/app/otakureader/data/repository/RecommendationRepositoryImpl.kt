@@ -26,7 +26,6 @@ class RecommendationRepositoryImpl @Inject constructor(
     override suspend fun refreshRecommendations(libraryManga: List<Manga>) {
         if (libraryManga.size < MIN_LIBRARY_SIZE) return
 
-        val libraryIds = libraryManga.map { it.id }.toSet()
         val profile = buildGenreProfile(libraryManga)
         if (profile.isEmpty()) return
 

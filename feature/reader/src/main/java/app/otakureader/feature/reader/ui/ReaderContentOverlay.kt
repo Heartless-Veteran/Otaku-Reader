@@ -223,7 +223,8 @@ private fun MangaReaderOverlayContent(
                     Text(
                         text = "$page",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator else LocalOtakuColors.current.unselectedPageIndicator,
+                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator
+                                else LocalOtakuColors.current.unselectedPageIndicator,
                         textAlign = TextAlign.Center
                     )
                 }

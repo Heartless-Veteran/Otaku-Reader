@@ -48,7 +48,7 @@
 
     <!-- Update All button -->
     <string name="extensions_update_all">Update All</string>
-    <string name="extensions_updating_all">Updating all…</string>
+    <string name="extensions_updating_all">Updating all&#8230;</string>
     <plurals name="extensions_updates_available">
         <item quantity="one">%d update available</item>
         <item quantity="other">%d updates available</item>
@@ -133,7 +133,7 @@
     <string name="source_manga_detail_error_prefix">Could not open manga</string>
     <!-- Extension trust/security -->
     <string name="extension_unverified_title">Unverified Extension</string>
-    <string name="extension_unverified_body">This extension doesn't have a verified signature from its repository. Installing unverified extensions may pose security risks.</string>
+    <string name="extension_unverified_body">This extension doesn\'t have a verified signature from its repository. Installing unverified extensions may pose security risks.</string>
     <string name="extension_install_anyway">Install Anyway</string>
     <string name="extension_cancel">Cancel</string>
     <string name="extension_repo_warning">Extension repositories contain executable code that runs inside Otaku Reader with full app privileges. Only add repositories you trust.</string>

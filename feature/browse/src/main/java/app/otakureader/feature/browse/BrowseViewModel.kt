@@ -164,7 +164,9 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.SaveCurrentSearch -> saveCurrentSearch()
             is BrowseEvent.DeleteSavedSearch -> deleteSavedSearch(event.searchId)
             is BrowseEvent.ApplySavedSearch -> applySavedSearch(event.search)
-            is BrowseEvent.SetSearchScope -> _state.update { it.copy(searchScope = event.scope, searchResults = emptyList(), hasSearchResults = false) }
+            is BrowseEvent.SetSearchScope -> _state.update {
+                it.copy(searchScope = event.scope, searchResults = emptyList(), hasSearchResults = false)
+            }
             is BrowseEvent.ClearSearchHistory -> viewModelScope.launch { generalPreferences.clearBrowseSearchHistory() }
         }
     }

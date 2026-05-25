@@ -119,8 +119,6 @@ class ReaderViewModelTest {
         trackerSyncRepository = mockk(relaxed = true)
         displayDelegate = ReaderDisplayDelegate(
             settingsRepository = settingsRepository,
-            mangaRepository = mangaRepository,
-            pageBookmarkRepository = pageBookmarkRepository,
         )
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)

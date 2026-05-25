@@ -84,4 +84,7 @@ object DatabaseModule {
 
     @Provides
     fun provideRecommendationDao(database: OtakuReaderDatabase) = database.recommendationDao()
+
+    @Provides
+    fun provideDynamicCategoryRuleDao(database: OtakuReaderDatabase) = database.dynamicCategoryRuleDao()
 }

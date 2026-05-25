@@ -19,6 +19,7 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
 import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
+import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.cash.turbine.test
@@ -60,6 +61,7 @@ class LibraryViewModelTest {
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
     private lateinit var statisticsRepository: StatisticsRepository
     private lateinit var readingListRepository: ReadingListRepository
+    private lateinit var getRecommendations: GetRecommendationsUseCase
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -81,6 +83,8 @@ class LibraryViewModelTest {
             every { libraryFilterMode } returns flowOf(0)
             every { libraryFilterSourceId } returns flowOf(null)
             every { isStaggeredGrid } returns flowOf(false)
+            every { showRecommendations } returns flowOf(false)
+            every { dismissedRecommendations } returns flowOf(emptySet())
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
@@ -121,6 +125,9 @@ class LibraryViewModelTest {
                 emptyList()
             ))
         }
+        getRecommendations = mockk {
+            every { this@mockk.invoke() } returns flowOf(emptyList())
+        }
     }
 
     @After
@@ -144,6 +151,7 @@ class LibraryViewModelTest {
             readingGoalPreferences,
             statisticsRepository,
             readingListRepository,
+            getRecommendations,
         )
     }
 
@@ -223,6 +231,7 @@ class LibraryViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.state.value.selectedManga.contains(1L))
     }
@@ -277,8 +286,10 @@ class LibraryViewModelTest {
 
         // First long-click to start selection mode
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        testDispatcher.scheduler.advanceUntilIdle()
         // Then click another item — should add to selection
         viewModel.onEvent(LibraryEvent.OnMangaClick(1L))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.state.value.selectedManga.contains(1L))
         assertTrue(viewModel.state.value.selectedManga.contains(2L))
