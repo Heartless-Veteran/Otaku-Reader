@@ -107,4 +107,38 @@
     <string name="manga_status_on_hiatus">On Hiatus</string>
     <string name="library_filter_reading_list">Reading List</string>
     <string name="library_reading_list_all">All Lists</string>
+    <string name="category_lock_label">Lock with biometrics</string>
+    <string name="category_unlock_label">Unlock category</string>
+    <string name="category_locked">Locked</string>
+    <string name="category_dynamic">Dynamic</string>
+    <string name="category_make_dynamic">Make dynamic</string>
+    <string name="category_remove_dynamic">Remove dynamic</string>
+    <string name="category_show_hidden">Show hidden</string>
+    <string name="category_unlock_prompt">Unlock to view hidden category</string>
+    <!-- Filter sheet -->
+    <string name="filter_sheet_title">Filters &amp; Sort</string>
+    <string name="filter_sheet_clear_all">Clear all</string>
+    <string name="filter_sheet_sort_label">Sort by</string>
+    <string name="filter_sheet_status_label">Status</string>
+    <string name="filter_sheet_genre_label">Genre</string>
+    <string name="filter_sort_ascending">Ascending</string>
+    <string name="filter_sort_descending">Descending</string>
+    <string name="sort_title">Title A–Z</string>
+    <string name="sort_last_read">Last read</string>
+    <string name="sort_date_added">Date added</string>
+    <string name="sort_unread_count">Unread count</string>
+    <string name="sort_source">Source</string>
+    <string name="filter_all">All</string>
+    <string name="filter_downloaded">Downloaded</string>
+    <string name="filter_unread">Unread</string>
+    <string name="filter_completed">Completed</string>
+    <string name="filter_dropped">Dropped</string>
+    <string name="filter_tracking">Tracking</string>
+    <string name="filter_reading_list">Reading list</string>
+    <string name="library_active_filters">Active filters</string>
+    <!-- Browse scope / search history -->
+    <string name="browse_scope_library">Library</string>
+    <string name="browse_scope_sources">Sources</string>
+    <string name="browse_search_history">Recent searches</string>
+    <string name="browse_search_history_empty">No recent searches</string>
 </resources>

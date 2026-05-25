@@ -24,7 +24,7 @@ class GetCategoriesUseCaseTest {
 
     @Test
     fun `invoke with no categories returns empty list`() = runTest {
-        every { categoryRepository.getCategories() } returns flowOf(emptyList())
+        every { categoryRepository.getVisibleCategories() } returns flowOf(emptyList())
 
         useCase().test {
             assertEquals(emptyList<Category>(), awaitItem())
@@ -38,7 +38,7 @@ class GetCategoriesUseCaseTest {
             Category(id = 1L, name = "Favorites", order = 0),
             Category(id = 2L, name = "Reading", order = 1)
         )
-        every { categoryRepository.getCategories() } returns flowOf(categories)
+        every { categoryRepository.getVisibleCategories() } returns flowOf(categories)
         every { categoryRepository.getMangaIdsByCategoryId(1L) } returns flowOf(listOf(10L, 20L, 30L))
         every { categoryRepository.getMangaIdsByCategoryId(2L) } returns flowOf(listOf(40L))
 
@@ -80,7 +80,7 @@ class GetCategoriesUseCaseTest {
     @Test
     fun `invoke with single category having no manga returns count of zero`() = runTest {
         val category = Category(id = 1L, name = "Empty", order = 0)
-        every { categoryRepository.getCategories() } returns flowOf(listOf(category))
+        every { categoryRepository.getVisibleCategories() } returns flowOf(listOf(category))
         every { categoryRepository.getMangaIdsByCategoryId(1L) } returns flowOf(emptyList())
 
         useCase().test {

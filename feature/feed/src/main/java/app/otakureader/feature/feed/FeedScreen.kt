@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -57,6 +58,7 @@ import java.time.format.FormatStyle
 fun FeedScreen(
     onNavigateBack: () -> Unit,
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit,
+    onNavigateToFeedManagement: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FeedViewModel = hiltViewModel()
 ) {
@@ -76,6 +78,7 @@ fun FeedScreen(
                 is FeedEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
+                FeedEffect.NavigateToFeedManagement -> onNavigateToFeedManagement()
             }
         }
     }
@@ -105,6 +108,12 @@ fun FeedScreen(
                         Icon(
                             Icons.Default.Delete,
                             contentDescription = stringResource(R.string.feed_clear)
+                        )
+                    }
+                    IconButton(onClick = { viewModel.onEvent(FeedEvent.ManageSources) }) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.feed_manage_sources)
                         )
                     }
                 }

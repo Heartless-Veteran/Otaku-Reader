@@ -30,6 +30,8 @@ import app.otakureader.feature.reader.viewmodel.delegate.ReaderSettingsLoaderDel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -434,7 +436,14 @@ class ReaderViewModel @Inject constructor(
         when (event) {
             is ReaderEvent.SetColorFilterMode -> displayDelegate.updateColorFilterMode(event.mode)
             is ReaderEvent.SetCustomTintColor -> displayDelegate.updateCustomTintColor(event.color)
-            is ReaderEvent.SetReaderBackgroundColor -> displayDelegate.updateReaderBackgroundColor(event.color)
+            is ReaderEvent.SetReaderBackgroundColor -> {
+                displayDelegate.updateReaderBackgroundColor(event.color)
+                currentManga?.let { manga ->
+                    val updated = manga.copy(readerBackgroundColor = event.color)
+                    currentManga = updated
+                    viewModelScope.launch { mangaRepository.updateManga(updated) }
+                }
+            }
         }
     }
 
@@ -661,6 +670,28 @@ class ReaderViewModel @Inject constructor(
         autoSaveJob?.cancel()
         prefetchDelegate.cancel()
         prefetchDelegate.clearCache()
+
+        if (currentState.isLastPage) {
+            val chapter = currentChapter
+            val manga = currentManga
+            if (chapter != null && manga != null) {
+                viewModelScope.launch {
+                    withContext(NonCancellable) {
+                        try {
+                            trackerSyncRepository.getSyncStateForManga(mangaId).first()
+                                .forEach { syncState ->
+                                    trackerSyncRepository.recordLocalChange(
+                                        mangaId = mangaId,
+                                        trackerId = syncState.trackerId,
+                                        chapterRead = chapter.chapterNumber,
+                                        status = manga.status
+                                    )
+                                }
+                        } catch (_: Exception) { }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -701,8 +732,8 @@ class ReaderViewModel @Inject constructor(
 
 
     companion object {
-        private const val MIN_ZOOM = 0.5f
-        private const val MAX_ZOOM = 5f
+        const val MIN_ZOOM = 0.5f
+        const val MAX_ZOOM = 5f
         private const val PROGRESS_SAVE_DELAY = 3000L // 3 seconds
         const val ZOOM_INCREMENT = 0.25f
         const val BRIGHTNESS_INCREMENT = 0.1f

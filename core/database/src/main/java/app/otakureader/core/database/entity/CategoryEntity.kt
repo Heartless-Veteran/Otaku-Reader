@@ -13,16 +13,20 @@ data class CategoryEntity(
     val flags: Int = 0,
     @ColumnInfo(name = "update_frequency")
     val updateFrequency: Int = 1,
+    @ColumnInfo(name = "lock_type")
+    val lockType: String? = null,
 ) {
     companion object {
-        // Bit flags for category options
-        const val FLAG_HIDDEN = 1 shl 0  // Category is hidden from main library view
-        const val FLAG_NSFW = 1 shl 1    // Category contains NSFW content
+        const val FLAG_HIDDEN = 1 shl 0
+        const val FLAG_NSFW = 1 shl 1
+        const val FLAG_LOCKED = 1 shl 2
 
         fun isHidden(flags: Int): Boolean = flags and FLAG_HIDDEN != 0
         fun isNsfw(flags: Int): Boolean = flags and FLAG_NSFW != 0
+        fun isLocked(flags: Int): Boolean = flags and FLAG_LOCKED != 0
     }
 
     val isHidden: Boolean get() = flags and FLAG_HIDDEN != 0
     val isNsfw: Boolean get() = flags and FLAG_NSFW != 0
+    val isLocked: Boolean get() = flags and FLAG_LOCKED != 0
 }

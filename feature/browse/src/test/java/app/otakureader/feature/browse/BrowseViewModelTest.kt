@@ -12,6 +12,7 @@ import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
+import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaPage
@@ -59,6 +60,7 @@ class BrowseViewModelTest {
     // Mocked to avoid withContext(Dispatchers.IO) racing against the test scheduler
     private val addMangaToLibraryUseCase: AddMangaToLibraryUseCase = mockk()
     private val toggleFavoriteMangaUseCase = ToggleFavoriteMangaUseCase(mangaRepository)
+    private val searchLibraryMangaUseCase: SearchLibraryMangaUseCase = mockk(relaxed = true)
 
     private lateinit var viewModel: BrowseViewModel
     private val testDispatcher = StandardTestDispatcher()
@@ -74,6 +76,8 @@ class BrowseViewModelTest {
         // Default stubs — applied before ViewModel creation
         every { sourceRepository.getSources() } returns flowOf(emptyList())
         every { generalPreferences.showNsfwContent } returns flowOf(false)
+        every { generalPreferences.browseSearchHistory } returns flowOf(emptyList())
+        coEvery { generalPreferences.addBrowseSearchHistory(any()) } returns mockk(relaxed = true)
         every { feedRepository.getSavedSearches() } returns flowOf(emptyList())
 
         // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
@@ -100,7 +104,8 @@ class BrowseViewModelTest {
             toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
             mangaRepository = mangaRepository,
             feedRepository = feedRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            searchLibraryMangaUseCase = searchLibraryMangaUseCase,
         )
         // Subscribe to activate stateIn(WhileSubscribed); will start collecting on first advanceUntilIdle.
         collectScope.launch { viewModel.state.collect { } }
@@ -395,7 +400,8 @@ class BrowseViewModelTest {
             toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
             mangaRepository = mangaRepository,
             feedRepository = feedRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            searchLibraryMangaUseCase = searchLibraryMangaUseCase,
         )
         activateStateCollection()
 
@@ -430,7 +436,8 @@ class BrowseViewModelTest {
             toggleFavoriteMangaUseCase = toggleFavoriteMangaUseCase,
             mangaRepository = mangaRepository,
             feedRepository = feedRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            searchLibraryMangaUseCase = searchLibraryMangaUseCase,
         )
         activateStateCollection()
 

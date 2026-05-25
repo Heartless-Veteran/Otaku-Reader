@@ -99,6 +99,17 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val newUpdatesCount: Flow<Int> = dataStore.data.map { it[Keys.NEW_UPDATES_COUNT] ?: 0 }
     suspend fun setNewUpdatesCount(value: Int) = dataStore.edit { it[Keys.NEW_UPDATES_COUNT] = value }
 
+    // --- Recommendations ---
+
+    val showRecommendations: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_RECOMMENDATIONS] ?: true }
+    suspend fun setShowRecommendations(value: Boolean) = dataStore.edit { it[Keys.SHOW_RECOMMENDATIONS] = value }
+
+    val dismissedRecommendations: Flow<Set<String>> = dataStore.data.map { it[Keys.DISMISSED_RECOMMENDATIONS] ?: emptySet() }
+    suspend fun dismissRecommendation(mangaId: Long) = dataStore.edit {
+        val updated = (it[Keys.DISMISSED_RECOMMENDATIONS] ?: emptySet()) + mangaId.toString()
+        it[Keys.DISMISSED_RECOMMENDATIONS] = if (updated.size > 200) updated.drop(1).toSet() else updated
+    }
+
     // --- Smart Update Skip ---
 
     /** Skip manga that still have unread chapters during global library update. */
@@ -159,5 +170,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val SKIP_UPDATES_WITH_COMPLETED = booleanPreferencesKey("skip_updates_with_completed")
         val SKIP_UPDATES_NEVER_STARTED = booleanPreferencesKey("skip_updates_never_started")
         val CATEGORY_LAST_UPDATE_MS = stringPreferencesKey("category_last_update_ms")
+        val SHOW_RECOMMENDATIONS = booleanPreferencesKey("library_show_recommendations")
+        val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
     }
 }

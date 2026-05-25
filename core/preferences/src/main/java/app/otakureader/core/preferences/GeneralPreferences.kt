@@ -155,6 +155,23 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.SAVED_SEARCHES] = current.joinToString("\n")
     }
 
+    // --- Browse Search History ---
+
+    val browseSearchHistory: Flow<List<String>> = dataStore.data.map { prefs ->
+        prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+
+    suspend fun addBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val normalized = query.trim()
+        if (normalized.isBlank()) return@edit
+        val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() }?.toMutableList() ?: mutableListOf()
+        current.remove(normalized)
+        current.add(0, normalized)
+        prefs[Keys.BROWSE_SEARCH_HISTORY] = current.take(10).joinToString("\n")
+    }
+
+    suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
@@ -239,6 +256,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SMART_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("smart_download_wifi_only")
         val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
         val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
+        val BROWSE_SEARCH_HISTORY = stringPreferencesKey("browse_search_history")
     }
 
     companion object {

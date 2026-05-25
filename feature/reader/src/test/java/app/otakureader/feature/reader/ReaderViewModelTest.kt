@@ -29,6 +29,7 @@ import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
 import app.otakureader.feature.reader.prefetch.SmartPrefetchManager
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderChapterLoaderDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDiscordDelegate
+import app.otakureader.feature.reader.viewmodel.delegate.ReaderDisplayDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDownloadAheadDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderHistoryDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderPrefetchDelegate
@@ -90,6 +91,7 @@ class ReaderViewModelTest {
     private lateinit var panelDetectionService: PanelDetectionService
     private lateinit var trackerSyncRepository: TrackerSyncRepository
     private lateinit var historyScheduler: ReadingHistoryScheduler
+    private lateinit var displayDelegate: ReaderDisplayDelegate
 
     @Before
     @Suppress("LongMethod")
@@ -115,6 +117,9 @@ class ReaderViewModelTest {
         panelDetectionService = mockk()
         historyScheduler = mockk(relaxed = true)
         trackerSyncRepository = mockk(relaxed = true)
+        displayDelegate = ReaderDisplayDelegate(
+            settingsRepository = settingsRepository,
+        )
         coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
         every { generalPreferences.visualEffectsEnabled } returns flowOf(true)
@@ -235,6 +240,7 @@ class ReaderViewModelTest {
                 chapterRepository = chapterRepository,
                 mangaRepository = mangaRepository,
             ),
+            displayDelegate = displayDelegate,
             trackerSyncRepository = trackerSyncRepository,
             savedStateHandle = SavedStateHandle(
                 mapOf("mangaId" to mangaId, "chapterId" to chapterId)

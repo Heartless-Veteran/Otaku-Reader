@@ -19,6 +19,7 @@ import app.otakureader.feature.browse.navigation.globalSearchScreen
 import app.otakureader.feature.browse.navigation.sourceMangaDetailScreen
 import app.otakureader.feature.browse.navigation.sourceDetailScreen
 import app.otakureader.feature.details.navigation.detailsScreen
+import app.otakureader.feature.feed.navigation.feedManagementScreen
 import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.category.navigation.categoryManagementScreen
@@ -369,7 +370,14 @@ fun OtakuReaderNavHost(
             },
             onNavigateToReader = { mangaId, chapterId ->
                 navController.navigate(Route.Reader(mangaId, chapterId))
+            },
+            onNavigateToFeedManagement = {
+                navController.navigate(Route.FeedManagement)
             }
+        )
+
+        feedManagementScreen(
+            onNavigateBack = { navController.popBackStack() }
         )
 
         // About

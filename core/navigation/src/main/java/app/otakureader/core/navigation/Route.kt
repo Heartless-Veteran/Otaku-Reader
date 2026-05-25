@@ -180,6 +180,9 @@ sealed interface Route {
     @Serializable
     data object Feed : Route
 
+    @Serializable
+    data object FeedManagement : Route
+
     // ─── Category Management ───
 
     @Serializable

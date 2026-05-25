@@ -41,6 +41,10 @@ class CategoryRepositoryImpl @Inject constructor(
     override suspend fun toggleCategoryNsfw(categoryId: Long) {
         categoryDao.toggleNsfwFlag(categoryId)
     }
+
+    override suspend fun toggleCategoryLocked(categoryId: Long) {
+        categoryDao.toggleLockedFlag(categoryId)
+    }
     
     override suspend fun getCategoryById(id: Long): Category? {
         return categoryDao.getCategoryById(id)?.toDomain()
@@ -82,6 +86,8 @@ class CategoryRepositoryImpl @Inject constructor(
         order = order,
         isHidden = isHidden,
         isNsfw = isNsfw,
+        isLocked = isLocked,
+        lockType = lockType,
         updateFrequency = CategoryUpdateFrequency.fromInt(updateFrequency),
     )
 
@@ -90,7 +96,9 @@ class CategoryRepositoryImpl @Inject constructor(
         name = name,
         order = order,
         updateFrequency = updateFrequency.value,
+        lockType = lockType,
         flags = (if (isHidden) CategoryEntity.FLAG_HIDDEN else 0) or
-                (if (isNsfw) CategoryEntity.FLAG_NSFW else 0)
+                (if (isNsfw) CategoryEntity.FLAG_NSFW else 0) or
+                (if (isLocked) CategoryEntity.FLAG_LOCKED else 0)
     )
 }

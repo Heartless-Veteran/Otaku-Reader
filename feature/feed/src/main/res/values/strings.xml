@@ -11,4 +11,12 @@
     <string name="feed_in_library">In library</string>
     <string name="feed_added_to_library">Added to library</string>
     <string name="feed_removed_from_library">Removed from library</string>
+    <string name="feed_manage_sources">Manage sources</string>
+    <string name="feed_add_source">Add source</string>
+    <string name="feed_remove_source">Remove source</string>
+    <string name="feed_source_name_hint">Source name</string>
+    <string name="feed_cancel">Cancel</string>
+    <string name="feed_add">Add</string>
+    <string name="feed_no_sources_title">No feed sources</string>
+    <string name="feed_no_sources_message">Add sources to customize your feed</string>
 </resources>

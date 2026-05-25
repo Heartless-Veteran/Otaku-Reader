@@ -234,13 +234,30 @@ class StatisticsRepositoryImplTest {
     @Test
     fun `getReadingGoalProgress counts today chapters correctly`() = runTest {
         every { readingHistoryDao.observeHistory() } returns flowOf(
+            listOf(makeEntry(dayMs(0)), makeEntry(dayMs(0)))
+        )
+
+        repository.getReadingGoalProgress(dailyGoal = 5, weeklyGoal = 20).test {
+            val goal = awaitItem()
+            assertEquals(2, goal.dailyProgress)
+            assertEquals(2, goal.weeklyProgress)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `getReadingGoalProgress weekly includes earlier days in same ISO week`() = runTest {
+        // weekStart = this Monday; only valid when today is not Monday (otherwise no prior days in week).
+        val daysFromMonday = java.time.LocalDate.now().dayOfWeek.value.toLong() - 1
+        if (daysFromMonday == 0L) return@runTest  // Monday: no earlier days in this week, skip
+        every { readingHistoryDao.observeHistory() } returns flowOf(
             listOf(makeEntry(dayMs(0)), makeEntry(dayMs(0)), makeEntry(dayMs(1)))
         )
 
         repository.getReadingGoalProgress(dailyGoal = 5, weeklyGoal = 20).test {
             val goal = awaitItem()
-            assertEquals(2, goal.dailyProgress) // only today
-            assertEquals(3, goal.weeklyProgress) // today + yesterday in same week most likely
+            assertEquals(2, goal.dailyProgress)
+            assertEquals(3, goal.weeklyProgress)
             cancelAndIgnoreRemainingEvents()
         }
     }
