@@ -25,7 +25,7 @@ data class DownloadQueueEntity(
     val pageUrlsJson: String,
     @ColumnInfo(defaultValue = "1")
     val priority: Int = 1,
-    @ColumnInfo(defaultValue = "QUEUED")
+    @ColumnInfo(defaultValue = "'QUEUED'")
     val status: String = "QUEUED",
     @ColumnInfo(name = "added_at")
     val addedAt: Long

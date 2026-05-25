@@ -30,6 +30,8 @@ import app.otakureader.feature.reader.viewmodel.delegate.ReaderSettingsLoaderDel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -661,6 +663,28 @@ class ReaderViewModel @Inject constructor(
         autoSaveJob?.cancel()
         prefetchDelegate.cancel()
         prefetchDelegate.clearCache()
+
+        if (currentState.isLastPage) {
+            val chapter = currentChapter
+            val manga = currentManga
+            if (chapter != null && manga != null) {
+                viewModelScope.launch {
+                    withContext(NonCancellable) {
+                        try {
+                            trackerSyncRepository.getSyncStateForManga(mangaId).first()
+                                .forEach { syncState ->
+                                    trackerSyncRepository.recordLocalChange(
+                                        mangaId = mangaId,
+                                        trackerId = syncState.trackerId,
+                                        chapterRead = chapter.chapterNumber,
+                                        status = manga.status
+                                    )
+                                }
+                        } catch (_: Exception) { }
+                    }
+                }
+            }
+        }
     }
 
     /**
