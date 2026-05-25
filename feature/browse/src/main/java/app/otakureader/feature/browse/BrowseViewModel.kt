@@ -3,6 +3,7 @@ package app.otakureader.feature.browse
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.ui.selection.SelectionManager
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
@@ -54,6 +55,9 @@ class BrowseViewModel @Inject constructor(
 
     private val _sources = MutableStateFlow<List<MangaSource>>(emptyList())
 
+    /** Atomic selection manager — keys are manga URLs. */
+    private val selection = SelectionManager<String>()
+
     private val _effect = Channel<BrowseEffect>()
     val effect = _effect.receiveAsFlow()
 
@@ -76,6 +80,12 @@ class BrowseViewModel @Inject constructor(
         }
         observeSavedSearches()
         observeLibraryFavorites()
+        // Sync selection manager into state so UI recomposes
+        combine(selection.selected, selection.isActive) { ids, active ->
+            ids to active
+        }.onEach { (ids, active) ->
+            _state.update { it.copy(selectedManga = ids, isBulkSelectionMode = active) }
+        }.launchIn(viewModelScope)
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -139,13 +149,13 @@ class BrowseViewModel @Inject constructor(
                 toggleMangaSelection(event.manga)
             }
             is BrowseEvent.ClearSelection -> {
-                _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
+                selection.clear()
             }
             is BrowseEvent.AddSelectedToLibrary -> {
                 addSelectedToLibrary()
             }
             is BrowseEvent.ExitBulkSelectionMode -> {
-                _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
+                selection.clear()
             }
             is BrowseEvent.LongClickManga -> quickToggleFavorite(event.manga)
             is BrowseEvent.SaveCurrentSearch -> saveCurrentSearch()
@@ -312,22 +322,7 @@ class BrowseViewModel @Inject constructor(
      * Enables bulk selection mode when first manga is selected.
      */
     private fun toggleMangaSelection(manga: SourceManga) {
-        _state.update { state ->
-            val currentSelection = state.selectedManga.toMutableMap()
-            val key = manga.url // Use URL as unique key
-            
-            if (currentSelection.containsKey(key)) {
-                currentSelection.remove(key)
-            } else {
-                currentSelection[key] = manga
-            }
-            
-            val newMode = currentSelection.isNotEmpty()
-            state.copy(
-                selectedManga = currentSelection,
-                isBulkSelectionMode = newMode
-            )
-        }
+        selection.toggle(manga.url)
     }
     
     /**
@@ -337,7 +332,12 @@ class BrowseViewModel @Inject constructor(
     private fun addSelectedToLibrary() {
         viewModelScope.launch {
             val sourceId = _state.value.currentSourceId ?: return@launch
-            val selected = _state.value.selectedManga.values.toList()
+            val selectedUrls = selection.snapshotAndClear()
+            if (selectedUrls.isEmpty()) return@launch
+
+            // Look up SourceManga from available lists by URL
+            val allManga = _state.value.popularManga + _state.value.searchResults
+            val selected = selectedUrls.mapNotNull { url -> allManga.find { it.url == url } }
             
             if (selected.isEmpty()) return@launch
             
@@ -345,7 +345,6 @@ class BrowseViewModel @Inject constructor(
                 .onSuccess { addedCount ->
                     _effect.send(BrowseEffect.ShowSnackbar("$addedCount manga added to library"))
                     _effect.send(BrowseEffect.NavigateToLibrary)
-                    _state.update { it.copy(selectedManga = emptyMap(), isBulkSelectionMode = false) }
                 }
                 .onFailure { error ->
                     _effect.send(BrowseEffect.ShowSnackbar("Failed to add manga: ${error.message}"))
