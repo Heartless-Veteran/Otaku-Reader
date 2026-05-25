@@ -19,6 +19,7 @@ import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.core.ui.selection.SelectionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -67,6 +68,8 @@ class LibraryViewModel @Inject constructor(
 
     private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
     val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
+
+    val selectionManager = SelectionManager<Long>()
 
     /** Holds the full, unfiltered library items for reactive filtering. */
     private val _allItems = MutableStateFlow<List<LibraryMangaItem>>(emptyList())
@@ -420,12 +423,24 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaClick(mangaId: Long) {
-        if (_state.value.selectedManga.isNotEmpty()) {
-            toggleSelection(mangaId)
-        } else {
-            viewModelScope.launch {
-                _effect.send(LibraryEffect.NavigateToManga(mangaId))
+        // Check and toggle atomically inside update{} to prevent TOCTOU race.
+        var shouldNavigate = false
+        _state.update { state ->
+            if (state.selectedManga.isNotEmpty()) {
+                val newSelection = if (state.selectedManga.contains(mangaId)) {
+                    state.selectedManga - mangaId
+                } else {
+                    state.selectedManga + mangaId
+                }
+                selectionManager.toggle(mangaId)
+                state.copy(selectedManga = newSelection)
+            } else {
+                shouldNavigate = true
+                state
             }
+        }
+        if (shouldNavigate) {
+            viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(mangaId)) }
         }
     }
 
@@ -434,12 +449,12 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun toggleSelection(mangaId: Long) {
+        selectionManager.toggle(mangaId)
         _state.update { state ->
-            val currentSelection = state.selectedManga
-            val newSelection = if (currentSelection.contains(mangaId)) {
-                currentSelection - mangaId
+            val newSelection = if (state.selectedManga.contains(mangaId)) {
+                state.selectedManga - mangaId
             } else {
-                currentSelection + mangaId
+                state.selectedManga + mangaId
             }
             state.copy(selectedManga = newSelection)
         }
@@ -479,6 +494,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun clearSelection() {
+        selectionManager.clear()
         _state.update { it.copy(selectedManga = emptySet()) }
     }
 
@@ -487,34 +503,37 @@ class LibraryViewModel @Inject constructor(
     private fun markSelectedAsUnread() = markChaptersForSelectedManga(read = false)
 
     private fun markChaptersForSelectedManga(read: Boolean) {
-        val mangaIds = _state.value.selectedManga
-        if (mangaIds.isEmpty()) return
+        // Snapshot + clear before launching so UI immediately shows cleared state
+        // and the async work operates on a stable set even if new selections arrive.
+        val snapshot = selectionManager.snapshot()
+        if (snapshot.isEmpty()) return
+        clearSelection()
         viewModelScope.launch {
-            val chapterIds = mangaIds.flatMap { mangaId ->
+            val chapterIds = snapshot.flatMap { mangaId ->
                 chapterRepository.getChaptersByMangaIdSync(mangaId).map { it.id }
             }
             if (chapterIds.isNotEmpty()) {
                 chapterRepository.updateChapterProgress(chapterIds, read = read, lastPageRead = 0)
             }
-            clearSelection()
         }
     }
 
     private fun removeSelectedFromLibrary() {
-        val ids = _state.value.selectedManga
-        if (ids.isEmpty()) return
+        val snapshot = selectionManager.snapshot()
+        if (snapshot.isEmpty()) return
+        clearSelection()
         viewModelScope.launch {
-            ids.forEach { mangaId -> toggleFavoriteManga(mangaId) }
-            clearSelection()
+            snapshot.forEach { mangaId -> toggleFavoriteManga(mangaId) }
         }
     }
 
     private fun downloadSelected() {
-        val mangaIds = _state.value.selectedManga
-        if (mangaIds.isEmpty()) return
+        val snapshot = selectionManager.snapshot()
+        if (snapshot.isEmpty()) return
+        clearSelection()
         viewModelScope.launch {
             val mangaById = _allItems.value.associateBy { it.id }
-            mangaIds.forEach { mangaId ->
+            snapshot.forEach { mangaId ->
                 val manga = mangaById[mangaId] ?: return@forEach
                 val chapters = chapterRepository.getChaptersByMangaId(mangaId).first()
                 chapters.filter { !it.read }.forEach { chapter ->
@@ -526,7 +545,6 @@ class LibraryViewModel @Inject constructor(
                     )
                 }
             }
-            clearSelection()
         }
     }
 
