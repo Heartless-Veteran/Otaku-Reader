@@ -11,21 +11,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Onboarding flow for first-time users (5-page intro)
 - `onboarding_completed` preference tracking
 - Comprehensive system audit documentation
+- Beta feature parity backlog: 35 GitHub issues created (#926–#958)
 
 ### Changed
 - Build is now a single flat artifact: removed `full` / `foss` product flavors and the `distribution` flavor dimension. Use `./gradlew assembleDebug` / `assembleRelease` directly (no more `assembleFullRelease` / `assembleFossRelease`).
+- Phase 5 renamed from "Pre-Release Audit" to "Beta Feature Parity" — all 35 beta features now tracked as GitHub issues
 
 ### Fixed
 - H-6: DataStore write failures now show snackbar (no longer silent)
 - H-12: Reader chapter load failures show error message (no longer blank)
 - Onboarding screen now triggers for new users
+- Alpha readiness: all gates green (build ✅, tests ✅, security ✅, architecture ✅, extension compat ✅, notifications ✅, tracker sync ✅)
 
 ### Security
 - HTTPS-only extension downloads (C-3 compliance)
 - Child-first classloader isolation for extensions
 - Not exported broadcast receiver for extension lifecycle
 
-## [0.1.0-beta] - 2026-04-15
+## [0.1.0-alpha] - 2026-05-25
 
 ### Added
 - Complete manga reader with 4 reading modes (Single, Dual, Webtoon, Smart Panels)

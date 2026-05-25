@@ -69,7 +69,7 @@ Every Tachiyomi fork is a maintenance burden with half-finished features. Otaku 
 - **One app, one job:** Read manga. Nothing else.
 - **Zero accounts required:** No Google, no Firebase, no sign-up. Ever.
 - **No AI in core:** No ML models, no data mining. Just manga.
-- **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachikomi backup → reading immediately.
+- **Switch in 60 seconds:** Restore from Mihon/Komikku/Tachiyomi backup → reading immediately.
 
 ### Built From Scratch
 This is not a fork. Otaku Reader was written from the ground up — the core app, UI, and architecture are original work. The extension system enables compatibility with existing source repositories (Keiyoushi, Komikku). Everything else is homegrown.
@@ -78,17 +78,16 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 ## 🚀 Features
 
+### Currently Implemented
+
 <details open>
 <summary>📚 Library & Organization</summary>
 
 - 📚 **Smart library** — Grid/list views, categories, sorting, filtering, unread badges
-- ✅ **Completed series** — Mark manga as finished, dimmed covers + checkmark badge, dedicated filter tab
-- ❌ **Dropped series** — Mark abandoned manga, red cancel badge, "Dropped" filter — never re-click a manga you hated
-- 🔍 **Fuzzy search** — Find manga instantly instead of scrolling
-- 📂 **Reading list collections** — Create custom lists beyond categories: "Summer Binge", "Re-read Later", "Hidden Gems"
-- 📝 **Chapter notes** — Add personal notes to any chapter
+- 📂 **Categories** — Manual category creation and manga assignment
+- 🔍 **Global search** — Search across all installed sources simultaneously
 - 📱 **Widget navigation** — Home screen widgets for continue reading, now reading, and recent updates with deep-link navigation
-- 📂 **QR library sharing** — Scan a friend's phone, get their manga list instantly (local, no server)
+- 📂 **QR library sharing** — Share library via text/URL (local, no server)
 
 </details>
 
@@ -96,9 +95,7 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <summary>📖 Reading Experience</summary>
 
 - 📖 **All reader modes** — Paged, webtoon, continuous scroll, dual-page, smart panels
-- 🎨 **Per-manga dynamic theme** — Material You palette extracted from cover art, every manga gets its own color scheme
-- 🔖 **Page bookmarks** — Bookmark any page within a chapter, revisit favorite artwork/scenes instantly
-- ⏱️ **Read time estimation** — "~5 min read" on chapter lists, powered by your actual reading speed
+- 🔖 **Page bookmarks** — Bookmark any page within a chapter in the reader
 - 📱 **Adaptive layouts** — Optimized for phones, foldables, tablets, and DeX
 
 </details>
@@ -106,10 +103,10 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <details open>
 <summary>⬇️ Downloads & Offline</summary>
 
-- ⬇️ **Smart download rules** — Auto-download next chapters when you hit 80% reading progress
+- ⬇️ **Download manager** — Queue, progress, offline reading
 - 📦 **CBZ export** — Archive downloaded chapters for backup or transfer
 - 📁 **Local source import** — CBZ/CBR/folder browsing without extensions
-- 🔔 **Smart notification batching** — Grouped chapter update alerts with quiet hours, cooldown, and digest mode — never spam
+- 🔔 **Smart notification batching** — Grouped chapter update alerts (backend worker active)
 
 </details>
 
@@ -118,10 +115,8 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 - 🔌 **Extension system** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
 - 🌐 **OPDS client** — Browse Komga, Kavita, Calibre-Web libraries
-- 🔍 **Global search** — Search across all installed sources simultaneously
-- 🕐 **Search history** — Recent queries as quick-tap chips — no more re-typing
 - 📰 **Feed** — New chapter updates from your sources in one place
-- 🔗 **Deep links** — Open manga and chapters directly from external links (extension URLs, tracker links)
+- 🔗 **Deep links** — Open manga and chapters directly from external links
 
 </details>
 
@@ -131,7 +126,6 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - 📊 **Reading streaks** — Consecutive-day counter with 30-day heatmap
 - 🏆 **Reading goals** — Daily/weekly chapter targets with progress
 - 📈 **Statistics dashboard** — Time read, chapters completed, genre breakdown
-- 📤 **Statistics sharing** — Generate a beautiful shareable card of your reading stats
 - 🔗 **Tracker sync** — AniList, MyAnimeList (MAL), Kitsu, MangaUpdates, Shikimori (opt-in, local-only API keys)
 - 🎮 **Discord Rich Presence** — Share what you're reading with Discord status integration
 
@@ -141,9 +135,51 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <summary>💾 Backup & Migration</summary>
 
 - 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device
-- 🔄 **Auto-backup scheduling** — Periodic automatic backups with configurable interval and retention
-- 📲 **Tachiyomi/Mihon/Komikku import** — Bring your entire library from any fork
+- 🔄 **Auto-backup worker** — Periodic automatic backups run in background
 - 🔄 **Source-to-source migration** — Move manga between sources without losing progress
+
+</details>
+
+### Beta Roadmap (Coming Soon)
+
+The following features have data/backend support and are being wired up for the beta release. Track progress on [GitHub Issues](https://github.com/Heartless-Veteran/Otaku-Reader/issues?q=is%3Aissue+label%3Aenhancement+label%3A%22help+wanted%22+).
+
+<details>
+<summary>🔧 Beta Features (35 tracked issues)</summary>
+
+**P0 — Blockers:**
+- Library Search (in-library manga search)
+- Advanced Search & Filtering (genre, status, sort)
+- Biometric App Lock
+- Tachiyomi Backup Import (migration from Mihon)
+- Auto-Backup Scheduling UI
+
+**P1 — Competitive:**
+- Dynamic Categories (smart/rule-based)
+- Hidden Categories (privacy-locked)
+- Smart Download Rules (conditional auto-download)
+- Per-Manga Reader Settings
+- Page Bookmark Management Screen
+- Chapter Notes UI
+- Search History & Suggestions
+- Download Queue Manager (pause/resume/reorder)
+- Extension Auto-Update
+- Smart Notification Batching UI
+- Statistics Sharing (social cards)
+- Tracker Batch Sync
+
+**P2 — Polish:**
+- Recommendation Engine
+- Customizable Feeds & Discovery
+- Reading List Collections
+- Completed/Dropped Series Sections
+- Per-Manga Dynamic Theme
+- Pure Black AMOLED Mode
+- Home Screen Widget (large)
+- QR Code Library Sharing (full)
+- Read Time Estimation
+- Crash Reporting Integration
+- Extension Repository Management
 
 </details>
 
@@ -159,16 +195,17 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 | Volume-key paging | ✅ Debounced, reliable | ⚠️ Spotty |
 | Battery-aware brightness | ✅ Auto curve | ❌ Manual slider only |
 | Predictive back (Android 14+) | ✅ Fullscreen gesture | ❌ System default |
-| Per-manga color theme | ✅ From cover art | ❌ Not available |
-| Page bookmarks | ✅ Any page, any chapter | ❌ Not available |
-| Read time estimation | ✅ Adaptive to your speed | ❌ Not available |
-| Completed/Dropped status | ✅ Visual badges + filters | ❌ Manual deletion only |
-| Chapter notes | ✅ Per-chapter annotations | ❌ Not available |
-| Reading list collections | ✅ Custom lists beyond categories | ❌ Not available |
-| Statistics sharing | ✅ Social-ready cards | ❌ Not available |
+| Extension system | ✅ 2000+ Tachiyomi sources | ✅ Same sources |
+| OPDS support | ✅ Client + server mode | ❌ Not available |
+| Discord Rich Presence | ✅ Live reading status | ❌ Not available |
 | Home screen widgets | ✅ Continue reading + recent updates | ❌ Not available |
 | Deep link support | ✅ Open manga from external URLs | ❌ Not available |
-| Discord Rich Presence | ✅ Live reading status | ❌ Not available |
+| Tracker sync | ✅ 5 trackers, auto-sync | ✅ Usually 3-5 |
+| Library search | 🚧 In beta (#926) | ✅ Yes |
+| Biometric lock | 🚧 In beta (#928) | ✅ Yes |
+| Smart download rules | 🚧 In beta (#933) | ⚠️ Basic only |
+| Backup import | 🚧 In beta (#929) | ✅ Yes |
+| Advanced search | 🚧 In beta (#927) | ✅ Yes |
 
 **Reading Modes:** Paged · Webtoon · Continuous Scroll · Dual-Page · Smart Panels
 
@@ -256,31 +293,33 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - [x] Deep link handling
 - [x] Discord Rich Presence
 
-### 🚧 Phase 4: Quality Gates & Release
+### ✅ Phase 4: Alpha Release
 - [x] Critical Compose UI tests (library, reader) — Robolectric-based
 - [x] Green CI: ktlint, unit tests, signed APK on every `v*` tag
 - [x] Keystore signing via GitHub Secrets — release builds are installable
 - [x] Branch protection enforced
 - [x] Gradle convention plugins modernized + SDK levels centralized in version catalog
-- [ ] F-Droid metadata + reproducible builds
-- [ ] Macrobenchmark module to prevent regressions
+- [x] All alpha readiness gates green
 
-### 🔍 Phase 5: Pre-Release Audit (In Progress)
-**Status:** Extension system functional, certification pending. Full audit completed 2026-05-16.
-
-- [x] Extension loading pipeline verified (DexClassLoader + signature verification)
-- [x] TachiyomiSourceAdapter IO dispatch confirmed safe
-- [x] ChildFirstPathClassLoader Java 17 compatible
-- [ ] Extension system certified (pending: fix DI binding, add tests)
-- [ ] Real content in placeholder screens (History, Tracking, OPDS, Migration)
-- [ ] `ExtensionManagementRepository` bound to correct implementation
-- [ ] Unit tests for `data/` and `domain/` layers
-- [ ] `<queries>` element in manifest for Android 11+ package visibility
-- [ ] WorkManager `PendingIntent` mutability flags for API 31+
-
-**Blocking Issues:**
-- 5 P0 items (placeholder screens, wrong repository binding, missing manifest queries)
-- 7 P1 items (test coverage, visual polish, minor DI fixes)
+### 🚧 Phase 5: Beta Feature Parity (Current)
+- [ ] Library Search (#926)
+- [ ] Advanced Search & Filtering (#927)
+- [ ] Biometric App Lock (#928)
+- [ ] Tachiyomi Backup Import (#929)
+- [ ] Auto-Backup Scheduling UI (#930)
+- [ ] Dynamic Categories (#931)
+- [ ] Hidden Categories (#932)
+- [ ] Smart Download Rules (#933)
+- [ ] Per-Manga Reader Settings (#934)
+- [ ] Page Bookmark Management (#935)
+- [ ] Chapter Notes UI (#936)
+- [ ] Search History & Suggestions (#937)
+- [ ] Download Queue Manager (#938)
+- [ ] Extension Auto-Update (#939)
+- [ ] Smart Notification Batching UI (#940)
+- [ ] Statistics Sharing (#941)
+- [ ] Tracker Batch Sync (#942)
+- [ ] + 11 P2 features (#943–#953)
 
 ### Future Differentiators
 - [ ] Curated default extension index (opt-out)
