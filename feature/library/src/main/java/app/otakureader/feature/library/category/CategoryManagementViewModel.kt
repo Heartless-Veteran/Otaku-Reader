@@ -3,9 +3,11 @@ package app.otakureader.feature.library.category
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.CategoryRepository
+import app.otakureader.domain.repository.DynamicCategoryRepository
 import app.otakureader.domain.usecase.CreateCategoryUseCase
 import app.otakureader.domain.usecase.DeleteCategoryUseCase
 import app.otakureader.domain.usecase.ToggleCategoryHiddenUseCase
+import app.otakureader.domain.usecase.ToggleCategoryLockedUseCase
 import app.otakureader.domain.usecase.ToggleCategoryNsfwUseCase
 import app.otakureader.domain.usecase.UpdateCategoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,11 +25,13 @@ import kotlinx.coroutines.CancellationException
 @HiltViewModel
 class CategoryManagementViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
+    private val dynamicCategoryRepository: DynamicCategoryRepository,
     private val createCategoryUseCase: CreateCategoryUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
     private val deleteCategoryUseCase: DeleteCategoryUseCase,
     private val toggleCategoryHiddenUseCase: ToggleCategoryHiddenUseCase,
     private val toggleCategoryNsfwUseCase: ToggleCategoryNsfwUseCase,
+    private val toggleCategoryLockedUseCase: ToggleCategoryLockedUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CategoryManagementState())
@@ -56,6 +60,8 @@ class CategoryManagementViewModel @Inject constructor(
                             mangaCount = mangaIds.size,
                             isHidden = category.isHidden,
                             isNsfw = category.isNsfw,
+                            isLocked = category.isLocked,
+                            isDynamic = dynamicCategoryRepository.hasDynamicRules(category.id),
                             updateFrequency = category.updateFrequency,
                         )
                     }.sortedBy { it.name }
@@ -75,6 +81,8 @@ class CategoryManagementViewModel @Inject constructor(
             is CategoryEvent.DeleteCategory -> deleteCategory(event.categoryId)
             is CategoryEvent.ToggleHidden -> toggleHidden(event.categoryId)
             is CategoryEvent.ToggleNsfw -> toggleNsfw(event.categoryId)
+            is CategoryEvent.ToggleLocked -> toggleLocked(event.categoryId)
+            is CategoryEvent.SetDynamic -> setDynamic(event.categoryId, event.enabled)
         }
     }
 
@@ -139,6 +147,34 @@ class CategoryManagementViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.emit(CategoryEffect.ShowSnackbar("Failed to toggle NSFW: ${e.message}"))
+            }
+        }
+    }
+
+    private fun toggleLocked(categoryId: Long) {
+        viewModelScope.launch {
+            try {
+                toggleCategoryLockedUseCase(categoryId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.emit(CategoryEffect.ShowSnackbar("Failed to toggle lock: ${e.message}"))
+            }
+        }
+    }
+
+    private fun setDynamic(categoryId: Long, enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                if (enabled) {
+                    dynamicCategoryRepository.setRules(categoryId, emptyList())
+                } else {
+                    dynamicCategoryRepository.clearRules(categoryId)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.emit(CategoryEffect.ShowSnackbar("Failed to update dynamic rules: ${e.message}"))
             }
         }
     }

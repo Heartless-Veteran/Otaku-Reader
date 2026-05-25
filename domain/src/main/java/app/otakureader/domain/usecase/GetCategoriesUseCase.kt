@@ -21,7 +21,7 @@ class GetCategoriesUseCase @Inject constructor(
      * category's entry with the live count of manga assigned to it.
      */
     operator fun invoke(): Flow<List<Category>> =
-        categoryRepository.getCategories().flatMapLatest { categories ->
+        categoryRepository.getVisibleCategories().flatMapLatest { categories ->
             if (categories.isEmpty()) {
                 flowOf(emptyList())
             } else {

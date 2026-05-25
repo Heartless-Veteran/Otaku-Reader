@@ -2,6 +2,7 @@ package app.otakureader.data.di
 
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.repository.DynamicCategoryRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
@@ -38,6 +39,7 @@ import app.otakureader.data.repository.PageBookmarkRepositoryImpl
 import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
+import app.otakureader.data.repository.DynamicCategoryRepositoryImpl
 import app.otakureader.data.tracking.repository.TrackerSyncRepositoryImpl
 import app.otakureader.data.worker.TrackerSyncSchedulerImpl
 import app.otakureader.domain.repository.TrackerSyncRepository
@@ -128,4 +130,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTrackerSyncRepository(impl: TrackerSyncRepositoryImpl): TrackerSyncRepository
+
+    @Binds
+    abstract fun bindDynamicCategoryRepository(impl: DynamicCategoryRepositoryImpl): DynamicCategoryRepository
 }
