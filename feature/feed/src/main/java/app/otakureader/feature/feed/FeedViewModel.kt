@@ -72,6 +72,7 @@ class FeedViewModel @Inject constructor(
             is FeedEvent.OnToggleSource -> toggleSource(event.sourceId, event.enabled)
             is FeedEvent.ClearHistory -> clearHistory()
             is FeedEvent.LongClickManga -> quickToggleFavorite(event.mangaId)
+            is FeedEvent.ManageSources -> viewModelScope.launch { _effect.send(FeedEffect.NavigateToFeedManagement) }
         }
     }
 

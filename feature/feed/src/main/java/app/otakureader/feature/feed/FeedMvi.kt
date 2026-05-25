@@ -23,9 +23,11 @@ sealed interface FeedEvent : UiEvent {
     data object ClearHistory : FeedEvent
     /** Long-click on a feed item: quickly add to or remove from the library. */
     data class LongClickManga(val mangaId: Long) : FeedEvent
+    data object ManageSources : FeedEvent
 }
 
 sealed interface FeedEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : FeedEffect
     data class ShowSnackbar(val message: String) : FeedEffect
+    data object NavigateToFeedManagement : FeedEffect
 }
