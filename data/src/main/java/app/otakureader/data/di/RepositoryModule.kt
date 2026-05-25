@@ -10,6 +10,7 @@ import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.OpdsRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.repository.ReadingListRepository
+import app.otakureader.domain.repository.RecommendationRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
@@ -40,6 +41,7 @@ import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import app.otakureader.data.repository.DynamicCategoryRepositoryImpl
+import app.otakureader.data.repository.RecommendationRepositoryImpl
 import app.otakureader.data.tracking.repository.TrackerSyncRepositoryImpl
 import app.otakureader.data.worker.TrackerSyncSchedulerImpl
 import app.otakureader.domain.repository.TrackerSyncRepository
@@ -133,4 +135,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindDynamicCategoryRepository(impl: DynamicCategoryRepositoryImpl): DynamicCategoryRepository
+
+    @Binds
+    abstract fun bindRecommendationRepository(impl: RecommendationRepositoryImpl): RecommendationRepository
 }

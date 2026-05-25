@@ -17,6 +17,7 @@ import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
 import app.otakureader.domain.usecase.GetContinueReadingUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
+import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.core.ui.selection.SelectionManager
@@ -61,6 +62,7 @@ class LibraryViewModel @Inject constructor(
     private val readingGoalPreferences: ReadingGoalPreferences,
     private val statisticsRepository: StatisticsRepository,
     private val readingListRepository: ReadingListRepository,
+    private val getRecommendations: GetRecommendationsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -89,6 +91,7 @@ class LibraryViewModel @Inject constructor(
         observeReadingLists()
         observeDownloadCounts()
         observeIncognitoMode()
+        observeRecommendations()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -112,6 +115,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ClearAllFilters -> handleFilterSortEvent(event)
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showFilterSheet = !it.showFilterSheet) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
+            is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleFavorite,
             is LibraryEvent.MarkSelectedAsRead,
             is LibraryEvent.MarkSelectedAsUnread,
@@ -688,6 +692,37 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val current = _state.value.incognitoMode
             settingsRepository.setIncognitoMode(!current)
+        }
+    }
+
+    private fun observeRecommendations() {
+        libraryPreferences.showRecommendations
+            .onEach { show -> _state.update { it.copy(showRecommendations = show) } }
+            .launchIn(viewModelScope)
+
+        combine(
+            getRecommendations(),
+            libraryPreferences.dismissedRecommendations,
+        ) { recs, dismissed ->
+            recs.filter { it.mangaId.toString() !in dismissed }
+                .map { rec ->
+                    LibraryMangaItem(
+                        id = rec.mangaId,
+                        title = rec.title,
+                        thumbnailUrl = rec.thumbnailUrl,
+                        unreadCount = 0,
+                        isFavorite = false,
+                        sourceId = rec.sourceId,
+                    )
+                }
+        }
+            .onEach { items -> _state.update { it.copy(recommendations = items) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun dismissRecommendation(mangaId: Long) {
+        viewModelScope.launch {
+            libraryPreferences.dismissRecommendation(mangaId)
         }
     }
 

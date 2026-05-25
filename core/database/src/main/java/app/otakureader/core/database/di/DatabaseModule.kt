@@ -81,4 +81,7 @@ object DatabaseModule {
 
     @Provides
     fun provideTrackEntryDao(database: OtakuReaderDatabase): TrackEntryDao = database.trackEntryDao()
+
+    @Provides
+    fun provideRecommendationDao(database: OtakuReaderDatabase) = database.recommendationDao()
 }

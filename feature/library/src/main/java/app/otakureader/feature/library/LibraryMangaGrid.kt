@@ -89,6 +89,14 @@ internal fun MangaGrid(
             )
         }
 
+        if (state.showRecommendations && state.recommendations.isNotEmpty()) {
+            RecommendationsCarousel(
+                items = state.recommendations,
+                onMangaClick = { mangaId -> onEvent(LibraryEvent.OnMangaClick(mangaId)) },
+                onDismiss = { mangaId -> onEvent(LibraryEvent.DismissRecommendation(mangaId)) },
+            )
+        }
+
         CategoryFilterChips(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
