@@ -131,4 +131,11 @@
     <!-- SourceMangaDetailScreen redirect states (#901) -->
     <string name="source_manga_detail_not_found">Manga not available offline</string>
     <string name="source_manga_detail_error_prefix">Could not open manga</string>
+    <!-- Extension trust/security -->
+    <string name="extension_unverified_title">Unverified Extension</string>
+    <string name="extension_unverified_body">This extension doesn't have a verified signature from its repository. Installing unverified extensions may pose security risks.</string>
+    <string name="extension_install_anyway">Install Anyway</string>
+    <string name="extension_cancel">Cancel</string>
+    <string name="extension_repo_warning">Some extensions from this repository don't have verified signatures.</string>
+    <string name="extension_repo_warning_learn_more">Learn More</string>
 </resources>
