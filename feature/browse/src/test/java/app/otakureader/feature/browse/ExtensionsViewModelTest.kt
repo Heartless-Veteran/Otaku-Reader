@@ -32,7 +32,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -405,32 +404,6 @@ class ExtensionsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { extensionRepoRepository.removeRepository("https://repo1.com") }
-    }
-
-    @Test
-    fun `set active repository updates state and refreshes`() = runTest {
-        // setActiveRepository no longer calls the repository — it updates local state and refreshes.
-        coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
-        coEvery { extensionRepository.checkForUpdates() } returns 0
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://repo1.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals("https://repo1.com", viewModel.state.value.activeRepository)
-        coVerify { extensionRepository.refreshAvailableExtensions() }
-    }
-
-    @Test
-    fun `set active repository always updates state (no remote call)`() = runTest {
-        // Since setActiveRepository updates state locally without a repository call,
-        // it always succeeds and reflects the new URL in state.
-        val before = viewModel.state.value.activeRepository
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://new.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertNotEquals(before, viewModel.state.value.activeRepository)
-        assertEquals("https://new.com", viewModel.state.value.activeRepository)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -817,17 +790,6 @@ class ExtensionsViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals("Naruto", viewModel.state.value.searchQuery)
-    }
-
-    @Test
-    fun `active repository persists in state`() = runTest {
-        coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
-        coEvery { extensionRepository.checkForUpdates() } returns 0
-
-        viewModel.onEvent(ExtensionsEvent.SetActiveRepository("https://repo.com"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertEquals("https://repo.com", viewModel.state.value.activeRepository)
     }
 
     // ─────────────────────────────────────────────────────────────

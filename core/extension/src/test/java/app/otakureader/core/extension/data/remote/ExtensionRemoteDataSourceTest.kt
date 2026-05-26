@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 class ExtensionRemoteDataSourceTest {
 
@@ -97,8 +98,8 @@ class ExtensionRemoteDataSourceTest {
         assertEquals(false, extension.isNsfw)
         assertEquals(1, extension.sources.size)
 
-        // Verify APK URL is resolved correctly (Keiyoushi convention: apks/ subdirectory)
-        val expectedApkUrl = "$baseUrl/apks/tachiyomi-en.mangadex-v1.2.3.apk"
+        // Verify APK URL is resolved correctly (Keiyoushi/Mihon convention: apk/ subdirectory)
+        val expectedApkUrl = "$baseUrl/apk/tachiyomi-en.mangadex-v1.2.3.apk"
         assertEquals(expectedApkUrl, extension.apkUrl)
 
         // Verify icon URL is resolved correctly
@@ -333,5 +334,24 @@ class ExtensionRemoteDataSourceTest {
         val extensions = result.getOrThrow()
         assertEquals(1, extensions.size)
         assertEquals(true, extensions[0].isNsfw)
+    }
+
+    @Test
+    fun `downloadApk falls back to apks folder when apk folder returns 404`() = runTest {
+        // Given: the standard /apk/ path 404s and the /apks/ fork path serves the file
+        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+        val apkUrl = "$baseUrl/apk/test-extension-v1.0.apk"
+        mockWebServer.enqueue(MockResponse().setResponseCode(404))
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("APK-BYTES"))
+        val destination = File.createTempFile("ext", ".apk").apply { deleteOnExit() }
+
+        // When
+        val result = dataSource.downloadApk(apkUrl, destination)
+
+        // Then: the fallback request succeeds, writes the file, and both folders were tried
+        assertTrue(result.isSuccess)
+        assertEquals("APK-BYTES", destination.readText())
+        assertEquals("/apk/test-extension-v1.0.apk", mockWebServer.takeRequest().path)
+        assertEquals("/apks/test-extension-v1.0.apk", mockWebServer.takeRequest().path)
     }
 }
