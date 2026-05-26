@@ -313,23 +313,24 @@ class ExtensionRemoteDataSourceImpl(
         return withContext(Dispatchers.IO) {
             // Try the standard /apk/ URL first, falling back to /apks/ only on a 404 (wrong
             // folder name). Network errors or other HTTP failures abort immediately, since
-            // retrying the same host with a different path would just double the wait.
+            // retrying the same host with a different path would just double the wait. The loop
+            // condition (not break/continue) drives termination.
+            val candidates = apkUrlCandidates(apkUrl)
             var lastError: Exception = ExtensionFetchException("No APK URL to download from $apkUrl")
-            for (url in apkUrlCandidates(apkUrl)) {
+            var downloaded: File? = null
+            var abort = false
+            var index = 0
+            while (downloaded == null && !abort && index < candidates.size) {
+                val url = candidates[index]
+                index++
                 try {
                     val request = Request.Builder()
                         .url(url)
                         .header("Accept", "application/vnd.android.package-archive")
                         .build()
 
-                    var only404 = false
-                    val downloaded = httpClient.newCall(request).execute().use { response ->
-                        if (!response.isSuccessful) {
-                            // H-1: Domain exception instead of error() so the outer Result catches it.
-                            lastError = ExtensionFetchException("HTTP ${response.code} downloading APK from $url")
-                            only404 = response.code == 404
-                            false
-                        } else {
+                    httpClient.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
                             val body = response.body
                                 ?: throw ExtensionFetchException("Empty APK response body from $url")
                             body.byteStream().use { input ->
@@ -337,19 +338,22 @@ class ExtensionRemoteDataSourceImpl(
                                     input.copyTo(output)
                                 }
                             }
-                            true
+                            downloaded = destination
+                        } else {
+                            // H-1: Domain exception instead of error() so the outer Result catches it.
+                            lastError = ExtensionFetchException("HTTP ${response.code} downloading APK from $url")
+                            // Only a 404 (wrong folder name) is worth trying the alternate path.
+                            abort = response.code != 404
                         }
                     }
-                    if (downloaded) return@withContext Result.success(destination)
-                    if (!only404) break
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     lastError = e
-                    break
+                    abort = true
                 }
             }
-            Result.failure(lastError)
+            downloaded?.let { Result.success(it) } ?: Result.failure(lastError)
         }
     }
 
