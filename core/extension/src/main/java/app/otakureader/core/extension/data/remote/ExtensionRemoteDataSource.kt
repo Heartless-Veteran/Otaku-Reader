@@ -311,8 +311,9 @@ class ExtensionRemoteDataSourceImpl(
 
     override suspend fun downloadApk(apkUrl: String, destination: File): Result<File> {
         return withContext(Dispatchers.IO) {
-            // Try the standard /apk/ URL first, falling back to /apks/ if the repo uses that
-            // layout, so a 404 on one folder name doesn't fail the whole install.
+            // Try the standard /apk/ URL first, falling back to /apks/ only on a 404 (wrong
+            // folder name). Network errors or other HTTP failures abort immediately, since
+            // retrying the same host with a different path would just double the wait.
             var lastError: Exception = ExtensionFetchException("No APK URL to download from $apkUrl")
             for (url in apkUrlCandidates(apkUrl)) {
                 try {
@@ -321,10 +322,12 @@ class ExtensionRemoteDataSourceImpl(
                         .header("Accept", "application/vnd.android.package-archive")
                         .build()
 
+                    var only404 = false
                     val downloaded = httpClient.newCall(request).execute().use { response ->
                         if (!response.isSuccessful) {
                             // H-1: Domain exception instead of error() so the outer Result catches it.
                             lastError = ExtensionFetchException("HTTP ${response.code} downloading APK from $url")
+                            only404 = response.code == 404
                             false
                         } else {
                             val body = response.body
@@ -338,10 +341,12 @@ class ExtensionRemoteDataSourceImpl(
                         }
                     }
                     if (downloaded) return@withContext Result.success(destination)
+                    if (!only404) break
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
                     lastError = e
+                    break
                 }
             }
             Result.failure(lastError)
