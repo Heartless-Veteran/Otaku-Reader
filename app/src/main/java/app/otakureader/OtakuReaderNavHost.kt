@@ -311,6 +311,9 @@ fun OtakuReaderNavHost(
             onNavigateToDiscord = {
                 navController.navigate(Route.SettingsDiscord)
             },
+            onNavigateToNotifications = {
+                navController.navigate(Route.SettingsNotifications)
+            },
             onNavigateToWidgetConfiguration = {
                 navController.navigate(Route.WidgetConfiguration)
             },

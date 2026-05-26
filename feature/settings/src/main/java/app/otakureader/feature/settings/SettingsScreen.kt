@@ -67,6 +67,7 @@ fun SettingsScreen(
     onNavigateToTracking: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onNavigateToDiscord: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -136,6 +137,10 @@ fun SettingsScreen(
             SettingsCategoryRow(
                 title = stringResource(R.string.settings_discord),
                 onClick = onNavigateToDiscord,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.settings_notifications),
+                onClick = onNavigateToNotifications,
             )
             SettingsCategoryRow(
                 title = stringResource(R.string.settings_widgets),

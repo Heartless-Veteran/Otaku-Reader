@@ -10,6 +10,7 @@ import app.otakureader.feature.settings.settingsBackupScreen
 import app.otakureader.feature.settings.settingsDiscordScreen
 import app.otakureader.feature.settings.settingsDownloadsScreen
 import app.otakureader.feature.settings.settingsLibraryScreen
+import app.otakureader.feature.settings.settingsNotificationsScreen
 import app.otakureader.feature.settings.settingsReaderScreen
 import app.otakureader.feature.settings.settingsTrackingScreen
 import app.otakureader.feature.settings.widgetConfigurationScreen
@@ -31,6 +32,7 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToTracking: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onNavigateToDiscord: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
 ) {
@@ -46,6 +48,7 @@ fun NavGraphBuilder.settingsScreen(
             onNavigateToTracking = onNavigateToTracking,
             onNavigateToBackup = onNavigateToBackup,
             onNavigateToDiscord = onNavigateToDiscord,
+            onNavigateToNotifications = onNavigateToNotifications,
             onNavigateToWidgetConfiguration = onNavigateToWidgetConfiguration,
             onNavigateToLocalSourceBrowser = onNavigateToLocalSourceBrowser,
         )
@@ -56,6 +59,7 @@ fun NavGraphBuilder.settingsScreen(
     settingsReaderScreen(onNavigateBack = onNavigateBack)
     settingsDownloadsScreen(onNavigateBack = onNavigateBack)
     settingsTrackingScreen(onNavigateBack = onNavigateBack)
+    settingsNotificationsScreen(onNavigateBack = onNavigateBack)
     settingsBackupScreen(
         onNavigateBack = onNavigateBack,
         onNavigateToMigrationEntry = onNavigateToMigrationEntry,
