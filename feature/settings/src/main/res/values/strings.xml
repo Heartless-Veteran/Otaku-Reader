@@ -111,6 +111,9 @@
     <string name="settings_notif_quiet_hours_description">Don\'t notify during the hours below</string>
     <string name="settings_notif_quiet_start">Quiet from %1$d:00</string>
     <string name="settings_notif_quiet_end">Quiet until %1$d:00</string>
+    <string name="settings_ext_auto_update">Auto-check extension updates</string>
+    <string name="settings_ext_auto_update_description">Periodically check installed extensions for updates and notify you</string>
+    <string name="settings_ext_auto_update_wifi_only">Check on Wi-Fi only</string>
 
     <!-- Reading Goals -->
     <string name="settings_reading_goals">Reading Goals</string>

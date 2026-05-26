@@ -109,6 +109,17 @@ class MainActivity : ComponentActivity() {
                 libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
                 trackerSyncScheduler.schedule()
 
+                // Reconcile the periodic extension-update check with the user's preference.
+                if (generalPreferences.extensionAutoUpdateEnabled.first()) {
+                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.schedule(
+                        context = applicationContext,
+                        intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
+                        wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
+                    )
+                } else {
+                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
+                }
+
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {
                     libraryUpdateScheduler.enqueueNow()

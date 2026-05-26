@@ -216,6 +216,20 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val smartDownloadMinStorageMb: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] ?: 500 }
     suspend fun setSmartDownloadMinStorageMb(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] = value }
 
+    // --- Extension Auto-Update ---
+
+    /** Whether to periodically check for extension updates in the background. */
+    val extensionAutoUpdateEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_ENABLED] ?: false }
+    suspend fun setExtensionAutoUpdateEnabled(value: Boolean) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_ENABLED] = value }
+
+    /** Only run the extension update check on unmetered (Wi-Fi) networks. */
+    val extensionAutoUpdateWifiOnly: Flow<Boolean> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_WIFI_ONLY] ?: true }
+    suspend fun setExtensionAutoUpdateWifiOnly(value: Boolean) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_WIFI_ONLY] = value }
+
+    /** Interval (hours) between background extension update checks. */
+    val extensionAutoUpdateIntervalHours: Flow<Int> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_INTERVAL] ?: 24 }
+    suspend fun setExtensionAutoUpdateIntervalHours(value: Int) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_INTERVAL] = value }
+
     // --- Image Cache ---
 
     /**
@@ -256,6 +270,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SMART_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("smart_download_wifi_only")
         val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
         val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
+        val EXT_AUTO_UPDATE_ENABLED = booleanPreferencesKey("extension_auto_update_enabled")
+        val EXT_AUTO_UPDATE_WIFI_ONLY = booleanPreferencesKey("extension_auto_update_wifi_only")
+        val EXT_AUTO_UPDATE_INTERVAL = intPreferencesKey("extension_auto_update_interval_hours")
         val BROWSE_SEARCH_HISTORY = stringPreferencesKey("browse_search_history")
     }
 

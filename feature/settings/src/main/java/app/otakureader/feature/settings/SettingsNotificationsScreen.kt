@@ -155,6 +155,28 @@ fun SettingsNotificationsScreen(
                     },
                 )
             }
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_ext_auto_update)) },
+                supportingContent = { Text(stringResource(R.string.settings_ext_auto_update_description)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.extensionAutoUpdateEnabled,
+                        onCheckedChange = viewModel::setExtensionAutoUpdate,
+                    )
+                },
+            )
+            if (state.extensionAutoUpdateEnabled) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_ext_auto_update_wifi_only)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.extensionAutoUpdateWifiOnly,
+                            onCheckedChange = viewModel::setExtensionAutoUpdateWifiOnly,
+                        )
+                    },
+                )
+            }
         }
     }
 }

@@ -2,6 +2,7 @@ package app.otakureader.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.NotificationPreferences
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,11 +21,14 @@ data class NotificationSettingsState(
     val respectQuietHours: Boolean = true,
     val quietHoursStart: Int = 22,
     val quietHoursEnd: Int = 8,
+    val extensionAutoUpdateEnabled: Boolean = false,
+    val extensionAutoUpdateWifiOnly: Boolean = true,
 )
 
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
     private val prefs: NotificationPreferences,
+    private val generalPreferences: GeneralPreferences,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NotificationSettingsState())
@@ -53,7 +57,23 @@ class NotificationSettingsViewModel @Inject constructor(
                 _state.update { it.copy(quietHoursStart = start, quietHoursEnd = end) }
             }.collect { }
         }
+        viewModelScope.launch {
+            combine(
+                generalPreferences.extensionAutoUpdateEnabled,
+                generalPreferences.extensionAutoUpdateWifiOnly,
+            ) { enabled, wifiOnly ->
+                _state.update {
+                    it.copy(extensionAutoUpdateEnabled = enabled, extensionAutoUpdateWifiOnly = wifiOnly)
+                }
+            }.collect { }
+        }
     }
+
+    fun setExtensionAutoUpdate(enabled: Boolean) =
+        viewModelScope.launch { generalPreferences.setExtensionAutoUpdateEnabled(enabled) }
+
+    fun setExtensionAutoUpdateWifiOnly(enabled: Boolean) =
+        viewModelScope.launch { generalPreferences.setExtensionAutoUpdateWifiOnly(enabled) }
 
     fun setSmartBatching(enabled: Boolean) = viewModelScope.launch { prefs.setSmartBatching(enabled) }
     fun setCooldown(minutes: Int) = viewModelScope.launch { prefs.setPerMangaCooldownMinutes(minutes) }
