@@ -311,6 +311,7 @@ fun ChapterListItem(
     onMarkPreviousRead: () -> Unit = {},
     onExportAsCbz: () -> Unit = {},
     onLoadThumbnail: () -> Unit = {},
+    onEditNote: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val alpha by animateFloatAsState(
@@ -448,6 +449,18 @@ fun ChapterListItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                // Note preview (first line) when this chapter has a saved note
+                chapter.userNotes?.takeIf { it.isNotBlank() }?.let { note ->
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = stringResource(R.string.details_chapter_note_preview, note.lineSequence().first()),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
 
             // Actions (hidden when selected)
@@ -537,6 +550,17 @@ fun ChapterListItem(
             text = { Text(stringResource(R.string.details_chapter_mark_previous_as_read)) },
             onClick = {
                 onMarkPreviousRead()
+                showMenu = false
+            }
+        )
+        DropdownMenuItem(
+            text = {
+                val resId = if (chapter.userNotes.isNullOrBlank()) R.string.details_chapter_add_note
+                    else R.string.details_chapter_edit_note
+                Text(stringResource(resId))
+            },
+            onClick = {
+                onEditNote()
                 showMenu = false
             }
         )

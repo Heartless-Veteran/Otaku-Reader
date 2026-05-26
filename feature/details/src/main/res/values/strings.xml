@@ -112,6 +112,9 @@
     <string name="details_chapter_bookmark">Bookmark chapter</string>
     <string name="details_chapter_remove_bookmark">Remove bookmark</string>
     <string name="details_chapter_mark_previous_as_read">Mark previous as read</string>
+    <string name="details_chapter_add_note">Add note</string>
+    <string name="details_chapter_edit_note">Edit note</string>
+    <string name="details_chapter_note_preview">📝 %1$s</string>
     <string name="details_chapter_download">Download chapter</string>
     <string name="details_chapter_downloading">Downloading</string>
     <string name="details_chapter_delete_download">Delete download</string>

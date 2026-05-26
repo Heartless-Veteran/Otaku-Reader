@@ -310,6 +310,15 @@ private fun DetailsContent(
         )
     }
 
+    if (state.chapterNoteEditorChapterId != null) {
+        NoteEditorDialog(
+            noteText = state.chapterNoteEditorText,
+            onTextChange = { onEvent(DetailsContract.Event.UpdateChapterNoteText(it)) },
+            onSave = { onEvent(DetailsContract.Event.SaveChapterNote) },
+            onDismiss = { onEvent(DetailsContract.Event.HideChapterNoteEditor) }
+        )
+    }
+
     if (state.showChapterFilter) {
         ChapterFilterDialog(
             filter = state.chapterFilter,
@@ -414,7 +423,8 @@ private fun LazyListScope.detailsChapterItems(
             isSelected = state.selectedChapters.contains(chapter.id),
             onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
             onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
-            onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) }
+            onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) },
+            onEditNote = { onEvent(DetailsContract.Event.ShowChapterNoteEditor(chapter.id)) },
         )
     }
 }

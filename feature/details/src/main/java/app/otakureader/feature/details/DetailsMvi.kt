@@ -36,6 +36,9 @@ object DetailsContract {
         val globalDeleteAfterRead: Boolean = false,
         val noteEditorVisible: Boolean = false,
         val noteEditorText: String = "",
+        /** Chapter whose note is being edited (per-chapter notes), or null if closed. */
+        val chapterNoteEditorChapterId: Long? = null,
+        val chapterNoteEditorText: String = "",
 
         /** Source suggestions (related titles from the source website). */
         val sourceSuggestions: List<SourceSuggestion> = emptyList(),
@@ -135,7 +138,8 @@ object DetailsContract {
         val dateUpload: Long,
         val downloadStatus: DownloadStatus = DownloadStatus.NOT_DOWNLOADED,
         val thumbnailUrl: String? = null,
-        val totalPages: Int = 0
+        val totalPages: Int = 0,
+        val userNotes: String? = null,
     )
 
     /**
@@ -182,6 +186,11 @@ object DetailsContract {
         data object HideNoteEditor : Event
         data class UpdateNoteText(val text: String) : Event
         data object SaveNote : Event
+        // Per-chapter notes (#936)
+        data class ShowChapterNoteEditor(val chapterId: Long) : Event
+        data object HideChapterNoteEditor : Event
+        data class UpdateChapterNoteText(val text: String) : Event
+        data object SaveChapterNote : Event
         data object ClearChapterSelection : Event
         data object SelectAllChapters : Event
         data object DownloadSelectedChapters : Event
@@ -253,7 +262,8 @@ fun Chapter.toChapterItem(thumbnailUrl: String? = null, totalPages: Int = 0): De
         dateUpload = dateUpload,
         downloadStatus = DetailsContract.DownloadStatus.NOT_DOWNLOADED,
         thumbnailUrl = thumbnailUrl,
-        totalPages = totalPages
+        totalPages = totalPages,
+        userNotes = userNotes,
     )
 }
 
