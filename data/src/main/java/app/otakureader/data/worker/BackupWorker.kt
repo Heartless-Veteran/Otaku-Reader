@@ -54,8 +54,9 @@ class BackupWorker @AssistedInject constructor(
         } catch (e: Exception) {
             notifier.notifyFailure(e.message)
             // Retry with WorkManager's backoff so a transient failure (e.g. low storage)
-            // doesn't skip the whole interval.
-            Result.retry()
+            // doesn't skip the whole interval — but cap attempts so a persistent failure
+            // (corruption, missing permission, a bug) doesn't drain the battery looping.
+            if (runAttemptCount < MAX_RETRY_ATTEMPTS) Result.retry() else Result.failure()
         }
     }
 
@@ -80,6 +81,7 @@ class BackupWorker @AssistedInject constructor(
 
     companion object {
         private const val TAG = "BackupWorker"
+        private const val MAX_RETRY_ATTEMPTS = 3
         const val WORK_NAME = "auto_backup"
     }
 }

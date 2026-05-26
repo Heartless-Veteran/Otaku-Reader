@@ -1,5 +1,10 @@
 package app.otakureader.security
 
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.os.SystemClock
+import android.provider.Settings
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -21,12 +26,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -49,19 +56,23 @@ fun BiometricLockGate(
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val activity = context as? FragmentActivity
+    // LocalContext may be a ContextWrapper (theme wrapper, Hilt/navigation wrapper); walk the
+    // chain to find the hosting FragmentActivity rather than casting directly.
+    val activity = remember(context) { context.findFragmentActivity() }
 
     var locked by rememberSaveable { mutableStateOf(false) }
     var initialized by rememberSaveable { mutableStateOf(false) }
     var backgroundedAt by rememberSaveable { mutableLongStateOf(0L) }
 
-    // Lock once when the feature is first known to be on (cold start). Disabling always unlocks.
+    // Lock once when the feature is first known to be on (cold start). Disabling resets the
+    // one-shot guard so re-enabling within the same process locks again immediately.
     LaunchedEffect(enabled) {
         if (enabled && !initialized) {
             locked = true
             initialized = true
         } else if (!enabled) {
             locked = false
+            initialized = false
         }
     }
 
@@ -69,10 +80,11 @@ fun BiometricLockGate(
     DisposableEffect(lifecycleOwner, enabled, timeoutMillis) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_STOP -> backgroundedAt = System.currentTimeMillis()
+                // elapsedRealtime() is monotonic — unaffected by clock changes / NTP sync.
+                Lifecycle.Event.ON_STOP -> backgroundedAt = SystemClock.elapsedRealtime()
                 Lifecycle.Event.ON_START -> {
                     if (enabled && backgroundedAt > 0L &&
-                        System.currentTimeMillis() - backgroundedAt >= timeoutMillis
+                        SystemClock.elapsedRealtime() - backgroundedAt >= timeoutMillis
                     ) {
                         locked = true
                     }
@@ -89,23 +101,31 @@ fun BiometricLockGate(
     if (enabled && locked) {
         val title = stringResource(R.string.biometric_lock_title)
         val subtitle = stringResource(R.string.biometric_lock_subtitle)
+        val authAvailable = activity != null && canAuthenticate(activity)
         BiometricLockOverlay(
+            authAvailable = authAvailable,
             onUnlockClick = { activity?.let { promptUnlock(it, title, subtitle) { locked = false } } },
+            onOpenSecuritySettings = {
+                activity?.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS))
+            },
         )
-        // Auto-prompt as soon as the lock appears. If there's no FragmentActivity or no
-        // enrolled credential, don't trap the user behind a prompt that can never succeed.
-        LaunchedEffect(Unit) {
-            if (activity == null || !canAuthenticate(activity)) {
-                locked = false
-            } else {
-                promptUnlock(activity, title, subtitle) { locked = false }
+        // Auto-prompt when authentication is possible. When it is NOT (no enrolled credential
+        // / unsupported hardware), keep the app locked — never silently expose content while
+        // the lock is enabled; the overlay guides the user to set up device security.
+        LaunchedEffect(authAvailable) {
+            if (authAvailable) {
+                activity?.let { promptUnlock(it, title, subtitle) { locked = false } }
             }
         }
     }
 }
 
 @Composable
-private fun BiometricLockOverlay(onUnlockClick: () -> Unit) {
+private fun BiometricLockOverlay(
+    authAvailable: Boolean,
+    onUnlockClick: () -> Unit,
+    onOpenSecuritySettings: () -> Unit,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -122,11 +142,33 @@ private fun BiometricLockOverlay(onUnlockClick: () -> Unit) {
                 text = stringResource(R.string.biometric_lock_title),
                 style = MaterialTheme.typography.titleMedium,
             )
-            Button(onClick = onUnlockClick, modifier = Modifier.padding(top = 24.dp)) {
-                Text(stringResource(R.string.biometric_lock_unlock))
+            if (authAvailable) {
+                Button(onClick = onUnlockClick, modifier = Modifier.padding(top = 24.dp)) {
+                    Text(stringResource(R.string.biometric_lock_unlock))
+                }
+            } else {
+                Text(
+                    text = stringResource(R.string.biometric_lock_no_auth),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+                Button(onClick = onOpenSecuritySettings, modifier = Modifier.padding(top = 24.dp)) {
+                    Text(stringResource(R.string.biometric_lock_open_settings))
+                }
             }
         }
     }
+}
+
+private fun Context.findFragmentActivity(): FragmentActivity? {
+    var ctx: Context? = this
+    while (ctx is ContextWrapper) {
+        if (ctx is FragmentActivity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
 
 private const val ALLOWED_AUTHENTICATORS = BIOMETRIC_STRONG or DEVICE_CREDENTIAL

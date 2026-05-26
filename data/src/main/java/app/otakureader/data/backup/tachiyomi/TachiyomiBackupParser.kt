@@ -179,7 +179,9 @@ internal class TachiyomiBackupParser @Inject constructor() {
                 viewerFlags = m.viewerFlags,
                 // Legacy JSON backups do not carry per-manga category membership.
                 categoryOrders = emptyList(),
-                chapters = (chaptersByManga[m.id] ?: emptyList()).map { c ->
+                // Associate by the manga's id (the key chapters/tracking reference). When a
+                // backup omits the id there is no key to match on, so none are attached.
+                chapters = m.id?.let { id -> chaptersByManga[id] }.orEmpty().map { c ->
                     ParsedChapter(
                         url = c.url,
                         name = c.name,
@@ -192,7 +194,7 @@ internal class TachiyomiBackupParser @Inject constructor() {
                         dateUpload = c.dateUpload,
                     )
                 },
-                tracking = (trackingByManga[m.id] ?: emptyList()).map { t ->
+                tracking = m.id?.let { id -> trackingByManga[id] }.orEmpty().map { t ->
                     ParsedTracking(
                         trackerId = t.syncId,
                         remoteId = t.remoteId,

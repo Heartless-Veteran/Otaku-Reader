@@ -84,12 +84,17 @@ fun SettingsBackupScreen(
     ) { uri: Uri? ->
         uri?.let {
             // Persist read/write access so the background worker can write here later.
-            context.contentResolver.takePersistableUriPermission(
-                it,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-            )
-            viewModel.onEvent(SettingsEvent.SetAutoBackupLocation(it.toString()))
+            // The grant can fail (SecurityException) if the provider rejects it — don't crash.
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+                viewModel.onEvent(SettingsEvent.SetAutoBackupLocation(it.toString()))
+            } catch (e: SecurityException) {
+                android.util.Log.e("SettingsBackupScreen", "Failed to persist backup location permission", e)
+            }
         }
     }
 

@@ -293,7 +293,7 @@ private fun LibraryContent(
             modifier = Modifier.weight(1f)
         ) {
             when {
-                state.isLoading && state.mangaList.isEmpty() -> {
+                (state.isLoading || state.isSearching) && state.mangaList.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }

@@ -29,6 +29,7 @@ data class LibraryState(
     val selectedManga: Set<Long> = emptySet(),
     val searchQuery: String = "",
     val showSearchBar: Boolean = false,
+    val isSearching: Boolean = false,
     val error: String? = null,
     val categories: List<CategoryItem> = emptyList(),
     val selectedCategory: Long? = null,

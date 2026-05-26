@@ -198,8 +198,13 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
+    private var filterLoadJob: kotlinx.coroutines.Job? = null
+
     private fun loadSourceFilters(sourceId: String) {
-        viewModelScope.launch {
+        // Cancel any in-flight load so a slower fetch for a previously-selected source can't
+        // land after a newer selection and overwrite the wrong source's filters.
+        filterLoadJob?.cancel()
+        filterLoadJob = viewModelScope.launch {
             // Two independent fetches: one stays at defaults (for "reset"), one receives the
             // user's previously-saved selections so filters survive across sessions.
             val defaults = getSourceFiltersUseCase(sourceId)
@@ -207,11 +212,14 @@ class BrowseViewModel @Inject constructor(
             generalPreferences.getBrowseFilterState(sourceId)?.let { saved ->
                 BrowseFilterStatePersistence.apply(active, saved)
             }
-            _state.update {
-                it.copy(
-                    availableFilters = defaults,
-                    activeFilters = active
-                )
+            // Only apply if this is still the selected source.
+            if (_state.value.currentSourceId == sourceId) {
+                _state.update {
+                    it.copy(
+                        availableFilters = defaults,
+                        activeFilters = active
+                    )
+                }
             }
         }
     }

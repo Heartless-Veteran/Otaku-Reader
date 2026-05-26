@@ -376,17 +376,21 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onSearchQueryChange(query: String) {
-        _state.update { it.copy(searchQuery = query) }
         searchJob?.cancel()
         if (query.isBlank()) {
+            _state.update { it.copy(searchQuery = query, isSearching = false) }
             _searchMatchingIds.value = null
             return
         }
+        // Mark searching so the UI shows progress instead of a false "no results" while the
+        // debounced query is in flight (the matching-id set is empty until results land).
+        _state.update { it.copy(searchQuery = query, isSearching = true) }
         _searchMatchingIds.value = emptySet()
         searchJob = viewModelScope.launch {
             delay(300L)
             searchLibraryManga(query).collect { mangas ->
                 _searchMatchingIds.value = mangas.map { it.id }.toSet()
+                _state.update { it.copy(isSearching = false) }
             }
         }
     }

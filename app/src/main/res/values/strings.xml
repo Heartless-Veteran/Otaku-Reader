@@ -21,6 +21,8 @@
     <string name="biometric_lock_title">Unlock Otaku Reader</string>
     <string name="biometric_lock_subtitle">Confirm your identity to continue</string>
     <string name="biometric_lock_unlock">Unlock</string>
+    <string name="biometric_lock_no_auth">No screen lock or biometrics are set up on this device. Add one in device settings to unlock the app.</string>
+    <string name="biometric_lock_open_settings">Open security settings</string>
 
     <!-- Crash report dialog -->
     <string name="crash_report_title">App Crashed</string>
