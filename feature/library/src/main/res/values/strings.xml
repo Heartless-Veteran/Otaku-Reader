@@ -34,6 +34,8 @@
     <string name="category_management_title">Categories</string>
     <string name="category_back">Back</string>
     <string name="category_create_new">Create category</string>
+    <string name="category_show_hidden">Show hidden categories</string>
+    <string name="category_hide_hidden">Hide hidden categories</string>
     <string name="category_edit">Edit</string>
     <string name="category_delete">Delete</string>
     <string name="category_more">More options</string>

@@ -131,6 +131,7 @@ androidx-glance-material3 = { group = "androidx.glance", name = "glance-material
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version = "1.1.0" }
 # Aliases matching code-style references (libs.paging.runtime, libs.paging.compose)
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }

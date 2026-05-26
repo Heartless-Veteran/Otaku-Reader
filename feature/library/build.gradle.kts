@@ -19,6 +19,7 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.sourceApi)
     implementation(libs.paging.compose)
+    implementation(libs.androidx.biometric)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.workmanager.ktx)
