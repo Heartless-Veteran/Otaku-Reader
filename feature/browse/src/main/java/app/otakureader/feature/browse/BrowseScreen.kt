@@ -280,6 +280,15 @@ private fun BrowseContent(
                             onEvent(BrowseEvent.Search)
                         },
                         label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringResource(R.string.browse_search_history_remove),
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .clickable { onEvent(BrowseEvent.DeleteSearchHistoryItem(query)) },
+                            )
+                        },
                     )
                 }
             }

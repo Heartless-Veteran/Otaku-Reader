@@ -172,6 +172,13 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
 
+    suspend fun removeBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() } ?: return@edit
+        val updated = current.filterNot { it == query }
+        if (updated.isEmpty()) prefs.remove(Keys.BROWSE_SEARCH_HISTORY)
+        else prefs[Keys.BROWSE_SEARCH_HISTORY] = updated.joinToString("\n")
+    }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
