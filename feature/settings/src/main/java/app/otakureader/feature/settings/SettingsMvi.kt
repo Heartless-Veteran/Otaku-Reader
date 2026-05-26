@@ -142,6 +142,8 @@ data class SettingsState(
     // --- Tracking ---
     val trackers get() = tracking.trackers
     val trackingLoginInProgress get() = tracking.trackingLoginInProgress
+    val batchSyncInProgress get() = tracking.batchSyncInProgress
+    val batchSyncSummary get() = tracking.batchSyncSummary
 }
 
 sealed interface SettingsEvent : UiEvent {
@@ -257,6 +259,8 @@ sealed interface SettingsEvent : UiEvent {
     // Tracking
     data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
     data class LogoutTracker(val trackerId: Int) : SettingsEvent
+    data object SyncAllTrackers : SettingsEvent
+    data object DismissTrackerSyncSummary : SettingsEvent
 
     // Migration
     data class SetMigrationSimilarityThreshold(val threshold: Float) : SettingsEvent

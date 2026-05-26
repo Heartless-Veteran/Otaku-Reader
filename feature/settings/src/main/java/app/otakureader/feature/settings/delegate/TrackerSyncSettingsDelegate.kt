@@ -1,6 +1,7 @@
 package app.otakureader.feature.settings.delegate
 
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.domain.tracking.TrackManager
 import app.otakureader.domain.updater.AppUpdateChecker
 import app.otakureader.feature.settings.SettingsEffect
@@ -19,6 +20,7 @@ class TrackerSyncSettingsDelegate @Inject constructor(
     private val trackManager: TrackManager,
     private val appUpdateChecker: AppUpdateChecker,
     private val generalPreferences: GeneralPreferences,
+    private val trackerSyncRepository: TrackerSyncRepository,
 ) {
 
     private var updateState: ((SettingsState) -> SettingsState) -> Unit = {}
@@ -59,7 +61,28 @@ class TrackerSyncSettingsDelegate @Inject constructor(
         is SettingsEvent.LogoutTracker -> { logoutTracker(event.trackerId, sendEffect); true }
         is SettingsEvent.SetAppUpdateCheckEnabled -> { generalPreferences.setAppUpdateCheckEnabled(event.enabled); true }
         SettingsEvent.CheckForAppUpdate -> { handleCheckForAppUpdate(sendEffect); true }
+        SettingsEvent.SyncAllTrackers -> { syncAllTrackers(sendEffect); true }
+        SettingsEvent.DismissTrackerSyncSummary -> {
+            updateState { it.copy(tracking = it.tracking.copy(batchSyncSummary = null)) }
+            true
+        }
         else -> false
+    }
+
+    private suspend fun syncAllTrackers(sendEffect: suspend (SettingsEffect) -> Unit) {
+        updateState { it.copy(tracking = it.tracking.copy(batchSyncInProgress = true, batchSyncSummary = null)) }
+        try {
+            // syncAllPending() only processes manga with pending tracker changes, so untracked
+            // manga are skipped, and it staggers calls internally to avoid tracker API bans.
+            val summary = trackerSyncRepository.syncAllPending()
+            updateState { it.copy(tracking = it.tracking.copy(batchSyncSummary = summary)) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            sendEffect(SettingsEffect.ShowSnackbar("Tracker sync failed: ${e.message}"))
+        } finally {
+            updateState { it.copy(tracking = it.tracking.copy(batchSyncInProgress = false)) }
+        }
     }
 
     private suspend fun loginTracker(
