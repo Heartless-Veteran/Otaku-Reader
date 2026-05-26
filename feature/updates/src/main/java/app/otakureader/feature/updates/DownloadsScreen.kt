@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.DownloadDone
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,6 +95,15 @@ fun DownloadsScreen(
                         }
                     } else {
                         if (state.hasDownloads) {
+                            IconButton(onClick = { viewModel.onEvent(DownloadsEvent.PauseAll) }) {
+                                Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.downloads_pause_all))
+                            }
+                            IconButton(onClick = { viewModel.onEvent(DownloadsEvent.ResumeAll) }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.downloads_resume_all))
+                            }
+                            IconButton(onClick = { viewModel.onEvent(DownloadsEvent.RetryAllFailed) }) {
+                                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.downloads_retry_all_failed))
+                            }
                             IconButton(onClick = { viewModel.onEvent(DownloadsEvent.SelectAll) }) {
                                 Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.downloads_select_all))
                             }

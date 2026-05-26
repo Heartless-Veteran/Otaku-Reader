@@ -53,6 +53,10 @@ class DownloadsViewModel @Inject constructor(
                 downloadRepository.clearAll()
             }
 
+            DownloadsEvent.PauseAll -> pauseAll()
+            DownloadsEvent.ResumeAll -> resumeAll()
+            DownloadsEvent.RetryAllFailed -> retryAllFailed()
+
             DownloadsEvent.ClearSelection -> clearSelection()
             DownloadsEvent.SelectAll -> selectAll()
             DownloadsEvent.PauseSelected -> pauseSelected()
@@ -118,6 +122,33 @@ class DownloadsViewModel @Inject constructor(
                 downloadRepository.cancelDownload(id)
             }
             clearSelection()
+        }
+    }
+
+    private fun pauseAll() {
+        viewModelScope.launch {
+            _state.value.items
+                .filter {
+                    it.status == app.otakureader.domain.model.DownloadStatus.QUEUED ||
+                        it.status == app.otakureader.domain.model.DownloadStatus.DOWNLOADING
+                }
+                .forEach { downloadRepository.pauseDownload(it.id) }
+        }
+    }
+
+    private fun resumeAll() {
+        viewModelScope.launch {
+            _state.value.items
+                .filter { it.status == app.otakureader.domain.model.DownloadStatus.PAUSED }
+                .forEach { downloadRepository.resumeDownload(it.id) }
+        }
+    }
+
+    private fun retryAllFailed() {
+        viewModelScope.launch {
+            _state.value.items
+                .filter { it.status == app.otakureader.domain.model.DownloadStatus.FAILED }
+                .forEach { downloadRepository.resumeDownload(it.id) }
         }
     }
 

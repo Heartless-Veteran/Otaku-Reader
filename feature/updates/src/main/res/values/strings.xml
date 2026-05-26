@@ -15,6 +15,9 @@
     <string name="downloads_resume_selected">Resume selected</string>
     <string name="downloads_cancel_selected">Cancel selected</string>
     <string name="downloads_select_all">Select all</string>
+    <string name="downloads_pause_all">Pause all</string>
+    <string name="downloads_resume_all">Resume all</string>
+    <string name="downloads_retry_all_failed">Retry all failed</string>
     <string name="downloads_clear_all">Clear All</string>
     <string name="downloads_pause">Pause</string>
     <string name="downloads_resume">Resume</string>
