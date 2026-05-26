@@ -188,10 +188,8 @@ private fun ExtensionsContent(
 
             RepositoryManager(
                 repositories = state.repositories,
-                activeRepository = state.activeRepository,
                 onAdd = { onEvent(ExtensionsEvent.AddRepository(it)) },
-                onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) },
-                onSetActive = { onEvent(ExtensionsEvent.SetActiveRepository(it)) }
+                onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) }
             )
 
             // Tabs
@@ -621,10 +619,8 @@ private fun UpdateAllButton(
 @Composable
 private fun RepositoryManager(
     repositories: List<String>,
-    activeRepository: String?,
     onAdd: (String) -> Unit,
-    onRemove: (String) -> Unit,
-    onSetActive: (String) -> Unit
+    onRemove: (String) -> Unit
 ) {
     var repoInput by remember { mutableStateOf("") }
 
@@ -642,21 +638,12 @@ private fun RepositoryManager(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = repo, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (activeRepository == repo) {
-                        Text(
-                            text = "Active",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                if (activeRepository != repo) {
-                    TextButton(onClick = { onSetActive(repo) }) {
-                        Text(stringResource(R.string.extensions_set_active))
-                    }
-                }
+                Text(
+                    text = repo,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
                 IconButton(onClick = { onRemove(repo) }) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_remove_repo))
                 }

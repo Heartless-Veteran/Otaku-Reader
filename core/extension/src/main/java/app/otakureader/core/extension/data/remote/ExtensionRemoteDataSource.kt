@@ -311,31 +311,49 @@ class ExtensionRemoteDataSourceImpl(
 
     override suspend fun downloadApk(apkUrl: String, destination: File): Result<File> {
         return withContext(Dispatchers.IO) {
-            try {
-                val request = Request.Builder()
-                    .url(apkUrl)
-                    .header("Accept", "application/vnd.android.package-archive")
-                    .build()
+            // Try the standard /apk/ URL first, falling back to /apks/ only on a 404 (wrong
+            // folder name). Network errors or other HTTP failures abort immediately, since
+            // retrying the same host with a different path would just double the wait. The loop
+            // condition (not break/continue) drives termination.
+            val candidates = apkUrlCandidates(apkUrl)
+            var lastError: Exception = ExtensionFetchException("No APK URL to download from $apkUrl")
+            var downloaded: File? = null
+            var abort = false
+            var index = 0
+            while (downloaded == null && !abort && index < candidates.size) {
+                val url = candidates[index]
+                index++
+                try {
+                    val request = Request.Builder()
+                        .url(url)
+                        .header("Accept", "application/vnd.android.package-archive")
+                        .build()
 
-                httpClient.newCall(request).execute().use { response ->
-                    // H-1: Domain exception instead of error() so the outer Result catches it.
-                    if (!response.isSuccessful) {
-                        throw ExtensionFetchException("HTTP ${response.code} downloading APK from $apkUrl")
-                    }
-                    val body = response.body
-                        ?: throw ExtensionFetchException("Empty APK response body from $apkUrl")
-                    body.byteStream().use { input ->
-                        destination.outputStream().use { output ->
-                            input.copyTo(output)
+                    httpClient.newCall(request).execute().use { response ->
+                        if (response.isSuccessful) {
+                            val body = response.body
+                                ?: throw ExtensionFetchException("Empty APK response body from $url")
+                            body.byteStream().use { input ->
+                                destination.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            downloaded = destination
+                        } else {
+                            // H-1: Domain exception instead of error() so the outer Result catches it.
+                            lastError = ExtensionFetchException("HTTP ${response.code} downloading APK from $url")
+                            // Only a 404 (wrong folder name) is worth trying the alternate path.
+                            abort = response.code != 404
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    lastError = e
+                    abort = true
                 }
-                Result.success(destination)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
             }
+            downloaded?.let { Result.success(it) } ?: Result.failure(lastError)
         }
     }
 
@@ -417,19 +435,29 @@ private fun MinifiedExtensionSourceDto.toDomain(): ExtensionSource {
 }
 
 /**
- * Resolve APK URL from relative filename.
- * Keiyoushi repos store APKs under {base}/apks/{filename} (plural).
- * Komikku repos store APKs under {base}/apk/{filename} (singular).
- * We try "apks" first (most popular), then fall back to "apk".
+ * Resolve APK URL from a relative filename.
+ * Keiyoushi/Mihon repos store APKs under {base}/apk/{filename} (singular); some forks use
+ * {base}/apks/{filename}. We build the standard /apk/ URL here, and [downloadApk] falls back
+ * to the /apks/ variant if the first request 404s.
  */
 private fun resolveApkUrl(baseUrl: String, apkPath: String): String {
     return if (apkPath.startsWith("http://") || apkPath.startsWith("https://")) {
         apkPath
     } else {
         val cleanPath = apkPath.trimStart('/')
-        // Try "apks/" first (Keiyoushi convention), then "apk/" (Komikku)
-        "$baseUrl/apks/$cleanPath"
+        "$baseUrl/apk/$cleanPath"
     }
+}
+
+/**
+ * Candidate APK URLs to try in order. Repos disagree on the APK folder name — the standard
+ * Keiyoushi/Mihon layout is `/apk/`, while some forks use `/apks/`. Trying both makes installs
+ * robust regardless of which layout a repo uses.
+ */
+private fun apkUrlCandidates(apkUrl: String): List<String> = when {
+    apkUrl.contains("/apk/") -> listOf(apkUrl, apkUrl.replaceFirst("/apk/", "/apks/"))
+    apkUrl.contains("/apks/") -> listOf(apkUrl, apkUrl.replaceFirst("/apks/", "/apk/"))
+    else -> listOf(apkUrl)
 }
 
 /**

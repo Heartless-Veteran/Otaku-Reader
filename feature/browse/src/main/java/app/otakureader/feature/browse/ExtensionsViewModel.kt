@@ -32,7 +32,6 @@ data class ExtensionsState(
     val extensionsWithUpdates: List<Extension> = emptyList(),
     val updateCount: Int = 0,
     val repositories: List<String> = emptyList(),
-    val activeRepository: String? = null,
     val error: String? = null,
     val showNsfw: Boolean = false,
     val sortMode: SortMode = SortMode.NAME,
@@ -58,7 +57,6 @@ sealed interface ExtensionsEvent : UiEvent {
     data class ToggleExtensionEnabled(val extension: Extension, val enabled: Boolean) : ExtensionsEvent
     data class AddRepository(val url: String) : ExtensionsEvent
     data class RemoveRepository(val url: String) : ExtensionsEvent
-    data class SetActiveRepository(val url: String) : ExtensionsEvent
     data object UpdateAllExtensions : ExtensionsEvent
     data class ToggleNsfw(val show: Boolean) : ExtensionsEvent
     data class SetSortMode(val mode: SortMode) : ExtensionsEvent
@@ -163,7 +161,6 @@ class ExtensionsViewModel @Inject constructor(
             is ExtensionsEvent.ToggleExtensionEnabled -> toggleExtension(event.extension, event.enabled)
             is ExtensionsEvent.AddRepository -> addRepository(event.url)
             is ExtensionsEvent.RemoveRepository -> removeRepository(event.url)
-            is ExtensionsEvent.SetActiveRepository -> setActiveRepository(event.url)
             is ExtensionsEvent.UpdateAllExtensions -> updateAllExtensions()
             is ExtensionsEvent.ToggleNsfw -> viewModelScope.launch {
                 generalPreferences.setShowNsfwContent(event.show)
@@ -306,12 +303,6 @@ class ExtensionsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { extensionRepoRepository.removeRepository(url) }
         }
-    }
-
-    private fun setActiveRepository(url: String) {
-        // All repositories are simultaneously active; refresh to pick up any new extensions.
-        _state.update { it.copy(activeRepository = url) }
-        refreshExtensions()
     }
 
     private fun installExtension(extension: Extension) {
