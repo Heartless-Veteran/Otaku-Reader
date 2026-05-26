@@ -17,9 +17,21 @@ sealed class DynamicCategoryRule {
     /** Manga whose genre list contains [genre] (case-insensitive substring match). */
     data class GenreContains(val genre: String) : DynamicCategoryRule()
 
+    /** Manga whose status is COMPLETED. */
+    data object Completed : DynamicCategoryRule()
+
+    /** Manga whose status is ONGOING. */
+    data object Ongoing : DynamicCategoryRule()
+
+    /** Manga added to the library within the last [withinDays] days. */
+    data class RecentlyAdded(val withinDays: Int) : DynamicCategoryRule()
+
     companion object {
         const val TYPE_UNREAD_AT_LEAST = "unread_at_least"
         const val TYPE_RECENTLY_UPDATED = "recently_updated"
         const val TYPE_GENRE_CONTAINS = "genre_contains"
+        const val TYPE_COMPLETED = "completed"
+        const val TYPE_ONGOING = "ongoing"
+        const val TYPE_RECENTLY_ADDED = "recently_added"
     }
 }
