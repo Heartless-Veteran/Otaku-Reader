@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -33,6 +34,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +63,7 @@ fun StatisticsScreen(
     viewModel: StatisticsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var showShareSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -72,10 +77,27 @@ fun StatisticsScreen(
                             contentDescription = stringResource(R.string.statistics_back)
                         )
                     }
-                }
+                },
+                actions = {
+                    if (!state.isLoading && state.error == null) {
+                        IconButton(onClick = { showShareSheet = true }) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = stringResource(R.string.statistics_share),
+                            )
+                        }
+                    }
+                },
             )
         }
     ) { paddingValues ->
+        if (showShareSheet) {
+            StatisticsShareSheet(
+                stats = state.stats,
+                shareText = stringResource(R.string.statistics_share_text),
+                onDismiss = { showShareSheet = false },
+            )
+        }
         when {
             state.isLoading -> Box(
                 modifier = Modifier
