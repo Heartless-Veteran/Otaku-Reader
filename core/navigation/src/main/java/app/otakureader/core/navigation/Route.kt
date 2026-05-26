@@ -41,6 +41,9 @@ sealed interface Route {
     @Serializable
     data object More : Route
 
+    @Serializable
+    data object Bookmarks : Route
+
     // ─── Library / Browse sub-flows ───
 
     /**

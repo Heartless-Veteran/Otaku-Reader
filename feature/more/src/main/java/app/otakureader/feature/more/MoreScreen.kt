@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -61,6 +62,7 @@ fun MoreScreen(
     onNavigateToDownloads: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToAbout: () -> Unit,
+    onNavigateToBookmarks: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onNavigateToExtensions: () -> Unit = {},
     onNavigateToFeed: () -> Unit = {},
@@ -197,6 +199,17 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_statistics),
                 supporting = stringResource(R.string.more_statistics_desc),
                 onClick = onNavigateToStatistics
+            )
+
+            HorizontalDivider()
+
+            MoreListItem(
+                icon = Icons.Default.Bookmark,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                headline = stringResource(R.string.more_bookmarks),
+                supporting = stringResource(R.string.more_bookmarks_description),
+                onClick = onNavigateToBookmarks
             )
 
             HorizontalDivider()
