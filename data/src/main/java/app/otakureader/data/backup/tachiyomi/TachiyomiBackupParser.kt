@@ -91,8 +91,13 @@ internal class TachiyomiBackupParser @Inject constructor() {
         GZIPInputStream(data.inputStream()).use { it.readBytes() }
 
     private fun looksLikeJson(data: ByteArray): Boolean {
-        val first = data.firstOrNull { !it.toInt().toChar().isWhitespace() } ?: return false
-        return first.toInt().toChar() == '{'
+        // A JSON backup's first byte is '{' (optionally after a UTF-8 BOM). Protobuf payloads
+        // start with a field tag (MihonBackup's field 1 is 0x0A), so a strict first-byte check
+        // avoids misreading binary data as text — note 0x0A would be skipped as whitespace.
+        val hasBom = data.size >= 3 &&
+            data[0] == 0xEF.toByte() && data[1] == 0xBB.toByte() && data[2] == 0xBF.toByte()
+        val start = if (hasBom) 3 else 0
+        return data.getOrNull(start) == '{'.code.toByte()
     }
 
     private fun parseProto(data: ByteArray): ParsedBackup {
