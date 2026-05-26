@@ -141,6 +141,7 @@ class BrowseViewModel @Inject constructor(
             }
             is BrowseEvent.ApplyFilters -> {
                 _state.update { it.copy(showFilterSheet = false) }
+                persistActiveFilters()
                 performSearch()
             }
 
@@ -199,13 +200,28 @@ class BrowseViewModel @Inject constructor(
 
     private fun loadSourceFilters(sourceId: String) {
         viewModelScope.launch {
-            val filters = getSourceFiltersUseCase(sourceId)
+            // Two independent fetches: one stays at defaults (for "reset"), one receives the
+            // user's previously-saved selections so filters survive across sessions.
+            val defaults = getSourceFiltersUseCase(sourceId)
+            val active = getSourceFiltersUseCase(sourceId)
+            generalPreferences.getBrowseFilterState(sourceId)?.let { saved ->
+                BrowseFilterStatePersistence.apply(active, saved)
+            }
             _state.update {
                 it.copy(
-                    availableFilters = filters,
-                    activeFilters = filters
+                    availableFilters = defaults,
+                    activeFilters = active
                 )
             }
+        }
+    }
+
+    private fun persistActiveFilters() {
+        val sourceId = _state.value.currentSourceId ?: return
+        val active = _state.value.activeFilters
+        viewModelScope.launch {
+            val encoded = if (active.hasActiveFilters()) BrowseFilterStatePersistence.encode(active) else null
+            generalPreferences.setBrowseFilterState(sourceId, encoded)
         }
     }
 

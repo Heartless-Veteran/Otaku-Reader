@@ -28,6 +28,13 @@ class BackupSettingsDelegate @Inject constructor(
 
     private var updateState: ((SettingsState) -> SettingsState) -> Unit = {}
 
+    /** URI of the backup the user is previewing, awaiting import confirmation. */
+    private var pendingImportUri: String? = null
+
+    private fun readBytes(uri: android.net.Uri): ByteArray =
+        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: error("Failed to read backup file")
+
     fun startObserving(
         scope: CoroutineScope,
         updateState: ((SettingsState) -> SettingsState) -> Unit,
@@ -38,11 +45,15 @@ class BackupSettingsDelegate @Inject constructor(
                 backupPreferences.autoBackupEnabled,
                 backupPreferences.autoBackupIntervalHours,
                 backupPreferences.autoBackupMaxCount,
-            ) { autoBackup, backupInterval, backupMax ->
+                backupPreferences.autoBackupLocationUri,
+                backupPreferences.lastAutoBackupTimestamp,
+            ) { autoBackup, backupInterval, backupMax, locationUri, lastBackup ->
                 updateState { it.copy(backup = it.backup.copy(
                     autoBackupEnabled = autoBackup,
                     autoBackupIntervalHours = backupInterval,
                     autoBackupMaxCount = backupMax,
+                    autoBackupLocationUri = locationUri,
+                    lastAutoBackupTimestamp = lastBackup,
                 )) }
             }.collect { }
         }
@@ -57,23 +68,76 @@ class BackupSettingsDelegate @Inject constructor(
         SettingsEvent.OnRestoreBackup -> { sendEffect(SettingsEffect.ShowRestorePicker); true }
         SettingsEvent.OnImportTachiyomiBackup -> { sendEffect(SettingsEffect.ShowTachiyomiImportPicker); true }
         is SettingsEvent.ImportTachiyomiBackupFromUri -> {
-            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true)) }
             try {
-                val json = context.contentResolver.openInputStream(event.uri)?.use { it.readBytes().decodeToString() }
-                    ?: error("Failed to read backup file")
-                val result = tachiyomiImporter.importBackup(json)
-                sendEffect(SettingsEffect.ShowSnackbar(
-                    "Imported ${result.mangaImported} manga, ${result.chaptersImported} chapters, ${result.categoriesImported} categories"
-                ))
+                val data = readBytes(event.uri)
+                val preview = tachiyomiImporter.preview(data)
+                pendingImportUri = event.uri.toString()
+                updateState {
+                    it.copy(backup = it.backup.copy(
+                        tachiyomiImportPreview = preview,
+                        pendingTachiyomiImportUri = event.uri.toString(),
+                    ))
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
-            } finally {
-                updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
+                sendEffect(SettingsEffect.ShowSnackbar("Couldn't read backup: ${e.message}"))
             }
             true
+        }
+        SettingsEvent.CancelTachiyomiImport -> {
+            pendingImportUri = null
+            updateState {
+                it.copy(backup = it.backup.copy(
+                    tachiyomiImportPreview = null,
+                    pendingTachiyomiImportUri = null,
+                ))
+            }
+            true
+        }
+        is SettingsEvent.ConfirmTachiyomiImport -> {
+            val uriString = pendingImportUri
+            pendingImportUri = null
+            if (uriString == null) {
+                true
+            } else {
+                updateState {
+                    it.copy(backup = it.backup.copy(
+                        isRestoreInProgress = true,
+                        tachiyomiImportPreview = null,
+                        pendingTachiyomiImportUri = null,
+                        tachiyomiImportProgress = 0,
+                        tachiyomiImportTotal = 0,
+                    ))
+                }
+                try {
+                    val data = readBytes(android.net.Uri.parse(uriString))
+                    val result = tachiyomiImporter.importBackup(
+                        data = data,
+                        overwriteExisting = event.overwriteExisting,
+                        onProgress = { current, total ->
+                            updateState {
+                                it.copy(backup = it.backup.copy(
+                                    tachiyomiImportProgress = current,
+                                    tachiyomiImportTotal = total,
+                                ))
+                            }
+                        },
+                    )
+                    sendEffect(SettingsEffect.ShowSnackbar(
+                        "Imported ${result.mangaImported} manga, ${result.chaptersImported} chapters, " +
+                            "${result.categoriesImported} categories, ${result.trackingImported} tracked " +
+                            "(${result.skipped} skipped)"
+                    ))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
+                } finally {
+                    updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
+                }
+                true
+            }
         }
         is SettingsEvent.CreateBackupWithUri -> {
             updateState { it.copy(backup = it.backup.copy(isBackupInProgress = true)) }
@@ -108,6 +172,8 @@ class BackupSettingsDelegate @Inject constructor(
         is SettingsEvent.SetAutoBackupEnabled -> { handleSetAutoBackupEnabled(event.enabled); true }
         is SettingsEvent.SetAutoBackupInterval -> { handleSetAutoBackupInterval(event.hours); true }
         is SettingsEvent.SetAutoBackupMaxCount -> { backupPreferences.setAutoBackupMaxCount(event.count); true }
+        SettingsEvent.RequestAutoBackupLocationPicker -> { sendEffect(SettingsEffect.ShowAutoBackupLocationPicker); true }
+        is SettingsEvent.SetAutoBackupLocation -> { backupPreferences.setAutoBackupLocationUri(event.uri); true }
         SettingsEvent.RefreshLocalBackups -> {
             val files = backupRepository.listLocalBackups().map { it.name }
             updateState { it.copy(backup = it.backup.copy(localBackupFiles = files)) }

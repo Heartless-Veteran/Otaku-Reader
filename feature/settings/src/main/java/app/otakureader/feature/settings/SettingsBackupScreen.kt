@@ -78,6 +78,21 @@ fun SettingsBackupScreen(
         uri?.let { viewModel.onEvent(SettingsEvent.ImportTachiyomiBackupFromUri(it)) }
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val backupLocationLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri: Uri? ->
+        uri?.let {
+            // Persist read/write access so the background worker can write here later.
+            context.contentResolver.takePersistableUriPermission(
+                it,
+                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.onEvent(SettingsEvent.SetAutoBackupLocation(it.toString()))
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.onEvent(SettingsEvent.RefreshLocalBackups)
         viewModel.effect.collect { effect ->
@@ -89,6 +104,8 @@ fun SettingsBackupScreen(
                     restoreFileLauncher.launch(arrayOf("application/json"))
                 SettingsEffect.ShowTachiyomiImportPicker ->
                     tachiyomiImportLauncher.launch(arrayOf("application/json", "*/*"))
+                SettingsEffect.ShowAutoBackupLocationPicker ->
+                    backupLocationLauncher.launch(null)
                 SettingsEffect.NavigateToMigrationEntry -> onNavigateToMigrationEntry()
                 else -> Unit
             }
@@ -120,6 +137,65 @@ fun SettingsBackupScreen(
             BackupContent(state = state, onEvent = viewModel::onEvent)
         }
     }
+
+    state.tachiyomiImportPreview?.let { preview ->
+        TachiyomiImportConfirmDialog(
+            preview = preview,
+            onConfirm = { overwrite -> viewModel.onEvent(SettingsEvent.ConfirmTachiyomiImport(overwrite)) },
+            onDismiss = { viewModel.onEvent(SettingsEvent.CancelTachiyomiImport) },
+        )
+    }
+}
+
+@Composable
+private fun TachiyomiImportConfirmDialog(
+    preview: app.otakureader.domain.model.TachiyomiBackupPreview,
+    onConfirm: (overwriteExisting: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var overwriteExisting by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_import_preview_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.settings_import_preview_manga, preview.mangaCount))
+                Text(stringResource(R.string.settings_import_preview_categories, preview.categoryCount))
+                Text(stringResource(R.string.settings_import_preview_chapters, preview.chapterCount))
+                Text(stringResource(R.string.settings_import_preview_tracking, preview.trackingCount))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = overwriteExisting,
+                            onClick = { overwriteExisting = !overwriteExisting },
+                            role = Role.Checkbox,
+                        )
+                        .padding(top = 12.dp),
+                ) {
+                    androidx.compose.material3.Checkbox(
+                        checked = overwriteExisting,
+                        onCheckedChange = null,
+                    )
+                    Text(
+                        text = stringResource(R.string.settings_import_overwrite_existing),
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onConfirm(overwriteExisting) }) {
+                Text(stringResource(R.string.settings_import_button))
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_import_cancel))
+            }
+        },
+    )
 }
 
 fun NavGraphBuilder.settingsBackupScreen(
@@ -171,7 +247,19 @@ private fun BackupContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
 
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_import_tachiyomi)) },
-        supportingContent = { Text(stringResource(R.string.settings_import_tachiyomi_description)) },
+        supportingContent = {
+            if (state.isRestoreInProgress && state.tachiyomiImportTotal > 0) {
+                Text(
+                    stringResource(
+                        R.string.settings_import_progress,
+                        state.tachiyomiImportProgress,
+                        state.tachiyomiImportTotal,
+                    )
+                )
+            } else {
+                Text(stringResource(R.string.settings_import_tachiyomi_description))
+            }
+        },
         trailingContent = {
             if (state.isRestoreInProgress) {
                 CircularProgressIndicator()
@@ -208,6 +296,8 @@ private fun BackupContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
                         stringResource(R.string.settings_backup_frequency_daily) to 24,
                         stringResource(R.string.settings_backup_frequency_2days) to 48,
                         stringResource(R.string.settings_backup_frequency_weekly) to 168,
+                        stringResource(R.string.settings_backup_frequency_biweekly) to 336,
+                        stringResource(R.string.settings_backup_frequency_monthly) to 720,
                     )
                     options.forEach { (label, hours) ->
                         Row(
@@ -259,6 +349,42 @@ private fun BackupContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
                         }
                     }
                 }
+            },
+        )
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_backup_location)) },
+            supportingContent = {
+                val uri = state.autoBackupLocationUri
+                Text(
+                    if (uri.isBlank()) {
+                        stringResource(R.string.settings_backup_location_default)
+                    } else {
+                        Uri.parse(uri).lastPathSegment ?: uri
+                    },
+                )
+            },
+            trailingContent = {
+                OutlinedButton(onClick = { onEvent(SettingsEvent.RequestAutoBackupLocationPicker) }) {
+                    Text(stringResource(R.string.settings_backup_location_choose))
+                }
+            },
+        )
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_backup_last)) },
+            supportingContent = {
+                val ts = state.lastAutoBackupTimestamp
+                Text(
+                    if (ts <= 0L) {
+                        stringResource(R.string.settings_backup_last_never)
+                    } else {
+                        java.text.DateFormat.getDateTimeInstance(
+                            java.text.DateFormat.MEDIUM,
+                            java.text.DateFormat.SHORT,
+                        ).format(java.util.Date(ts))
+                    },
+                )
             },
         )
 

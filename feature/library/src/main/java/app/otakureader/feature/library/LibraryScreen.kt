@@ -142,6 +142,16 @@ fun LibraryScreen(
                             ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             keyboardActions = KeyboardActions(onSearch = {}),
+                            trailingIcon = {
+                                if (state.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.onEvent(LibraryEvent.OnSearchQueryChange("")) }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.library_search_clear)
+                                        )
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
@@ -286,6 +296,14 @@ private fun LibraryContent(
                 state.isLoading && state.mangaList.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+                state.mangaList.isEmpty() && state.searchQuery.isNotBlank() -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        EmptyLibrarySearchMessage(
+                            query = state.searchQuery,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
                 }
                 state.mangaList.isEmpty() -> {

@@ -129,6 +129,9 @@ sealed interface Route {
     data object SettingsDiscord : Route
 
     @Serializable
+    data object SettingsSecurity : Route
+
+    @Serializable
     data object WidgetConfiguration : Route
 
     @Serializable

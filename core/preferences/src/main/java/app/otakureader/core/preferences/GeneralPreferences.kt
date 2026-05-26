@@ -10,7 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 /**
  * Preference store for general application settings including theme and locale.
@@ -172,6 +174,43 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
 
+    // --- Browse Filter State (per source) ---
+
+    /**
+     * Persisted per-source browse filter selections, keyed by source id. The value is an
+     * opaque encoding produced by the browse feature; this store treats it as a string.
+     */
+    val browseFilterStates: Flow<Map<String, String>> = dataStore.data.map { prefs ->
+        prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) } ?: emptyMap()
+    }
+
+    suspend fun getBrowseFilterState(sourceId: String): String? = browseFilterStates.first()[sourceId]
+
+    suspend fun setBrowseFilterState(sourceId: String, encoded: String?) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) }?.toMutableMap()
+            ?: mutableMapOf()
+        if (encoded.isNullOrBlank()) current.remove(sourceId) else current[sourceId] = encoded
+        if (current.isEmpty()) prefs.remove(Keys.BROWSE_FILTER_STATES)
+        else prefs[Keys.BROWSE_FILTER_STATES] = Json.encodeToString(current)
+    }
+
+    private fun decodeFilterStates(raw: String): Map<String, String> =
+        runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+
+    // --- Security ---
+
+    /** Whether the app requires biometric / device-credential unlock. */
+    val biometricLockEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_ENABLED] ?: false }
+    suspend fun setBiometricLockEnabled(value: Boolean) = dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = value }
+
+    /**
+     * Grace period before the app re-locks after going to the background, in minutes.
+     * 0 means lock immediately on every return to the foreground.
+     */
+    val biometricLockTimeoutMinutes: Flow<Int> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] ?: 0 }
+    suspend fun setBiometricLockTimeoutMinutes(value: Int) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] = value }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
@@ -257,6 +296,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
         val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
         val BROWSE_SEARCH_HISTORY = stringPreferencesKey("browse_search_history")
+        val BROWSE_FILTER_STATES = stringPreferencesKey("browse_filter_states")
+        val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
+        val BIOMETRIC_LOCK_TIMEOUT_MINUTES = intPreferencesKey("biometric_lock_timeout_minutes")
     }
 
     companion object {
