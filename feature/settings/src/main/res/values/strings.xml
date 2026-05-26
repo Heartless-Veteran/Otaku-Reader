@@ -381,6 +381,14 @@
     <string name="settings_download_ahead_description">Automatically download next chapters while reading</string>
     <string name="settings_download_ahead_wifi_only">Download Ahead on Wi-Fi Only</string>
     <string name="settings_download_ahead_wifi_only_description">Restrict ahead downloads to Wi-Fi</string>
+    <string name="settings_smart_download">Smart Downloads</string>
+    <string name="settings_smart_download_enabled">Enable smart downloads</string>
+    <string name="settings_smart_download_enabled_description">Auto-download upcoming chapters based on your reading progress</string>
+    <string name="settings_smart_download_chapters_ahead">Download %1$d chapters ahead</string>
+    <string name="settings_smart_download_threshold">Trigger at %1$d%% through a chapter</string>
+    <string name="settings_smart_download_wifi_only">On Wi-Fi only</string>
+    <string name="settings_smart_download_favorites_only">Favorites only</string>
+    <string name="settings_smart_download_min_storage">Require %1$d MB free</string>
     <string name="settings_delete_after_reading">Delete After Reading</string>
     <string name="settings_delete_after_reading_description">Remove downloaded chapters once finished</string>
 

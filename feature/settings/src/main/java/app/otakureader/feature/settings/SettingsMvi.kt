@@ -129,6 +129,12 @@ data class SettingsState(
     val downloadAheadWhileReading get() = downloads.downloadAheadWhileReading
     val downloadAheadOnlyOnWifi get() = downloads.downloadAheadOnlyOnWifi
     val downloadLocation get() = downloads.downloadLocation
+    val smartDownloadEnabled get() = downloads.smartDownloadEnabled
+    val smartDownloadChaptersAhead get() = downloads.smartDownloadChaptersAhead
+    val smartDownloadThreshold get() = downloads.smartDownloadThreshold
+    val smartDownloadWifiOnly get() = downloads.smartDownloadWifiOnly
+    val smartDownloadFavoritesOnly get() = downloads.smartDownloadFavoritesOnly
+    val smartDownloadMinStorageMb get() = downloads.smartDownloadMinStorageMb
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -233,6 +239,14 @@ sealed interface SettingsEvent : UiEvent {
     data class SetDownloadAheadOnlyOnWifi(val enabled: Boolean) : SettingsEvent
     data class SetDownloadLocation(val location: String?) : SettingsEvent
     data object RequestDownloadLocationPicker : SettingsEvent
+
+    // Smart download rules
+    data class SetSmartDownloadEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadChaptersAhead(val count: Int) : SettingsEvent
+    data class SetSmartDownloadThreshold(val threshold: Float) : SettingsEvent
+    data class SetSmartDownloadWifiOnly(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadFavoritesOnly(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadMinStorageMb(val mb: Int) : SettingsEvent
 
     // Local Source
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent
