@@ -12,6 +12,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,6 +25,9 @@ class TrackerSyncSettingsDelegate @Inject constructor(
 ) {
 
     private var updateState: ((SettingsState) -> SettingsState) -> Unit = {}
+
+    /** Guards against starting a second batch sync while one is already running. */
+    private val batchSyncRunning = AtomicBoolean(false)
 
     fun startObserving(
         scope: CoroutineScope,
@@ -70,6 +74,8 @@ class TrackerSyncSettingsDelegate @Inject constructor(
     }
 
     private suspend fun syncAllTrackers(sendEffect: suspend (SettingsEffect) -> Unit) {
+        // Ignore re-taps while a sync is running so we don't fire concurrent batch syncs.
+        if (!batchSyncRunning.compareAndSet(false, true)) return
         updateState { it.copy(tracking = it.tracking.copy(batchSyncInProgress = true, batchSyncSummary = null)) }
         try {
             // syncAllPending() only processes manga with pending tracker changes, so untracked
@@ -81,6 +87,7 @@ class TrackerSyncSettingsDelegate @Inject constructor(
         } catch (e: Exception) {
             sendEffect(SettingsEffect.ShowSnackbar("Tracker sync failed: ${e.message}"))
         } finally {
+            batchSyncRunning.set(false)
             updateState { it.copy(tracking = it.tracking.copy(batchSyncInProgress = false)) }
         }
     }

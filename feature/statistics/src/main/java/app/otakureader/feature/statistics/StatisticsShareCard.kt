@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -62,9 +64,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.NumberFormat
 import java.util.concurrent.TimeUnit
-
-/** Layout variants for the shareable statistics card. */
-enum class ShareCardLayout { DETAILED, COMPACT }
 
 /**
  * A shareable card showing reading statistics in a social-media-friendly format.
