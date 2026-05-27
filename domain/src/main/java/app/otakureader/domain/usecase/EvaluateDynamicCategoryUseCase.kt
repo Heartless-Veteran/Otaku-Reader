@@ -30,12 +30,12 @@ class EvaluateDynamicCategoryUseCase @Inject constructor() {
     private fun matches(manga: Manga, rule: DynamicCategoryRule, now: Long): Boolean = when (rule) {
         is DynamicCategoryRule.UnreadAtLeast -> manga.unreadCount >= rule.count
         is DynamicCategoryRule.RecentlyUpdated ->
-            manga.lastUpdate > 0 && now - manga.lastUpdate <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+            manga.lastUpdate in 1..now && now - manga.lastUpdate <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
         is DynamicCategoryRule.GenreContains ->
             manga.genre.any { it.contains(rule.genre, ignoreCase = true) }
         is DynamicCategoryRule.Completed -> manga.status == MangaStatus.COMPLETED
         is DynamicCategoryRule.Ongoing -> manga.status == MangaStatus.ONGOING
         is DynamicCategoryRule.RecentlyAdded ->
-            manga.dateAdded > 0 && now - manga.dateAdded <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+            manga.dateAdded in 1..now && now - manga.dateAdded <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
     }
 }

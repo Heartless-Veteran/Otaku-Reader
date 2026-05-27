@@ -9,10 +9,14 @@ package app.otakureader.domain.model
  */
 sealed class DynamicCategoryRule {
     /** Manga with at least [count] unread chapters. */
-    data class UnreadAtLeast(val count: Int) : DynamicCategoryRule()
+    data class UnreadAtLeast(val count: Int) : DynamicCategoryRule() {
+        init { require(count >= 0) { "count must be non-negative, was $count" } }
+    }
 
     /** Manga updated within the last [withinDays] days (based on most recent chapter date). */
-    data class RecentlyUpdated(val withinDays: Int) : DynamicCategoryRule()
+    data class RecentlyUpdated(val withinDays: Int) : DynamicCategoryRule() {
+        init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
+    }
 
     /** Manga whose genre list contains [genre] (case-insensitive substring match). */
     data class GenreContains(val genre: String) : DynamicCategoryRule()
@@ -24,7 +28,9 @@ sealed class DynamicCategoryRule {
     data object Ongoing : DynamicCategoryRule()
 
     /** Manga added to the library within the last [withinDays] days. */
-    data class RecentlyAdded(val withinDays: Int) : DynamicCategoryRule()
+    data class RecentlyAdded(val withinDays: Int) : DynamicCategoryRule() {
+        init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
+    }
 
     companion object {
         const val TYPE_UNREAD_AT_LEAST = "unread_at_least"
