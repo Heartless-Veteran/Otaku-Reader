@@ -141,6 +141,7 @@ class BrowseViewModel @Inject constructor(
             }
             is BrowseEvent.ApplyFilters -> {
                 _state.update { it.copy(showFilterSheet = false) }
+                persistActiveFilters()
                 performSearch()
             }
 
@@ -197,15 +198,38 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
+    private var filterLoadJob: kotlinx.coroutines.Job? = null
+
     private fun loadSourceFilters(sourceId: String) {
-        viewModelScope.launch {
-            val filters = getSourceFiltersUseCase(sourceId)
-            _state.update {
-                it.copy(
-                    availableFilters = filters,
-                    activeFilters = filters
-                )
+        // Cancel any in-flight load so a slower fetch for a previously-selected source can't
+        // land after a newer selection and overwrite the wrong source's filters.
+        filterLoadJob?.cancel()
+        filterLoadJob = viewModelScope.launch {
+            // Two independent fetches: one stays at defaults (for "reset"), one receives the
+            // user's previously-saved selections so filters survive across sessions.
+            val defaults = getSourceFiltersUseCase(sourceId)
+            val active = getSourceFiltersUseCase(sourceId)
+            generalPreferences.getBrowseFilterState(sourceId)?.let { saved ->
+                BrowseFilterStatePersistence.apply(active, saved)
             }
+            // Only apply if this is still the selected source.
+            if (_state.value.currentSourceId == sourceId) {
+                _state.update {
+                    it.copy(
+                        availableFilters = defaults,
+                        activeFilters = active
+                    )
+                }
+            }
+        }
+    }
+
+    private fun persistActiveFilters() {
+        val sourceId = _state.value.currentSourceId ?: return
+        val active = _state.value.activeFilters
+        viewModelScope.launch {
+            val encoded = if (active.hasActiveFilters()) BrowseFilterStatePersistence.encode(active) else null
+            generalPreferences.setBrowseFilterState(sourceId, encoded)
         }
     }
 
