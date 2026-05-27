@@ -148,7 +148,7 @@ class DownloadsViewModel @Inject constructor(
         viewModelScope.launch {
             _state.value.items
                 .filter { it.status == app.otakureader.domain.model.DownloadStatus.FAILED }
-                .forEach { downloadRepository.resumeDownload(it.id) }
+                .forEach { downloadRepository.retryDownload(it.id) }
         }
     }
 
