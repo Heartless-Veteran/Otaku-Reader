@@ -18,6 +18,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
+import app.otakureader.data.R
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
@@ -60,15 +61,19 @@ class ExtensionAutoUpdateWorker @AssistedInject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Extension updates",
+                context.getString(R.string.extension_update_channel_name),
                 NotificationManager.IMPORTANCE_DEFAULT,
             )
             context.getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
         }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setContentTitle("Extension updates available")
-            .setContentText("$count extension update(s) ready to install")
+            .setContentTitle(context.getString(R.string.extension_update_notification_title))
+            .setContentText(
+                context.resources.getQuantityString(
+                    R.plurals.extension_update_notification_text, count, count,
+                ),
+            )
             .setAutoCancel(true)
             .build()
         @Suppress("MissingPermission")

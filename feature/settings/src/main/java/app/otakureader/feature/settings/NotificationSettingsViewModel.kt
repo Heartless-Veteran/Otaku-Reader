@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.NotificationPreferences
+import app.otakureader.domain.scheduler.ExtensionUpdateScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +30,7 @@ data class NotificationSettingsState(
 class NotificationSettingsViewModel @Inject constructor(
     private val prefs: NotificationPreferences,
     private val generalPreferences: GeneralPreferences,
+    private val extensionUpdateScheduler: ExtensionUpdateScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(NotificationSettingsState())
@@ -69,11 +71,29 @@ class NotificationSettingsViewModel @Inject constructor(
         }
     }
 
-    fun setExtensionAutoUpdate(enabled: Boolean) =
-        viewModelScope.launch { generalPreferences.setExtensionAutoUpdateEnabled(enabled) }
+    fun setExtensionAutoUpdate(enabled: Boolean) = viewModelScope.launch {
+        generalPreferences.setExtensionAutoUpdateEnabled(enabled)
+        // Reschedule immediately so the toggle takes effect without waiting for the next app start.
+        if (enabled) {
+            extensionUpdateScheduler.schedule(
+                intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
+                wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
+            )
+        } else {
+            extensionUpdateScheduler.cancel()
+        }
+    }
 
-    fun setExtensionAutoUpdateWifiOnly(enabled: Boolean) =
-        viewModelScope.launch { generalPreferences.setExtensionAutoUpdateWifiOnly(enabled) }
+    fun setExtensionAutoUpdateWifiOnly(enabled: Boolean) = viewModelScope.launch {
+        generalPreferences.setExtensionAutoUpdateWifiOnly(enabled)
+        // Re-apply the network constraint live if auto-update is currently on.
+        if (generalPreferences.extensionAutoUpdateEnabled.first()) {
+            extensionUpdateScheduler.schedule(
+                intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
+                wifiOnly = enabled,
+            )
+        }
+    }
 
     fun setSmartBatching(enabled: Boolean) = viewModelScope.launch { prefs.setSmartBatching(enabled) }
     fun setCooldown(minutes: Int) = viewModelScope.launch { prefs.setPerMangaCooldownMinutes(minutes) }

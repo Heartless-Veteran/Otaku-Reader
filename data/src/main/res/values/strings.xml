@@ -4,4 +4,12 @@
     <string name="update_notifier_skipped_title">Library update — %1$d skipped</string>
     <string name="update_notifier_skipped_text">Some manga were skipped based on your smart-update settings.</string>
     <string name="update_notifier_skipped_big_text">%1$d manga were skipped (unread, completed, or never started). Adjust this in Settings → Library.</string>
+
+    <!-- Extension auto-update worker notifications -->
+    <string name="extension_update_channel_name">Extension updates</string>
+    <string name="extension_update_notification_title">Extension updates available</string>
+    <plurals name="extension_update_notification_text">
+        <item quantity="one">%1$d extension update ready to install</item>
+        <item quantity="other">%1$d extension updates ready to install</item>
+    </plurals>
 </resources>
