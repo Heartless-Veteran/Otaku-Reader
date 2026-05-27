@@ -2,6 +2,7 @@
 package app.otakureader.feature.details
 
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -315,7 +316,8 @@ private fun DetailsContent(
             noteText = state.chapterNoteEditorText,
             onTextChange = { onEvent(DetailsContract.Event.UpdateChapterNoteText(it)) },
             onSave = { onEvent(DetailsContract.Event.SaveChapterNote) },
-            onDismiss = { onEvent(DetailsContract.Event.HideChapterNoteEditor) }
+            onDismiss = { onEvent(DetailsContract.Event.HideChapterNoteEditor) },
+            titleRes = R.string.chapter_notes_editor_dialog_title
         )
     }
 
@@ -474,11 +476,12 @@ private fun NoteEditorDialog(
     noteText: String,
     onTextChange: (String) -> Unit,
     onSave: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    @StringRes titleRes: Int = R.string.notes_editor_dialog_title
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.notes_editor_dialog_title)) },
+        title = { Text(stringResource(titleRes)) },
         text = {
             OutlinedTextField(
                 value = noteText,

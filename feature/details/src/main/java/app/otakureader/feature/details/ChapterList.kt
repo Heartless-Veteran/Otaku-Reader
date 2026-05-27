@@ -92,6 +92,7 @@ fun ChapterList(
     onDeleteDownload: (Long) -> Unit,
     onMarkPreviousRead: (Long) -> Unit,
     onExportAsCbz: (Long) -> Unit = {},
+    onEditNote: (Long) -> Unit = {},
     onLoadThumbnail: (Long) -> Unit = {},
     onClearSelection: () -> Unit = {},
     onSelectAll: () -> Unit = {},
@@ -149,6 +150,7 @@ fun ChapterList(
                         onDeleteDownload = { onDeleteDownload(chapter.id) },
                         onMarkPreviousRead = { onMarkPreviousRead(chapter.id) },
                         onExportAsCbz = { onExportAsCbz(chapter.id) },
+                        onEditNote = { onEditNote(chapter.id) },
                         onLoadThumbnail = { onLoadThumbnail(chapter.id) }
                     )
                 }
