@@ -18,6 +18,10 @@ class ExtensionRepoRepositoryImpl(
 
     companion object {
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
+
+        /** Keiyoushi — upstream extension repository for Tachiyomi/Mihon/Komikku-compatible extensions. */
+        const val DEFAULT_REPOSITORY_URL =
+            "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"
     }
 
     override fun getRepositories(): Flow<List<String>> {
@@ -42,9 +46,17 @@ class ExtensionRepoRepositoryImpl(
         }
     }
 
-    @Deprecated("No longer used as there is no default repository.")
+    /**
+     * Ensures the default Keiyoushi repository is present.
+     * Called on first launch (or whenever the app decides to seed defaults).
+     * Does NOT clear or overwrite user-added repos — only adds the default if missing.
+     */
     override suspend fun ensureDefaultRepository() {
-        // No default — users add their own extension repositories via the Extensions screen.
+        dataStore.edit { preferences ->
+            val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
+            currentRepos.add(DEFAULT_REPOSITORY_URL)
+            preferences[REPOSITORIES_KEY] = currentRepos
+        }
     }
 
     override suspend fun clearRepositories() {

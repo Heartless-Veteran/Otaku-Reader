@@ -1,5 +1,6 @@
 package app.otakureader.data.worker
 
+import android.content.pm.ServiceInfo
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -92,7 +93,7 @@ class CoverRefreshWorker @AssistedInject constructor(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
-        return ForegroundInfo(COVER_REFRESH_PROGRESS_ID, notification)
+        return ForegroundInfo(COVER_REFRESH_PROGRESS_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
     private fun createChannel() {

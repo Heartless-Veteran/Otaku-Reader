@@ -35,12 +35,9 @@ interface ExtensionRepoRepository {
     suspend fun removeRepository(url: String)
 
     /**
-     * No-op. Retained for interface compatibility.
+     * Ensures the default Keiyoushi repository is present on first launch.
+     * Does NOT clear or overwrite user-added repos — only adds the default if missing.
      */
-    @Deprecated(
-        message = "No longer used as there is no default repository. Users must add their own.",
-        level = DeprecationLevel.WARNING
-    )
     suspend fun ensureDefaultRepository()
 
     /**
