@@ -18,11 +18,13 @@ class ExtensionRepoRepositoryImpl(
 
     companion object {
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
+        private const val DEFAULT_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
     }
 
     override fun getRepositories(): Flow<List<String>> {
         return dataStore.data.map { preferences ->
-            preferences[REPOSITORIES_KEY]?.toList() ?: emptyList()
+            val repos = preferences[REPOSITORIES_KEY]?.toList() ?: emptyList()
+            if (repos.isEmpty()) listOf(DEFAULT_REPO_URL) else repos
         }
     }
 
@@ -42,9 +44,13 @@ class ExtensionRepoRepositoryImpl(
         }
     }
 
-    @Deprecated("No longer used as there is no default repository.")
     override suspend fun ensureDefaultRepository() {
-        // No default — users add their own extension repositories via the Extensions screen.
+        dataStore.edit { preferences ->
+            val currentRepos = preferences[REPOSITORIES_KEY]
+            if (currentRepos.isNullOrEmpty()) {
+                preferences[REPOSITORIES_KEY] = setOf(DEFAULT_REPO_URL)
+            }
+        }
     }
 
     override suspend fun clearRepositories() {
