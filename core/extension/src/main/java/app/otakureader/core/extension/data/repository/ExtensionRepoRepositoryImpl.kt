@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import app.otakureader.core.extension.data.remote.ExtensionRemoteDataSourceImpl
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,14 +32,16 @@ class ExtensionRepoRepositoryImpl(
     override suspend fun addRepository(url: String) {
         dataStore.edit { preferences ->
             val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
-            currentRepos.add(url)
+            currentRepos.add(ExtensionRemoteDataSourceImpl.normalizeRepoUrl(url))
             preferences[REPOSITORIES_KEY] = currentRepos
         }
     }
 
     override suspend fun removeRepository(url: String) {
         dataStore.edit { preferences ->
+            val normalizedUrl = ExtensionRemoteDataSourceImpl.normalizeRepoUrl(url)
             val currentRepos = preferences[REPOSITORIES_KEY]?.toMutableSet() ?: mutableSetOf()
+            currentRepos.remove(normalizedUrl)
             currentRepos.remove(url)
             preferences[REPOSITORIES_KEY] = currentRepos
         }
