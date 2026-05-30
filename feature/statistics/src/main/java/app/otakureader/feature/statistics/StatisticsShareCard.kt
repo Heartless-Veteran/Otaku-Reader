@@ -298,39 +298,46 @@ fun StatisticsShareSheet(
 }
 
 /** Writes [bitmap] to cache and returns a FileProvider URI shareable with other apps. */
-private fun bitmapToShareUri(context: Context, bitmap: Bitmap): Uri {
-    val statsDir = File(context.cacheDir, "shared_stats").also { it.mkdirs() }
-    val file = File(statsDir, "reading_stats_${System.currentTimeMillis()}.png")
-    FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
-    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-}
+private suspend fun bitmapToShareUri(context: Context, bitmap: Bitmap): Uri =
+    withContext(Dispatchers.IO) {
+        val statsDir = File(context.cacheDir, "shared_stats").also { it.mkdirs() }
+        val file = File(statsDir, "reading_stats_${System.currentTimeMillis()}.png")
+        FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    }
 
-/** Saves [bitmap] to the device gallery via MediaStore. Returns true on success. */
+/**
+ * Saves [bitmap] to the device gallery via MediaStore. Returns true on success.
+ *
+ * On API 29+ (scoped storage) the MediaStore insert works without runtime permissions.
+ * On API 26–28 the legacy `EXTERNAL_CONTENT_URI` write requires `WRITE_EXTERNAL_STORAGE`,
+ * which this app does not request — so we short-circuit to `false` there instead of letting
+ * the insert throw `SecurityException`. The insert itself is also wrapped in `runCatching`
+ * so any other unexpected I/O or permission failure surfaces as a toast, not a crash.
+ */
 private suspend fun saveBitmapToGallery(context: Context, bitmap: Bitmap): Boolean =
     withContext(Dispatchers.IO) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return@withContext false
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.Images.Media.DISPLAY_NAME, "otaku_stats_${System.currentTimeMillis()}.png")
             put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/OtakuReader")
-                put(MediaStore.Images.Media.IS_PENDING, 1)
-            }
+            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/OtakuReader")
+            put(MediaStore.Images.Media.IS_PENDING, 1)
         }
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-            ?: return@withContext false
+        var uri: Uri? = null
         runCatching {
-            resolver.openOutputStream(uri)?.use { out ->
+            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: return@runCatching false
+            resolver.openOutputStream(uri!!)?.use { out ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            } ?: return@withContext false
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.clear()
-                values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                resolver.update(uri, values, null, null)
-            }
+            } ?: return@runCatching false
+            values.clear()
+            values.put(MediaStore.Images.Media.IS_PENDING, 0)
+            resolver.update(uri!!, values, null, null)
             true
         }.getOrElse {
-            resolver.delete(uri, null, null)
+            uri?.let { resolver.delete(it, null, null) }
             false
         }
     }

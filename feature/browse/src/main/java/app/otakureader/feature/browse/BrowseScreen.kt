@@ -281,13 +281,19 @@ private fun BrowseContent(
                         },
                         label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.browse_search_history_remove),
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable { onEvent(BrowseEvent.DeleteSearchHistoryItem(query)) },
-                            )
+                            // 24.dp IconButton meets the dense-inline accessibility minimum
+                            // (the 18.dp Icon was easy to miss, and tapping near it could
+                            // trigger the chip's onClick search action by mistake).
+                            IconButton(
+                                onClick = { onEvent(BrowseEvent.DeleteSearchHistoryItem(query)) },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.browse_search_history_remove),
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
                         },
                     )
                 }
