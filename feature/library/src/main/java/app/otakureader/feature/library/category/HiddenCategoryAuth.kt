@@ -18,6 +18,17 @@ import androidx.fragment.app.FragmentActivity
  * If the host isn't a [FragmentActivity] (BiometricPrompt's requirement) or no credential is
  * enrolled, it falls back to granting access so the user is never permanently locked out — the
  * gate hardens once the app's Activity is a FragmentActivity.
+ *
+ * ## Security note (CodeQL `java/android/insecure-local-authentication`)
+ *
+ * CodeQL flags this callback as "insecure" because the success result only toggles a UI
+ * state — it isn't used to unwrap a key or unlock encrypted storage. That is intentional:
+ * this is a **privacy gate**, not a security boundary. Hidden-category rows in Room are not
+ * encrypted at rest; the only thing biometric auth protects against here is over-the-shoulder
+ * viewing in the library UI. There is no cryptographic material to bind a `CryptoObject` to,
+ * so the canonical CodeQL fix (passing a `BiometricPrompt.CryptoObject` and using its
+ * `Cipher`/`Signature` post-auth) is not applicable. The CodeQL alert should be dismissed as
+ * "Won't fix — UI privacy gate, not protecting cryptographic material."
  */
 internal object HiddenCategoryAuth {
 
