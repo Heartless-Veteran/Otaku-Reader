@@ -157,14 +157,17 @@ class UpdatesViewModel @Inject constructor(
         if (selected.isEmpty()) return
         val count = selected.size
         viewModelScope.launch {
-            runCatching {
+            // try/catch with explicit CancellationException rethrow — coroutine cancellation
+            // (e.g. ViewModel cleared mid-update) shouldn't surface as "Failed to mark as read".
+            try {
                 chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
-            }.onSuccess {
                 // Only clear selection on success — if the DB write threw, keep the items
                 // selected so the user can retry instead of silently losing their selection.
                 _state.update { it.copy(selectedItems = emptySet()) }
                 _effect.send(UpdatesEffect.ShowSnackbar("Marked $count chapter(s) as read"))
-            }.onFailure {
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar("Failed to mark as read"))
             }
         }
