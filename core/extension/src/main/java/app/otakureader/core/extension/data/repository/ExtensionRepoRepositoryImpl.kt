@@ -23,9 +23,13 @@ class ExtensionRepoRepositoryImpl(
     }
 
     override fun getRepositories(): Flow<List<String>> {
+        // Return exactly what's in DataStore. The previous `if (repos.isEmpty()) DEFAULT_REPO_URL`
+        // substitution meant deleting the last repo silently re-emitted the default, which made
+        // the delete button look broken — the row snapped back instantly. First-launch defaulting
+        // is handled by `ensureDefaultRepository()` (called from ExtensionsViewModel.init), so a
+        // truly-empty list here is the user's deliberate state.
         return dataStore.data.map { preferences ->
-            val repos = preferences[REPOSITORIES_KEY]?.toList() ?: emptyList()
-            if (repos.isEmpty()) listOf(DEFAULT_REPO_URL) else repos
+            preferences[REPOSITORIES_KEY]?.toList() ?: emptyList()
         }
     }
 

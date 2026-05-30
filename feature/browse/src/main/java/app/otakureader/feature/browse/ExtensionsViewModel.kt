@@ -302,6 +302,10 @@ class ExtensionsViewModel @Inject constructor(
     private fun removeRepository(url: String) {
         viewModelScope.launch {
             runCatching { extensionRepoRepository.removeRepository(url) }
+                .onSuccess { _effect.send(ExtensionsEffect.ShowSnackbar("Repository removed")) }
+                .onFailure { e ->
+                    _effect.send(ExtensionsEffect.ShowError("Couldn't remove repository: ${e.message}"))
+                }
         }
     }
 
