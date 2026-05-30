@@ -15,6 +15,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.File
 
 class ExtensionRemoteDataSourceTest {
 
@@ -97,8 +98,8 @@ class ExtensionRemoteDataSourceTest {
         assertEquals(false, extension.isNsfw)
         assertEquals(1, extension.sources.size)
 
-        // Verify APK URL is resolved correctly (Keiyoushi convention: apks/ subdirectory)
-        val expectedApkUrl = "$baseUrl/apks/tachiyomi-en.mangadex-v1.2.3.apk"
+        // Verify APK URL is resolved correctly (Keiyoushi/Mihon convention: apk/ subdirectory)
+        val expectedApkUrl = "$baseUrl/apk/tachiyomi-en.mangadex-v1.2.3.apk"
         assertEquals(expectedApkUrl, extension.apkUrl)
 
         // Verify icon URL is resolved correctly
@@ -333,5 +334,79 @@ class ExtensionRemoteDataSourceTest {
         val extensions = result.getOrThrow()
         assertEquals(1, extensions.size)
         assertEquals(true, extensions[0].isNsfw)
+    }
+
+    @Test
+    fun `fetchAvailableExtensions supports Komikku minified repository full index URL`() = runTest {
+        // Given: Komikku repository URLs are commonly pasted as a full index.min.json URL.
+        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+        coEvery { repoRepository.getRepositories() } returns flowOf(listOf("$baseUrl/index.min.json"))
+
+        val komikkuExtensions = listOf(
+            MinifiedExtensionDto(
+                name = "Tachiyomi: AHottie",
+                pkg = "eu.kanade.tachiyomi.extension.all.ahottie",
+                apk = "tachiyomi-all.ahottie-v1.4.3.apk",
+                lang = "all",
+                code = 3,
+                version = "1.4.3",
+                nsfw = 1,
+                sources = listOf(
+                    MinifiedExtensionSourceDto(
+                        name = "AHottie",
+                        lang = "all",
+                        id = "6289731484943315811",
+                        baseUrl = "https://ahottie.top",
+                    ),
+                ),
+            ),
+        )
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(json.encodeToString(komikkuExtensions)),
+        )
+
+        // When: Fetching extensions from a Komikku-style repo.
+        val result = dataSource.fetchAvailableExtensions()
+
+        // Then: The full URL is normalized and the Komikku schema is parsed correctly.
+        assertTrue(result.isSuccess)
+        val extensions = result.getOrThrow()
+        assertEquals(1, extensions.size)
+        assertEquals("/index.min.json", mockWebServer.takeRequest().path)
+
+        val extension = extensions[0]
+        assertEquals("Tachiyomi: AHottie", extension.name)
+        assertEquals("eu.kanade.tachiyomi.extension.all.ahottie", extension.pkgName)
+        assertEquals("all", extension.lang)
+        assertEquals(3, extension.versionCode)
+        assertEquals("1.4.3", extension.versionName)
+        assertEquals(true, extension.isNsfw)
+        assertEquals("$baseUrl/apk/tachiyomi-all.ahottie-v1.4.3.apk", extension.apkUrl)
+        assertEquals("$baseUrl/icon/eu.kanade.tachiyomi.extension.all.ahottie.png", extension.iconUrl)
+        assertEquals(baseUrl, extension.repoUrl)
+        assertEquals(1, extension.sources.size)
+        assertEquals("https://ahottie.top", extension.sources.first().baseUrl)
+    }
+
+    @Test
+    fun `downloadApk falls back to apks folder when apk folder returns 404`() = runTest {
+        // Given: the standard /apk/ path 404s and the /apks/ fork path serves the file
+        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+        val apkUrl = "$baseUrl/apk/test-extension-v1.0.apk"
+        mockWebServer.enqueue(MockResponse().setResponseCode(404))
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("APK-BYTES"))
+        val destination = File.createTempFile("ext", ".apk").apply { deleteOnExit() }
+
+        // When
+        val result = dataSource.downloadApk(apkUrl, destination)
+
+        // Then: the fallback request succeeds, writes the file, and both folders were tried
+        assertTrue(result.isSuccess)
+        assertEquals("APK-BYTES", destination.readText())
+        assertEquals("/apk/test-extension-v1.0.apk", mockWebServer.takeRequest().path)
+        assertEquals("/apks/test-extension-v1.0.apk", mockWebServer.takeRequest().path)
     }
 }

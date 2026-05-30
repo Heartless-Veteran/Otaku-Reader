@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <cache-path name="extension_cache" path="extension_downloads/" />
+    <files-path name="exts" path="exts/" />
+    <files-path name="extension_downloads" path="extension_downloads/" />
     <cache-path name="shared_stats" path="shared_stats/" />
-    <files-path name="extensions" path="extensions/" />
 </paths>

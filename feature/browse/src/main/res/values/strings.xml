@@ -37,7 +37,6 @@
     <string name="extensions_update">Update</string>
     <string name="extensions_install">Install</string>
     <string name="extensions_remove_repo">Remove repository</string>
-    <string name="extensions_set_active">Set active</string>
 
     <!-- Accessibility: GlobalSearchScreen -->
     <string name="browse_global_search">Search</string>
@@ -82,7 +81,7 @@
     <string name="extensions_install_download_cd">Download</string>
     <string name="extensions_install_file_open_cd">Open file</string>
     <string name="extensions_install_instructions">Instructions</string>
-    <string name="extensions_install_instructions_body">1. To install a Tachiyomi extension, you need the APK file.\n\n2. You can download extensions from:\n   &#8226; Suwayomi repository\n   &#8226; Tachiyomi extensions archive\n\n3. Enter the URL or local file path above.\n\n4. The extension will be loaded and its sources will appear in Browse.</string>
+    <string name="extensions_install_instructions_body">1. To install a Tachiyomi/Mihon/Komikku extension directly, you need the APK file.\n\n2. You can download extensions from trusted repositories such as Keiyoushi, Komikku-compatible repos, Suwayomi, or a Tachiyomi extensions archive.\n\n3. Enter the HTTPS APK URL or local file path above.\n\n4. The extension will be loaded and its sources will appear in Browse.</string>
 
     <!-- SourceFilterSheet -->
     <string name="browse_filters_reset">Reset</string>
@@ -102,7 +101,7 @@
     <!-- ExtensionsBottomSheet -->
     <string name="extensions_sheet_title">Extensions</string>
     <string name="extensions_search_placeholder">Search extensions...</string>
-    <string name="extensions_repo_url_placeholder">https://.../repo</string>
+    <string name="extensions_repo_url_placeholder">https://raw.githubusercontent.com/komikku-app/extensions/repo</string>
     <string name="extensions_add_repository">Add repository</string>
     <string name="extensions_repositories_title">Repositories</string>
     <string name="extensions_search_cd">Search</string>
