@@ -155,11 +155,18 @@ class UpdatesViewModel @Inject constructor(
     private fun markSelectedAsRead() {
         val selected = _state.value.selectedItems
         if (selected.isEmpty()) return
+        val count = selected.size
         viewModelScope.launch {
             runCatching {
                 chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
+            }.onSuccess {
+                // Only clear selection on success — if the DB write threw, keep the items
+                // selected so the user can retry instead of silently losing their selection.
+                _state.update { it.copy(selectedItems = emptySet()) }
+                _effect.send(UpdatesEffect.ShowSnackbar("Marked $count chapter(s) as read"))
+            }.onFailure {
+                _effect.send(UpdatesEffect.ShowSnackbar("Failed to mark as read"))
             }
-            _state.update { it.copy(selectedItems = emptySet()) }
         }
     }
 

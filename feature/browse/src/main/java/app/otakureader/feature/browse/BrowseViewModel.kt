@@ -473,6 +473,8 @@ class BrowseViewModel @Inject constructor(
     private fun deleteSavedSearch(searchId: Long) {
         viewModelScope.launch {
             runCatching { feedRepository.removeSavedSearch(searchId) }
+                .onSuccess { _effect.send(BrowseEffect.ShowSnackbar("Search deleted")) }
+                .onFailure { _effect.send(BrowseEffect.ShowSnackbar("Failed to delete search")) }
         }
     }
 
