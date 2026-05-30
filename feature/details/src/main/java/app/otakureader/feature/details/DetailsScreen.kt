@@ -425,8 +425,14 @@ private fun LazyListScope.detailsChapterItems(
             isSelected = state.selectedChapters.contains(chapter.id),
             onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
             onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
+            onToggleRead = { onEvent(DetailsContract.Event.ToggleChapterRead(chapter.id)) },
+            onToggleBookmark = { onEvent(DetailsContract.Event.ToggleChapterBookmark(chapter.id)) },
+            onDownload = { onEvent(DetailsContract.Event.DownloadChapter(chapter.id)) },
+            onDeleteDownload = { onEvent(DetailsContract.Event.DeleteChapterDownload(chapter.id)) },
+            onMarkPreviousRead = { onEvent(DetailsContract.Event.MarkPreviousAsRead(chapter.id)) },
             onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) },
             onEditNote = { onEvent(DetailsContract.Event.ShowChapterNoteEditor(chapter.id)) },
+            onLoadThumbnail = { onEvent(DetailsContract.Event.LoadChapterThumbnail(chapter.id)) },
         )
     }
 }
