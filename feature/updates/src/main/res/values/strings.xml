@@ -61,6 +61,11 @@
     <string name="updates_download_failed">Failed to queue download: %1$s</string>
     <string name="updates_bulk_download_queued">%1$d chapter(s) queued for download</string>
     <string name="updates_bulk_download_partial">%1$d queued, %2$d failed</string>
+    <plurals name="updates_marked_as_read">
+        <item quantity="one">Marked %1$d chapter as read</item>
+        <item quantity="other">Marked %1$d chapters as read</item>
+    </plurals>
+    <string name="updates_mark_as_read_failed">Failed to mark as read</string>
     <string name="updates_library_update_started">Library update started</string>
     <!-- Date group headers -->
     <string name="updates_date_today">Today</string>
