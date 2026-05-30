@@ -33,7 +33,7 @@ log "ruflo: runtime missing, initialising…"
 # (faster, survives the stale-rename `ENOTEMPTY` case where `npx -y` would fight the cache);
 # otherwise fall back to a `--yes` npx that re-fetches.
 RUFLO_CACHED_BIN=""
-for candidate in /root/.npm/_npx/*/node_modules/ruflo/bin/ruflo.js; do
+for candidate in "${HOME:-/root}/.npm/_npx"/*/node_modules/ruflo/bin/ruflo.js; do
     if [[ -f "$candidate" ]]; then
         RUFLO_CACHED_BIN="$candidate"
         break
