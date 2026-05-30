@@ -52,9 +52,12 @@ class ExtensionRepoRepositoryImpl(
     }
 
     override suspend fun ensureDefaultRepository() {
+        // Seed the default repo ONLY when the key has never been written (truly first launch).
+        // An empty Set means the user has deliberately deleted everything — preserve that across
+        // restarts, otherwise the delete-last-repo flow looks broken: relaunch silently re-adds
+        // the default and the user's "no repos" state evaporates.
         dataStore.edit { preferences ->
-            val currentRepos = preferences[REPOSITORIES_KEY]
-            if (currentRepos.isNullOrEmpty()) {
+            if (preferences[REPOSITORIES_KEY] == null) {
                 preferences[REPOSITORIES_KEY] = setOf(DEFAULT_REPO_URL)
             }
         }

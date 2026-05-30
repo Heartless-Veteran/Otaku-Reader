@@ -301,11 +301,18 @@ class ExtensionsViewModel @Inject constructor(
 
     private fun removeRepository(url: String) {
         viewModelScope.launch {
-            runCatching { extensionRepoRepository.removeRepository(url) }
-                .onSuccess { _effect.send(ExtensionsEffect.ShowSnackbar("Repository removed")) }
-                .onFailure { e ->
-                    _effect.send(ExtensionsEffect.ShowError("Couldn't remove repository: ${e.message}"))
-                }
+            // try/catch with explicit CancellationException rethrow instead of `runCatching`,
+            // matching the pattern used by toggleExtension / doInstallExtension / uninstallExtension
+            // in this VM. `runCatching` catches Throwable including CancellationException, which
+            // would route normal coroutine cancellation through the error snackbar.
+            try {
+                extensionRepoRepository.removeRepository(url)
+                _effect.send(ExtensionsEffect.ShowSnackbar("Repository removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(ExtensionsEffect.ShowError("Couldn't remove repository: ${e.message}"))
+            }
         }
     }
 
