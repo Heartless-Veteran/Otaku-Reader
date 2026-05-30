@@ -161,14 +161,19 @@ class UpdatesViewModel @Inject constructor(
             // (e.g. ViewModel cleared mid-update) shouldn't surface as "Failed to mark as read".
             try {
                 chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
-                // Only clear selection on success — if the DB write threw, keep the items
-                // selected so the user can retry instead of silently losing their selection.
-                _state.update { it.copy(selectedItems = emptySet()) }
-                _effect.send(UpdatesEffect.ShowSnackbar("Marked $count chapter(s) as read"))
+                // Subtract only the IDs we actually processed from the current selection.
+                // Clearing wholesale would also wipe any new selections the user made while
+                // the DB write was in flight — losing UI state they expect to keep.
+                _state.update { it.copy(selectedItems = it.selectedItems - selected) }
+                _effect.send(
+                    UpdatesEffect.ShowSnackbar(
+                        context.resources.getQuantityString(R.plurals.updates_marked_as_read, count, count)
+                    )
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(UpdatesEffect.ShowSnackbar("Failed to mark as read"))
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
             }
         }
     }
