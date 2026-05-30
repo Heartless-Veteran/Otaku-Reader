@@ -101,10 +101,13 @@ class NotificationSettingsViewModel @Inject constructor(
     fun setRespectQuietHours(enabled: Boolean) = viewModelScope.launch { prefs.setRespectQuietHours(enabled) }
 
     fun setQuietHoursStart(hour: Int) = viewModelScope.launch {
-        prefs.setQuietHours(hour, prefs.quietHoursEnd.first())
+        // Read the other bound from already-collected state instead of re-suspending on
+        // a DataStore Flow. Parallel .first() reads in two setters can interleave with the
+        // writes and clobber rapid start/end changes; state is always synced with prefs.
+        prefs.setQuietHours(hour, _state.value.quietHoursEnd)
     }
 
     fun setQuietHoursEnd(hour: Int) = viewModelScope.launch {
-        prefs.setQuietHours(prefs.quietHoursStart.first(), hour)
+        prefs.setQuietHours(_state.value.quietHoursStart, hour)
     }
 }
