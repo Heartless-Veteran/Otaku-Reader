@@ -174,12 +174,15 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
 
+    suspend fun removeBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() } ?: return@edit
+        val updated = current.filterNot { it == query }
+        if (updated.isEmpty()) prefs.remove(Keys.BROWSE_SEARCH_HISTORY)
+        else prefs[Keys.BROWSE_SEARCH_HISTORY] = updated.joinToString("\n")
+    }
+
     // --- Browse Filter State (per source) ---
 
-    /**
-     * Persisted per-source browse filter selections, keyed by source id. The value is an
-     * opaque encoding produced by the browse feature; this store treats it as a string.
-     */
     val browseFilterStates: Flow<Map<String, String>> = dataStore.data.map { prefs ->
         prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) } ?: emptyMap()
     }
@@ -199,14 +202,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     // --- Security ---
 
-    /** Whether the app requires biometric / device-credential unlock. */
     val biometricLockEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_ENABLED] ?: false }
     suspend fun setBiometricLockEnabled(value: Boolean) = dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = value }
 
-    /**
-     * Grace period before the app re-locks after going to the background, in minutes.
-     * 0 means lock immediately on every return to the foreground.
-     */
     val biometricLockTimeoutMinutes: Flow<Int> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] ?: 0 }
     suspend fun setBiometricLockTimeoutMinutes(value: Int) =
         dataStore.edit { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] = value }

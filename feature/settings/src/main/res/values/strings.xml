@@ -201,6 +201,12 @@
     <string name="settings_tracker_connect">Connect %1$s</string>
     <string name="settings_tracker_show_password">Show password</string>
     <string name="settings_tracker_hide_password">Hide password</string>
+    <string name="settings_tracker_sync_all">Sync all to trackers</string>
+    <string name="settings_tracker_sync_all_description">Push reading status and chapter progress for every tracked manga</string>
+    <string name="settings_tracker_sync_all_button">Sync all</string>
+    <string name="settings_tracker_sync_summary_title">Sync complete</string>
+    <string name="settings_tracker_sync_summary_body">Attempted: %1$d\nSynced: %2$d\nFailed: %3$d\nConflicts: %4$d</string>
+    <string name="settings_tracker_sync_summary_dismiss">OK</string>
 
     <!-- Migration -->
     <string name="settings_migration">Migration</string>

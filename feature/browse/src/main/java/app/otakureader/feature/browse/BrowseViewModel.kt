@@ -170,6 +170,8 @@ class BrowseViewModel @Inject constructor(
                 it.copy(searchScope = event.scope, searchResults = emptyList(), hasSearchResults = false)
             }
             is BrowseEvent.ClearSearchHistory -> viewModelScope.launch { generalPreferences.clearBrowseSearchHistory() }
+            is BrowseEvent.DeleteSearchHistoryItem ->
+                viewModelScope.launch { generalPreferences.removeBrowseSearchHistory(event.query) }
         }
     }
 
