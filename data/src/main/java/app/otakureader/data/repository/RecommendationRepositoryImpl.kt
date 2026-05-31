@@ -1,5 +1,6 @@
 package app.otakureader.data.repository
 
+import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.RecommendationDao
 import app.otakureader.core.database.entity.RecommendationEntity
 import app.otakureader.domain.model.Manga
@@ -16,6 +17,7 @@ import kotlin.math.sqrt
 @Singleton
 class RecommendationRepositoryImpl @Inject constructor(
     private val recommendationDao: RecommendationDao,
+    private val mangaDao: MangaDao,
 ) : RecommendationRepository {
 
     override fun getRecommendations(): Flow<List<Recommendation>> =
@@ -29,26 +31,37 @@ class RecommendationRepositoryImpl @Inject constructor(
         val profile = buildGenreProfile(libraryManga)
         if (profile.isEmpty()) return
 
-        // Score non-library manga sourced from genre metadata already in the library manga list.
-        // In Phase 1 we score the library manga themselves (excluding identity) as candidates
-        // to prove the algorithm, since non-library source browsing is async.
-        val candidates = libraryManga.filter { it.genre.isNotEmpty() }
+        // Candidates are browsed-but-not-favorited manga from the local manga table —
+        // these are sources the user has at least glanced at, which keeps recommendations
+        // grounded in their actual extension ecosystem rather than blind catalog crawls.
+        val libraryIds = libraryManga.mapTo(mutableSetOf()) { it.id }
+        val now = System.currentTimeMillis()
 
-        val scored = candidates.mapNotNull { manga ->
-            val genreVector = manga.genre.associateWith { 1f }
-            val score = cosineSimilarity(profile, genreVector)
-            if (score > 0f) {
+        val scored = mangaDao.getRecommendationCandidates(limit = CANDIDATE_POOL_LIMIT)
+            .asSequence()
+            .filter { it.id !in libraryIds }
+            .mapNotNull { entity ->
+                val genres = entity.genre?.split('|', ',', ';')
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotEmpty() }
+                    ?: return@mapNotNull null
+                if (genres.isEmpty()) return@mapNotNull null
+                val genreVector = genres.associateWith { 1f }
+                val score = cosineSimilarity(profile, genreVector)
+                if (score <= 0f) return@mapNotNull null
                 RecommendationEntity(
-                    mangaId = manga.id,
-                    title = manga.title,
-                    thumbnailUrl = manga.thumbnailUrl,
-                    sourceId = manga.sourceId,
-                    genresJson = Json.encodeToString(manga.genre),
+                    mangaId = entity.id,
+                    title = entity.title,
+                    thumbnailUrl = entity.thumbnailUrl,
+                    sourceId = entity.sourceId,
+                    genresJson = Json.encodeToString(genres),
                     score = score,
-                    lastComputed = System.currentTimeMillis(),
+                    lastComputed = now,
                 )
-            } else null
-        }.sortedByDescending { it.score }.take(MAX_RECOMMENDATIONS)
+            }
+            .sortedByDescending { it.score }
+            .take(MAX_RECOMMENDATIONS)
+            .toList()
 
         recommendationDao.deleteAll()
         if (scored.isNotEmpty()) recommendationDao.upsertAll(scored)
@@ -90,5 +103,6 @@ class RecommendationRepositoryImpl @Inject constructor(
     companion object {
         private const val MIN_LIBRARY_SIZE = 5
         private const val MAX_RECOMMENDATIONS = 20
+        private const val CANDIDATE_POOL_LIMIT = 500
     }
 }
