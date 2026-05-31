@@ -40,6 +40,10 @@ data class SettingsState(
     // --- Browse ---
     val showNsfwContent: Boolean = false,
 
+    // --- Security ---
+    val biometricLockEnabled: Boolean = false,
+    val biometricLockTimeoutMinutes: Int = 0,
+
     // --- Discord ---
     val discordRpcEnabled: Boolean = false,
 
@@ -137,7 +141,12 @@ data class SettingsState(
     val autoBackupEnabled get() = backup.autoBackupEnabled
     val autoBackupIntervalHours get() = backup.autoBackupIntervalHours
     val autoBackupMaxCount get() = backup.autoBackupMaxCount
+    val autoBackupLocationUri get() = backup.autoBackupLocationUri
+    val lastAutoBackupTimestamp get() = backup.lastAutoBackupTimestamp
     val localBackupFiles get() = backup.localBackupFiles
+    val tachiyomiImportPreview get() = backup.tachiyomiImportPreview
+    val tachiyomiImportProgress get() = backup.tachiyomiImportProgress
+    val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
@@ -250,9 +259,13 @@ sealed interface SettingsEvent : UiEvent {
     data class CreateBackupWithUri(val uri: Uri) : SettingsEvent
     data class RestoreBackupFromUri(val uri: Uri) : SettingsEvent
     data class ImportTachiyomiBackupFromUri(val uri: Uri) : SettingsEvent
+    data class ConfirmTachiyomiImport(val overwriteExisting: Boolean) : SettingsEvent
+    data object CancelTachiyomiImport : SettingsEvent
     data class SetAutoBackupEnabled(val enabled: Boolean) : SettingsEvent
     data class SetAutoBackupInterval(val hours: Int) : SettingsEvent
     data class SetAutoBackupMaxCount(val count: Int) : SettingsEvent
+    data object RequestAutoBackupLocationPicker : SettingsEvent
+    data class SetAutoBackupLocation(val uri: String) : SettingsEvent
     data object RefreshLocalBackups : SettingsEvent
     data class RestoreLocalBackup(val fileName: String) : SettingsEvent
 
@@ -270,6 +283,10 @@ sealed interface SettingsEvent : UiEvent {
 
     // Browse
     data class SetShowNsfwContent(val enabled: Boolean) : SettingsEvent
+
+    // Security
+    data class SetBiometricLockEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetBiometricLockTimeout(val minutes: Int) : SettingsEvent
 
     // Discord
     data class SetDiscordRpcEnabled(val enabled: Boolean) : SettingsEvent
@@ -307,4 +324,5 @@ sealed interface SettingsEffect : UiEffect {
     data object NavigateToMigrationEntry : SettingsEffect
     data object NavigateToAbout : SettingsEffect
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect
+    data object ShowAutoBackupLocationPicker : SettingsEffect
 }
