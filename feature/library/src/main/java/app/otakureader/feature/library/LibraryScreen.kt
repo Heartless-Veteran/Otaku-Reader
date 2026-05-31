@@ -125,6 +125,32 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.RemoveSelectedFromLibrary) }) {
                             Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.library_remove_selected))
                         }
+                        var selectionOverflowExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { selectionOverflowExpanded = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.library_more_actions),
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = selectionOverflowExpanded,
+                            onDismissRequest = { selectionOverflowExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_mark_selected_completed)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsCompleted)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_mark_selected_dropped)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsDropped)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                        }
                     }
                 )
                 state.showSearchBar -> TopAppBar(
@@ -142,6 +168,16 @@ fun LibraryScreen(
                             ),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                             keyboardActions = KeyboardActions(onSearch = {}),
+                            trailingIcon = {
+                                if (state.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.onEvent(LibraryEvent.OnSearchQueryChange("")) }) {
+                                        Icon(
+                                            Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.library_search_clear)
+                                        )
+                                    }
+                                }
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     },
@@ -283,9 +319,17 @@ private fun LibraryContent(
             modifier = Modifier.weight(1f)
         ) {
             when {
-                state.isLoading && state.mangaList.isEmpty() -> {
+                (state.isLoading || state.isSearching) && state.mangaList.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+                state.mangaList.isEmpty() && state.searchQuery.isNotBlank() -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        EmptyLibrarySearchMessage(
+                            query = state.searchQuery,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
                     }
                 }
                 state.mangaList.isEmpty() -> {

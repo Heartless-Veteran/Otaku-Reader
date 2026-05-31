@@ -109,6 +109,12 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.HideNoteEditor -> hideNoteEditor()
             is DetailsContract.Event.UpdateNoteText -> updateNoteText(event.text)
             is DetailsContract.Event.SaveNote -> saveNote()
+            is DetailsContract.Event.ShowChapterNoteEditor -> showChapterNoteEditor(event.chapterId)
+            is DetailsContract.Event.HideChapterNoteEditor ->
+                _state.update { it.copy(chapterNoteEditorChapterId = null) }
+            is DetailsContract.Event.UpdateChapterNoteText ->
+                _state.update { it.copy(chapterNoteEditorText = event.text) }
+            is DetailsContract.Event.SaveChapterNote -> saveChapterNote()
             is DetailsContract.Event.ClearChapterSelection -> clearChapterSelection()
             is DetailsContract.Event.SelectAllChapters -> selectAllChapters()
             is DetailsContract.Event.DownloadSelectedChapters -> downloadSelectedChapters()
@@ -117,6 +123,8 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.MarkSelectedAsUnread -> markSelectedAsUnread()
             is DetailsContract.Event.BookmarkSelectedChapters -> bookmarkSelectedChapters()
             is DetailsContract.Event.ToggleNotifications -> toggleNotifications()
+            is DetailsContract.Event.ToggleUserCompleted -> toggleUserCompleted()
+            is DetailsContract.Event.ToggleUserDropped -> toggleUserDropped()
 
             // Per-manga reader settings (#260)
             is DetailsContract.Event.SetReaderDirection -> setReaderDirection(event.direction)
@@ -332,6 +340,36 @@ class DetailsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to update library: ${e.message}"))
+            }
+        }
+    }
+
+    private fun toggleUserCompleted() {
+        viewModelScope.launch {
+            val current = _state.value.manga?.userCompleted ?: false
+            try {
+                mangaRepository.markUserCompleted(mangaId, !current)
+                val message = if (!current) "Marked as completed" else "Removed completed mark"
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update: ${e.message}"))
+            }
+        }
+    }
+
+    private fun toggleUserDropped() {
+        viewModelScope.launch {
+            val current = _state.value.manga?.userDropped ?: false
+            try {
+                mangaRepository.markUserDropped(mangaId, !current)
+                val message = if (!current) "Marked as dropped" else "Removed dropped mark"
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update: ${e.message}"))
             }
         }
     }
@@ -714,6 +752,28 @@ class DetailsViewModel @Inject constructor(
 
     private fun hideNoteEditor() {
         _state.update { it.copy(noteEditorVisible = false) }
+    }
+
+    private fun showChapterNoteEditor(chapterId: Long) {
+        val current = _state.value.chapters.firstOrNull { it.id == chapterId }?.userNotes ?: ""
+        _state.update { it.copy(chapterNoteEditorChapterId = chapterId, chapterNoteEditorText = current) }
+    }
+
+    private fun saveChapterNote() {
+        val chapterId = _state.value.chapterNoteEditorChapterId ?: return
+        viewModelScope.launch {
+            val text = _state.value.chapterNoteEditorText.trim().ifEmpty { null }
+            try {
+                // The chapter Flow re-emits after this write, refreshing the list's note indicator.
+                chapterRepository.updateChapterNotes(chapterId, text)
+                _state.update { it.copy(chapterNoteEditorChapterId = null) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Note saved"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to save note: ${e.message}"))
+            }
+        }
     }
 
     private fun updateNoteText(text: String) {

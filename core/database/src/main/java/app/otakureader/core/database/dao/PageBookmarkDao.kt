@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PageBookmarkDao {
 
+    @Query("SELECT * FROM page_bookmarks ORDER BY created_at DESC")
+    fun getAllBookmarks(): Flow<List<PageBookmarkEntity>>
+
     @Query("SELECT * FROM page_bookmarks WHERE manga_id = :mangaId ORDER BY created_at DESC")
     fun getBookmarksForManga(mangaId: Long): Flow<List<PageBookmarkEntity>>
 

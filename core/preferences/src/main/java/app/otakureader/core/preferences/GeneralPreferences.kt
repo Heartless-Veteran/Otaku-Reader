@@ -10,7 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 /**
  * Preference store for general application settings including theme and locale.
@@ -172,6 +174,41 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
 
+    suspend fun removeBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() } ?: return@edit
+        val updated = current.filterNot { it == query }
+        if (updated.isEmpty()) prefs.remove(Keys.BROWSE_SEARCH_HISTORY)
+        else prefs[Keys.BROWSE_SEARCH_HISTORY] = updated.joinToString("\n")
+    }
+
+    // --- Browse Filter State (per source) ---
+
+    val browseFilterStates: Flow<Map<String, String>> = dataStore.data.map { prefs ->
+        prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) } ?: emptyMap()
+    }
+
+    suspend fun getBrowseFilterState(sourceId: String): String? = browseFilterStates.first()[sourceId]
+
+    suspend fun setBrowseFilterState(sourceId: String, encoded: String?) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) }?.toMutableMap()
+            ?: mutableMapOf()
+        if (encoded.isNullOrBlank()) current.remove(sourceId) else current[sourceId] = encoded
+        if (current.isEmpty()) prefs.remove(Keys.BROWSE_FILTER_STATES)
+        else prefs[Keys.BROWSE_FILTER_STATES] = Json.encodeToString(current)
+    }
+
+    private fun decodeFilterStates(raw: String): Map<String, String> =
+        runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+
+    // --- Security ---
+
+    val biometricLockEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_ENABLED] ?: false }
+    suspend fun setBiometricLockEnabled(value: Boolean) = dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = value }
+
+    val biometricLockTimeoutMinutes: Flow<Int> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] ?: 0 }
+    suspend fun setBiometricLockTimeoutMinutes(value: Int) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] = value }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
@@ -216,6 +253,20 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val smartDownloadMinStorageMb: Flow<Int> = dataStore.data.map { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] ?: 500 }
     suspend fun setSmartDownloadMinStorageMb(value: Int) = dataStore.edit { it[Keys.SMART_DOWNLOAD_MIN_STORAGE_MB] = value }
 
+    // --- Extension Auto-Update ---
+
+    /** Whether to periodically check for extension updates in the background. */
+    val extensionAutoUpdateEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_ENABLED] ?: false }
+    suspend fun setExtensionAutoUpdateEnabled(value: Boolean) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_ENABLED] = value }
+
+    /** Only run the extension update check on unmetered (Wi-Fi) networks. */
+    val extensionAutoUpdateWifiOnly: Flow<Boolean> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_WIFI_ONLY] ?: true }
+    suspend fun setExtensionAutoUpdateWifiOnly(value: Boolean) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_WIFI_ONLY] = value }
+
+    /** Interval (hours) between background extension update checks. */
+    val extensionAutoUpdateIntervalHours: Flow<Int> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_INTERVAL] ?: 24 }
+    suspend fun setExtensionAutoUpdateIntervalHours(value: Int) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_INTERVAL] = value }
+
     // --- Image Cache ---
 
     /**
@@ -256,7 +307,13 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SMART_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey("smart_download_wifi_only")
         val SMART_DOWNLOAD_FAVORITES_ONLY = booleanPreferencesKey("smart_download_favorites_only")
         val SMART_DOWNLOAD_MIN_STORAGE_MB = intPreferencesKey("smart_download_min_storage_mb")
+        val EXT_AUTO_UPDATE_ENABLED = booleanPreferencesKey("extension_auto_update_enabled")
+        val EXT_AUTO_UPDATE_WIFI_ONLY = booleanPreferencesKey("extension_auto_update_wifi_only")
+        val EXT_AUTO_UPDATE_INTERVAL = intPreferencesKey("extension_auto_update_interval_hours")
         val BROWSE_SEARCH_HISTORY = stringPreferencesKey("browse_search_history")
+        val BROWSE_FILTER_STATES = stringPreferencesKey("browse_filter_states")
+        val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
+        val BIOMETRIC_LOCK_TIMEOUT_MINUTES = intPreferencesKey("biometric_lock_timeout_minutes")
     }
 
     companion object {

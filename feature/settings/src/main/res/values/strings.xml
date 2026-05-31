@@ -103,6 +103,17 @@
     <string name="settings_update_interval_6h">6 hours</string>
     <string name="settings_update_interval_12h">12 hours</string>
     <string name="settings_update_interval_24h">24 hours</string>
+    <string name="settings_notif_batching">Smart batching</string>
+    <string name="settings_notif_batching_description">Group new-chapter notifications to avoid spam</string>
+    <string name="settings_notif_cooldown">Per-manga cooldown: %1$d min</string>
+    <string name="settings_notif_max_individual">Summarize after %1$d notifications</string>
+    <string name="settings_notif_quiet_hours">Respect quiet hours</string>
+    <string name="settings_notif_quiet_hours_description">Don\'t notify during the hours below</string>
+    <string name="settings_notif_quiet_start">Quiet from %1$d:00</string>
+    <string name="settings_notif_quiet_end">Quiet until %1$d:00</string>
+    <string name="settings_ext_auto_update">Auto-check extension updates</string>
+    <string name="settings_ext_auto_update_description">Periodically check installed extensions for updates and notify you</string>
+    <string name="settings_ext_auto_update_wifi_only">Check on Wi-Fi only</string>
 
     <!-- Reading Goals -->
     <string name="settings_reading_goals">Reading Goals</string>
@@ -130,6 +141,14 @@
     <string name="settings_import_tachiyomi">Import from Tachiyomi/Mihon</string>
     <string name="settings_import_tachiyomi_description">Bring your library from another manga reader app</string>
     <string name="settings_import_button">Import</string>
+    <string name="settings_import_cancel">Cancel</string>
+    <string name="settings_import_preview_title">Import backup?</string>
+    <string name="settings_import_preview_manga">Manga: %1$d</string>
+    <string name="settings_import_preview_categories">Categories: %1$d</string>
+    <string name="settings_import_preview_chapters">Chapters: %1$d</string>
+    <string name="settings_import_preview_tracking">Tracking links: %1$d</string>
+    <string name="settings_import_overwrite_existing">Overwrite manga already in my library</string>
+    <string name="settings_import_progress">Importing %1$d / %2$d</string>
     <string name="settings_automatic_backups">Automatic Backups</string>
     <string name="settings_enable_auto_backup">Enable automatic backups</string>
     <string name="settings_enable_auto_backup_description">Periodically save a backup to device storage</string>
@@ -139,8 +158,15 @@
     <string name="settings_backup_frequency_daily">Daily</string>
     <string name="settings_backup_frequency_2days">Every 2 days</string>
     <string name="settings_backup_frequency_weekly">Weekly</string>
+    <string name="settings_backup_frequency_biweekly">Every 2 weeks</string>
+    <string name="settings_backup_frequency_monthly">Monthly</string>
     <string name="settings_backups_to_keep">Backups to keep</string>
     <string name="settings_backup_count">%1$d backups</string>
+    <string name="settings_backup_location">Backup location</string>
+    <string name="settings_backup_location_default">App storage (default)</string>
+    <string name="settings_backup_location_choose">Choose</string>
+    <string name="settings_backup_last">Last backup</string>
+    <string name="settings_backup_last_never">No backups yet</string>
     <string name="settings_restore_from_auto">Restore from automatic backup</string>
     <string name="settings_no_auto_backups">No automatic backups yet</string>
     <string name="settings_no_auto_backups_description">Backups will appear here once created</string>
@@ -186,6 +212,12 @@
     <string name="settings_tracker_connect">Connect %1$s</string>
     <string name="settings_tracker_show_password">Show password</string>
     <string name="settings_tracker_hide_password">Hide password</string>
+    <string name="settings_tracker_sync_all">Sync all to trackers</string>
+    <string name="settings_tracker_sync_all_description">Push reading status and chapter progress for every tracked manga</string>
+    <string name="settings_tracker_sync_all_button">Sync all</string>
+    <string name="settings_tracker_sync_summary_title">Sync complete</string>
+    <string name="settings_tracker_sync_summary_body">Attempted: %1$d\nSynced: %2$d\nFailed: %3$d\nConflicts: %4$d</string>
+    <string name="settings_tracker_sync_summary_dismiss">OK</string>
 
     <!-- Migration -->
     <string name="settings_migration">Migration</string>
@@ -199,6 +231,14 @@
 
     <!-- Discord -->
     <string name="settings_discord">Discord</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_biometric_lock">Lock app with biometrics</string>
+    <string name="settings_biometric_lock_description">Require fingerprint, face, or device PIN to open the app</string>
+    <string name="settings_lock_timeout">Lock after</string>
+    <string name="settings_lock_timeout_immediate">Immediately</string>
+    <string name="settings_lock_timeout_1min">After 1 minute</string>
+    <string name="settings_lock_timeout_5min">After 5 minutes</string>
+    <string name="settings_lock_timeout_15min">After 15 minutes</string>
     <string name="settings_discord_rich_presence">Rich Presence</string>
     <string name="settings_discord_rich_presence_description">Show current reading activity as your Discord status</string>
 
@@ -381,6 +421,14 @@
     <string name="settings_download_ahead_description">Automatically download next chapters while reading</string>
     <string name="settings_download_ahead_wifi_only">Download Ahead on Wi-Fi Only</string>
     <string name="settings_download_ahead_wifi_only_description">Restrict ahead downloads to Wi-Fi</string>
+    <string name="settings_smart_download">Smart Downloads</string>
+    <string name="settings_smart_download_enabled">Enable smart downloads</string>
+    <string name="settings_smart_download_enabled_description">Auto-download upcoming chapters based on your reading progress</string>
+    <string name="settings_smart_download_chapters_ahead">Download %1$d chapters ahead</string>
+    <string name="settings_smart_download_threshold">Trigger at %1$d%% through a chapter</string>
+    <string name="settings_smart_download_wifi_only">On Wi-Fi only</string>
+    <string name="settings_smart_download_favorites_only">Favorites only</string>
+    <string name="settings_smart_download_min_storage">Require %1$d MB free</string>
     <string name="settings_delete_after_reading">Delete After Reading</string>
     <string name="settings_delete_after_reading_description">Remove downloaded chapters once finished</string>
 

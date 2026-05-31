@@ -42,7 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.ui.components.CompletedBadge
 import app.otakureader.core.ui.components.DownloadBadge
+import app.otakureader.core.ui.components.DroppedBadge
 import app.otakureader.core.ui.components.MangaCard
 import app.otakureader.core.ui.components.ManhwaCard
 import app.otakureader.core.ui.theme.LocalOtakuColors
@@ -218,6 +220,11 @@ internal fun MangaGrid(
                                 }
                                 else -> null
                             },
+                            statusBadge = when {
+                                manga.userCompleted -> { { CompletedBadge() } }
+                                manga.userDropped -> { { DroppedBadge() } }
+                                else -> null
+                            },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -289,6 +296,11 @@ internal fun MangaGrid(
                             state.showDownloadBadge && downloadCount > 0 -> {
                                 { DownloadBadge(count = downloadCount) }
                             }
+                            else -> null
+                        },
+                        statusBadge = when {
+                            manga.userCompleted -> { { CompletedBadge() } }
+                            manga.userDropped -> { { DroppedBadge() } }
                             else -> null
                         },
                         modifier = Modifier.fillMaxWidth()

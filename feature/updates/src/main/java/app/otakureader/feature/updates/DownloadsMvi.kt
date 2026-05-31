@@ -21,6 +21,12 @@ sealed interface DownloadsEvent : UiEvent {
     /** Move the given item to the front of the download queue. */
     data class Prioritize(val id: Long) : DownloadsEvent
     data object ClearAll : DownloadsEvent
+    /** Pause every active (queued/downloading) download. */
+    data object PauseAll : DownloadsEvent
+    /** Resume every paused download. */
+    data object ResumeAll : DownloadsEvent
+    /** Re-queue every failed download. */
+    data object RetryAllFailed : DownloadsEvent
     data object ClearSelection : DownloadsEvent
     data object SelectAll : DownloadsEvent
     data object PauseSelected : DownloadsEvent

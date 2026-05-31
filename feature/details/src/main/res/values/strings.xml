@@ -5,6 +5,7 @@
     <string name="notes_edit_content_description">Edit note</string>
     <string name="notes_empty_hint">Tap the pencil icon to add a personal note.</string>
     <string name="notes_editor_dialog_title">Edit Note</string>
+    <string name="chapter_notes_editor_dialog_title">Edit Chapter Note</string>
     <string name="notes_editor_placeholder">Write your note here…\nSupports **bold**, *italic*, and [links](url).</string>
     <string name="notes_editor_save">Save</string>
     <string name="notes_editor_cancel">Cancel</string>
@@ -112,6 +113,9 @@
     <string name="details_chapter_bookmark">Bookmark chapter</string>
     <string name="details_chapter_remove_bookmark">Remove bookmark</string>
     <string name="details_chapter_mark_previous_as_read">Mark previous as read</string>
+    <string name="details_chapter_add_note">Add note</string>
+    <string name="details_chapter_edit_note">Edit note</string>
+    <string name="details_chapter_note_preview">📝 %1$s</string>
     <string name="details_chapter_download">Download chapter</string>
     <string name="details_chapter_downloading">Downloading</string>
     <string name="details_chapter_delete_download">Delete download</string>
@@ -157,4 +161,8 @@
     <string name="details_filter_reset">Reset</string>
     <string name="details_filter_cancel">Cancel</string>
     <string name="details_remaining_read_time">About %1$s remaining</string>
+    <string name="details_mark_completed">Mark as completed</string>
+    <string name="details_unmark_completed">Unmark completed</string>
+    <string name="details_mark_dropped">Mark as dropped</string>
+    <string name="details_unmark_dropped">Unmark dropped</string>
 </resources>
