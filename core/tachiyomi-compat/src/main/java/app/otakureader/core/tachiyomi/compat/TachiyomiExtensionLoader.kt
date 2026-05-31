@@ -3,6 +3,7 @@ package app.otakureader.core.tachiyomi.compat
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.SourceFactory
@@ -36,6 +37,9 @@ class TachiyomiExtensionLoader(
 ) {
 
     companion object {
+        /** Logcat tag — filter with `adb logcat -s TachiyomiExtensionLoader:*`. */
+        private const val TAG = "TachiyomiExtensionLoader"
+
         /** Uses-feature flag that identifies a Tachiyomi-compatible extension package. */
         const val TACHIYOMI_EXTENSION_FEATURE = "tachiyomi.extension"
 
@@ -47,6 +51,19 @@ class TachiyomiExtensionLoader(
 
         /** Metadata key indicating NSFW content (integer 1 = nsfw). */
         const val METADATA_NSFW = "tachiyomi.extension.nsfw"
+    }
+
+    /**
+     * Outcome of attempting to instantiate an extension class.
+     *
+     * Intentionally duplicated from [app.otakureader.core.extension.loader.InstantiationResult]
+     * because core:tachiyomi-compat can't depend on core:extension (would be a cycle).
+     * Kept private — only [instantiateClass] and [resolveSourcesFromMetadata] use it.
+     */
+    private sealed class InstantiationResult {
+        data class Success(val instance: Any) : InstantiationResult()
+        data object NotFound : InstantiationResult()
+        data class Failure(val reason: String, val cause: Throwable) : InstantiationResult()
     }
 
     private val loadedExtensions = ConcurrentHashMap<String, LoadedExtension>()
@@ -176,11 +193,19 @@ class TachiyomiExtensionLoader(
             parentClassLoader,
         )
 
-        // Resolve source instances
-        val sources = resolveSourcesFromMetadata(metadata, packageName, classLoader)
+        // Resolve source instances; collect per-class failure reasons so they aren't swallowed.
+        val errors = mutableListOf<String>()
+        val sources = resolveSourcesFromMetadata(metadata, packageName, classLoader, errors)
 
         if (sources.isEmpty()) {
-            // No valid sources found — discard the class loader and skip this extension
+            // No valid sources found — discard the class loader and skip this extension.
+            // Log the reason so the user can debug a failed sideloaded/Komikku extension.
+            val detail = if (errors.isEmpty()) {
+                "no source class declared in manifest metadata"
+            } else {
+                errors.joinToString(separator = "; ")
+            }
+            runCatching { Log.w(TAG, "No valid sources for $packageName ($detail)") }
             return null
         }
 
@@ -213,39 +238,64 @@ class TachiyomiExtensionLoader(
      * Checks [METADATA_SOURCE_FACTORY] first; if absent, reads class names from
      * [METADATA_SOURCE_CLASS].  Class names starting with `.` are expanded using
      * the package name.
+     *
+     * Per-class failures are accumulated in [errors] (declaration order); the caller logs
+     * them when the result list is empty so a sideloaded Komikku/Keiyoushi extension that
+     * fails to instantiate doesn't disappear silently.
      */
     private fun resolveSourcesFromMetadata(
         metadata: android.os.Bundle,
         pkgName: String,
         classLoader: ClassLoader,
+        errors: MutableList<String>,
     ): List<CatalogueSource> {
+        val collected = mutableListOf<CatalogueSource>()
+
         // SourceFactory path
         val factoryClass = metadata.getString(METADATA_SOURCE_FACTORY)
         if (!factoryClass.isNullOrBlank()) {
             val resolved = resolveClassName(factoryClass.trim(), pkgName)
-            val factory = instantiateClass(classLoader, resolved)
-            if (factory is SourceFactory) {
-                return factory.createSources()
-                    .filterIsInstance<CatalogueSource>()
+            when (val result = instantiateClass(classLoader, resolved)) {
+                is InstantiationResult.Success -> {
+                    val instance = result.instance
+                    if (instance is SourceFactory) {
+                        collected += instance.createSources().filterIsInstance<CatalogueSource>()
+                        return collected
+                    } else {
+                        errors += "$resolved: declared as factory but is not a SourceFactory"
+                    }
+                }
+                is InstantiationResult.NotFound -> errors += "$resolved: ClassNotFoundException"
+                is InstantiationResult.Failure -> errors += "$resolved: ${result.reason}"
             }
         }
 
         // Direct source class(es)
-        val sourceClassEntry = metadata.getString(METADATA_SOURCE_CLASS) ?: return emptyList()
+        val sourceClassEntry = metadata.getString(METADATA_SOURCE_CLASS) ?: return collected
 
-        return sourceClassEntry
+        sourceClassEntry
             .split(";")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
-            .flatMap { rawClass ->
+            .forEach { rawClass ->
                 val resolved = resolveClassName(rawClass, pkgName)
-                when (val instance = instantiateClass(classLoader, resolved)) {
-                    is SourceFactory -> instance.createSources().filterIsInstance<CatalogueSource>()
-                    is CatalogueSource -> listOf(instance)
-                    is Source -> emptyList() // non-catalogue sources not supported here
-                    else -> emptyList()
+                when (val result = instantiateClass(classLoader, resolved)) {
+                    is InstantiationResult.Success -> {
+                        when (val instance = result.instance) {
+                            is SourceFactory -> collected += instance.createSources().filterIsInstance<CatalogueSource>()
+                            is CatalogueSource -> collected += instance
+                            is Source -> errors += "$resolved: ${instance.javaClass.simpleName} is not a CatalogueSource"
+                            else -> errors += "$resolved: instantiated to ${instance.javaClass.simpleName}, not a Source or SourceFactory"
+                        }
+                    }
+                    is InstantiationResult.NotFound -> {
+                        // Routine for `;`-separated lists; don't pollute the error list.
+                    }
+                    is InstantiationResult.Failure -> errors += "$resolved: ${result.reason}"
                 }
             }
+
+        return collected
     }
 
     /** Expand a relative class name (starting with `.`) using the package name. */
@@ -253,37 +303,47 @@ class TachiyomiExtensionLoader(
         return if (className.startsWith(".")) pkgName + className else className
     }
 
-    /** Instantiate a class by name; returns null on any error. */
-    private fun instantiateClass(classLoader: ClassLoader, className: String): Any? {
-        if (className.isBlank()) return null
+    /**
+     * Instantiate a class by name. See the same-named function in
+     * [app.otakureader.core.extension.loader.ExtensionLoadingUtils] — the catch ladder
+     * is intentionally identical and any change here must be mirrored there.
+     */
+    private fun instantiateClass(classLoader: ClassLoader, className: String): InstantiationResult {
+        if (className.isBlank()) return InstantiationResult.Failure("blank class name", IllegalArgumentException("blank class name"))
 
         return try {
-            Class.forName(className, false, classLoader).getDeclaredConstructor().newInstance()
+            val instance = Class.forName(className, false, classLoader)
+                .getDeclaredConstructor().newInstance()
+            InstantiationResult.Success(instance)
         } catch (e: ClassNotFoundException) {
-            // Class not found in APK - expected for invalid/missing source classes
-            null
+            runCatching { Log.d(TAG, "Class not found: $className") }
+            InstantiationResult.NotFound
         } catch (e: NoSuchMethodException) {
-            // No parameterless constructor - expected for non-source classes
-            null
+            failure(className, "NoSuchMethodException (no no-arg constructor)", e)
         } catch (e: InstantiationException) {
-            // Cannot instantiate (abstract class/interface) - expected for invalid sources
-            null
+            failure(className, "InstantiationException (abstract class or interface)", e)
         } catch (e: IllegalAccessException) {
-            // Constructor not accessible - expected for inaccessible classes
-            null
+            failure(className, "IllegalAccessException (constructor not accessible)", e)
         } catch (e: SecurityException) {
-            // Security manager denies access - rare but expected
-            null
+            failure(className, "SecurityException", e)
         } catch (e: java.lang.reflect.InvocationTargetException) {
-            // Constructor threw an exception - expected for extension code with initialization errors
-            null
+            val cause = e.targetException ?: e
+            failure(className, "InvocationTargetException: ${cause.javaClass.simpleName}: ${cause.message}", cause)
         } catch (e: ExceptionInInitializerError) {
-            // Static initializer threw an exception - expected for extension code with init errors
-            null
+            val cause = e.cause ?: e
+            failure(className, "ExceptionInInitializerError: ${cause.javaClass.simpleName}: ${cause.message}", cause)
         } catch (e: LinkageError) {
-            // Class linking failed - expected for extensions with missing dependencies
-            null
+            // Typically NoClassDefFoundError → extension references a class the host
+            // (core/tachiyomi-compat) doesn't ship. The most common silent failure mode.
+            failure(className, "LinkageError: ${e.javaClass.simpleName}: ${e.message}", e)
+        } catch (e: RuntimeException) {
+            failure(className, "RuntimeException: ${e.javaClass.simpleName}: ${e.message}", e)
         }
+    }
+
+    private fun failure(className: String, reason: String, cause: Throwable): InstantiationResult.Failure {
+        runCatching { Log.w(TAG, "Failed to instantiate $className — $reason", cause) }
+        return InstantiationResult.Failure(reason, cause)
     }
 
     /**
