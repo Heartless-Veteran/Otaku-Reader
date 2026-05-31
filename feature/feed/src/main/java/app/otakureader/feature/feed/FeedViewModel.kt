@@ -33,20 +33,23 @@ class FeedViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
     private val _favoritedMangaIds = MutableStateFlow<Set<Long>>(emptySet())
+    private val _discoveryMode = MutableStateFlow(FeedDiscoveryMode.LATEST)
 
     val state = combine(
         feedRepository.getFeedItems(limit = FEED_ITEMS_LIMIT),
         feedRepository.getFeedSources(),
         _isLoading,
         _error,
-        _favoritedMangaIds,
-    ) { feedItems, sources, isLoading, error, favoritedIds ->
+        // Bundle the two single-value flows together so we stay under combine's 5-arg overload.
+        combine(_favoritedMangaIds, _discoveryMode) { ids, mode -> ids to mode },
+    ) { feedItems, sources, isLoading, error, (favoritedIds, mode) ->
         FeedState(
             isLoading = isLoading,
-            feedItems = feedItems,
+            feedItems = applyDiscoveryMode(feedItems, mode),
             feedSources = sources,
             error = error,
             favoritedMangaIds = favoritedIds,
+            discoveryMode = mode,
         )
     }.catch { e ->
         // Emit an error state so the UI can display the error message.
@@ -56,6 +59,22 @@ class FeedViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = FeedState(isLoading = true)
     )
+
+    /**
+     * Apply the chosen discovery mode to the raw feed list.
+     * LATEST is the default natural ordering from the repo (timestamp DESC).
+     */
+    private fun applyDiscoveryMode(
+        items: List<app.otakureader.domain.model.FeedItem>,
+        mode: FeedDiscoveryMode,
+    ): List<app.otakureader.domain.model.FeedItem> = when (mode) {
+        FeedDiscoveryMode.LATEST -> items
+        FeedDiscoveryMode.TRENDING -> items.sortedWith(
+            compareBy<app.otakureader.domain.model.FeedItem> { it.isRead }
+                .thenByDescending { it.timestamp }
+        )
+        FeedDiscoveryMode.RANDOM -> items.shuffled()
+    }
 
     private val _effect = Channel<FeedEffect>()
     val effect = _effect.receiveAsFlow()
@@ -73,6 +92,7 @@ class FeedViewModel @Inject constructor(
             is FeedEvent.ClearHistory -> clearHistory()
             is FeedEvent.LongClickManga -> quickToggleFavorite(event.mangaId)
             is FeedEvent.ManageSources -> viewModelScope.launch { _effect.send(FeedEffect.NavigateToFeedManagement) }
+            is FeedEvent.SetDiscoveryMode -> _discoveryMode.update { event.mode }
         }
     }
 
