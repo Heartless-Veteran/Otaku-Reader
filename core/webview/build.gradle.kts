@@ -11,4 +11,6 @@ android {
 dependencies {
     implementation(projects.core.navigation)
     implementation(projects.core.preferences)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.compose.material.icons.extended)
 }
