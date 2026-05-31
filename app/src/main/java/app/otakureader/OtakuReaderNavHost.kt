@@ -28,6 +28,7 @@ import app.otakureader.feature.library.readinglist.navigation.readingListDetailS
 import app.otakureader.feature.library.readinglist.navigation.readingListsScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
+import app.otakureader.feature.more.bookmarks.bookmarksScreen
 import app.otakureader.feature.more.navigation.moreScreen
 import app.otakureader.feature.more.navigation.scanLibraryScreen
 import app.otakureader.feature.more.navigation.shareLibraryScreen
@@ -313,6 +314,12 @@ fun OtakuReaderNavHost(
             onNavigateToDiscord = {
                 navController.navigate(Route.SettingsDiscord)
             },
+            onNavigateToSecurity = {
+                navController.navigate(Route.SettingsSecurity)
+            },
+            onNavigateToNotifications = {
+                navController.navigate(Route.SettingsNotifications)
+            },
             onNavigateToWidgetConfiguration = {
                 navController.navigate(Route.WidgetConfiguration)
             },
@@ -424,9 +431,11 @@ fun OtakuReaderNavHost(
             onNavigateToReadingLists = {
                 navController.navigate(Route.ReadingLists)
             },
+            onNavigateToBookmarks = {
+                navController.navigate(Route.Bookmarks)
+            },
         )
 
-        // Reading List Collections (#945)
         readingListsScreen(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToList = { listId -> navController.navigate(Route.ReadingListDetail(listId)) },
@@ -434,6 +443,15 @@ fun OtakuReaderNavHost(
         readingListDetailScreen(
             onNavigateBack = { navController.popBackStack() },
             onNavigateToManga = { mangaId -> navController.navigate(Route.MangaDetails(mangaId)) },
+        )
+
+        bookmarksScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onOpenBookmark = { mangaId, chapterId ->
+                navController.navigate(Route.Reader(mangaId, chapterId))
+            },
         )
 
         // QR Library Sharing

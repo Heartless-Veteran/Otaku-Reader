@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -112,6 +114,45 @@ private fun TrackingContent(state: SettingsState, onEvent: (SettingsEvent) -> Un
             supportingContent = { Text(stringResource(R.string.settings_no_tracker_services_description)) },
         )
         return
+    }
+
+    if (state.trackers.any { it.isLoggedIn }) {
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_tracker_sync_all)) },
+            supportingContent = { Text(stringResource(R.string.settings_tracker_sync_all_description)) },
+            trailingContent = {
+                if (state.batchSyncInProgress) {
+                    CircularProgressIndicator()
+                } else {
+                    Button(onClick = { onEvent(SettingsEvent.SyncAllTrackers) }) {
+                        Text(stringResource(R.string.settings_tracker_sync_all_button))
+                    }
+                }
+            },
+        )
+    }
+
+    state.batchSyncSummary?.let { summary ->
+        AlertDialog(
+            onDismissRequest = { onEvent(SettingsEvent.DismissTrackerSyncSummary) },
+            title = { Text(stringResource(R.string.settings_tracker_sync_summary_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.settings_tracker_sync_summary_body,
+                        summary.attempted,
+                        summary.successful,
+                        summary.failed,
+                        summary.conflicts,
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { onEvent(SettingsEvent.DismissTrackerSyncSummary) }) {
+                    Text(stringResource(R.string.settings_tracker_sync_summary_dismiss))
+                }
+            },
+        )
     }
 
     state.trackers.forEach { tracker ->

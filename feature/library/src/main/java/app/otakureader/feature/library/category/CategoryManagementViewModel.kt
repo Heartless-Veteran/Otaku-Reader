@@ -66,9 +66,9 @@ class CategoryManagementViewModel @Inject constructor(
                         )
                     }.sortedBy { it.name }
 
-                    _state.value = CategoryManagementState(
+                    _state.value = _state.value.copy(
                         categories = items,
-                        isLoading = false
+                        isLoading = false,
                     )
                 }
         }
@@ -83,6 +83,8 @@ class CategoryManagementViewModel @Inject constructor(
             is CategoryEvent.ToggleNsfw -> toggleNsfw(event.categoryId)
             is CategoryEvent.ToggleLocked -> toggleLocked(event.categoryId)
             is CategoryEvent.SetDynamic -> setDynamic(event.categoryId, event.enabled)
+            is CategoryEvent.SetHiddenRevealed ->
+                _state.value = _state.value.copy(hiddenRevealed = event.revealed)
         }
     }
 

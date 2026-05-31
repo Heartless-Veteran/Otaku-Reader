@@ -119,11 +119,45 @@ fun CategoryManagementScreen(
                         .weight(1f)
                 )
             } else {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val visibleCategories = if (state.hiddenRevealed) {
+                    state.categories
+                } else {
+                    state.categories.filter { !it.isHidden }
+                }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    if (state.hasHiddenCategories) {
+                        item(key = "hidden_reveal_toggle") {
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    if (state.hiddenRevealed) {
+                                        viewModel.onEvent(CategoryEvent.SetHiddenRevealed(false))
+                                    } else {
+                                        HiddenCategoryAuth.authenticate(context) { success ->
+                                            if (success) {
+                                                viewModel.onEvent(CategoryEvent.SetHiddenRevealed(true))
+                                            }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                            ) {
+                                androidx.compose.material3.Text(
+                                    stringResource(
+                                        if (state.hiddenRevealed) {
+                                            R.string.category_hide_hidden
+                                        } else {
+                                            R.string.category_show_hidden
+                                        },
+                                    ),
+                                )
+                            }
+                        }
+                    }
                     items(
-                        items = state.categories,
+                        items = visibleCategories,
                         key = { it.id }
                     ) { category ->
                         CategoryListItem(

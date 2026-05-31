@@ -1,6 +1,7 @@
 package app.otakureader.feature.settings.delegate
 
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
@@ -14,6 +15,7 @@ import javax.inject.Singleton
 @Singleton
 class DownloadSettingsDelegate @Inject constructor(
     private val downloadPreferences: DownloadPreferences,
+    private val generalPreferences: GeneralPreferences,
 ) {
 
     fun startObserving(
@@ -52,6 +54,28 @@ class DownloadSettingsDelegate @Inject constructor(
                 )) }
             }.collect { }
         }
+        scope.launch {
+            combine(
+                generalPreferences.smartDownloadEnabled,
+                generalPreferences.smartDownloadChaptersAhead,
+                generalPreferences.smartDownloadThreshold,
+                generalPreferences.smartDownloadWifiOnly,
+                generalPreferences.smartDownloadFavoritesOnly,
+            ) { enabled, ahead, threshold, wifiOnly, favoritesOnly ->
+                updateState { it.copy(downloads = it.downloads.copy(
+                    smartDownloadEnabled = enabled,
+                    smartDownloadChaptersAhead = ahead,
+                    smartDownloadThreshold = threshold,
+                    smartDownloadWifiOnly = wifiOnly,
+                    smartDownloadFavoritesOnly = favoritesOnly,
+                )) }
+            }.collect { }
+        }
+        scope.launch {
+            generalPreferences.smartDownloadMinStorageMb.collect { mb ->
+                updateState { it.copy(downloads = it.downloads.copy(smartDownloadMinStorageMb = mb)) }
+            }
+        }
     }
 
     suspend fun handleEvent(
@@ -71,6 +95,16 @@ class DownloadSettingsDelegate @Inject constructor(
             sendEffect(SettingsEffect.ShowDownloadLocationPicker(downloadPreferences.downloadLocation.first()))
             true
         }
+        is SettingsEvent.SetSmartDownloadEnabled -> { generalPreferences.setSmartDownloadEnabled(event.enabled); true }
+        is SettingsEvent.SetSmartDownloadChaptersAhead ->
+            { generalPreferences.setSmartDownloadChaptersAhead(event.count); true }
+        is SettingsEvent.SetSmartDownloadThreshold ->
+            { generalPreferences.setSmartDownloadThreshold(event.threshold); true }
+        is SettingsEvent.SetSmartDownloadWifiOnly -> { generalPreferences.setSmartDownloadWifiOnly(event.enabled); true }
+        is SettingsEvent.SetSmartDownloadFavoritesOnly ->
+            { generalPreferences.setSmartDownloadFavoritesOnly(event.enabled); true }
+        is SettingsEvent.SetSmartDownloadMinStorageMb ->
+            { generalPreferences.setSmartDownloadMinStorageMb(event.mb); true }
         else -> false
     }
 }

@@ -7,4 +7,5 @@ data class ImportResult(
     val skipped: Int,
     val totalManga: Int,
     val totalChapters: Int,
+    val trackingImported: Int = 0,
 )

@@ -72,6 +72,8 @@ sealed interface BrowseEvent : UiEvent {
     data class ApplySavedSearch(val search: app.otakureader.domain.model.FeedSavedSearch) : BrowseEvent
     data class SetSearchScope(val scope: BrowseSearchScope) : BrowseEvent
     data object ClearSearchHistory : BrowseEvent
+    /** Removes a single recent-search entry. */
+    data class DeleteSearchHistoryItem(val query: String) : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

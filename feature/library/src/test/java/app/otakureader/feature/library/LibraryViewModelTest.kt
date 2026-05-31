@@ -12,6 +12,7 @@ import app.otakureader.domain.model.ReadingListMangaItem
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.StatisticsRepository
@@ -53,6 +54,7 @@ class LibraryViewModelTest {
     private lateinit var libraryPreferences: LibraryPreferences
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var mangaRepository: MangaRepository
     private lateinit var downloadRepository: DownloadRepository
     private lateinit var settingsRepository: ReaderSettingsRepository
     private lateinit var trackRepository: TrackRepository
@@ -91,9 +93,8 @@ class LibraryViewModelTest {
             every { lastUpdatesViewedAt } returns flowOf(0L)
             every { visualEffectsEnabled } returns flowOf(true)
         }
-        chapterRepository = mockk {
-            every { countNewUpdatesSince(any()) } returns flowOf(0)
-        }
+        chapterRepository = mockk { every { countNewUpdatesSince(any()) } returns flowOf(0) }
+        mangaRepository = mockk(relaxed = true)
         downloadRepository = mockk {
             coEvery { hasMangaDownloads(any(), any()) } returns false
             every { observeDownloads() } returns flowOf(emptyList())
@@ -143,6 +144,7 @@ class LibraryViewModelTest {
             libraryPreferences,
             generalPreferences,
             chapterRepository,
+            mangaRepository,
             downloadRepository,
             settingsRepository,
             trackRepository,

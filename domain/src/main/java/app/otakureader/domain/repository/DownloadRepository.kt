@@ -31,6 +31,9 @@ interface DownloadRepository {
 
     suspend fun pauseDownload(chapterId: Long)
     suspend fun resumeDownload(chapterId: Long)
+
+    /** Re-queues a FAILED download for another attempt. No-op if the chapter isn't FAILED. */
+    suspend fun retryDownload(chapterId: Long)
     suspend fun cancelDownload(chapterId: Long)
 
     /**

@@ -61,6 +61,7 @@ fun MangaCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     badge: @Composable (() -> Unit)? = null,
+    statusBadge: @Composable (() -> Unit)? = null,
     contentDescription: String? = null,
     isSelected: Boolean = false,
     readProgress: Float? = null,
@@ -140,6 +141,17 @@ fun MangaCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                ) {
+                    it()
+                }
+            }
+
+            // Status badge (e.g., completed / dropped marker), top-start corner
+            statusBadge?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
                         .padding(4.dp)
                 ) {
                     it()

@@ -62,8 +62,10 @@ dependencies {
 
     implementation(libs.paging.runtime)
     implementation(libs.workmanager.ktx)
+    implementation(libs.androidx.documentfile)
     implementation(libs.hilt.work)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.protobuf)
     implementation(libs.retrofit.kotlinx.serialization)
     implementation(libs.coil.compose)
     ksp(libs.hilt.compiler)

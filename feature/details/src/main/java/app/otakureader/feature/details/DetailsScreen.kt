@@ -2,6 +2,7 @@
 package app.otakureader.feature.details
 
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -199,6 +200,36 @@ fun DetailsScreen(
                                 overflowExpanded = false
                             }
                         )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (state.manga?.userCompleted == true) {
+                                        stringResource(R.string.details_unmark_completed)
+                                    } else {
+                                        stringResource(R.string.details_mark_completed)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ToggleUserCompleted)
+                                overflowExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (state.manga?.userDropped == true) {
+                                        stringResource(R.string.details_unmark_dropped)
+                                    } else {
+                                        stringResource(R.string.details_mark_dropped)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ToggleUserDropped)
+                                overflowExpanded = false
+                            }
+                        )
                     }
                 }
             )
@@ -310,6 +341,16 @@ private fun DetailsContent(
         )
     }
 
+    if (state.chapterNoteEditorChapterId != null) {
+        NoteEditorDialog(
+            noteText = state.chapterNoteEditorText,
+            onTextChange = { onEvent(DetailsContract.Event.UpdateChapterNoteText(it)) },
+            onSave = { onEvent(DetailsContract.Event.SaveChapterNote) },
+            onDismiss = { onEvent(DetailsContract.Event.HideChapterNoteEditor) },
+            titleRes = R.string.chapter_notes_editor_dialog_title
+        )
+    }
+
     if (state.showChapterFilter) {
         ChapterFilterDialog(
             filter = state.chapterFilter,
@@ -403,6 +444,7 @@ private fun LazyListScope.detailsChapterItems(
             chapterCount = state.chapters.size,
             sortOrder = state.chapterSortOrder,
             isFilterActive = state.chapterFilter.isActive,
+            estimatedRemainingTimeMs = state.estimatedRemainingTimeMs,
             onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
             onShowFilter = { onEvent(DetailsContract.Event.ShowChapterFilter) }
         )
@@ -414,7 +456,14 @@ private fun LazyListScope.detailsChapterItems(
             isSelected = state.selectedChapters.contains(chapter.id),
             onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
             onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
-            onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) }
+            onToggleRead = { onEvent(DetailsContract.Event.ToggleChapterRead(chapter.id)) },
+            onToggleBookmark = { onEvent(DetailsContract.Event.ToggleChapterBookmark(chapter.id)) },
+            onDownload = { onEvent(DetailsContract.Event.DownloadChapter(chapter.id)) },
+            onDeleteDownload = { onEvent(DetailsContract.Event.DeleteChapterDownload(chapter.id)) },
+            onMarkPreviousRead = { onEvent(DetailsContract.Event.MarkPreviousAsRead(chapter.id)) },
+            onExportAsCbz = { onEvent(DetailsContract.Event.ExportChapterAsCbz(chapter.id)) },
+            onEditNote = { onEvent(DetailsContract.Event.ShowChapterNoteEditor(chapter.id)) },
+            onLoadThumbnail = { onEvent(DetailsContract.Event.LoadChapterThumbnail(chapter.id)) },
         )
     }
 }
@@ -464,11 +513,12 @@ private fun NoteEditorDialog(
     noteText: String,
     onTextChange: (String) -> Unit,
     onSave: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    @StringRes titleRes: Int = R.string.notes_editor_dialog_title
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.notes_editor_dialog_title)) },
+        title = { Text(stringResource(titleRes)) },
         text = {
             OutlinedTextField(
                 value = noteText,

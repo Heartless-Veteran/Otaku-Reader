@@ -41,6 +41,9 @@ sealed interface Route {
     @Serializable
     data object More : Route
 
+    @Serializable
+    data object Bookmarks : Route
+
     // ─── Library / Browse sub-flows ───
 
     /**
@@ -127,6 +130,12 @@ sealed interface Route {
 
     @Serializable
     data object SettingsDiscord : Route
+
+    @Serializable
+    data object SettingsSecurity : Route
+
+    @Serializable
+    data object SettingsNotifications : Route
 
     @Serializable
     data object WidgetConfiguration : Route

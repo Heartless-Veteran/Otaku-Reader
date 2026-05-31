@@ -36,6 +36,10 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             DynamicCategoryRule.RecentlyUpdated(ruleParamsJson.toIntOrNull() ?: return null)
         DynamicCategoryRule.TYPE_GENRE_CONTAINS ->
             DynamicCategoryRule.GenreContains(ruleParamsJson)
+        DynamicCategoryRule.TYPE_COMPLETED -> DynamicCategoryRule.Completed
+        DynamicCategoryRule.TYPE_ONGOING -> DynamicCategoryRule.Ongoing
+        DynamicCategoryRule.TYPE_RECENTLY_ADDED ->
+            DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull() ?: return null)
         else -> null
     }
 
@@ -45,11 +49,17 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.UnreadAtLeast -> DynamicCategoryRule.TYPE_UNREAD_AT_LEAST
             is DynamicCategoryRule.RecentlyUpdated -> DynamicCategoryRule.TYPE_RECENTLY_UPDATED
             is DynamicCategoryRule.GenreContains -> DynamicCategoryRule.TYPE_GENRE_CONTAINS
+            is DynamicCategoryRule.Completed -> DynamicCategoryRule.TYPE_COMPLETED
+            is DynamicCategoryRule.Ongoing -> DynamicCategoryRule.TYPE_ONGOING
+            is DynamicCategoryRule.RecentlyAdded -> DynamicCategoryRule.TYPE_RECENTLY_ADDED
         },
         ruleParamsJson = when (this) {
             is DynamicCategoryRule.UnreadAtLeast -> count.toString()
             is DynamicCategoryRule.RecentlyUpdated -> withinDays.toString()
             is DynamicCategoryRule.GenreContains -> genre
+            is DynamicCategoryRule.Completed -> ""
+            is DynamicCategoryRule.Ongoing -> ""
+            is DynamicCategoryRule.RecentlyAdded -> withinDays.toString()
         }
     )
 }
