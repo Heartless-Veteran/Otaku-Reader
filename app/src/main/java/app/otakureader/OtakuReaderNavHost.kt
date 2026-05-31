@@ -26,6 +26,7 @@ import app.otakureader.feature.library.category.navigation.categoryManagementScr
 import app.otakureader.feature.library.navigation.libraryScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
+import app.otakureader.feature.more.bookmarks.bookmarksScreen
 import app.otakureader.feature.more.navigation.moreScreen
 import app.otakureader.feature.more.navigation.scanLibraryScreen
 import app.otakureader.feature.more.navigation.shareLibraryScreen
@@ -421,6 +422,18 @@ fun OtakuReaderNavHost(
             },
             onNavigateToBackup = {
                 navController.navigate(Route.SettingsBackup)
+            },
+            onNavigateToBookmarks = {
+                navController.navigate(Route.Bookmarks)
+            },
+        )
+
+        bookmarksScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onOpenBookmark = { mangaId, chapterId ->
+                navController.navigate(Route.Reader(mangaId, chapterId))
             },
         )
 
