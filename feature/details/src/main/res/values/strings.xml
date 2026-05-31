@@ -160,6 +160,7 @@
     <string name="details_filter_apply">Apply</string>
     <string name="details_filter_reset">Reset</string>
     <string name="details_filter_cancel">Cancel</string>
+    <string name="details_remaining_read_time">About %1$s remaining</string>
     <string name="details_mark_completed">Mark as completed</string>
     <string name="details_unmark_completed">Unmark completed</string>
     <string name="details_mark_dropped">Mark as dropped</string>

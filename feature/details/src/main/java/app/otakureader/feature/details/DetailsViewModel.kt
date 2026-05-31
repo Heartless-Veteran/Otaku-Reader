@@ -9,6 +9,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.core.preferences.DeleteAfterReadMode
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
@@ -50,6 +51,7 @@ class DetailsViewModel @Inject constructor(
     private val generalPreferences: GeneralPreferences,
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
+    private val statisticsRepository: StatisticsRepository,
 ) : ViewModel() {
 
     private val mangaId: Long = savedStateHandle.get<Long>(MANGA_ID_ARG) 
@@ -303,6 +305,10 @@ class DetailsViewModel @Inject constructor(
             .onEach { enabled ->
                 _state.update { it.copy(autoThemeEnabled = enabled) }
             }
+            .launchIn(viewModelScope)
+
+        statisticsRepository.getAverageChapterDurationMs()
+            .onEach { ms -> _state.update { it.copy(averageChapterDurationMs = ms) } }
             .launchIn(viewModelScope)
     }
 

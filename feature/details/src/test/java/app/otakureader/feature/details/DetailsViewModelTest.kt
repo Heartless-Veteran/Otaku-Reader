@@ -47,6 +47,7 @@ class DetailsViewModelTest {
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var updateMangaNote: UpdateMangaNoteUseCase
     private lateinit var setMangaNotifications: SetMangaNotificationsUseCase
+    private lateinit var statisticsRepository: app.otakureader.domain.repository.StatisticsRepository
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val sampleManga = Manga(
@@ -76,6 +77,7 @@ class DetailsViewModelTest {
         generalPreferences = mockk(relaxed = true)
         updateMangaNote = mockk()
         setMangaNotifications = mockk()
+        statisticsRepository = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle(mapOf(DetailsViewModel.MANGA_ID_ARG to mangaId))
     }
 
@@ -95,6 +97,7 @@ class DetailsViewModelTest {
             generalPreferences,
             updateMangaNote,
             setMangaNotifications,
+            statisticsRepository,
         )
     }
 

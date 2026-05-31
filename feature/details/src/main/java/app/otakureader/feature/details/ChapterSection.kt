@@ -37,6 +37,7 @@ internal fun ChapterListHeader(
     chapterCount: Int,
     sortOrder: DetailsContract.ChapterSortOrder,
     isFilterActive: Boolean = false,
+    estimatedRemainingTimeMs: Long = 0L,
     onToggleSort: () -> Unit,
     onShowFilter: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -46,10 +47,23 @@ internal fun ChapterListHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = pluralStringResource(R.plurals.details_chapter_count, chapterCount, chapterCount),
-            style = MaterialTheme.typography.titleMedium
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = pluralStringResource(R.plurals.details_chapter_count, chapterCount, chapterCount),
+                style = MaterialTheme.typography.titleMedium
+            )
+            if (estimatedRemainingTimeMs > 0L) {
+                val minutes = (estimatedRemainingTimeMs / 60_000L).toInt()
+                Text(
+                    text = stringResource(
+                        R.string.details_remaining_read_time,
+                        app.otakureader.core.common.formatReadTime(minutes),
+                    ),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onShowFilter) {

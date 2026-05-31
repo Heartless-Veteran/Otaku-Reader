@@ -58,6 +58,13 @@ class StatisticsRepositoryImpl @Inject constructor(
         )
     }
     
+    override fun getAverageChapterDurationMs(): Flow<Long> = readingHistoryDao.observeHistory().map { history ->
+        // Only count sessions with a recorded duration so an early-exit (0ms) read doesn't drag the average to zero.
+        val timed = history.filter { it.readDurationMs > 0L }
+        if (timed.isEmpty()) DEFAULT_AVG_CHAPTER_DURATION_MS
+        else timed.sumOf { it.readDurationMs } / timed.size
+    }
+
     @Suppress("MaxLineLength")
     override fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal> = readingHistoryDao.observeHistory().map { history ->
         val today = LocalDate.now()
@@ -117,6 +124,11 @@ class StatisticsRepositoryImpl @Inject constructor(
         return streak
     }
     
+    private companion object {
+        // 5 minutes — a reasonable default for an "average" manga chapter when the user has no history yet.
+        const val DEFAULT_AVG_CHAPTER_DURATION_MS = 5L * 60L * 1000L
+    }
+
     private fun calculateBestStreak(readingDays: List<LocalDate>): Int {
         if (readingDays.isEmpty()) return 0
         
