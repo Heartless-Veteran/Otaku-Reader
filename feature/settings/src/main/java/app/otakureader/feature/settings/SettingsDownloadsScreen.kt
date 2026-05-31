@@ -248,4 +248,109 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
             )
         },
     )
+
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+    SmartDownloadSection(state = state, onEvent = onEvent)
+}
+
+@Suppress("LongMethod")
+@Composable
+private fun SmartDownloadSection(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
+    SectionHeader(title = stringResource(R.string.settings_smart_download))
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_smart_download_enabled)) },
+        supportingContent = { Text(stringResource(R.string.settings_smart_download_enabled_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.smartDownloadEnabled,
+                onCheckedChange = { onEvent(SettingsEvent.SetSmartDownloadEnabled(it)) },
+            )
+        },
+    )
+
+    if (state.smartDownloadEnabled) {
+        var aheadSlider by remember(state.smartDownloadChaptersAhead) {
+            mutableFloatStateOf(state.smartDownloadChaptersAhead.toFloat())
+        }
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.settings_smart_download_chapters_ahead, aheadSlider.roundToInt()))
+            },
+            supportingContent = {
+                Slider(
+                    value = aheadSlider,
+                    onValueChange = { aheadSlider = it },
+                    onValueChangeFinished = {
+                        onEvent(SettingsEvent.SetSmartDownloadChaptersAhead(aheadSlider.roundToInt()))
+                    },
+                    valueRange = 1f..10f,
+                    steps = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+        )
+
+        var thresholdSlider by remember(state.smartDownloadThreshold) {
+            mutableFloatStateOf(state.smartDownloadThreshold)
+        }
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.settings_smart_download_threshold, (thresholdSlider * 100).roundToInt()))
+            },
+            supportingContent = {
+                Slider(
+                    value = thresholdSlider,
+                    onValueChange = { thresholdSlider = it },
+                    onValueChangeFinished = {
+                        onEvent(SettingsEvent.SetSmartDownloadThreshold(thresholdSlider))
+                    },
+                    valueRange = 0.5f..0.95f,
+                    steps = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+        )
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_smart_download_wifi_only)) },
+            trailingContent = {
+                Switch(
+                    checked = state.smartDownloadWifiOnly,
+                    onCheckedChange = { onEvent(SettingsEvent.SetSmartDownloadWifiOnly(it)) },
+                )
+            },
+        )
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_smart_download_favorites_only)) },
+            trailingContent = {
+                Switch(
+                    checked = state.smartDownloadFavoritesOnly,
+                    onCheckedChange = { onEvent(SettingsEvent.SetSmartDownloadFavoritesOnly(it)) },
+                )
+            },
+        )
+
+        var storageSlider by remember(state.smartDownloadMinStorageMb) {
+            mutableFloatStateOf(state.smartDownloadMinStorageMb.toFloat())
+        }
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.settings_smart_download_min_storage, storageSlider.roundToInt()))
+            },
+            supportingContent = {
+                Slider(
+                    value = storageSlider,
+                    onValueChange = { storageSlider = it },
+                    onValueChangeFinished = {
+                        onEvent(SettingsEvent.SetSmartDownloadMinStorageMb(storageSlider.roundToInt()))
+                    },
+                    valueRange = 100f..2000f,
+                    steps = 18,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+        )
+    }
 }
