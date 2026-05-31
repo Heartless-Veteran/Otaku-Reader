@@ -165,4 +165,8 @@
     <string name="details_unmark_completed">Unmark completed</string>
     <string name="details_mark_dropped">Mark as dropped</string>
     <string name="details_unmark_dropped">Unmark dropped</string>
+    <!-- Per-manga theme override (#947) -->
+    <string name="details_theme_inherit">Cover theme: use app default</string>
+    <string name="details_theme_force_on">Cover theme: force on</string>
+    <string name="details_theme_force_off">Cover theme: force off</string>
 </resources>
