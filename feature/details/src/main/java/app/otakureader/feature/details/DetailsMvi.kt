@@ -194,6 +194,10 @@ object DetailsContract {
         data object ToggleNotifications : Event
         data object OpenTracking : Event
 
+        // Completed / Dropped user-state toggles (#946)
+        data object ToggleUserCompleted : Event
+        data object ToggleUserDropped : Event
+
         // Per-manga reader settings (#260)
         data class SetReaderDirection(val direction: Int?) : Event
         data class SetReaderMode(val mode: Int?) : Event

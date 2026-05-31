@@ -79,6 +79,9 @@
     <string name="library_mark_selected_unread">Mark as unread</string>
     <string name="library_download_selected">Download selected</string>
     <string name="library_remove_selected">Remove from library</string>
+    <string name="library_more_actions">More actions</string>
+    <string name="library_mark_selected_completed">Mark as completed</string>
+    <string name="library_mark_selected_dropped">Mark as dropped</string>
     <!-- Daily goal banner -->
     <string name="library_daily_goal_label">Daily Reading Goal</string>
     <string name="library_daily_goal_complete">Daily goal reached! 🎉</string>
