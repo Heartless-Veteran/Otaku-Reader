@@ -66,6 +66,7 @@ class SettingsViewModel @Inject constructor(
         observeMigrationPreferences()
         observeReadingGoalPreferences()
         observeImageCachePreferences()
+        observeSecurityPreferences()
     }
 
     fun onEvent(event: SettingsEvent) {
@@ -122,10 +123,30 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetCoilDiskCacheSizeMb ->
                 generalPreferences.setCoilDiskCacheSizeMb(event.sizeMb)
 
+            // Security
+            is SettingsEvent.SetBiometricLockEnabled ->
+                generalPreferences.setBiometricLockEnabled(event.enabled)
+            is SettingsEvent.SetBiometricLockTimeout ->
+                generalPreferences.setBiometricLockTimeoutMinutes(event.minutes)
+
             // Navigation
             SettingsEvent.NavigateToAbout -> _effect.send(SettingsEffect.NavigateToAbout)
 
             else -> Unit
+        }
+    }
+
+    private fun observeSecurityPreferences() {
+        viewModelScope.launch {
+            combine(
+                generalPreferences.biometricLockEnabled,
+                generalPreferences.biometricLockTimeoutMinutes,
+            ) { enabled, timeout ->
+                _state.update { it.copy(
+                    biometricLockEnabled = enabled,
+                    biometricLockTimeoutMinutes = timeout,
+                ) }
+            }.collect { }
         }
     }
 
