@@ -82,6 +82,7 @@ import kotlinx.coroutines.launch
 fun ExtensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToRepositories: () -> Unit = {},
     viewModel: ExtensionsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -116,6 +117,7 @@ fun ExtensionsBottomSheet(
                 }
             },
             onNavigateToSettings = onNavigateToSettings,
+            onNavigateToRepositories = onNavigateToRepositories,
         )
     }
 }
@@ -128,6 +130,7 @@ private fun ExtensionsContent(
     snackbarHostState: SnackbarHostState,
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToRepositories: () -> Unit = {},
 ) {
     val selectedTab = state.selectedTab
     val tabs = listOf("Installed", "Available", "Updates")
@@ -189,7 +192,8 @@ private fun ExtensionsContent(
             RepositoryManager(
                 repositories = state.repositories,
                 onAdd = { onEvent(ExtensionsEvent.AddRepository(it)) },
-                onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) }
+                onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) },
+                onOpenFullManager = onNavigateToRepositories,
             )
 
             // Tabs
@@ -620,7 +624,8 @@ private fun UpdateAllButton(
 private fun RepositoryManager(
     repositories: List<String>,
     onAdd: (String) -> Unit,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    onOpenFullManager: () -> Unit = {},
 ) {
     var repoInput by remember { mutableStateOf("") }
 
@@ -660,8 +665,12 @@ private fun RepositoryManager(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            TextButton(onClick = onOpenFullManager) {
+                Text(stringResource(R.string.extensions_manage_repositories))
+            }
             TextButton(
                 onClick = {
                     onAdd(repoInput)

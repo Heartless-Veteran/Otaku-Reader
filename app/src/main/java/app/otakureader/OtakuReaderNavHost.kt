@@ -15,6 +15,7 @@ import app.otakureader.feature.about.navigation.aboutScreen
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.extensionInstallScreen
 import app.otakureader.feature.browse.navigation.extensionsBottomSheet
+import app.otakureader.feature.browse.repos.navigation.extensionRepositoriesScreen
 import app.otakureader.feature.browse.navigation.globalSearchScreen
 import app.otakureader.feature.browse.navigation.sourceMangaDetailScreen
 import app.otakureader.feature.browse.navigation.sourceDetailScreen
@@ -236,7 +237,15 @@ fun OtakuReaderNavHost(
             },
             onNavigateToSettings = {
                 navController.navigate(Route.Settings)
-            }
+            },
+            onNavigateToRepositories = {
+                navController.navigate(Route.ExtensionRepositories)
+            },
+        )
+
+        // Extension repositories management screen (#953)
+        extensionRepositoriesScreen(
+            onNavigateBack = { navController.popBackStack() },
         )
 
         // Extension install screen

@@ -67,6 +67,7 @@ fun NavGraphBuilder.sourceMangaDetailScreen(
 fun NavGraphBuilder.extensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToRepositories: () -> Unit = {},
 ) {
     composable<Route.ExtensionCatalog>(
         enterTransition = { fadeIn(animationSpec = tween(200)) },
@@ -77,6 +78,7 @@ fun NavGraphBuilder.extensionsBottomSheet(
         ExtensionsBottomSheet(
             onDismiss = onDismiss,
             onNavigateToSettings = onNavigateToSettings,
+            onNavigateToRepositories = onNavigateToRepositories,
         )
     }
 }
