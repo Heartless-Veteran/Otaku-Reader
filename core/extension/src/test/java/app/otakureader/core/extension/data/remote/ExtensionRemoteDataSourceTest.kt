@@ -337,6 +337,61 @@ class ExtensionRemoteDataSourceTest {
     }
 
     @Test
+    fun `fetchAvailableExtensions supports Komikku minified repository full index URL`() = runTest {
+        // Given: Komikku repository URLs are commonly pasted as a full index.min.json URL.
+        val baseUrl = mockWebServer.url("/").toString().trimEnd('/')
+        coEvery { repoRepository.getRepositories() } returns flowOf(listOf("$baseUrl/index.min.json"))
+
+        val komikkuExtensions = listOf(
+            MinifiedExtensionDto(
+                name = "Tachiyomi: AHottie",
+                pkg = "eu.kanade.tachiyomi.extension.all.ahottie",
+                apk = "tachiyomi-all.ahottie-v1.4.3.apk",
+                lang = "all",
+                code = 3,
+                version = "1.4.3",
+                nsfw = 1,
+                sources = listOf(
+                    MinifiedExtensionSourceDto(
+                        name = "AHottie",
+                        lang = "all",
+                        id = "6289731484943315811",
+                        baseUrl = "https://ahottie.top",
+                    ),
+                ),
+            ),
+        )
+
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(json.encodeToString(komikkuExtensions)),
+        )
+
+        // When: Fetching extensions from a Komikku-style repo.
+        val result = dataSource.fetchAvailableExtensions()
+
+        // Then: The full URL is normalized and the Komikku schema is parsed correctly.
+        assertTrue(result.isSuccess)
+        val extensions = result.getOrThrow()
+        assertEquals(1, extensions.size)
+        assertEquals("/index.min.json", mockWebServer.takeRequest().path)
+
+        val extension = extensions[0]
+        assertEquals("Tachiyomi: AHottie", extension.name)
+        assertEquals("eu.kanade.tachiyomi.extension.all.ahottie", extension.pkgName)
+        assertEquals("all", extension.lang)
+        assertEquals(3, extension.versionCode)
+        assertEquals("1.4.3", extension.versionName)
+        assertEquals(true, extension.isNsfw)
+        assertEquals("$baseUrl/apk/tachiyomi-all.ahottie-v1.4.3.apk", extension.apkUrl)
+        assertEquals("$baseUrl/icon/eu.kanade.tachiyomi.extension.all.ahottie.png", extension.iconUrl)
+        assertEquals(baseUrl, extension.repoUrl)
+        assertEquals(1, extension.sources.size)
+        assertEquals("https://ahottie.top", extension.sources.first().baseUrl)
+    }
+
+    @Test
     fun `downloadApk falls back to apks folder when apk folder returns 404`() = runTest {
         // Given: the standard /apk/ path 404s and the /apks/ fork path serves the file
         val baseUrl = mockWebServer.url("/").toString().trimEnd('/')

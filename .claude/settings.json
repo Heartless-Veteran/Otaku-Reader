@@ -1,0 +1,143 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "sh -c 'D=\"${CLAUDE_PROJECT_DIR:-.}\"; [ -f \"$D/.claude/helpers/statusline.cjs\" ] || D=\"${HOME}\"; exec node \"$D/.claude/helpers/statusline.cjs\"'"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx @claude-flow*)",
+      "Bash(npx claude-flow*)",
+      "Bash(npx -y ruflo*)",
+      "Bash(node .claude/*)",
+      "Bash(.claude/hooks/*)",
+      "mcp__claude-flow__:*",
+      "mcp__ruflo__:*"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/ruflo-bootstrap.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_FLOW_V3_ENABLED": "true",
+    "CLAUDE_FLOW_HOOKS_ENABLED": "true"
+  },
+  "claudeFlow": {
+    "version": "3.0.0",
+    "enabled": true,
+    "platform": {
+      "os": "linux",
+      "arch": "x64",
+      "shell": "bash"
+    },
+    "modelPreferences": {
+      "default": "claude-opus-4-8",
+      "routing": "claude-haiku-4-5-20251001"
+    },
+    "agentTeams": {
+      "enabled": true,
+      "teammateMode": "auto",
+      "taskListEnabled": true,
+      "mailboxEnabled": true,
+      "coordination": {
+        "autoAssignOnIdle": true,
+        "trainPatternsOnComplete": true,
+        "notifyLeadOnComplete": true,
+        "sharedMemoryNamespace": "agent-teams"
+      },
+      "hooks": {
+        "teammateIdle": {
+          "enabled": true,
+          "autoAssign": true,
+          "checkTaskList": true
+        },
+        "taskCompleted": {
+          "enabled": true,
+          "trainPatterns": true,
+          "notifyLead": true
+        }
+      }
+    },
+    "swarm": {
+      "topology": "mesh",
+      "maxAgents": 5
+    },
+    "memory": {
+      "backend": "memory",
+      "enableHNSW": false,
+      "learningBridge": {
+        "enabled": false
+      },
+      "memoryGraph": {
+        "enabled": false
+      },
+      "agentScopes": {
+        "enabled": false
+      }
+    },
+    "neural": {
+      "enabled": false
+    },
+    "daemon": {
+      "autoStart": false,
+      "workers": [
+        "map",
+        "audit",
+        "optimize"
+      ],
+      "schedules": {
+        "audit": {
+          "interval": "4h",
+          "priority": "critical"
+        },
+        "optimize": {
+          "interval": "2h",
+          "priority": "high"
+        }
+      }
+    },
+    "learning": {
+      "enabled": true,
+      "autoTrain": true,
+      "patterns": [
+        "coordination",
+        "optimization",
+        "prediction"
+      ],
+      "retention": {
+        "shortTerm": "24h",
+        "longTerm": "30d"
+      }
+    },
+    "adr": {
+      "autoGenerate": true,
+      "directory": "/docs/adr",
+      "template": "madr"
+    },
+    "ddd": {
+      "trackDomains": true,
+      "validateBoundedContexts": true,
+      "directory": "/docs/ddd"
+    },
+    "security": {
+      "autoScan": true,
+      "scanOnEdit": true,
+      "cveCheck": true,
+      "threatModel": true
+    }
+  }
+}

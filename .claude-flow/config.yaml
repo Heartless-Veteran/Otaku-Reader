@@ -1,0 +1,43 @@
+# RuFlo V3 Runtime Configuration
+# Generated: 2026-05-30T11:38:35.183Z
+
+version: "3.0.0"
+
+swarm:
+  topology: mesh
+  maxAgents: 5
+  autoScale: true
+  coordinationStrategy: consensus
+
+memory:
+  backend: memory
+  enableHNSW: false
+  persistPath: .claude-flow/data
+  cacheSize: 100
+  # ADR-049: Self-Learning Memory
+  learningBridge:
+    enabled: false
+    sonaMode: balanced
+    confidenceDecayRate: 0.005
+    accessBoostAmount: 0.03
+    consolidationThreshold: 10
+  memoryGraph:
+    enabled: false
+    pageRankDamping: 0.85
+    maxNodes: 5000
+    similarityThreshold: 0.8
+  agentScopes:
+    enabled: false
+    defaultScope: project
+
+neural:
+  enabled: false
+  modelPath: .claude-flow/neural
+
+hooks:
+  enabled: true
+  autoExecute: true
+
+mcp:
+  autoStart: false
+  port: 3000

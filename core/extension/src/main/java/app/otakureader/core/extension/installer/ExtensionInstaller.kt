@@ -566,22 +566,21 @@ class ExtensionInstaller(
      * granted; opens the settings screen to request it.
      */
     private fun maybeLaunchSystemInstaller(apkFile: File) {
+        // Make the file read-only so the system installer accepts it.
+        apkFile.setReadOnly()
+
+        // C-4: Request unknown-sources permission if not already granted.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
             !context.packageManager.canRequestPackageInstalls()
         ) {
-            // Skip system install if permission is not granted.
-            // Internal private-extension loading already works; system install
-            // is only an optional optimisation for shared-package discovery.
-            android.util.Log.d(
-                "ExtensionInstaller",
-                "Skipping system install — permission not granted. " +
-                    "Extension will load via internal path: ${apkFile.absolutePath}",
-            )
+            val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                data = "package:${context.packageName}".toUri()
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(settingsIntent)
+            // Note: The user must manually return and retry the install after granting.
             return
         }
-
-        // Make the file read-only so the system installer accepts it.
-        apkFile.setReadOnly()
 
         val uri = FileProvider.getUriForFile(
             context,
@@ -592,6 +591,7 @@ class ExtensionInstaller(
             setDataAndType(uri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+
         context.startActivity(installIntent)
     }
     

@@ -1,6 +1,7 @@
 package app.otakureader.feature.more
 
 import android.content.pm.PackageManager
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -49,7 +49,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import app.otakureader.core.ui.R as CoreUiR
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -265,11 +267,12 @@ private fun AppLogoCard(
                         .background(Color.White.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
+                    // Brand logo in place of the previous generic AutoAwesome placeholder.
+                    // No tint — keep the marketing-logo colours intact.
+                    Image(
+                        painter = painterResource(CoreUiR.drawable.ic_otaku_logo),
                         contentDescription = stringResource(R.string.more_app_name),
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(44.dp),
                     )
                 }
                 Column {
