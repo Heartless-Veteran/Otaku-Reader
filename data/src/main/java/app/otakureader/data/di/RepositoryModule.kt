@@ -1,5 +1,6 @@
 package app.otakureader.data.di
 
+import app.otakureader.domain.repository.AchievementRepository
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DynamicCategoryRepository
@@ -14,6 +15,7 @@ import app.otakureader.domain.repository.RecommendationRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
+import app.otakureader.data.repository.AchievementRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
@@ -60,6 +62,9 @@ import dagger.hilt.components.SingletonComponent
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    abstract fun bindAchievementRepository(impl: AchievementRepositoryImpl): AchievementRepository
 
     @Binds
     abstract fun bindMangaRepository(impl: MangaRepositoryImpl): MangaRepository

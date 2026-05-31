@@ -20,6 +20,7 @@ import app.otakureader.core.database.migrations.MIGRATION_22_23
 import app.otakureader.core.database.migrations.MIGRATION_23_24
 import app.otakureader.core.database.migrations.MIGRATION_24_25
 import app.otakureader.core.database.migrations.MIGRATION_25_26
+import app.otakureader.core.database.migrations.MIGRATION_28_29
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -45,7 +46,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 28", 28, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 29", 29, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -72,7 +73,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 26 migrations (v2→v28)", 26, ALL_MIGRATIONS.size)
+        assertEquals("Expected 27 migrations (v2→v29)", 27, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -497,6 +498,43 @@ class DatabaseMigrationTest {
             "download_queue must still exist after idempotent 25→26",
             "download_queue" in db.tableNames(),
         )
+        db.close()
+    }
+
+    // ── Migration 28 → 29 ───────────────────────────────────────────────────
+    // Adds: achievements table with definitionKey unique index
+
+    @Test
+    fun migration28To29_createsAchievementsTable() {
+        val db = helper.createDatabase(TEST_DB, 28)
+        assertFalse("achievements must NOT exist at v28", "achievements" in db.tableNames())
+        MIGRATION_28_29.migrate(db)
+        assertTrue("achievements must exist after 28→29", "achievements" in db.tableNames())
+        val cols = db.columnNames("achievements")
+        assertTrue("id must exist", "id" in cols)
+        assertTrue("definitionKey must exist", "definitionKey" in cols)
+        assertTrue("unlockedAt must exist", "unlockedAt" in cols)
+        assertTrue("progress must exist", "progress" in cols)
+        assertTrue("target must exist", "target" in cols)
+        assertTrue(
+            "index_achievements_definitionKey must exist",
+            "index_achievements_definitionKey" in db.indexNames("achievements"),
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration28To29_uniqueConstraintOnDefinitionKey() {
+        val db = helper.createDatabase(TEST_DB, 28)
+        MIGRATION_28_29.migrate(db)
+        db.execSQL("INSERT INTO achievements (definitionKey, unlockedAt, progress, target) VALUES ('FIRST_CHAPTER', 0, 0, 1)")
+        var threw = false
+        try {
+            db.execSQL("INSERT INTO achievements (definitionKey, unlockedAt, progress, target) VALUES ('FIRST_CHAPTER', 0, 0, 1)")
+        } catch (_: Exception) {
+            threw = true
+        }
+        assertTrue("Duplicate definitionKey must throw", threw)
         db.close()
     }
 

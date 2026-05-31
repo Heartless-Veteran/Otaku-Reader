@@ -1,5 +1,7 @@
 package app.otakureader.data.repository
 
+import android.content.Context
+import androidx.work.WorkManager
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.ChapterWithHistoryEntity
@@ -9,9 +11,12 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -21,6 +26,7 @@ class ChapterRepositoryImplTest {
 
     private lateinit var chapterDao: ChapterDao
     private lateinit var repository: ChapterRepositoryImpl
+    private lateinit var context: Context
 
     private fun makeEntity(
         id: Long = 1L,
@@ -48,7 +54,15 @@ class ChapterRepositoryImplTest {
     fun setUp() {
         chapterDao = mockk()
         readingHistoryDao = mockk()
-        repository = ChapterRepositoryImpl(chapterDao, readingHistoryDao)
+        context = mockk(relaxed = true)
+        mockkStatic(WorkManager::class)
+        every { WorkManager.getInstance(any()) } returns mockk(relaxed = true)
+        repository = ChapterRepositoryImpl(context, chapterDao, readingHistoryDao)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(WorkManager::class)
     }
 
     // ---- getChaptersByMangaId ----

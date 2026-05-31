@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.domain.model.ReadingStats
+import app.otakureader.domain.repository.AchievementRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.usecase.GetReadingStatsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,6 +25,7 @@ class StatisticsViewModel @Inject constructor(
     private val getReadingStatsUseCase: GetReadingStatsUseCase,
     private val statisticsRepository: StatisticsRepository,
     private val readingGoalPreferences: ReadingGoalPreferences,
+    private val achievementRepository: AchievementRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StatisticsState())
@@ -33,11 +35,18 @@ class StatisticsViewModel @Inject constructor(
 
     init {
         loadStats()
+        achievementRepository.observeAll()
+            .onEach { achievements ->
+                _state.update { it.copy(achievements = achievements) }
+            }
+            .catch { /* non-fatal: achievements are supplementary */ }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: StatisticsEvent) {
         when (event) {
             is StatisticsEvent.Refresh -> loadStats()
+            is StatisticsEvent.LoadAchievements -> { /* observer already active from init */ }
         }
     }
 
