@@ -170,6 +170,14 @@
     <string name="settings_restore_from_auto">Restore from automatic backup</string>
     <string name="settings_no_auto_backups">No automatic backups yet</string>
     <string name="settings_no_auto_backups_description">Backups will appear here once created</string>
+
+    <!-- Cloud Backup -->
+    <string name="settings_cloud_backup">Cloud Backup</string>
+    <string name="settings_cloud_backup_destination">Cloud destination</string>
+    <string name="settings_cloud_backup_webdav">WebDAV</string>
+    <string name="settings_cloud_backup_test_connection">Test connection</string>
+    <string name="settings_cloud_backup_save_credentials">Save credentials</string>
+    <string name="settings_cloud_backup_configure">Configure</string>
     <string name="settings_migrate_manga">Migrate manga</string>
     <string name="settings_migrate_manga_description">Move manga from one source to another</string>
 

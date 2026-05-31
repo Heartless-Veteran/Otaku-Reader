@@ -54,6 +54,7 @@ import app.otakureader.feature.settings.viewmodel.BackupSyncViewModel
 fun SettingsBackupScreen(
     onNavigateBack: () -> Unit,
     onNavigateToMigrationEntry: () -> Unit = {},
+    onNavigateToCloudBackup: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: BackupSyncViewModel = hiltViewModel(),
 ) {
@@ -112,6 +113,7 @@ fun SettingsBackupScreen(
                 SettingsEffect.ShowAutoBackupLocationPicker ->
                     backupLocationLauncher.launch(null)
                 SettingsEffect.NavigateToMigrationEntry -> onNavigateToMigrationEntry()
+                SettingsEffect.NavigateToCloudBackup -> onNavigateToCloudBackup()
                 else -> Unit
             }
         }
@@ -139,7 +141,11 @@ fun SettingsBackupScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState()),
         ) {
-            BackupContent(state = state, onEvent = viewModel::onEvent)
+            BackupContent(
+                state = state,
+                onEvent = viewModel::onEvent,
+                onNavigateToCloudBackup = onNavigateToCloudBackup,
+            )
         }
     }
 
@@ -206,11 +212,13 @@ private fun TachiyomiImportConfirmDialog(
 fun NavGraphBuilder.settingsBackupScreen(
     onNavigateBack: () -> Unit,
     onNavigateToMigrationEntry: () -> Unit = {},
+    onNavigateToCloudBackup: () -> Unit = {},
 ) {
     composable<Route.SettingsBackup> {
         SettingsBackupScreen(
             onNavigateBack = onNavigateBack,
             onNavigateToMigrationEntry = onNavigateToMigrationEntry,
+            onNavigateToCloudBackup = onNavigateToCloudBackup,
         )
     }
 }
@@ -219,7 +227,11 @@ fun NavGraphBuilder.settingsBackupScreen(
 
 @Suppress("LongMethod")
 @Composable
-private fun BackupContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
+private fun BackupContent(
+    state: SettingsState,
+    onEvent: (SettingsEvent) -> Unit,
+    onNavigateToCloudBackup: () -> Unit = {},
+) {
     SectionHeader(title = stringResource(R.string.settings_backup_restore_migration))
 
     ListItem(
@@ -420,4 +432,16 @@ private fun BackupContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
             )
         }
     }
+
+    HorizontalDivider()
+    SectionHeader(title = stringResource(R.string.settings_cloud_backup))
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_cloud_backup)) },
+        supportingContent = { Text(stringResource(R.string.settings_cloud_backup_destination)) },
+        trailingContent = {
+            OutlinedButton(onClick = onNavigateToCloudBackup) {
+                Text(stringResource(R.string.settings_cloud_backup_configure))
+            }
+        },
+    )
 }
