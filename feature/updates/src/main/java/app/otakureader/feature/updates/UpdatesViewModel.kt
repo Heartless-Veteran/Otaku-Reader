@@ -155,11 +155,26 @@ class UpdatesViewModel @Inject constructor(
     private fun markSelectedAsRead() {
         val selected = _state.value.selectedItems
         if (selected.isEmpty()) return
+        val count = selected.size
         viewModelScope.launch {
-            runCatching {
+            // try/catch with explicit CancellationException rethrow — coroutine cancellation
+            // (e.g. ViewModel cleared mid-update) shouldn't surface as "Failed to mark as read".
+            try {
                 chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
+                // Subtract only the IDs we actually processed from the current selection.
+                // Clearing wholesale would also wipe any new selections the user made while
+                // the DB write was in flight — losing UI state they expect to keep.
+                _state.update { it.copy(selectedItems = it.selectedItems - selected) }
+                _effect.send(
+                    UpdatesEffect.ShowSnackbar(
+                        context.resources.getQuantityString(R.plurals.updates_marked_as_read, count, count)
+                    )
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
             }
-            _state.update { it.copy(selectedItems = emptySet()) }
         }
     }
 

@@ -212,7 +212,7 @@ class ExtensionRemoteDataSourceImpl(
                 repositories.forEach { rawUrl ->
                     val baseUrl = normalizeRepoUrl(rawUrl)
                     val repoExtensions = fetchFromRepository(baseUrl)
-                    extensions.addAll(repoExtensions)
+                    extensions.addAll(repoExtensions.map { it.copy(repoUrl = baseUrl) })
                 }
 
                 // Deduplicate by package name preferring highest versionCode
@@ -445,7 +445,12 @@ private fun resolveApkUrl(baseUrl: String, apkPath: String): String {
         apkPath
     } else {
         val cleanPath = apkPath.trimStart('/')
-        "$baseUrl/apk/$cleanPath"
+        // If the path already contains 'apk/' or 'apks/', don't prepend it.
+        if (cleanPath.startsWith("apk/") || cleanPath.startsWith("apks/")) {
+            "$baseUrl/$cleanPath"
+        } else {
+            "$baseUrl/apk/$cleanPath"
+        }
     }
 }
 

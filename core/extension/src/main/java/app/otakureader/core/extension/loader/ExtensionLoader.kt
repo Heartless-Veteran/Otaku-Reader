@@ -303,9 +303,20 @@ class ExtensionLoader(
             return ExtensionLoadResult.Error("Invalid parameters for class loader: ${e.message}", e)
         }
 
-        // Resolve source instances from the metadata
-        val sources = ExtensionLoadingUtils.resolveSourcesFromMetadata(appInfo, pkgName, classLoader)
-            .ifEmpty { return ExtensionLoadResult.Error("No valid sources found in extension $pkgName") }
+        // Resolve source instances from the metadata. The resolution carries any
+        // per-class failure reasons so we can surface them in the user-visible error
+        // instead of just saying "no valid sources found" (the loader used to be silent
+        // for LinkageError / ctor-threw / etc. — see ExtensionLoadingUtils.instantiateClass).
+        val resolution = ExtensionLoadingUtils.resolveSourcesFromMetadata(appInfo, pkgName, classLoader)
+        if (resolution.sources.isEmpty()) {
+            val detail = if (resolution.errors.isEmpty()) {
+                "no source class declared in manifest metadata"
+            } else {
+                resolution.errors.joinToString(separator = "; ")
+            }
+            return ExtensionLoadResult.Error("No valid sources found in extension $pkgName ($detail)")
+        }
+        val sources = resolution.sources
 
         val extension = buildExtension(apkPath, packageInfo, sources, isNsfw, isShared)
 

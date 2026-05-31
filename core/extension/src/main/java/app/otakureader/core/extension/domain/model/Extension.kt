@@ -58,7 +58,10 @@ data class Extension(
     val isShared: Boolean = true,
 
     /** Whether the extension is enabled without uninstalling */
-    val isEnabled: Boolean = true
+    val isEnabled: Boolean = true,
+
+    /** URL of the repository this extension belongs to */
+    val repoUrl: String? = null
 ) : Parcelable {
     
     val isInstalled: Boolean
