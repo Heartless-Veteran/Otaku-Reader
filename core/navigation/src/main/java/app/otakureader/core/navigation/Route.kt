@@ -135,6 +135,9 @@ sealed interface Route {
     data object SettingsSecurity : Route
 
     @Serializable
+    data object SettingsNotifications : Route
+
+    @Serializable
     data object WidgetConfiguration : Route
 
     @Serializable

@@ -315,6 +315,9 @@ fun OtakuReaderNavHost(
             onNavigateToSecurity = {
                 navController.navigate(Route.SettingsSecurity)
             },
+            onNavigateToNotifications = {
+                navController.navigate(Route.SettingsNotifications)
+            },
             onNavigateToWidgetConfiguration = {
                 navController.navigate(Route.WidgetConfiguration)
             },

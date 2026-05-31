@@ -103,6 +103,17 @@
     <string name="settings_update_interval_6h">6 hours</string>
     <string name="settings_update_interval_12h">12 hours</string>
     <string name="settings_update_interval_24h">24 hours</string>
+    <string name="settings_notif_batching">Smart batching</string>
+    <string name="settings_notif_batching_description">Group new-chapter notifications to avoid spam</string>
+    <string name="settings_notif_cooldown">Per-manga cooldown: %1$d min</string>
+    <string name="settings_notif_max_individual">Summarize after %1$d notifications</string>
+    <string name="settings_notif_quiet_hours">Respect quiet hours</string>
+    <string name="settings_notif_quiet_hours_description">Don\'t notify during the hours below</string>
+    <string name="settings_notif_quiet_start">Quiet from %1$d:00</string>
+    <string name="settings_notif_quiet_end">Quiet until %1$d:00</string>
+    <string name="settings_ext_auto_update">Auto-check extension updates</string>
+    <string name="settings_ext_auto_update_description">Periodically check installed extensions for updates and notify you</string>
+    <string name="settings_ext_auto_update_wifi_only">Check on Wi-Fi only</string>
 
     <!-- Reading Goals -->
     <string name="settings_reading_goals">Reading Goals</string>
