@@ -29,5 +29,11 @@
     <string name="widget_up_to_date">Up to date</string>
     <!-- Recent Updates widget: new chapters count -->
     <string name="widget_new_chapters">%1$d new chapter(s)</string>
-    
+
+    <!-- Large Home Widget (#949) -->
+    <string name="home_widget_label">Home (Large)</string>
+    <string name="home_widget_description">Cover-art carousel of your most-recently-read manga with progress</string>
+    <string name="widget_home_title">Recently Read</string>
+    <string name="widget_home_next_chapter">Next: Ch. %1$.1f</string>
+
 </resources>

@@ -220,6 +220,20 @@
                 android:resource="@xml/recent_updates_widget_info" />
         </receiver>
 
+        <!-- Large Home Widget — cover-art carousel (#949) -->
+        <receiver
+            android:name=".widget.HomeWidgetReceiver"
+            android:exported="true"
+            android:label="@string/home_widget_label"
+            android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/home_widget_info" />
+        </receiver>
+
         <!--
             WorkManager foreground service: declare dataSync type so that library-update
             and backup workers can run as foreground services on Android 14+ without
