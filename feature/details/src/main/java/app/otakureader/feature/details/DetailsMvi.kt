@@ -48,8 +48,14 @@ object DetailsContract {
         /** Whether to show panorama cover (wide banner) instead of square thumbnail. */
         val showPanoramaCover: Boolean = false,
         /** Whether automatic theme color extraction from cover is enabled. */
-        val autoThemeEnabled: Boolean = true
+        val autoThemeEnabled: Boolean = true,
+        /** User's average per-chapter reading duration in milliseconds; used to estimate remaining time. */
+        val averageChapterDurationMs: Long = 0L
     ) : UiState {
+
+        /** Estimated time remaining to finish all unread chapters of this manga. */
+        val estimatedRemainingTimeMs: Long
+            get() = averageChapterDurationMs * chapters.count { !it.read }
         
         val canStartReading: Boolean
             get() = chapters.isNotEmpty()
