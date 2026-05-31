@@ -1,16 +1,18 @@
 package app.otakureader.core.database.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Upsert
 import app.otakureader.core.database.entity.DataUsageEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface DataUsageDao {
 
-    @Upsert
-    suspend fun upsert(entity: DataUsageEntity)
+    /** Inserts a new zero-byte row for (date, category, network) if none exists yet. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIfAbsent(entity: DataUsageEntity)
 
     @Query("""
         UPDATE data_usage SET bytes = bytes + :delta
