@@ -479,4 +479,15 @@
     <string name="settings_about">About</string>
     <string name="settings_about_title">About Otaku Reader</string>
     <string name="settings_about_description">App info, FAQ, licenses</string>
+
+    <!-- Reader Sync (#958) -->
+    <string name="settings_sync">Reader Sync</string>
+    <string name="settings_sync_description">Sync your reading progress across devices using a self-hosted server. Leave blank to disable.</string>
+    <string name="settings_sync_server_url">Server URL</string>
+    <string name="settings_sync_bearer_token">Bearer Token</string>
+    <string name="settings_sync_save">Save</string>
+    <string name="settings_sync_now">Sync Now</string>
+    <string name="settings_sync_device_id">Device ID</string>
+    <string name="settings_sync_queue_size">Pending items</string>
+    <string name="settings_sync_test_connection">Test Connection</string>
 </resources>

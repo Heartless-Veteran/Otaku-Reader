@@ -3,6 +3,7 @@ package app.otakureader.data.repository
 import androidx.work.WorkManager
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
+import app.otakureader.domain.repository.SyncRepository
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.ChapterWithHistoryEntity
 import app.otakureader.core.database.entity.ChapterWithMangaEntity
@@ -31,6 +32,7 @@ class ChapterRepositoryImpl @Inject constructor(
     private val chapterDao: ChapterDao,
     private val readingHistoryDao: ReadingHistoryDao,
     private val workManager: WorkManager,
+    private val syncRepository: SyncRepository,
 ) : ChapterRepository {
     
     override fun getChaptersByMangaId(mangaId: Long): Flow<List<Chapter>> {
@@ -118,6 +120,19 @@ class ChapterRepositoryImpl @Inject constructor(
     override suspend fun recordHistory(chapterId: Long, readAt: Long, readDurationMs: Long) {
         readingHistoryDao.upsert(chapterId, readAt, readDurationMs)
         AchievementCheckWorker.enqueue(workManager)
+        // Enqueue a sync event — best-effort, never throws so reading is never blocked.
+        try {
+            val chapterEntity = chapterDao.getChapterById(chapterId)
+            if (chapterEntity != null) {
+                syncRepository.enqueueChapterRead(
+                    chapterId = chapterId,
+                    mangaId = chapterEntity.mangaId,
+                    chapterNumber = chapterEntity.chapterNumber,
+                )
+            }
+        } catch (_: Exception) {
+            // Intentionally swallowed: sync is best-effort and must not break reading.
+        }
     }
 
     override suspend fun removeFromHistory(chapterId: Long) {
