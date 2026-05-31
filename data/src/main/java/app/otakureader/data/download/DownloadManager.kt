@@ -172,6 +172,21 @@ class DownloadManager @Inject constructor(
         }
     }
 
+    /**
+     * Re-queues a FAILED download so it is attempted again.
+     *
+     * [resume] only un-pauses PAUSED items, so it can't recover a FAILED one; retrying instead
+     * re-enqueues the originally stored request (enqueue already permits re-queueing terminal
+     * states). No-op if the chapter isn't FAILED or its request is no longer available.
+     */
+    suspend fun retry(chapterId: Long) {
+        val request = mutex.withLock {
+            if (downloadMap[chapterId]?.status != DownloadStatus.FAILED) return
+            requests[chapterId]
+        } ?: return
+        enqueue(request)
+    }
+
     suspend fun cancel(chapterId: Long) {
         mutex.withLock {
             jobs.remove(chapterId)?.cancel()

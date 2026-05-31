@@ -67,6 +67,9 @@
     <string name="library_search">Search library</string>
     <string name="library_search_placeholder">Search…</string>
     <string name="library_search_close">Close search</string>
+    <string name="library_search_clear">Clear search</string>
+    <string name="library_search_no_results_title">No results found</string>
+    <string name="library_search_no_results_message">No manga in your library match “%1$s”</string>
 
     <!-- Filter chips -->
     <string name="library_filter_all">All</string>

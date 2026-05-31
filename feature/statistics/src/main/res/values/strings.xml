@@ -32,4 +32,11 @@
     <string name="statistics_share_day_streak">day streak</string>
     <string name="statistics_share_footer">📚 Otaku Reader</string>
     <string name="statistics_share_text">Check out my reading stats! 📚</string>
+    <string name="statistics_share_button">Share</string>
+    <string name="statistics_share_layout_detailed">Detailed</string>
+    <string name="statistics_share_layout_compact">Compact</string>
+    <string name="statistics_share_anonymize">Hide library size</string>
+    <string name="statistics_share_save_gallery">Save to gallery</string>
+    <string name="statistics_share_saved">Saved to gallery</string>
+    <string name="statistics_share_save_failed">Couldn\'t save image</string>
 </resources>

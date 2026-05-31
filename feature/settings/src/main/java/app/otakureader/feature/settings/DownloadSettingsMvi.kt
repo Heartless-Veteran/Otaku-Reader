@@ -12,4 +12,11 @@ data class DownloadSettingsState(
     val downloadAheadWhileReading: Int = 0,
     val downloadAheadOnlyOnWifi: Boolean = true,
     val downloadLocation: String? = null,
+    // Smart download rules
+    val smartDownloadEnabled: Boolean = false,
+    val smartDownloadChaptersAhead: Int = 3,
+    val smartDownloadThreshold: Float = 0.8f,
+    val smartDownloadWifiOnly: Boolean = true,
+    val smartDownloadFavoritesOnly: Boolean = true,
+    val smartDownloadMinStorageMb: Int = 500,
 )

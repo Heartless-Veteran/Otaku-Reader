@@ -66,6 +66,10 @@ class DownloadRepositoryImpl @Inject constructor(
         downloadManager.resume(id)
     }
 
+    override suspend fun retryDownload(id: Long) {
+        downloadManager.retry(id)
+    }
+
     override suspend fun cancelDownload(id: Long) {
         downloadManager.cancel(id)
     }

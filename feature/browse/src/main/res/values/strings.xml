@@ -140,5 +140,6 @@
     <string name="browse_scope_sources">Sources</string>
     <string name="browse_scope_library">Library</string>
     <string name="browse_search_history">Recent searches</string>
+    <string name="browse_search_history_remove">Remove from recent searches</string>
     <string name="filter_sheet_clear_all">Clear all</string>
 </resources>

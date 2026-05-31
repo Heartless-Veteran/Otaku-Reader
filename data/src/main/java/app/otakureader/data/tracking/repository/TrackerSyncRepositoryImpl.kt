@@ -12,6 +12,7 @@ import app.otakureader.domain.model.SyncStatus
 import app.otakureader.domain.model.TrackerSyncState
 import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.domain.tracking.TrackRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -274,7 +275,9 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         var failed = 0
         var conflicts = 0
 
-        pending.forEach { state ->
+        pending.forEachIndexed { index, state ->
+            // Stagger requests to avoid hitting tracker API rate limits / bans.
+            if (index > 0) delay(BATCH_SYNC_STAGGER_MS)
             attempted++
             val result = syncManga(state.mangaId, state.trackerId)
             when {
@@ -505,4 +508,9 @@ class TrackerSyncRepositoryImpl @Inject constructor(
         syncOnChapterRead = syncOnChapterRead,
         syncOnMarkComplete = syncOnMarkComplete
     )
+
+    private companion object {
+        /** Delay between consecutive tracker syncs in a batch, to respect API rate limits. */
+        const val BATCH_SYNC_STAGGER_MS = 350L
+    }
 }
