@@ -233,4 +233,22 @@ sealed interface Route {
         val code: String,
         val state: String? = null,
     ) : Route
+
+    // ─── WebView ───
+
+    /**
+     * Embedded WebView screen (e.g. CAPTCHA solving, OAuth).
+     *
+     * @param sourceId Extension source ID this WebView is serving.
+     * @param url      URL to open.
+     * @param purpose  [app.otakureader.core.webview.WebViewPurpose] as a String to avoid
+     *                 a cross-module enum reference in the navigation layer.
+     *                 Defaults to "GENERAL".
+     */
+    @Serializable
+    data class WebView(
+        val sourceId: Long,
+        val url: String,
+        val purpose: String = "GENERAL",
+    ) : Route
 }

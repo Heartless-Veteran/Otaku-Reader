@@ -134,6 +134,7 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.core.database)
     implementation(projects.core.discord)
+    implementation(projects.core.webview)
     implementation(projects.domain)
     implementation(projects.sourceApi)
 

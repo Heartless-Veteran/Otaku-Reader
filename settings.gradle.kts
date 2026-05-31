@@ -35,6 +35,7 @@ include(":core:navigation")
 include(":core:extension")
 include(":core:tachiyomi-compat")
 include(":core:discord")
+include(":core:webview")
 
 // Domain layer
 include(":domain")
