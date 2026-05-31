@@ -10,7 +10,9 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 /**
  * Preference store for general application settings including theme and locale.
@@ -172,6 +174,41 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clearBrowseSearchHistory() = dataStore.edit { it.remove(Keys.BROWSE_SEARCH_HISTORY) }
 
+    suspend fun removeBrowseSearchHistory(query: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_SEARCH_HISTORY]?.split("\n")?.filter { it.isNotBlank() } ?: return@edit
+        val updated = current.filterNot { it == query }
+        if (updated.isEmpty()) prefs.remove(Keys.BROWSE_SEARCH_HISTORY)
+        else prefs[Keys.BROWSE_SEARCH_HISTORY] = updated.joinToString("\n")
+    }
+
+    // --- Browse Filter State (per source) ---
+
+    val browseFilterStates: Flow<Map<String, String>> = dataStore.data.map { prefs ->
+        prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) } ?: emptyMap()
+    }
+
+    suspend fun getBrowseFilterState(sourceId: String): String? = browseFilterStates.first()[sourceId]
+
+    suspend fun setBrowseFilterState(sourceId: String, encoded: String?) = dataStore.edit { prefs ->
+        val current = prefs[Keys.BROWSE_FILTER_STATES]?.let { decodeFilterStates(it) }?.toMutableMap()
+            ?: mutableMapOf()
+        if (encoded.isNullOrBlank()) current.remove(sourceId) else current[sourceId] = encoded
+        if (current.isEmpty()) prefs.remove(Keys.BROWSE_FILTER_STATES)
+        else prefs[Keys.BROWSE_FILTER_STATES] = Json.encodeToString(current)
+    }
+
+    private fun decodeFilterStates(raw: String): Map<String, String> =
+        runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+
+    // --- Security ---
+
+    val biometricLockEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_ENABLED] ?: false }
+    suspend fun setBiometricLockEnabled(value: Boolean) = dataStore.edit { it[Keys.BIOMETRIC_LOCK_ENABLED] = value }
+
+    val biometricLockTimeoutMinutes: Flow<Int> = dataStore.data.map { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] ?: 0 }
+    suspend fun setBiometricLockTimeoutMinutes(value: Int) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] = value }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
@@ -274,6 +311,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val EXT_AUTO_UPDATE_WIFI_ONLY = booleanPreferencesKey("extension_auto_update_wifi_only")
         val EXT_AUTO_UPDATE_INTERVAL = intPreferencesKey("extension_auto_update_interval_hours")
         val BROWSE_SEARCH_HISTORY = stringPreferencesKey("browse_search_history")
+        val BROWSE_FILTER_STATES = stringPreferencesKey("browse_filter_states")
+        val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
+        val BIOMETRIC_LOCK_TIMEOUT_MINUTES = intPreferencesKey("biometric_lock_timeout_minutes")
     }
 
     companion object {

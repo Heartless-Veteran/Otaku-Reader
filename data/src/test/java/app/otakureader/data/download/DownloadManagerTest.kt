@@ -732,6 +732,61 @@ class DownloadManagerTest {
     }
 
     @Test
+    fun `retry re-queues a failed download and it completes`() = runTest(testDispatcher) {
+        // Given - first attempt fails, retry succeeds
+        var callCount = 0
+        coEvery { downloader.downloadPage(any(), any()) } answers {
+            if (callCount++ == 0) Result.failure(RuntimeException("first fail"))
+            else Result.success(File("/tmp/test/page.jpg"))
+        }
+
+        downloadManager.enqueue(testRequest)
+        advanceUntilIdle()
+
+        var downloads = downloadManager.downloads.first()
+        repeat(10) {
+            if (downloads.firstOrNull()?.status == DownloadStatus.DOWNLOADING) {
+                advanceUntilIdle()
+                downloads = downloadManager.downloads.first()
+            }
+        }
+        assertEquals(DownloadStatus.FAILED, downloads[0].status)
+
+        // When - retry the failed chapter (resume would not work for FAILED)
+        downloadManager.retry(testRequest.chapterId)
+        advanceUntilIdle()
+
+        downloads = downloadManager.downloads.first()
+        repeat(20) {
+            if (downloads.firstOrNull()?.status == DownloadStatus.DOWNLOADING) {
+                advanceUntilIdle()
+                downloads = downloadManager.downloads.first()
+            }
+        }
+
+        // Then - recovered to COMPLETED
+        assertEquals(1, downloads.size)
+        assertEquals(DownloadStatus.COMPLETED, downloads[0].status)
+    }
+
+    @Test
+    fun `retry on a non-failed download is a no-op`() = runTest(testDispatcher) {
+        // Given - a healthy paused download (not FAILED)
+        downloadManager.enqueue(testRequest)
+        advanceUntilIdle()
+        downloadManager.pause(testRequest.chapterId)
+        advanceUntilIdle()
+        assertEquals(DownloadStatus.PAUSED, downloadManager.downloads.first()[0].status)
+
+        // When - retry should ignore non-FAILED items
+        downloadManager.retry(testRequest.chapterId)
+        advanceUntilIdle()
+
+        // Then - still PAUSED, not restarted
+        assertEquals(DownloadStatus.PAUSED, downloadManager.downloads.first()[0].status)
+    }
+
+    @Test
     fun `failed download does not re-queue itself automatically`() = runTest(testDispatcher) {
         // Given - downloader always fails
         coEvery { downloader.downloadPage(any(), any()) } returns Result.failure(

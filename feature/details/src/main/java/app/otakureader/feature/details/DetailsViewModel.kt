@@ -107,6 +107,12 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.HideNoteEditor -> hideNoteEditor()
             is DetailsContract.Event.UpdateNoteText -> updateNoteText(event.text)
             is DetailsContract.Event.SaveNote -> saveNote()
+            is DetailsContract.Event.ShowChapterNoteEditor -> showChapterNoteEditor(event.chapterId)
+            is DetailsContract.Event.HideChapterNoteEditor ->
+                _state.update { it.copy(chapterNoteEditorChapterId = null) }
+            is DetailsContract.Event.UpdateChapterNoteText ->
+                _state.update { it.copy(chapterNoteEditorText = event.text) }
+            is DetailsContract.Event.SaveChapterNote -> saveChapterNote()
             is DetailsContract.Event.ClearChapterSelection -> clearChapterSelection()
             is DetailsContract.Event.SelectAllChapters -> selectAllChapters()
             is DetailsContract.Event.DownloadSelectedChapters -> downloadSelectedChapters()
@@ -708,6 +714,28 @@ class DetailsViewModel @Inject constructor(
 
     private fun hideNoteEditor() {
         _state.update { it.copy(noteEditorVisible = false) }
+    }
+
+    private fun showChapterNoteEditor(chapterId: Long) {
+        val current = _state.value.chapters.firstOrNull { it.id == chapterId }?.userNotes ?: ""
+        _state.update { it.copy(chapterNoteEditorChapterId = chapterId, chapterNoteEditorText = current) }
+    }
+
+    private fun saveChapterNote() {
+        val chapterId = _state.value.chapterNoteEditorChapterId ?: return
+        viewModelScope.launch {
+            val text = _state.value.chapterNoteEditorText.trim().ifEmpty { null }
+            try {
+                // The chapter Flow re-emits after this write, refreshing the list's note indicator.
+                chapterRepository.updateChapterNotes(chapterId, text)
+                _state.update { it.copy(chapterNoteEditorChapterId = null) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Note saved"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to save note: ${e.message}"))
+            }
+        }
     }
 
     private fun updateNoteText(text: String) {

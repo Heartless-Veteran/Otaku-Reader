@@ -14,6 +14,12 @@ class PageBookmarkRepositoryImpl @Inject constructor(
     private val pageBookmarkDao: PageBookmarkDao
 ) : PageBookmarkRepository {
 
+    override fun getAllBookmarks(): Flow<List<PageBookmark>> {
+        return pageBookmarkDao.getAllBookmarks().map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     override fun getBookmarksForManga(mangaId: Long): Flow<List<PageBookmark>> {
         return pageBookmarkDao.getBookmarksForManga(mangaId).map { list ->
             list.map { it.toDomain() }

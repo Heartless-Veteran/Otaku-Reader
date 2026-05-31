@@ -40,6 +40,10 @@ data class SettingsState(
     // --- Browse ---
     val showNsfwContent: Boolean = false,
 
+    // --- Security ---
+    val biometricLockEnabled: Boolean = false,
+    val biometricLockTimeoutMinutes: Int = 0,
+
     // --- Discord ---
     val discordRpcEnabled: Boolean = false,
 
@@ -129,6 +133,12 @@ data class SettingsState(
     val downloadAheadWhileReading get() = downloads.downloadAheadWhileReading
     val downloadAheadOnlyOnWifi get() = downloads.downloadAheadOnlyOnWifi
     val downloadLocation get() = downloads.downloadLocation
+    val smartDownloadEnabled get() = downloads.smartDownloadEnabled
+    val smartDownloadChaptersAhead get() = downloads.smartDownloadChaptersAhead
+    val smartDownloadThreshold get() = downloads.smartDownloadThreshold
+    val smartDownloadWifiOnly get() = downloads.smartDownloadWifiOnly
+    val smartDownloadFavoritesOnly get() = downloads.smartDownloadFavoritesOnly
+    val smartDownloadMinStorageMb get() = downloads.smartDownloadMinStorageMb
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -137,11 +147,18 @@ data class SettingsState(
     val autoBackupEnabled get() = backup.autoBackupEnabled
     val autoBackupIntervalHours get() = backup.autoBackupIntervalHours
     val autoBackupMaxCount get() = backup.autoBackupMaxCount
+    val autoBackupLocationUri get() = backup.autoBackupLocationUri
+    val lastAutoBackupTimestamp get() = backup.lastAutoBackupTimestamp
     val localBackupFiles get() = backup.localBackupFiles
+    val tachiyomiImportPreview get() = backup.tachiyomiImportPreview
+    val tachiyomiImportProgress get() = backup.tachiyomiImportProgress
+    val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
     val trackingLoginInProgress get() = tracking.trackingLoginInProgress
+    val batchSyncInProgress get() = tracking.batchSyncInProgress
+    val batchSyncSummary get() = tracking.batchSyncSummary
 }
 
 sealed interface SettingsEvent : UiEvent {
@@ -234,6 +251,14 @@ sealed interface SettingsEvent : UiEvent {
     data class SetDownloadLocation(val location: String?) : SettingsEvent
     data object RequestDownloadLocationPicker : SettingsEvent
 
+    // Smart download rules
+    data class SetSmartDownloadEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadChaptersAhead(val count: Int) : SettingsEvent
+    data class SetSmartDownloadThreshold(val threshold: Float) : SettingsEvent
+    data class SetSmartDownloadWifiOnly(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadFavoritesOnly(val enabled: Boolean) : SettingsEvent
+    data class SetSmartDownloadMinStorageMb(val mb: Int) : SettingsEvent
+
     // Local Source
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent
 
@@ -248,15 +273,21 @@ sealed interface SettingsEvent : UiEvent {
     data class CreateBackupWithUri(val uri: Uri) : SettingsEvent
     data class RestoreBackupFromUri(val uri: Uri) : SettingsEvent
     data class ImportTachiyomiBackupFromUri(val uri: Uri) : SettingsEvent
+    data class ConfirmTachiyomiImport(val overwriteExisting: Boolean) : SettingsEvent
+    data object CancelTachiyomiImport : SettingsEvent
     data class SetAutoBackupEnabled(val enabled: Boolean) : SettingsEvent
     data class SetAutoBackupInterval(val hours: Int) : SettingsEvent
     data class SetAutoBackupMaxCount(val count: Int) : SettingsEvent
+    data object RequestAutoBackupLocationPicker : SettingsEvent
+    data class SetAutoBackupLocation(val uri: String) : SettingsEvent
     data object RefreshLocalBackups : SettingsEvent
     data class RestoreLocalBackup(val fileName: String) : SettingsEvent
 
     // Tracking
     data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
     data class LogoutTracker(val trackerId: Int) : SettingsEvent
+    data object SyncAllTrackers : SettingsEvent
+    data object DismissTrackerSyncSummary : SettingsEvent
 
     // Migration
     data class SetMigrationSimilarityThreshold(val threshold: Float) : SettingsEvent
@@ -266,6 +297,10 @@ sealed interface SettingsEvent : UiEvent {
 
     // Browse
     data class SetShowNsfwContent(val enabled: Boolean) : SettingsEvent
+
+    // Security
+    data class SetBiometricLockEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetBiometricLockTimeout(val minutes: Int) : SettingsEvent
 
     // Discord
     data class SetDiscordRpcEnabled(val enabled: Boolean) : SettingsEvent
@@ -303,4 +338,5 @@ sealed interface SettingsEffect : UiEffect {
     data object NavigateToMigrationEntry : SettingsEffect
     data object NavigateToAbout : SettingsEffect
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect
+    data object ShowAutoBackupLocationPicker : SettingsEffect
 }

@@ -6,10 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.fragment.app.FragmentActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
@@ -26,10 +28,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import app.otakureader.security.BiometricLockGate
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -62,7 +66,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 private const val CRASH_REPORT_CLIP_LABEL = "crash_report"
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     companion object {
         // I-2: Named constants for theme mode integers stored in GeneralPreferences.
@@ -149,6 +153,20 @@ class MainActivity : ComponentActivity() {
             // Observe onboarding status - defaults to false (show onboarding) for new users
             val onboardingCompleted by generalPreferences.onboardingCompleted
                 .collectAsStateWithLifecycle(initialValue = false)
+            val biometricLockEnabled by generalPreferences.biometricLockEnabled
+                .collectAsStateWithLifecycle(initialValue = false)
+            val biometricLockTimeoutMinutes by generalPreferences.biometricLockTimeoutMinutes
+                .collectAsStateWithLifecycle(initialValue = 0)
+
+            // Hide app content in the recent-apps switcher while the lock is enabled.
+            DisposableEffect(biometricLockEnabled) {
+                if (biometricLockEnabled) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+                onDispose { }
+            }
 
             // I-2: Use named constants instead of magic numbers for theme mode.
             val darkTheme = when (themeMode) {
@@ -168,22 +186,27 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    OtakuReaderApp(
-                        generalPreferences = generalPreferences,
-                        libraryPreferences = libraryPreferences,
-                        onboardingCompleted = onboardingCompleted,
-                        deepLinkResult = pendingDeepLinkResult,
-                        onDeepLinkConsumed = { pendingDeepLinkResult = null }
-                    )
-
-                    // Show crash report from previous run as an overlay dialog.
-                    // The report is already removed from SharedPreferences at this point;
-                    // dismissing just hides the dialog for this session.
-                    pendingCrashReport?.let { report ->
-                        CrashReportDialog(
-                            report = report,
-                            onDismiss = { pendingCrashReport = null }
+                    BiometricLockGate(
+                        enabled = biometricLockEnabled,
+                        timeoutMillis = biometricLockTimeoutMinutes * 60_000L,
+                    ) {
+                        OtakuReaderApp(
+                            generalPreferences = generalPreferences,
+                            libraryPreferences = libraryPreferences,
+                            onboardingCompleted = onboardingCompleted,
+                            deepLinkResult = pendingDeepLinkResult,
+                            onDeepLinkConsumed = { pendingDeepLinkResult = null }
                         )
+
+                        // Show crash report from previous run as an overlay dialog.
+                        // The report is already removed from SharedPreferences at this point;
+                        // dismissing just hides the dialog for this session.
+                        pendingCrashReport?.let { report ->
+                            CrashReportDialog(
+                                report = report,
+                                onDismiss = { pendingCrashReport = null }
+                            )
+                        }
                     }
                 }
             }

@@ -149,6 +149,9 @@ dependencies {
     // AppCompat (for per-app locale support)
     implementation(libs.androidx.appcompat)
 
+    // Biometric app lock
+    implementation(libs.androidx.biometric)
+
     // Lifecycle
     implementation(libs.lifecycle.runtime.ktx)
 
