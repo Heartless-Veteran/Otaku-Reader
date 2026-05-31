@@ -19,6 +19,7 @@ import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
 import app.otakureader.sourceapi.toSourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -472,7 +473,16 @@ class BrowseViewModel @Inject constructor(
 
     private fun deleteSavedSearch(searchId: Long) {
         viewModelScope.launch {
-            runCatching { feedRepository.removeSavedSearch(searchId) }
+            // try/catch with explicit CancellationException rethrow so coroutine cancellation
+            // (e.g. ViewModel cleared mid-delete) doesn't get routed through the failure snackbar.
+            try {
+                feedRepository.removeSavedSearch(searchId)
+                _effect.send(BrowseEffect.ShowSnackbar("Search deleted"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BrowseEffect.ShowSnackbar("Failed to delete search"))
+            }
         }
     }
 
