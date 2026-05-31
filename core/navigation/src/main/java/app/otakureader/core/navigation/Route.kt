@@ -197,6 +197,19 @@ sealed interface Route {
     @Serializable
     data object CategoryManagement : Route
 
+    // ─── Reading Lists ───
+
+    /** User-defined reading list collections — top-level CRUD screen. */
+    @Serializable
+    data object ReadingLists : Route
+
+    /**
+     * A single reading list's detail/manga-grid screen.
+     * @param listId The reading list's database ID.
+     */
+    @Serializable
+    data class ReadingListDetail(val listId: Long) : Route
+
     // ─── OPDS (Phase 3) ───
 
     /**

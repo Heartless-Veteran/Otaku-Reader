@@ -20,6 +20,7 @@ fun NavGraphBuilder.moreScreen(
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToBackup: () -> Unit = {},
     onNavigateToUpdateErrors: () -> Unit = {},
+    onNavigateToReadingLists: () -> Unit = {},
     onNavigateToBookmarks: () -> Unit = {},
 ) {
     composable<Route.More> {
@@ -34,6 +35,7 @@ fun NavGraphBuilder.moreScreen(
             onNavigateToScanLibrary = onNavigateToScanLibrary,
             onNavigateToBackup = onNavigateToBackup,
             onNavigateToUpdateErrors = onNavigateToUpdateErrors,
+            onNavigateToReadingLists = onNavigateToReadingLists,
             onNavigateToBookmarks = onNavigateToBookmarks,
         )
     }

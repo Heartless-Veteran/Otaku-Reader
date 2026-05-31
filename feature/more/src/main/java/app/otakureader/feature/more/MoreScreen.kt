@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Bookmark
@@ -71,6 +72,7 @@ fun MoreScreen(
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToUpdateErrors: () -> Unit = {},
+    onNavigateToReadingLists: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -123,6 +125,17 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_extensions),
                 supporting = stringResource(R.string.more_extensions_desc),
                 onClick = onNavigateToExtensions
+            )
+
+            HorizontalDivider()
+
+            MoreListItem(
+                icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                headline = stringResource(R.string.more_reading_lists),
+                supporting = stringResource(R.string.more_reading_lists_desc),
+                onClick = onNavigateToReadingLists,
             )
 
             HorizontalDivider()

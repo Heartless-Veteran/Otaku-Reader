@@ -148,4 +148,27 @@
     <string name="browse_scope_sources">Sources</string>
     <string name="browse_search_history">Recent searches</string>
     <string name="browse_search_history_empty">No recent searches</string>
+    <!-- Reading Lists (#945) -->
+    <string name="reading_lists_title">Reading Lists</string>
+    <string name="reading_lists_back">Back</string>
+    <string name="reading_lists_create">Create list</string>
+    <string name="reading_lists_create_title">Create reading list</string>
+    <string name="reading_lists_edit">Edit</string>
+    <string name="reading_lists_edit_title">Edit reading list</string>
+    <string name="reading_lists_delete">Delete</string>
+    <string name="reading_lists_delete_title">Delete reading list?</string>
+    <string name="reading_lists_delete_confirm">Permanently delete "%1$s" and all its entries?</string>
+    <string name="reading_lists_delete_confirm_button">Delete</string>
+    <string name="reading_lists_cancel">Cancel</string>
+    <string name="reading_lists_save">Save</string>
+    <string name="reading_lists_name_label">Name</string>
+    <string name="reading_lists_description_label">Description (optional)</string>
+    <string name="reading_lists_item_count">%1$d entries</string>
+    <string name="reading_lists_open">Open</string>
+    <string name="reading_lists_empty_title">No reading lists yet</string>
+    <string name="reading_lists_empty_subtitle">Create one to group manga across categories.</string>
+    <string name="reading_lists_detail_fallback_title">Reading list</string>
+    <string name="reading_lists_detail_empty_title">List is empty</string>
+    <string name="reading_lists_detail_empty_subtitle">Add manga from their details screen.</string>
+    <string name="reading_lists_remove_from_list">Remove from list</string>
 </resources>

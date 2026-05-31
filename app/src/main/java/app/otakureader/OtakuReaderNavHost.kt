@@ -24,6 +24,8 @@ import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.category.navigation.categoryManagementScreen
 import app.otakureader.feature.library.navigation.libraryScreen
+import app.otakureader.feature.library.readinglist.navigation.readingListDetailScreen
+import app.otakureader.feature.library.readinglist.navigation.readingListsScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
 import app.otakureader.feature.migration.navigation.migrationScreen
 import app.otakureader.feature.more.bookmarks.bookmarksScreen
@@ -426,9 +428,21 @@ fun OtakuReaderNavHost(
             onNavigateToBackup = {
                 navController.navigate(Route.SettingsBackup)
             },
+            onNavigateToReadingLists = {
+                navController.navigate(Route.ReadingLists)
+            },
             onNavigateToBookmarks = {
                 navController.navigate(Route.Bookmarks)
             },
+        )
+
+        readingListsScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToList = { listId -> navController.navigate(Route.ReadingListDetail(listId)) },
+        )
+        readingListDetailScreen(
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToManga = { mangaId -> navController.navigate(Route.MangaDetails(mangaId)) },
         )
 
         bookmarksScreen(
