@@ -121,6 +121,8 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.MarkSelectedAsUnread -> markSelectedAsUnread()
             is DetailsContract.Event.BookmarkSelectedChapters -> bookmarkSelectedChapters()
             is DetailsContract.Event.ToggleNotifications -> toggleNotifications()
+            is DetailsContract.Event.ToggleUserCompleted -> toggleUserCompleted()
+            is DetailsContract.Event.ToggleUserDropped -> toggleUserDropped()
 
             // Per-manga reader settings (#260)
             is DetailsContract.Event.SetReaderDirection -> setReaderDirection(event.direction)
@@ -332,6 +334,36 @@ class DetailsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to update library: ${e.message}"))
+            }
+        }
+    }
+
+    private fun toggleUserCompleted() {
+        viewModelScope.launch {
+            val current = _state.value.manga?.userCompleted ?: false
+            try {
+                mangaRepository.markUserCompleted(mangaId, !current)
+                val message = if (!current) "Marked as completed" else "Removed completed mark"
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update: ${e.message}"))
+            }
+        }
+    }
+
+    private fun toggleUserDropped() {
+        viewModelScope.launch {
+            val current = _state.value.manga?.userDropped ?: false
+            try {
+                mangaRepository.markUserDropped(mangaId, !current)
+                val message = if (!current) "Marked as dropped" else "Removed dropped mark"
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update: ${e.message}"))
             }
         }
     }

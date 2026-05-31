@@ -200,6 +200,36 @@ fun DetailsScreen(
                                 overflowExpanded = false
                             }
                         )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (state.manga?.userCompleted == true) {
+                                        stringResource(R.string.details_unmark_completed)
+                                    } else {
+                                        stringResource(R.string.details_mark_completed)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ToggleUserCompleted)
+                                overflowExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (state.manga?.userDropped == true) {
+                                        stringResource(R.string.details_unmark_dropped)
+                                    } else {
+                                        stringResource(R.string.details_mark_dropped)
+                                    }
+                                )
+                            },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ToggleUserDropped)
+                                overflowExpanded = false
+                            }
+                        )
                     }
                 }
             )

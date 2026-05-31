@@ -116,6 +116,8 @@ sealed class LibraryEvent {
     data object MarkSelectedAsUnread : LibraryEvent()
     data object RemoveSelectedFromLibrary : LibraryEvent()
     data object DownloadSelected : LibraryEvent()
+    data object MarkSelectedAsCompleted : LibraryEvent()
+    data object MarkSelectedAsDropped : LibraryEvent()
     // Continue Reading
     data class ContinueReadingClick(val mangaId: Long, val chapterId: Long) : LibraryEvent()
     // Reading list filter (null = clear/show all)

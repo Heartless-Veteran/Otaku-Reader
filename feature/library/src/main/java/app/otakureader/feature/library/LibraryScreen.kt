@@ -125,6 +125,32 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.RemoveSelectedFromLibrary) }) {
                             Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.library_remove_selected))
                         }
+                        var selectionOverflowExpanded by remember { mutableStateOf(false) }
+                        IconButton(onClick = { selectionOverflowExpanded = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.library_more_actions),
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = selectionOverflowExpanded,
+                            onDismissRequest = { selectionOverflowExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_mark_selected_completed)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsCompleted)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_mark_selected_dropped)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsDropped)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                        }
                     }
                 )
                 state.showSearchBar -> TopAppBar(
