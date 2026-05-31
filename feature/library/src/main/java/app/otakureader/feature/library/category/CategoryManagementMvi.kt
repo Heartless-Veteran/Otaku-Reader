@@ -18,8 +18,13 @@ data class CategoryUiItem(
 
 data class CategoryManagementState(
     val categories: List<CategoryUiItem> = emptyList(),
-    val isLoading: Boolean = false
-) : UiState
+    val isLoading: Boolean = false,
+    /** Whether hidden categories are currently revealed (after biometric unlock). */
+    val hiddenRevealed: Boolean = false,
+) : UiState {
+    /** True when at least one category is hidden (so the reveal control is worth showing). */
+    val hasHiddenCategories: Boolean get() = categories.any { it.isHidden }
+}
 
 sealed interface CategoryEvent : UiEvent {
     data class CreateCategory(
@@ -36,6 +41,8 @@ sealed interface CategoryEvent : UiEvent {
     data class ToggleNsfw(val categoryId: Long) : CategoryEvent
     data class ToggleLocked(val categoryId: Long) : CategoryEvent
     data class SetDynamic(val categoryId: Long, val enabled: Boolean) : CategoryEvent
+    /** Reveal or re-hide hidden categories (reveal should be gated by biometric in the UI). */
+    data class SetHiddenRevealed(val revealed: Boolean) : CategoryEvent
 }
 
 sealed interface CategoryEffect : UiEffect {

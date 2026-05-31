@@ -20,7 +20,11 @@ class GetDynamicCategoryMembersUseCaseTest {
 
     private val dynamicCategoryRepository: DynamicCategoryRepository = mockk()
     private val mangaRepository: MangaRepository = mockk()
-    private val useCase = GetDynamicCategoryMembersUseCase(dynamicCategoryRepository, mangaRepository)
+    private val useCase = GetDynamicCategoryMembersUseCase(
+        dynamicCategoryRepository,
+        mangaRepository,
+        EvaluateDynamicCategoryUseCase(),
+    )
 
     private val now = System.currentTimeMillis()
     private val dayMs = 86_400_000L

@@ -34,6 +34,8 @@
     <string name="category_management_title">Categories</string>
     <string name="category_back">Back</string>
     <string name="category_create_new">Create category</string>
+    <string name="category_show_hidden">Show hidden categories</string>
+    <string name="category_hide_hidden">Hide hidden categories</string>
     <string name="category_edit">Edit</string>
     <string name="category_delete">Delete</string>
     <string name="category_more">More options</string>
@@ -116,7 +118,6 @@
     <string name="category_dynamic">Dynamic</string>
     <string name="category_make_dynamic">Make dynamic</string>
     <string name="category_remove_dynamic">Remove dynamic</string>
-    <string name="category_show_hidden">Show hidden</string>
     <string name="category_unlock_prompt">Unlock to view hidden category</string>
     <!-- Filter sheet -->
     <string name="filter_sheet_title">Filters &amp; Sort</string>
