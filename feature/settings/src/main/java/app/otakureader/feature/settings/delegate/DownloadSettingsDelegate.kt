@@ -18,6 +18,7 @@ class DownloadSettingsDelegate @Inject constructor(
     private val generalPreferences: GeneralPreferences,
 ) {
 
+    @Suppress("LongMethod")
     fun startObserving(
         scope: CoroutineScope,
         updateState: ((SettingsState) -> SettingsState) -> Unit,
@@ -83,6 +84,7 @@ class DownloadSettingsDelegate @Inject constructor(
         }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     suspend fun handleEvent(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,
