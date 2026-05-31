@@ -123,6 +123,15 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
             }
         }
 
+    // --- Data Saver ---
+
+    /**
+     * When enabled, chapter downloads are blocked while on mobile data to reduce
+     * cellular data consumption. Default: false.
+     */
+    val dataSaverEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.DATA_SAVER_ENABLED] ?: false }
+    suspend fun setDataSaverEnabled(value: Boolean) = dataStore.edit { it[Keys.DATA_SAVER_ENABLED] = value }
+
     private object Keys {
         val AUTO_DOWNLOAD_ENABLED = booleanPreferencesKey("auto_download_enabled")
         val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
@@ -134,5 +143,6 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         val SAVE_AS_CBZ = booleanPreferencesKey("save_as_cbz")
         val DELETE_AFTER_READING = booleanPreferencesKey("delete_after_reading")
         val PER_MANGA_OVERRIDES = stringPreferencesKey("delete_after_reading_overrides")
+        val DATA_SAVER_ENABLED = booleanPreferencesKey("data_saver_enabled")
     }
 }

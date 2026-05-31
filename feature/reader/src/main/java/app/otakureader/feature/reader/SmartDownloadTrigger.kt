@@ -1,9 +1,8 @@
 package app.otakureader.feature.reader
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.os.StatFs
+import app.otakureader.core.common.network.NetworkMonitor
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.model.SmartDownloadRule
 import app.otakureader.domain.repository.ChapterRepository
@@ -32,6 +31,7 @@ class SmartDownloadTrigger @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val downloadRepository: DownloadRepository,
+    private val networkMonitor: NetworkMonitor,
     @ApplicationScope private val scope: CoroutineScope,
 ) {
 
@@ -93,12 +93,7 @@ class SmartDownloadTrigger @Inject constructor(
         )
     }
 
-    private fun isUnmeteredNetwork(): Boolean {
-        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
-        val network = cm.activeNetwork ?: return false
-        val capabilities = cm.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-    }
+    private fun isUnmeteredNetwork(): Boolean = networkMonitor.isUnmetered()
 
     private fun getFreeStorageMb(): Long {
         val stat = StatFs(context.getExternalFilesDir(null)?.path ?: return 0L)

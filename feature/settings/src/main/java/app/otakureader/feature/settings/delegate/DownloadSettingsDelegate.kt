@@ -76,6 +76,11 @@ class DownloadSettingsDelegate @Inject constructor(
                 updateState { it.copy(downloads = it.downloads.copy(smartDownloadMinStorageMb = mb)) }
             }
         }
+        scope.launch {
+            downloadPreferences.dataSaverEnabled.collect { enabled ->
+                updateState { it.copy(downloads = it.downloads.copy(downloadDataSaverEnabled = enabled)) }
+            }
+        }
     }
 
     suspend fun handleEvent(
@@ -105,6 +110,12 @@ class DownloadSettingsDelegate @Inject constructor(
             { generalPreferences.setSmartDownloadFavoritesOnly(event.enabled); true }
         is SettingsEvent.SetSmartDownloadMinStorageMb ->
             { generalPreferences.setSmartDownloadMinStorageMb(event.mb); true }
+        is SettingsEvent.SetDownloadDataSaverEnabled ->
+            { downloadPreferences.setDataSaverEnabled(event.enabled); true }
+        is SettingsEvent.NavigateToDataUsage -> {
+            sendEffect(SettingsEffect.NavigateToDataUsage)
+            true
+        }
         else -> false
     }
 }

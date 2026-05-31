@@ -340,6 +340,9 @@ fun OtakuReaderNavHost(
             onNavigateToCloudBackup = {
                 navController.navigate(Route.SettingsCloudBackup)
             },
+            onNavigateToDataUsage = {
+                navController.navigate(Route.DataUsage)
+            },
         )
 
         downloadsScreen(

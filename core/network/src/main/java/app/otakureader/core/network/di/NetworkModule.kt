@@ -1,6 +1,8 @@
 package app.otakureader.core.network.di
 
 import app.otakureader.core.network.BuildConfig
+import app.otakureader.core.network.BytesEventListener
+import app.otakureader.core.network.BytesRecorder
 import app.otakureader.core.network.TrackerCertificatePinner
 import app.otakureader.core.network.interceptor.IgnoreGzipInterceptor
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -37,7 +39,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(
+        bytesRecorder: BytesRecorder,
+    ): OkHttpClient {
         val builder = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -47,6 +51,12 @@ object NetworkModule {
             // to handle both gzip and Brotli decompression explicitly.
             .addNetworkInterceptor(IgnoreGzipInterceptor())
             .addNetworkInterceptor(BrotliInterceptor)
+            // Record bytes per request category and network type for the Data Usage Dashboard.
+            // BytesRecorder is a thin interface bound in :data to DataUsageRepository, avoiding
+            // a cross-layer dependency from :core:network into :data.
+            .eventListenerFactory(BytesEventListener.Factory { category, bytes ->
+                bytesRecorder.record(category, bytes)
+            })
 
         // Enable HTTP logging only in debug builds; redact sensitive headers to prevent
         // token exposure in logcat even when a debug APK reaches a non-developer device.

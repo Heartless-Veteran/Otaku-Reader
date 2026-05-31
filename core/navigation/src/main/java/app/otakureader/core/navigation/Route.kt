@@ -241,6 +241,11 @@ sealed interface Route {
         val title: String = "",
     ) : Route
 
+    // ─── Data Usage ───
+
+    @Serializable
+    data object DataUsage : Route
+
     // ─── Deep-link only ───
 
     /**

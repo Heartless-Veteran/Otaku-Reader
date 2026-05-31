@@ -9,6 +9,7 @@ import app.otakureader.feature.settings.settingsAppearanceScreen
 import app.otakureader.feature.settings.cloudbackup.cloudBackupSettingsScreen
 import app.otakureader.feature.settings.settingsBackupScreen
 import app.otakureader.feature.settings.settingsDiscordScreen
+import app.otakureader.feature.settings.datausage.dataUsageScreen
 import app.otakureader.feature.settings.settingsDownloadsScreen
 import app.otakureader.feature.settings.settingsLibraryScreen
 import app.otakureader.feature.settings.settingsNotificationsScreen
@@ -39,6 +40,7 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
     onNavigateToCloudBackup: () -> Unit = {},
+    onNavigateToDataUsage: () -> Unit = {},
 ) {
     composable<Route.Settings> {
         SettingsScreen(
@@ -62,7 +64,11 @@ fun NavGraphBuilder.settingsScreen(
     settingsAppearanceScreen(onNavigateBack = onNavigateBack)
     settingsLibraryScreen(onNavigateBack = onNavigateBack)
     settingsReaderScreen(onNavigateBack = onNavigateBack)
-    settingsDownloadsScreen(onNavigateBack = onNavigateBack)
+    settingsDownloadsScreen(
+        onNavigateBack = onNavigateBack,
+        onNavigateToDataUsage = onNavigateToDataUsage,
+    )
+    dataUsageScreen(onNavigateBack = onNavigateBack)
     settingsTrackingScreen(onNavigateBack = onNavigateBack)
     settingsSecurityScreen(onNavigateBack = onNavigateBack)
     settingsNotificationsScreen(onNavigateBack = onNavigateBack)

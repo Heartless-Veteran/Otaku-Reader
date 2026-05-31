@@ -1,6 +1,8 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import app.otakureader.core.common.network.NetworkMonitor
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadStatus
@@ -33,6 +35,7 @@ class DownloadManagerTest {
     private lateinit var context: Context
     private lateinit var downloader: Downloader
     private lateinit var downloadPreferences: DownloadPreferences
+    private lateinit var networkMonitor: NetworkMonitor
     private lateinit var downloadQueueDao: DownloadQueueDao
     private lateinit var downloadManager: DownloadManager
 
@@ -50,11 +53,16 @@ class DownloadManagerTest {
         context = mockk(relaxed = true)
         downloader = mockk(relaxed = true)
         downloadPreferences = mockk()
+        networkMonitor = mockk(relaxed = true)
         downloadQueueDao = mockk(relaxed = true)
 
         // Mock preferences
         every { downloadPreferences.saveAsCbz } returns flowOf(false)
         every { downloadPreferences.concurrentDownloads } returns flowOf(2)
+        every { downloadPreferences.dataSaverEnabled } returns flowOf(false)
+
+        // Mock network — WiFi by default (data saver does not block)
+        every { networkMonitor.currentNetwork() } returns NetworkType.WIFI
 
         // Mock successful download
         coEvery { downloader.downloadPage(any(), any()) } returns Result.success(File("/tmp/test/page.jpg"))
@@ -62,7 +70,7 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences, downloadQueueDao, TestScope(testDispatcher))
+        downloadManager = DownloadManager(context, downloader, downloadPreferences, networkMonitor, downloadQueueDao, TestScope(testDispatcher))
     }
 
     // -------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import app.otakureader.core.common.network.NetworkMonitor
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.preferences.DownloadPreferences
@@ -63,6 +65,7 @@ class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloader: Downloader,
     private val downloadPreferences: DownloadPreferences,
+    private val networkMonitor: NetworkMonitor,
     private val downloadQueueDao: DownloadQueueDao,
     @ApplicationScope private val scope: CoroutineScope
 ) {
@@ -97,6 +100,13 @@ class DownloadManager @Inject constructor(
     // -------------------------------------------------------------------------
 
     suspend fun enqueue(request: ChapterDownloadRequest) {
+        // Block downloads on mobile data when Data Saver is enabled.
+        if (downloadPreferences.dataSaverEnabled.first() &&
+            networkMonitor.currentNetwork() == NetworkType.MOBILE
+        ) {
+            return
+        }
+
         val shouldStart = mutex.withLock {
             val existing = downloadMap[request.chapterId]
             // Allow re-enqueueing for terminal states (COMPLETED, FAILED) or when the item
