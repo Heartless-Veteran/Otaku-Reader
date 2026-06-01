@@ -31,7 +31,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -164,7 +166,7 @@ private fun TachiyomiImportConfirmDialog(
     onConfirm: (overwriteExisting: Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var overwriteExisting by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var overwriteExisting by remember { mutableStateOf(false) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_import_preview_title)) },
