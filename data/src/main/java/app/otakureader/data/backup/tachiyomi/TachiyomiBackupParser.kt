@@ -6,7 +6,7 @@ import java.util.zip.GZIPInputStream
 import javax.inject.Inject
 
 /** Source/format-agnostic representation of a Tachiyomi/Mihon backup the importer can consume. */
-internal data class ParsedBackup(
+data class ParsedBackup(
     val manga: List<ParsedManga>,
     val categories: List<ParsedCategory>,
 ) {
@@ -14,7 +14,7 @@ internal data class ParsedBackup(
     val trackingCount: Int get() = manga.sumOf { it.tracking.size }
 }
 
-internal data class ParsedManga(
+data class ParsedManga(
     val source: Long,
     val url: String,
     val title: String,
@@ -35,7 +35,7 @@ internal data class ParsedManga(
     val tracking: List<ParsedTracking>,
 )
 
-internal data class ParsedChapter(
+data class ParsedChapter(
     val url: String,
     val name: String,
     val read: Boolean,
@@ -47,13 +47,13 @@ internal data class ParsedChapter(
     val dateUpload: Long,
 )
 
-internal data class ParsedCategory(
+data class ParsedCategory(
     val name: String,
     val order: Int,
     val flags: Long,
 )
 
-internal data class ParsedTracking(
+data class ParsedTracking(
     val trackerId: Int,
     val remoteId: Long,
     val title: String?,
@@ -72,7 +72,7 @@ internal data class ParsedTracking(
  *  - protobuf payloads (modern Mihon/Tachiyomi), and
  *  - legacy JSON payloads (older exports / Otaku Reader's own Tachiyomi JSON).
  */
-internal class TachiyomiBackupParser @Inject constructor() {
+class TachiyomiBackupParser @Inject constructor() {
 
     private val json = Json {
         ignoreUnknownKeys = true
