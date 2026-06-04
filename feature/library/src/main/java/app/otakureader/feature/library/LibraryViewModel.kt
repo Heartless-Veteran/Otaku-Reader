@@ -108,7 +108,14 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterSource, is LibraryEvent.ToggleNsfw, is LibraryEvent.SetFilterReadingList,
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
             is LibraryEvent.ClearAllFilters -> handleFilterSortEvent(event)
-            is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showFilterSheet = !it.showFilterSheet) }
+            is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
+            is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
+            is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
+            is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
+            is LibraryEvent.SetGridSize -> viewModelScope.launch { libraryPreferences.setGridSize(event.size) }
+            is LibraryEvent.ToggleShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(!_state.value.showBadges) }
+            is LibraryEvent.ToggleShowDownloadBadge -> viewModelScope.launch { libraryPreferences.setShowDownloadBadge(!_state.value.showDownloadBadge) }
+            is LibraryEvent.ToggleStaggeredGrid -> viewModelScope.launch { libraryPreferences.setStaggeredGrid(!_state.value.isStaggeredGrid) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleFavorite, is LibraryEvent.MarkSelectedAsRead,
@@ -211,6 +218,9 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         generalPreferences.visualEffectsEnabled
             .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.groupByCategory
+            .onEach { groupByCategory -> _state.update { it.copy(groupByCategory = groupByCategory) } }
             .launchIn(viewModelScope)
     }
 
