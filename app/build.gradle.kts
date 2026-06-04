@@ -113,6 +113,7 @@ dependencies {
     // Feature modules
     implementation(projects.feature.feed)
     implementation(projects.feature.more)
+    implementation(projects.feature.webview)
     implementation(projects.feature.library)
     implementation(projects.feature.reader)
     implementation(projects.feature.browse)
