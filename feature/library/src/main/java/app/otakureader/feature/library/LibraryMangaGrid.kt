@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -51,7 +52,6 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.offset
 
 /** Returns true when a manga item belongs to the manhwa/webtoon content type. */
 internal fun isManhwa(manga: LibraryMangaItem): Boolean {
@@ -108,6 +108,13 @@ internal fun MangaGrid(
         }
 
         CategoryFilterChips(
+            categories = state.categories,
+            selectedCategory = state.selectedCategory,
+            onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        CategoryTabRow(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
             onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
@@ -193,6 +200,7 @@ internal fun MangaGrid(
                                 .toFloat() / manga.totalChapterCount
                         } else null
                         val downloadCount = state.downloadCountByManga[manga.id] ?: 0
+                        val continueReading = manga.lastRead != null && manga.unreadCount > 0
                         MangaCard(
                             title = manga.title,
                             coverUrl = manga.thumbnailUrl,
@@ -203,6 +211,8 @@ internal fun MangaGrid(
                             onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
                             isSelected = manga.id in state.selectedManga,
                             readProgress = readProgress,
+                            continueReading = continueReading,
+                            isNew = manga.unreadCount > 0,
                             badge = when {
                                 state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
                                     {
@@ -270,6 +280,7 @@ internal fun MangaGrid(
                         .toFloat() / manga.totalChapterCount
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
+                val continueReading = manga.lastRead != null && manga.unreadCount > 0
                 val cardContent: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
@@ -281,6 +292,8 @@ internal fun MangaGrid(
                         onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
                         isSelected = manga.id in state.selectedManga,
                         readProgress = readProgress,
+                        continueReading = continueReading,
+                        isNew = manga.unreadCount > 0,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
                                 {
@@ -320,6 +333,48 @@ internal fun MangaGrid(
                     cardContent()
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun CategoryTabRow(
+    categories: List<CategoryItem>,
+    selectedCategory: Long?,
+    onCategorySelected: (Long?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val totalCount = categories.sumOf { it.count }
+    val categoryTabs = listOf(
+        CategoryItem(id = -1, name = stringResource(R.string.library_category_all), count = totalCount)
+    ) + categories
+
+    val selectedIndex = when (selectedCategory) {
+        null -> 0
+        else -> categoryTabs.indexOfFirst { it.id == selectedCategory }.coerceAtLeast(0)
+    }
+
+    ScrollableTabRow(
+        selectedTabIndex = selectedIndex,
+        containerColor = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        edgePadding = 16.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        categoryTabs.forEachIndexed { index, category ->
+            Tab(
+                selected = selectedIndex == index,
+                onClick = {
+                    if (category.id == -1L) onCategorySelected(null)
+                    else onCategorySelected(category.id)
+                },
+                text = {
+                    Text(
+                        text = "${category.name} ${category.count}",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            )
         }
     }
 }
