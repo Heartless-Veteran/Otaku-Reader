@@ -61,6 +61,7 @@ import app.otakureader.feature.reader.ui.PageThumbnailStrip
 import app.otakureader.feature.reader.ui.ReadingTimerOverlay
 import app.otakureader.feature.reader.ui.ReaderContentOverlay
 import app.otakureader.feature.reader.ui.ReaderMenuOverlay
+import app.otakureader.feature.reader.ui.ReaderSettingsOverlay
 import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
 import app.otakureader.feature.reader.ReaderEffect
@@ -166,16 +167,17 @@ fun ReaderScreen(
         focusRequester.requestFocus()
     }
 
-    // Handle back gestures: close gallery or menu before navigating away.
+    // Handle back gestures: close gallery, settings, or menu before navigating away.
     // A single BackHandler with explicit priority ordering is used so that the
-    // gallery takes precedence over the menu (both could theoretically be open).
+    // gallery takes precedence over settings, which takes precedence over the menu.
     // This integrates with the predictive back API (enabled via
     // android:enableOnBackInvokedCallback="true" in AndroidManifest.xml) so
     // that when an overlay is open the back gesture dismisses it rather than
     // triggering a full screen transition.
-    BackHandler(enabled = state.isGalleryOpen || state.isMenuVisible) {
+    BackHandler(enabled = state.isGalleryOpen || state.isSettingsOverlayOpen || state.isMenuVisible) {
         when {
             state.isGalleryOpen -> viewModel.onEvent(ReaderEvent.ToggleGallery)
+            state.isSettingsOverlayOpen -> viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay)
             state.isMenuVisible -> viewModel.onEvent(ReaderEvent.ToggleMenu)
         }
     }
@@ -314,7 +316,18 @@ fun ReaderScreen(
             onNavigateBack = onNavigateBack,
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
             onToggleChapterFilter = { showChapterFilterSheet = true },
+            onToggleSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
         )
+
+        // Settings overlay
+        if (state.isSettingsOverlayOpen) {
+            ReaderSettingsOverlay(
+                state = state,
+                onEvent = { viewModel.onEvent(it) },
+                onDismiss = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+                modifier = Modifier.align(Alignment.CenterEnd)
+            )
+        }
 
         if (showChapterFilterSheet) {
             ChapterFilterBottomSheet(

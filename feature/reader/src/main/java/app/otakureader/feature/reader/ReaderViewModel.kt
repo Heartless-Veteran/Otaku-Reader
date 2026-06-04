@@ -400,6 +400,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleOverlay(event: ReaderEvent.OverlayControl) {
         when (event) {
             ReaderEvent.ToggleMenu -> displayDelegate.toggleMenu()
+            ReaderEvent.ToggleSettingsOverlay -> displayDelegate.toggleSettingsOverlay()
             ReaderEvent.ToggleGallery -> displayDelegate.toggleGallery()
             is ReaderEvent.SetGalleryColumns -> displayDelegate.setGalleryColumns(event.columns)
             ReaderEvent.ToggleFullscreen -> displayDelegate.toggleFullscreen()

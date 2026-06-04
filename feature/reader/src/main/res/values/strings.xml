@@ -1,5 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Reader settings overlay (#985) -->
+    <string name="reader_settings_title">Reader Settings</string>
+    <string name="reader_settings_close">Close settings</string>
+    <string name="reader_settings_mode">Reading Mode</string>
+    <string name="reader_settings_display">Display</string>
+    <string name="reader_settings_navigation">Navigation</string>
+    <string name="reader_settings_filter">Color Filter</string>
+    <string name="reader_settings_keep_screen_on">Keep screen on</string>
+    <string name="reader_settings_show_page_number">Show page number</string>
+    <string name="reader_settings_crop_borders">Crop borders</string>
+    <string name="reader_settings_double_tap_zoom">Double-tap zoom</string>
+    <string name="reader_settings_brightness">Brightness: %1$d%%</string>
+    <string name="reader_settings_volume_keys">Volume keys</string>
+    <string name="reader_settings_invert_volume_keys">Invert volume keys</string>
+    <string name="reader_settings_skip_read">Skip read chapters</string>
+    <string name="color_filter_none">None</string>
+    <string name="color_filter_invert">Invert</string>
+    <string name="color_filter_grayscale">Grayscale</string>
+    <string name="color_filter_sepia">Sepia</string>
+    <string name="color_filter_blue_light">Blue light</string>
+    <string name="color_filter_custom_tint">Custom tint</string>
+    <string name="reader_mode_single">Single</string>
+    <string name="reader_mode_dual">Dual</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart_panels">Smart</string>
+    <string name="reader_direction_ltr">Left to right</string>
+    <string name="reader_direction_rtl">Right to left</string>
+    <string name="reader_direction_vertical">Vertical</string>
+
     <!-- Reader menu overlay -->
     <string name="reader_page_indicator">Page %1$d of %2$d</string>
     <string name="reader_back">Back</string>

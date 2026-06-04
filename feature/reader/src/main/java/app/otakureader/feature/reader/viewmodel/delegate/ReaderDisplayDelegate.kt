@@ -84,6 +84,10 @@ class ReaderDisplayDelegate @Inject constructor(
         update { it.copy(isGalleryOpen = !it.isGalleryOpen) }
     }
 
+    fun toggleSettingsOverlay() {
+        update { it.copy(isSettingsOverlayOpen = !it.isSettingsOverlayOpen) }
+    }
+
     fun setGalleryColumns(columns: Int) {
         val clamped = columns.coerceIn(2, 4)
         update { it.copy(galleryColumns = clamped) }

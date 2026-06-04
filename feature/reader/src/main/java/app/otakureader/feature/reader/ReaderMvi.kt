@@ -181,6 +181,12 @@ data class ReaderState(
     val savePagesToSeparateFolders: Boolean = false,
     /** Show thumbnail strip at bottom of reader */
     val showPageThumbnailStrip: Boolean = true,
+    /** Whether the reader quick-settings overlay is open */
+    val isSettingsOverlayOpen: Boolean = false,
+    /** Whether the chapter list overlay is open */
+    val isChapterListOpen: Boolean = false,
+    /** List of all chapters in the current manga */
+    val chapters: List<app.otakureader.domain.model.Chapter> = emptyList(),
     /** Whether the current page is bookmarked */
     val isCurrentPageBookmarked: Boolean = false,
 
@@ -474,6 +480,9 @@ sealed interface ReaderEvent {
 
     /** Toggle the visibility of the reader menu/controls. */
     data object ToggleMenu : OverlayControl
+
+    /** Toggle the reader quick-settings overlay. */
+    data object ToggleSettingsOverlay : OverlayControl
 
     /** Toggle the page gallery/thumbnail view. */
     data object ToggleGallery : OverlayControl
