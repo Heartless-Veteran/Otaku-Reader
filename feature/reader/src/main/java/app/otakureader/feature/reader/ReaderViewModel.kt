@@ -132,6 +132,7 @@ class ReaderViewModel @Inject constructor(
     init {
         loadSettings()
         loadChapter()
+        observeChapters()
         observePageBookmarks()
         observeVisualEffects()
         discordDelegate.startObserving(
@@ -144,6 +145,18 @@ class ReaderViewModel @Inject constructor(
         // Wire display delegate to shared state and scope
         displayDelegate.stateFlow = _state
         displayDelegate.scope = viewModelScope
+    }
+
+    /**
+     * Observe all chapters for the current manga to populate the chapter list overlay.
+     */
+    private fun observeChapters() {
+        viewModelScope.launch {
+            chapterRepository.getChaptersByMangaId(mangaId)
+                .collect { chapters ->
+                    _state.update { it.copy(chapters = chapters) }
+                }
+        }
     }
 
     /**
@@ -372,6 +385,10 @@ class ReaderViewModel @Inject constructor(
     private fun handleChapterNavigation(event: ReaderEvent.ChapterNavigation) {
         when (event) {
             is ReaderEvent.LoadChapter -> loadChapterById(event.chapterId)
+            is ReaderEvent.SelectChapter -> {
+                _state.update { it.copy(isChapterListOpen = false) }
+                loadChapterById(event.chapterId)
+            }
             ReaderEvent.NextChapter -> navigateNextChapter()
             ReaderEvent.PrevChapter -> navigatePreviousChapter()
         }
@@ -400,6 +417,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleOverlay(event: ReaderEvent.OverlayControl) {
         when (event) {
             ReaderEvent.ToggleMenu -> displayDelegate.toggleMenu()
+            ReaderEvent.ToggleChapterList -> _state.update { it.copy(isChapterListOpen = !it.isChapterListOpen) }
             ReaderEvent.ToggleGallery -> displayDelegate.toggleGallery()
             is ReaderEvent.SetGalleryColumns -> displayDelegate.setGalleryColumns(event.columns)
             ReaderEvent.ToggleFullscreen -> displayDelegate.toggleFullscreen()

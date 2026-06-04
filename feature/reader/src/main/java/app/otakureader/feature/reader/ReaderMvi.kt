@@ -183,6 +183,10 @@ data class ReaderState(
     val showPageThumbnailStrip: Boolean = true,
     /** Whether the current page is bookmarked */
     val isCurrentPageBookmarked: Boolean = false,
+    /** Whether the chapter list overlay is open */
+    val isChapterListOpen: Boolean = false,
+    /** List of all chapters in the current manga */
+    val chapters: List<app.otakureader.domain.model.Chapter> = emptyList(),
 
     /** True when this manga is detected/overridden as manhwa/webtoon content */
     val isManhwaContent: Boolean = false,
@@ -477,6 +481,11 @@ sealed interface ReaderEvent {
 
     /** Toggle the page gallery/thumbnail view. */
     data object ToggleGallery : OverlayControl
+
+    /** Toggle the chapter list overlay. */
+    data object ToggleChapterList : OverlayControl
+    /** Select a chapter from the list to load. */
+    data class SelectChapter(val chapterId: Long) : ChapterNavigation
 
     /** Set the number of columns in the gallery grid (2, 3, or 4). */
     data class SetGalleryColumns(val columns: Int) : OverlayControl

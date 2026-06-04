@@ -152,4 +152,9 @@
     <!-- Chapter navigation accessibility -->
     <string name="reader_previous_chapter">Previous chapter</string>
     <string name="reader_next_chapter">Next chapter</string>
+
+    <!-- Chapter list overlay (#986) -->
+    <string name="chapter_list_title">Chapters</string>
+    <string name="chapter_list_count">%1$d chapters</string>
+    <string name="chapter_read_label">Read</string>
 </resources>

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Settings
@@ -99,6 +100,7 @@ fun ReaderMenuOverlay(
     onZoomOut: () -> Unit,
     onResetZoom: () -> Unit,
     onToggleGallery: () -> Unit,
+    onToggleChapterList: () -> Unit,
     onNavigateBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
     onToggleChapterFilter: (() -> Unit)? = null,
@@ -144,6 +146,9 @@ fun ReaderMenuOverlay(
                             IconButton(onClick = onToggleChapterFilter) {
                                 Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
                             }
+                        }
+                        IconButton(onClick = onToggleChapterList) {
+                            Icon(Icons.Default.List, contentDescription = stringResource(R.string.chapter_list_title))
                         }
                         IconButton(onClick = onToggleFullscreen) {
                             Icon(Icons.Default.Fullscreen, contentDescription = stringResource(R.string.reader_fullscreen))

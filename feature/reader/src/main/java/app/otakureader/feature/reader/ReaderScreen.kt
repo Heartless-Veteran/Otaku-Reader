@@ -3,8 +3,14 @@ package app.otakureader.feature.reader
 import android.app.Activity
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -23,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -55,6 +63,7 @@ import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.ChapterFilterBottomSheet
+import app.otakureader.feature.reader.ui.ChapterListOverlay
 import app.otakureader.feature.reader.ui.FullPageGallery
 import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
@@ -166,16 +175,13 @@ fun ReaderScreen(
         focusRequester.requestFocus()
     }
 
-    // Handle back gestures: close gallery or menu before navigating away.
+    // Handle back gestures: close gallery, chapter list, or menu before navigating away.
     // A single BackHandler with explicit priority ordering is used so that the
-    // gallery takes precedence over the menu (both could theoretically be open).
-    // This integrates with the predictive back API (enabled via
-    // android:enableOnBackInvokedCallback="true" in AndroidManifest.xml) so
-    // that when an overlay is open the back gesture dismisses it rather than
-    // triggering a full screen transition.
-    BackHandler(enabled = state.isGalleryOpen || state.isMenuVisible) {
+    // gallery takes precedence over the chapter list, which takes precedence over the menu.
+    BackHandler(enabled = state.isGalleryOpen || state.isChapterListOpen || state.isMenuVisible) {
         when {
             state.isGalleryOpen -> viewModel.onEvent(ReaderEvent.ToggleGallery)
+            state.isChapterListOpen -> viewModel.onEvent(ReaderEvent.ToggleChapterList)
             state.isMenuVisible -> viewModel.onEvent(ReaderEvent.ToggleMenu)
         }
     }
@@ -311,6 +317,7 @@ fun ReaderScreen(
             onZoomOut = { viewModel.onEvent(ReaderEvent.ZoomOut) },
             onResetZoom = { viewModel.onEvent(ReaderEvent.ResetZoom) },
             onToggleGallery = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
+            onToggleChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterList) },
             onNavigateBack = onNavigateBack,
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
             onToggleChapterFilter = { showChapterFilterSheet = true },
@@ -333,7 +340,7 @@ fun ReaderScreen(
             pages = state.pages,
             currentPage = state.currentPage,
             onPageClick = { viewModel.jumpToPage(it) },
-            isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+            isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isChapterListOpen && !state.isLoading,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
         
@@ -347,6 +354,32 @@ fun ReaderScreen(
             onColumnsChange = { viewModel.onEvent(ReaderEvent.SetGalleryColumns(it)) },
             isVisible = state.isGalleryOpen
         )
+
+        // Chapter list overlay — slide-out panel from the right
+        AnimatedVisibility(
+            visible = state.isChapterListOpen,
+            enter = fadeIn() + slideInHorizontally { it },
+            exit = fadeOut() + slideOutHorizontally { it }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .clickable(
+                        onClick = { viewModel.onEvent(ReaderEvent.ToggleChapterList) },
+                        indication = null,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                    )
+            ) {
+                ChapterListOverlay(
+                    chapters = state.chapters,
+                    currentChapterId = chapterId,
+                    onChapterSelect = { viewModel.onEvent(ReaderEvent.SelectChapter(it)) },
+                    onDismiss = { viewModel.onEvent(ReaderEvent.ToggleChapterList) },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                )
+            }
+        }
         
         // Zoom indicator
         ZoomIndicator(
