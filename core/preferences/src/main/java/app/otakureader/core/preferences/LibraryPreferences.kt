@@ -17,6 +17,10 @@ import kotlinx.coroutines.flow.map
  */
 class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
+    /** Whether to group library items by category visually. */
+    val groupByCategory: Flow<Boolean> = dataStore.data.map { it[Keys.GROUP_BY_CATEGORY] ?: false }
+    suspend fun setGroupByCategory(value: Boolean) = dataStore.edit { it[Keys.GROUP_BY_CATEGORY] = value }
+
     // --- Grid ---
 
     /** Number of columns in the library grid (2–5). */
@@ -172,5 +176,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val CATEGORY_LAST_UPDATE_MS = stringPreferencesKey("category_last_update_ms")
         val SHOW_RECOMMENDATIONS = booleanPreferencesKey("library_show_recommendations")
         val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
+        val GROUP_BY_CATEGORY = booleanPreferencesKey("library_group_by_category")
     }
 }
