@@ -139,6 +139,7 @@ data class SettingsState(
     val smartDownloadWifiOnly get() = downloads.smartDownloadWifiOnly
     val smartDownloadFavoritesOnly get() = downloads.smartDownloadFavoritesOnly
     val smartDownloadMinStorageMb get() = downloads.smartDownloadMinStorageMb
+    val downloadDataSaverEnabled get() = downloads.downloadDataSaverEnabled
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -330,6 +331,10 @@ sealed interface SettingsEvent : UiEvent {
     // Navigation
     data object NavigateToAbout : SettingsEvent
     data object NavigateToCloudBackup : SettingsEvent
+    data object NavigateToDataUsage : SettingsEvent
+
+    // Downloads — Data Saver
+    data class SetDownloadDataSaverEnabled(val enabled: Boolean) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {
@@ -342,4 +347,5 @@ sealed interface SettingsEffect : UiEffect {
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect
     data object ShowAutoBackupLocationPicker : SettingsEffect
     data object NavigateToCloudBackup : SettingsEffect
+    data object NavigateToDataUsage : SettingsEffect
 }

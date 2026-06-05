@@ -482,6 +482,17 @@
     <string name="settings_about_title">About Otaku Reader</string>
     <string name="settings_about_description">App info, FAQ, licenses</string>
 
+    <!-- Data Usage (#956) -->
+    <string name="settings_data_usage">Data Usage</string>
+    <string name="settings_data_usage_back">Back</string>
+    <string name="settings_data_usage_wifi">Wi-Fi: %1$s</string>
+    <string name="settings_data_usage_mobile">Mobile: %1$s</string>
+    <string name="settings_data_usage_tab_today">Today</string>
+    <string name="settings_data_usage_tab_week">This Week</string>
+    <string name="settings_data_usage_tab_month">This Month</string>
+    <string name="settings_download_data_saver">Data Saver</string>
+    <string name="settings_download_data_saver_desc">Block downloads on mobile data</string>
+
     <!-- Reader Sync (#958) -->
     <string name="settings_sync">Reader Sync</string>
     <string name="settings_sync_description">Sync your reading progress across devices using a self-hosted server. Leave blank to disable.</string>

@@ -19,7 +19,9 @@ import app.otakureader.data.opds.OpdsRepositoryImpl
 import app.otakureader.data.repository.AchievementRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
+import app.otakureader.data.repository.DataUsageRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
+import app.otakureader.domain.repository.DataUsageRepository
 import app.otakureader.data.repository.FeedRepositoryImpl
 import app.otakureader.data.repository.MangaRepositoryImpl
 import app.otakureader.data.repository.ReaderSettingsRepository
@@ -152,6 +154,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindRecommendationRepository(impl: RecommendationRepositoryImpl): RecommendationRepository
+
+    @Binds
+    abstract fun bindDataUsageRepository(impl: DataUsageRepositoryImpl): DataUsageRepository
 
     @Binds
     abstract fun bindSyncRepository(impl: SyncRepositoryImpl): SyncRepository

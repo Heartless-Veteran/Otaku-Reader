@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import app.otakureader.core.network.RequestCategory
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -37,7 +38,9 @@ class Downloader @Inject constructor(
             while (attempt < MAX_RETRIES) {
                 try {
                     destFile.parentFile?.mkdirs()
-                    val request = Request.Builder().url(url).build()
+                    val request = Request.Builder().url(url)
+                        .tag(RequestCategory::class.java, RequestCategory.DOWNLOAD)
+                        .build()
                     okHttpClient.newCall(request).execute().use { response ->
                         if (!response.isSuccessful) {
                             error("HTTP ${response.code}: ${response.message}")

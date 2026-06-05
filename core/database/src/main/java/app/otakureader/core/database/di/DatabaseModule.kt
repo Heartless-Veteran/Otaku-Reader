@@ -6,6 +6,7 @@ import androidx.room.Room
 import app.otakureader.core.database.BuildConfig
 import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.AchievementDao
+import app.otakureader.core.database.dao.DataUsageDao
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.dao.SyncQueueDao
 import app.otakureader.core.database.dao.TrackEntryDao
@@ -92,6 +93,9 @@ object DatabaseModule {
 
     @Provides
     fun provideAchievementDao(database: OtakuReaderDatabase): AchievementDao = database.achievementDao()
+
+    @Provides
+    fun provideDataUsageDao(database: OtakuReaderDatabase): DataUsageDao = database.dataUsageDao()
 
     @Provides
     fun provideSyncQueueDao(database: OtakuReaderDatabase): SyncQueueDao = database.syncQueueDao()

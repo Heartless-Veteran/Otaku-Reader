@@ -1,5 +1,6 @@
 package app.otakureader.data.opds
 
+import app.otakureader.core.network.RequestCategory
 import app.otakureader.domain.model.OpdsFeed
 import app.otakureader.domain.model.OpdsServer
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ class OpdsClient @Inject constructor(
         withContext(Dispatchers.IO) {
             val resolvedUrl = resolveUrl(server.url, feedUrl)
             val requestBuilder = Request.Builder().url(resolvedUrl)
+                .tag(RequestCategory::class.java, RequestCategory.OTHER)
 
             if (server.username.isNotBlank()) {
                 requestBuilder.header(
@@ -71,6 +73,7 @@ class OpdsClient @Inject constructor(
         withContext(Dispatchers.IO) {
             val resolvedUrl = resolveUrl(server.url, searchDescriptionUrl)
             val requestBuilder = Request.Builder().url(resolvedUrl)
+                .tag(RequestCategory::class.java, RequestCategory.OTHER)
 
             if (server.username.isNotBlank()) {
                 requestBuilder.header(

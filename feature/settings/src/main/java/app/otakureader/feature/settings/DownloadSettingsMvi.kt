@@ -19,4 +19,6 @@ data class DownloadSettingsState(
     val smartDownloadWifiOnly: Boolean = true,
     val smartDownloadFavoritesOnly: Boolean = true,
     val smartDownloadMinStorageMb: Int = 500,
+    // Data Saver
+    val downloadDataSaverEnabled: Boolean = false,
 )

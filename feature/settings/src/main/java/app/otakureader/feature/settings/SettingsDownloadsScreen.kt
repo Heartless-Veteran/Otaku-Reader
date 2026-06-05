@@ -50,6 +50,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsDownloadsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToDataUsage: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DownloadViewModel = hiltViewModel(),
 ) {
@@ -67,6 +68,7 @@ fun SettingsDownloadsScreen(
             when (effect) {
                 is SettingsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is SettingsEffect.ShowDownloadLocationPicker -> downloadLocationLauncher.launch(null)
+                is SettingsEffect.NavigateToDataUsage -> onNavigateToDataUsage()
                 else -> Unit
             }
         }
@@ -99,9 +101,15 @@ fun SettingsDownloadsScreen(
     }
 }
 
-fun NavGraphBuilder.settingsDownloadsScreen(onNavigateBack: () -> Unit) {
+fun NavGraphBuilder.settingsDownloadsScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToDataUsage: () -> Unit = {},
+) {
     composable<Route.SettingsDownloads> {
-        SettingsDownloadsScreen(onNavigateBack = onNavigateBack)
+        SettingsDownloadsScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToDataUsage = onNavigateToDataUsage,
+        )
     }
 }
 
@@ -251,6 +259,25 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
 
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
     SmartDownloadSection(state = state, onEvent = onEvent)
+
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+    SectionHeader(title = stringResource(R.string.settings_data_usage))
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_download_data_saver)) },
+        supportingContent = { Text(stringResource(R.string.settings_download_data_saver_desc)) },
+        trailingContent = {
+            Switch(
+                checked = state.downloadDataSaverEnabled,
+                onCheckedChange = { onEvent(SettingsEvent.SetDownloadDataSaverEnabled(it)) },
+            )
+        },
+    )
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_data_usage)) },
+        modifier = Modifier.clickable { onEvent(SettingsEvent.NavigateToDataUsage) },
+    )
 }
 
 @Suppress("LongMethod")

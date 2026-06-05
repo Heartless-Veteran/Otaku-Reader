@@ -3,6 +3,7 @@ package app.otakureader.feature.details
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
@@ -468,17 +469,19 @@ class DetailsViewModel @Inject constructor(
             val mangaTitle = manga?.title ?: "Manga"
             val sourceName = manga?.sourceId?.toString() ?: ""
 
-            chapters.forEach { chapter ->
-                downloadRepository.enqueueChapter(
-                    mangaId = chapter.mangaId,
-                    chapterId = chapter.id,
-                    sourceName = sourceName,
-                    mangaTitle = mangaTitle,
-                    chapterTitle = chapter.name
-                )
+            val enqueuedCount = try {
+                enqueueChapters(chapters, sourceName, mangaTitle)
+            } catch (e: DownloadBlockedException) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                return@launch
             }
             clearChapterSelection()
-            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
+            val failCount = chapters.size - enqueuedCount
+            if (failCount > 0) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("$enqueuedCount chapter(s) added, $failCount failed"))
+            } else {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
+            }
         }
     }
 
@@ -608,14 +611,22 @@ class DetailsViewModel @Inject constructor(
             val sourceName = manga?.sourceId?.toString() ?: ""
 
             if (chapter != null) {
-                downloadRepository.enqueueChapter(
-                    mangaId = chapter.mangaId,
-                    chapterId = chapter.id,
-                    sourceName = sourceName,
-                    mangaTitle = mangaTitle,
-                    chapterTitle = chapter.name
-                )
-                _effect.send(DetailsContract.Effect.ShowSnackbar("Download added to queue"))
+                try {
+                    downloadRepository.enqueueChapter(
+                        mangaId = chapter.mangaId,
+                        chapterId = chapter.id,
+                        sourceName = sourceName,
+                        mangaTitle = mangaTitle,
+                        chapterTitle = chapter.name
+                    )
+                    _effect.send(DetailsContract.Effect.ShowSnackbar("Download added to queue"))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: DownloadBlockedException) {
+                    _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                } catch (e: Exception) {
+                    _effect.send(DetailsContract.Effect.ShowError("Failed to queue download: ${e.message}"))
+                }
             }
         }
     }
@@ -630,18 +641,48 @@ class DetailsViewModel @Inject constructor(
                 _state.value.chapters
             }
             if (chapters.isEmpty()) return@launch
-            chapters.forEach { chapter ->
+
+            val enqueuedCount = try {
+                enqueueChapters(chapters, sourceName, manga.title)
+            } catch (e: DownloadBlockedException) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                return@launch
+            }
+            val label = if (unreadOnly) "unread" else "all"
+            val failCount = chapters.size - enqueuedCount
+            if (failCount > 0) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("$enqueuedCount $label chapter(s) added, $failCount failed"))
+            } else {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
+            }
+        }
+    }
+
+    private suspend fun enqueueChapters(
+        chapters: List<DetailsContract.ChapterItem>,
+        sourceName: String,
+        mangaTitle: String
+    ): Int {
+        var enqueuedCount = 0
+        for (chapter in chapters) {
+            try {
                 downloadRepository.enqueueChapter(
                     mangaId = chapter.mangaId,
                     chapterId = chapter.id,
                     sourceName = sourceName,
-                    mangaTitle = manga.title,
+                    mangaTitle = mangaTitle,
                     chapterTitle = chapter.name
                 )
+                enqueuedCount++
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: DownloadBlockedException) {
+                throw e
+            } catch (_: Exception) {
+                // chapter failed to enqueue - continue with others
             }
-            val label = if (unreadOnly) "unread" else "all"
-            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
         }
+        return enqueuedCount
     }
 
     private fun deleteChapterDownload(chapterId: Long) {

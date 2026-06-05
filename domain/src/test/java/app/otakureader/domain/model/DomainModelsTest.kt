@@ -1,6 +1,7 @@
 package app.otakureader.domain.model
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -164,6 +165,35 @@ class DomainModelsTest {
         assertEquals(3, TrackerType.KITSU)
         assertEquals(4, TrackerType.MANGA_UPDATES)
         assertEquals(5, TrackerType.SHIKIMORI)
+    }
+
+    // ── DataUsageRecord ───────────────────────────────────────────────────────
+
+    @Test
+    fun `DataUsageRecord default bytes is zero`() {
+        val record = DataUsageRecord(date = "2026-06-05", category = "DOWNLOAD", network = "WIFI")
+        assertEquals("2026-06-05", record.date)
+        assertEquals("DOWNLOAD", record.category)
+        assertEquals("WIFI", record.network)
+        assertEquals(0L, record.bytes)
+    }
+
+    @Test
+    fun `DataUsageRecord copy preserves fields`() {
+        val record = DataUsageRecord(date = "2026-06-05", category = "IMAGE_CACHE", network = "MOBILE", bytes = 1024L)
+        val updated = record.copy(bytes = 2048L)
+        assertEquals(2048L, updated.bytes)
+        assertEquals("IMAGE_CACHE", updated.category)
+        assertEquals(record.date, updated.date)
+    }
+
+    @Test
+    fun `DataUsageRecord equality based on all fields`() {
+        val a = DataUsageRecord("2026-06-05", "DOWNLOAD", "WIFI", 512L)
+        val b = DataUsageRecord("2026-06-05", "DOWNLOAD", "WIFI", 512L)
+        val c = DataUsageRecord("2026-06-05", "DOWNLOAD", "MOBILE", 512L)
+        assertEquals(a, b)
+        assertNotEquals(a, c)
     }
 
     // ── ContinueReadingItem ───────────────────────────────────────────────────
