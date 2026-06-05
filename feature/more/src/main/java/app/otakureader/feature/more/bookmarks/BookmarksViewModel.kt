@@ -101,7 +101,7 @@ class BookmarksViewModel @Inject constructor(
         .catch { emit(BookmarksState(isLoading = false)) }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
+            started = SharingStarted.Eagerly,
             initialValue = BookmarksState(),
         )
 
