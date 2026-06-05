@@ -40,7 +40,7 @@ import javax.inject.Inject
  * ViewModel for Manga Details Screen following MVI pattern
  */
 @HiltViewModel
-@Suppress("LargeClass")
+@Suppress("LargeClass", "TooManyFunctions")
 class DetailsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val mangaRepository: MangaRepository,
@@ -78,7 +78,7 @@ class DetailsViewModel @Inject constructor(
         observeStaticSettings()
     }
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun onEvent(event: DetailsContract.Event) {
         when (event) {
             is DetailsContract.Event.Refresh -> refreshData()

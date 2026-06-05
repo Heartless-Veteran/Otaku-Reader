@@ -135,6 +135,9 @@ sealed interface Route {
     data object SettingsBackup : Route
 
     @Serializable
+    data object SettingsCloudBackup : Route
+
+    @Serializable
     data object SettingsDiscord : Route
 
     @Serializable

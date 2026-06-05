@@ -47,11 +47,19 @@ class BackupPreferences(private val dataStore: DataStore<Preferences>) {
     val lastAutoBackupTimestamp: Flow<Long> = dataStore.data.map { it[Keys.LAST_AUTO_BACKUP_TIMESTAMP] ?: 0L }
     suspend fun setLastAutoBackupTimestamp(value: Long) = dataStore.edit { it[Keys.LAST_AUTO_BACKUP_TIMESTAMP] = value }
 
+    /**
+     * Selected cloud backup destination key.
+     * Supported values: "NONE" (default), "WEBDAV".
+     */
+    val cloudDestination: Flow<String> = dataStore.data.map { it[Keys.CLOUD_DESTINATION] ?: "NONE" }
+    suspend fun setCloudDestination(value: String) = dataStore.edit { it[Keys.CLOUD_DESTINATION] = value }
+
     private object Keys {
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
         val AUTO_BACKUP_INTERVAL_HOURS = intPreferencesKey("auto_backup_interval_hours")
         val AUTO_BACKUP_MAX_COUNT = intPreferencesKey("auto_backup_max_count")
         val AUTO_BACKUP_LOCATION_URI = stringPreferencesKey("auto_backup_location_uri")
         val LAST_AUTO_BACKUP_TIMESTAMP = longPreferencesKey("last_auto_backup_timestamp")
+        val CLOUD_DESTINATION = stringPreferencesKey("cloud_destination")
     }
 }

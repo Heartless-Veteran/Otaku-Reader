@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.CloudBackupCredentialsStore
 import app.otakureader.core.preferences.EncryptedOpdsCredentialStore
 import app.otakureader.core.preferences.PendingOAuthStore
 import app.otakureader.core.preferences.TrackerTokenStore
@@ -139,4 +140,10 @@ object PreferencesModule {
     fun provideTrackerTokenStore(
         @ApplicationContext context: Context
     ): TrackerTokenStore = TrackerTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideCloudBackupCredentialsStore(
+        @ApplicationContext context: Context
+    ): CloudBackupCredentialsStore = CloudBackupCredentialsStore(context)
 }

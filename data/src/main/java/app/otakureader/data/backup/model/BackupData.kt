@@ -20,7 +20,7 @@ data class BackupData(
     val syncConfigurations: List<BackupSyncConfiguration> = emptyList()
 ) {
     companion object {
-        const val CURRENT_VERSION = 2
+        const val CURRENT_VERSION = 3
     }
 }
 

@@ -8,6 +8,8 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.BackupPreferences
+import app.otakureader.core.preferences.CloudBackupCredentialsStore
+import app.otakureader.core.preferences.CloudBackupUploader
 import app.otakureader.data.backup.repository.BackupRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -29,7 +31,9 @@ class BackupWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val backupRepository: BackupRepository,
-    private val backupPreferences: BackupPreferences
+    private val backupPreferences: BackupPreferences,
+    private val cloudBackupCredentialsStore: CloudBackupCredentialsStore,
+    private val cloudBackupUploader: CloudBackupUploader,
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
@@ -44,6 +48,17 @@ class BackupWorker @AssistedInject constructor(
             val locationUri = backupPreferences.autoBackupLocationUri.first()
             if (locationUri.isNotBlank()) {
                 copyToLocation(file, locationUri)
+            }
+
+            // Best-effort WebDAV upload — failure does not fail the entire backup job.
+            val cloudDestination = backupPreferences.cloudDestination.first()
+            if (cloudDestination == "WEBDAV") {
+                val creds = cloudBackupCredentialsStore.getWebDavCredentials()
+                if (creds != null) {
+                    cloudBackupUploader.configure(creds.url, creds.username, creds.password)
+                    cloudBackupUploader.upload(file)
+                        .onFailure { e -> Log.w(TAG, "WebDAV upload failed (non-fatal)", e) }
+                }
             }
 
             backupPreferences.setLastAutoBackupTimestamp(System.currentTimeMillis())
