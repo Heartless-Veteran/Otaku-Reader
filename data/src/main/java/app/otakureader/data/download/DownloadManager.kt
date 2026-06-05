@@ -6,6 +6,7 @@ import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.DownloadPriority
 import app.otakureader.domain.model.DownloadStatus
@@ -104,7 +105,7 @@ class DownloadManager @Inject constructor(
         if (downloadPreferences.dataSaverEnabled.first() &&
             networkMonitor.currentNetwork() == NetworkType.MOBILE
         ) {
-            return
+            throw DownloadBlockedException("Downloads blocked on mobile while Data Saver is enabled")
         }
 
         val shouldStart = mutex.withLock {
