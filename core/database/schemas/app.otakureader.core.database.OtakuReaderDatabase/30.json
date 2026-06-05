@@ -1,12 +1,12 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 29,
-    "identityHash": "c4672ab17043568dc53f82ece8302b2d",
+    "version": 30,
+    "identityHash": "9271f738342beb8d10c9b0a781d886a8",
     "entities": [
       {
         "tableName": "manga",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sourceId` INTEGER NOT NULL, `url` TEXT NOT NULL, `title` TEXT NOT NULL, `thumbnailUrl` TEXT, `author` TEXT, `artist` TEXT, `description` TEXT, `genre` TEXT, `status` INTEGER NOT NULL, `favorite` INTEGER NOT NULL, `lastUpdate` INTEGER NOT NULL, `initialized` INTEGER NOT NULL, `viewerFlags` INTEGER NOT NULL, `chapterFlags` INTEGER NOT NULL, `coverLastModified` INTEGER NOT NULL, `dateAdded` INTEGER NOT NULL, `autoDownload` INTEGER NOT NULL, `notes` TEXT, `notifyNewChapters` INTEGER NOT NULL, `readerDirection` INTEGER, `readerMode` INTEGER, `readerColorFilter` INTEGER, `readerCustomTintColor` INTEGER, `readerBackgroundColor` INTEGER, `preloadPagesBefore` INTEGER, `preloadPagesAfter` INTEGER, `contentRating` INTEGER NOT NULL, `userCompleted` INTEGER NOT NULL, `userDropped` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sourceId` INTEGER NOT NULL, `url` TEXT NOT NULL, `title` TEXT NOT NULL, `thumbnailUrl` TEXT, `author` TEXT, `artist` TEXT, `description` TEXT, `genre` TEXT, `status` INTEGER NOT NULL, `favorite` INTEGER NOT NULL, `lastUpdate` INTEGER NOT NULL, `initialized` INTEGER NOT NULL, `viewerFlags` INTEGER NOT NULL, `chapterFlags` INTEGER NOT NULL, `coverLastModified` INTEGER NOT NULL, `dateAdded` INTEGER NOT NULL, `autoDownload` INTEGER NOT NULL, `notes` TEXT, `notifyNewChapters` INTEGER NOT NULL, `readerDirection` INTEGER, `readerMode` INTEGER, `readerColorFilter` INTEGER, `readerCustomTintColor` INTEGER, `readerBackgroundColor` INTEGER, `preloadPagesBefore` INTEGER, `preloadPagesAfter` INTEGER, `contentRating` INTEGER NOT NULL, `userCompleted` INTEGER NOT NULL, `userDropped` INTEGER NOT NULL, `mangaThemeOverride` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -174,6 +174,12 @@
             "columnName": "userDropped",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "mangaThemeOverride",
+            "columnName": "mangaThemeOverride",
+            "affinity": "INTEGER",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -1627,8 +1633,8 @@
         }
       },
       {
-        "tableName": "achievements",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `definitionKey` TEXT NOT NULL, `unlockedAt` INTEGER NOT NULL, `progress` INTEGER NOT NULL, `target` INTEGER NOT NULL)",
+        "tableName": "sync_queue",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapterId` INTEGER NOT NULL, `mangaId` INTEGER NOT NULL, `payload` TEXT NOT NULL, `attempts` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastError` TEXT)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1637,28 +1643,39 @@
             "notNull": true
           },
           {
-            "fieldPath": "definitionKey",
-            "columnName": "definitionKey",
+            "fieldPath": "chapterId",
+            "columnName": "chapterId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mangaId",
+            "columnName": "mangaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "payload",
+            "columnName": "payload",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "unlockedAt",
-            "columnName": "unlockedAt",
+            "fieldPath": "attempts",
+            "columnName": "attempts",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "progress",
-            "columnName": "progress",
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "target",
-            "columnName": "target",
-            "affinity": "INTEGER",
-            "notNull": true
+            "fieldPath": "lastError",
+            "columnName": "lastError",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -1671,7 +1688,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c4672ab17043568dc53f82ece8302b2d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8d93b20bb2fe76c9c637b522a92a76fb')"
     ]
   }
 }

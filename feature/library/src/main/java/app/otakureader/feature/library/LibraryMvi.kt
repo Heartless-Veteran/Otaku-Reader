@@ -22,6 +22,13 @@ enum class LibraryFilterMode {
     READING_LIST
 }
 
+enum class LibraryBottomSheetTab {
+    DISPLAY,
+    SORT,
+    FILTER,
+    GROUP
+}
+
 data class LibraryState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -59,10 +66,14 @@ data class LibraryState(
     val filterGenres: Set<String> = emptySet(),
     val sortAscending: Boolean = true,
     val availableGenres: List<String> = emptyList(),
-    val showFilterSheet: Boolean = false,
+    val showBottomSheet: Boolean = false,
+    val bottomSheetTab: LibraryBottomSheetTab = LibraryBottomSheetTab.DISPLAY,
+    val groupByCategory: Boolean = false,
     // Recommendations carousel
     val recommendations: List<LibraryMangaItem> = emptyList(),
     val showRecommendations: Boolean = true,
+    // Advanced search sheet
+    val showAdvancedSearch: Boolean = false,
 )
 
 data class LibraryMangaItem(
@@ -133,8 +144,17 @@ sealed class LibraryEvent {
     data class SetGenreFilter(val genres: Set<String>) : LibraryEvent()
     data class SetSortAscending(val ascending: Boolean) : LibraryEvent()
     data object ClearAllFilters : LibraryEvent()
+    data object ToggleBottomSheet : LibraryEvent()
+    data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
+    data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
+    data class SetGridSize(val size: Int) : LibraryEvent()
+    data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
+    data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
+    data class SetStaggeredGrid(val enabled: Boolean) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
+    data object ToggleAdvancedSearch : LibraryEvent()
+    data class ApplyAdvancedSearch(val authorQuery: String, val tagQuery: String) : LibraryEvent()
 }
 
 sealed class LibraryEffect {

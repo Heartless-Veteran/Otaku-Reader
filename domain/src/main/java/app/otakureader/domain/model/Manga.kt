@@ -50,7 +50,10 @@ data class Manga(
     val userCompleted: Boolean = false,
     /** User has dropped / abandoned this manga. */
     val userDropped: Boolean = false,
-    /** Per-manga UI theme color override as ARGB Long, or null to use the global theme. */
+    /**
+     * Per-manga override for the cover-derived dynamic theme (#947).
+     * null = inherit the global `autoThemeColor` setting; true/false = explicit override.
+     */
     val mangaThemeOverride: Boolean? = null,
 )
 

@@ -87,6 +87,7 @@ class LibraryViewModelTest {
             every { isStaggeredGrid } returns flowOf(false)
             every { showRecommendations } returns flowOf(false)
             every { dismissedRecommendations } returns flowOf(emptySet())
+            every { groupByCategory } returns flowOf(false)
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)

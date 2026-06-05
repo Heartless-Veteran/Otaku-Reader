@@ -47,6 +47,7 @@ include(":data")
 include(":source-api")
 
 // Feature modules
+include(":feature:webview")
 include(":feature:library")
 include(":feature:reader")
 include(":feature:browse")

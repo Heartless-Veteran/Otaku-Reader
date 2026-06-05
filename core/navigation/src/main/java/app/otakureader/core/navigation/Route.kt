@@ -228,6 +228,19 @@ sealed interface Route {
     @Serializable
     data class OpdsCatalog(val serverId: Long? = null) : Route
 
+    // ─── WebView Fallback ───
+
+    /**
+     * In-app WebView viewer for source pages that fail API extraction.
+     * @param url Initial URL to load.
+     * @param title Optional display title for the screen.
+     */
+    @Serializable
+    data class WebViewFallback(
+        val url: String,
+        val title: String = "",
+    ) : Route
+
     // ─── Deep-link only ───
 
     /**

@@ -20,6 +20,12 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -200,7 +206,7 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) }) {
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
@@ -281,11 +287,11 @@ fun LibraryScreen(
         )
     }
 
-    if (state.showFilterSheet) {
-        LibraryFilterSheet(
+    if (state.showBottomSheet) {
+        LibraryBottomSheet(
             state = state,
             onEvent = viewModel::onEvent,
-            onDismiss = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) },
+            onDismiss = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) },
         )
     }
 }
@@ -311,8 +317,19 @@ private fun LibraryContent(
             IncognitoBanner()
         }
 
+        if (state.showSearchBar) {
+            LibrarySearchFiltersRow(state = state, onEvent = onEvent)
+        }
+
+        if (state.showSearchBar && state.showAdvancedSearch) {
+            AdvancedSearchSheet(
+                onApply = { author, tag -> onEvent(LibraryEvent.ApplyAdvancedSearch(author, tag)) },
+                onDismiss = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+            )
+        }
+
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL || state.filterGenres.isNotEmpty()
-        if (hasActiveFilters) {
+        if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -388,6 +405,71 @@ private fun LibraryContent(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LibrarySearchFiltersRow(
+    state: LibraryState,
+    onEvent: (LibraryEvent) -> Unit,
+) {
+    val allLabel = stringResource(R.string.library_filter_all)
+    val unreadLabel = stringResource(R.string.library_filter_unread)
+    val downloadedLabel = stringResource(R.string.library_filter_downloaded)
+    val completedLabel = stringResource(R.string.library_filter_completed)
+    val droppedLabel = stringResource(R.string.library_filter_dropped)
+    val statusFilters = remember(allLabel, unreadLabel, downloadedLabel, completedLabel, droppedLabel) {
+        listOf(
+            LibraryFilterMode.ALL to allLabel,
+            LibraryFilterMode.UNREAD to unreadLabel,
+            LibraryFilterMode.DOWNLOADED to downloadedLabel,
+            LibraryFilterMode.COMPLETED to completedLabel,
+            LibraryFilterMode.DROPPED to droppedLabel,
+        )
+    }
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(statusFilters, key = { it.first.name }) { (mode, label) ->
+            FilterChip(
+                selected = state.filterMode == mode,
+                onClick = { onEvent(LibraryEvent.SetFilterMode(mode)) },
+                label = { Text(label) },
+            )
+        }
+        if (state.availableGenres.isNotEmpty()) {
+            items(state.availableGenres.take(12), key = { "genre_$it" }) { genre ->
+                FilterChip(
+                    selected = genre in state.filterGenres,
+                    onClick = {
+                        val updated = if (genre in state.filterGenres) {
+                            state.filterGenres - genre
+                        } else {
+                            state.filterGenres + genre
+                        }
+                        onEvent(LibraryEvent.SetGenreFilter(updated))
+                    },
+                    label = { Text(genre) },
+                )
+            }
+        }
+        item(key = "advanced") {
+            AssistChip(
+                onClick = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+                label = { Text(stringResource(R.string.library_advanced_search_open)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                    )
+                },
+            )
         }
     }
 }

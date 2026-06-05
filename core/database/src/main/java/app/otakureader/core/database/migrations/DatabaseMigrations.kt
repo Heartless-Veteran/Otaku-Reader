@@ -322,6 +322,13 @@ internal val MIGRATION_28_29 = object : Migration(28, 29) {
     }
 }
 
+/** Per-manga cover-derived theme override (#947). Nullable: null = inherit global pref. */
+internal val MIGRATION_29_30 = object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `mangaThemeOverride` INTEGER DEFAULT NULL")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -330,5 +337,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18,
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
-    MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29
+    MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30
 )

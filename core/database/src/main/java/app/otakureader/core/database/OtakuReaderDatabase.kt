@@ -72,7 +72,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Reading achievements (#955)
         AchievementEntity::class,
     ],
-    version = 29,
+    version = 30,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

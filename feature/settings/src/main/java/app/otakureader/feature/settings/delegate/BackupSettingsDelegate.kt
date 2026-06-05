@@ -104,6 +104,7 @@ class BackupSettingsDelegate @Inject constructor(
                 updateState {
                     it.copy(backup = it.backup.copy(
                         isRestoreInProgress = true,
+                        isTachiyomiImporting = true,
                         tachiyomiImportPreview = null,
                         pendingTachiyomiImportUri = null,
                         tachiyomiImportProgress = 0,
@@ -134,7 +135,7 @@ class BackupSettingsDelegate @Inject constructor(
                 } catch (e: Exception) {
                     sendEffect(SettingsEffect.ShowSnackbar("Failed to import Tachiyomi backup: ${e.message}"))
                 } finally {
-                    updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
+                    updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false, isTachiyomiImporting = false)) }
                 }
                 true
             }
@@ -155,7 +156,9 @@ class BackupSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.RestoreBackupFromUri -> {
-            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true)) }
+            updateState {
+                it.copy(backup = it.backup.copy(isRestoreInProgress = true, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
+            }
             try {
                 backupRepository.restoreBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
@@ -180,7 +183,16 @@ class BackupSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.RestoreLocalBackup -> {
-            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName)) }
+            updateState {
+                it.copy(
+                    backup = it.backup.copy(
+                        isRestoreInProgress = true,
+                        restoringBackupFileName = event.fileName,
+                        tachiyomiImportTotal = 0,
+                        tachiyomiImportProgress = 0,
+                    )
+                )
+            }
             try {
                 val allFiles = backupRepository.listLocalBackups()
                 val file = allFiles.firstOrNull { it.name == event.fileName }

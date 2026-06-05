@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="webview_title">WebView</string>
+    <string name="webview_url_hint">URL</string>
+    <string name="webview_back">Back</string>
+    <string name="webview_forward">Forward</string>
+    <string name="webview_refresh">Refresh</string>
+    <string name="webview_open_external">Open in browser</string>
+    <string name="webview_exit">Exit WebView</string>
+    <string name="webview_loading">Loading…</string>
+    <string name="webview_mode_indicator">WebView mode</string>
+</resources>
