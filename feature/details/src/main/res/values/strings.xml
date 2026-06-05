@@ -91,6 +91,10 @@
     <string name="details_pages_before">Pages before current</string>
     <string name="details_pages_after">Pages after current</string>
     <string name="details_reset_defaults">Reset to defaults</string>
+    <!-- Per-manga reader settings — "Use Global" options (#934) -->
+    <string name="details_use_global">Use Global</string>
+    <string name="details_reset_to_global">Reset to Global</string>
+    <string name="details_reader_overrides_active_cd">Reader settings overridden for this manga</string>
     <plurals name="details_chapter_count">
         <item quantity="one">%1$d Chapter</item>
         <item quantity="other">%1$d Chapters</item>
