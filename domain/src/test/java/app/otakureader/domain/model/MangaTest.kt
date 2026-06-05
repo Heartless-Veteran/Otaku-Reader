@@ -2,6 +2,7 @@ package app.otakureader.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MangaTest {
@@ -40,5 +41,24 @@ class MangaTest {
         assertEquals(true, updated.favorite)
         assertEquals("Updated", updated.title)
         assertEquals(1L, updated.id) // ID unchanged
+    }
+
+    @Test
+    fun `mangaThemeOverride defaults to null`() {
+        val manga = Manga(id = 1L, sourceId = 1L, url = "/m/1", title = "Test")
+        assertNull(manga.mangaThemeOverride)
+    }
+
+    @Test
+    fun `mangaThemeOverride can be set and copied`() {
+        val base = Manga(id = 1L, sourceId = 1L, url = "/m/1", title = "Test")
+
+        val enabled = base.copy(mangaThemeOverride = true)
+        val disabled = base.copy(mangaThemeOverride = false)
+        val cleared = enabled.copy(mangaThemeOverride = null)
+
+        assertEquals(true, enabled.mangaThemeOverride)
+        assertEquals(false, disabled.mangaThemeOverride)
+        assertNull(cleared.mangaThemeOverride)
     }
 }

@@ -50,6 +50,13 @@ data class MangaEntity(
     val userCompleted: Boolean = false,
     /** User has dropped / abandoned this manga. */
     val userDropped: Boolean = false,
+    /**
+     * Per-manga override for the cover-derived dynamic theme.
+     * - null  → inherit global `autoThemeColor` preference
+     * - true  → always extract theme from this manga's cover
+     * - false → always use the base app theme for this manga
+     */
+    val mangaThemeOverride: Boolean? = null,
 )
 
 enum class MangaStatus {

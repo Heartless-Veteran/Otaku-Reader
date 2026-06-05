@@ -133,6 +133,18 @@
     <string name="category_make_dynamic">Make dynamic</string>
     <string name="category_remove_dynamic">Remove dynamic</string>
     <string name="category_unlock_prompt">Unlock to view hidden category</string>
+    <!-- Bottom sheet tabs -->
+    <string name="display_tab">Display</string>
+    <string name="sort_tab">Sort</string>
+    <string name="filter_tab">Filter</string>
+    <string name="group_tab">Group</string>
+    <string name="display_grid_size_label">Grid size</string>
+    <string name="display_grid_size_value">%1$d columns</string>
+    <string name="display_show_badges">Show unread badges</string>
+    <string name="display_show_download_badge">Show download badge</string>
+    <string name="display_staggered_grid">Staggered grid</string>
+    <string name="group_category_label">Category</string>
+    <string name="group_by_category">Group by category</string>
     <!-- Filter sheet -->
     <string name="filter_sheet_title">Filters &amp; Sort</string>
     <string name="filter_sheet_clear_all">Clear all</string>

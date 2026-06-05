@@ -206,7 +206,7 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) }) {
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
@@ -287,11 +287,11 @@ fun LibraryScreen(
         )
     }
 
-    if (state.showFilterSheet) {
-        LibraryFilterSheet(
+    if (state.showBottomSheet) {
+        LibraryBottomSheet(
             state = state,
             onEvent = viewModel::onEvent,
-            onDismiss = { viewModel.onEvent(LibraryEvent.ToggleFilterSheet) },
+            onDismiss = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) },
         )
     }
 }

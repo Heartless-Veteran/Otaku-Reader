@@ -188,6 +188,10 @@ class MangaRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateMangaThemeOverride(id: Long, override: Boolean?) {
+        mangaDao.updateMangaThemeOverride(id, override)
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -219,6 +223,7 @@ class MangaRepositoryImpl @Inject constructor(
         contentRating = ContentRating.fromOrdinal(contentRating),
         userCompleted = userCompleted,
         userDropped = userDropped,
+        mangaThemeOverride = mangaThemeOverride,
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -250,5 +255,6 @@ class MangaRepositoryImpl @Inject constructor(
         contentRating = contentRating.ordinal,
         userCompleted = userCompleted,
         userDropped = userDropped,
+        mangaThemeOverride = mangaThemeOverride,
     )
 }

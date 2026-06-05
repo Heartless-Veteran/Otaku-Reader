@@ -125,6 +125,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ToggleNotifications -> toggleNotifications()
             is DetailsContract.Event.ToggleUserCompleted -> toggleUserCompleted()
             is DetailsContract.Event.ToggleUserDropped -> toggleUserDropped()
+            is DetailsContract.Event.CycleMangaThemeOverride -> cycleMangaThemeOverride()
 
             // Per-manga reader settings (#260)
             is DetailsContract.Event.SetReaderDirection -> setReaderDirection(event.direction)
@@ -799,6 +800,38 @@ class DetailsViewModel @Inject constructor(
                     }
                 }
                 _effect.send(DetailsContract.Effect.ShowError(errorMessage))
+            }
+        }
+    }
+
+    /**
+     * Tri-state cycle for the per-manga theme override:
+     *   null (inherit) → true (force on) → false (force off) → null
+     */
+    private fun cycleMangaThemeOverride() {
+        val manga = _state.value.manga ?: return
+        val next: Boolean? = when (manga.mangaThemeOverride) {
+            null -> true
+            true -> false
+            false -> null
+        }
+        // Optimistic update so the UI reflects the new state immediately
+        _state.update { it.copy(manga = manga.copy(mangaThemeOverride = next)) }
+        viewModelScope.launch {
+            try {
+                mangaRepository.updateMangaThemeOverride(manga.id, next)
+                val message = when (next) {
+                    null -> "Theme: following app setting"
+                    true -> "Theme: cover colors"
+                    false -> "Theme: app default"
+                }
+                _effect.send(DetailsContract.Effect.ShowSnackbar(message))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Roll back optimistic update on failure
+                _state.update { it.copy(manga = manga) }
+                _effect.send(DetailsContract.Effect.ShowError("Failed to update theme: ${e.message}"))
             }
         }
     }
