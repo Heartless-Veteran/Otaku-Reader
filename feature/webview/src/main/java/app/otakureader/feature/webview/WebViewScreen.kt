@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
@@ -69,7 +70,9 @@ fun WebViewScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
+    // urlText is what the user is typing; committedUrl is what the WebView actually loads
     var urlText by remember { mutableStateOf(initialUrl) }
+    var committedUrl by remember { mutableStateOf(initialUrl) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
@@ -124,8 +127,10 @@ fun WebViewScreen(
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.webview_open_external)) },
                             onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlText))
-                                context.startActivity(intent)
+                                runCatching {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(committedUrl))
+                                    context.startActivity(intent)
+                                }
                                 showMenu = false
                             },
                         )
@@ -165,6 +170,7 @@ fun WebViewScreen(
                                 } else {
                                     "https://$targetUrl"
                                 }
+                                committedUrl = resolvedUrl
                                 webViewRef?.loadUrl(resolvedUrl)
                             }
                             focusManager.clearFocus()
@@ -201,7 +207,7 @@ fun WebViewScreen(
                     enabled = canGoForward,
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = stringResource(R.string.webview_forward),
                     )
                 }
@@ -232,6 +238,7 @@ fun WebViewScreen(
                         )
                         settings.apply {
                             javaScriptEnabled = true
+                            domStorageEnabled = true
                             allowFileAccess = false
                             allowContentAccess = false
                             setGeolocationEnabled(false)
@@ -243,12 +250,16 @@ fun WebViewScreen(
                             ): Boolean {
                                 request?.url?.toString()?.let { newUrl ->
                                     urlText = newUrl
+                                    committedUrl = newUrl
                                 }
                                 return false
                             }
 
                             override fun onPageFinished(view: WebView?, url: String?) {
-                                url?.let { urlText = it }
+                                url?.let {
+                                    urlText = it
+                                    committedUrl = it
+                                }
                                 canGoBack = canGoBack()
                                 canGoForward = canGoForward()
                             }
@@ -264,10 +275,6 @@ fun WebViewScreen(
                     }
                 },
                 update = { webView ->
-                    // Only reload if the URL changed externally
-                    if (webView.url != urlText && urlText.startsWith("http")) {
-                        webView.loadUrl(urlText)
-                    }
                     webViewRef = webView
                 },
             )
