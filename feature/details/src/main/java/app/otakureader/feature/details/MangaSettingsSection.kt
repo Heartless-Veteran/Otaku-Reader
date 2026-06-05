@@ -167,6 +167,7 @@ internal fun ReaderSettingsSection(
                        manga.preloadPagesBefore != null ||
                        manga.preloadPagesAfter != null
 
+    val overridesActiveDesc = stringResource(R.string.details_reader_overrides_active_cd)
     Column(modifier = modifier) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.details_reader_settings)) },
@@ -184,7 +185,7 @@ internal fun ReaderSettingsSection(
                         if (hasOverrides) {
                             Badge(
                                 modifier = Modifier.semantics {
-                                    contentDescription = stringResource(R.string.details_reader_overrides_active_cd)
+                                    contentDescription = overridesActiveDesc
                                 }
                             )
                         }
