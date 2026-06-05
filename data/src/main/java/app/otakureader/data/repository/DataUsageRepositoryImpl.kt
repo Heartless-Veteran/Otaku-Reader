@@ -36,7 +36,7 @@ class DataUsageRepositoryImpl @Inject constructor(
     override suspend fun recordBytes(category: String, network: String, bytes: Long) {
         val date = today()
         val entity = DataUsageEntity(date = date, category = category, network = network, bytes = 0)
-        dao.insertIfAbsent(entity)
+        dao.insertIgnore(entity)
         dao.addBytes(date = date, category = category, network = network, delta = bytes)
     }
 }

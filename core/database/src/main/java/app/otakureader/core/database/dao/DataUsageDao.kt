@@ -10,9 +10,8 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface DataUsageDao {
 
-    /** Inserts a new zero-byte row for (date, category, network) if none exists yet. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertIfAbsent(entity: DataUsageEntity)
+    suspend fun insertIgnore(entity: DataUsageEntity)
 
     @Query("""
         UPDATE data_usage SET bytes = bytes + :delta

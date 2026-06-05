@@ -22,8 +22,9 @@ class DataUsageViewModel @Inject constructor(
     val state: StateFlow<DataUsageState> = _state.asStateFlow()
 
     init {
-        val weekAgo = LocalDate.now().minusWeeks(1).toString()
-        val monthAgo = LocalDate.now().minusMonths(1).toString()
+        val today = LocalDate.now()
+        val weekAgo = today.minusDays(7).toString()
+        val monthAgo = today.minusMonths(1).toString()
 
         combine(
             repository.observeToday(),
