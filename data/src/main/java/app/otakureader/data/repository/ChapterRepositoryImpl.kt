@@ -131,8 +131,9 @@ class ChapterRepositoryImpl @Inject constructor(
                     chapterNumber = chapterEntity.chapterNumber,
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
             // Intentionally swallowed: sync is best-effort and must not break reading.
         }
     }
