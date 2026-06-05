@@ -444,10 +444,10 @@ class LibraryViewModel @Inject constructor(
     private fun toggleSearchBar() {
         _state.update { state ->
             if (state.showSearchBar) {
-                // Closing: also clear the query
+                // Closing: also clear the query and dismiss any open advanced search sheet
                 searchJob?.cancel()
                 _searchMatchingIds.value = null
-                state.copy(showSearchBar = false, searchQuery = "")
+                state.copy(showSearchBar = false, searchQuery = "", showAdvancedSearch = false)
             } else {
                 state.copy(showSearchBar = true)
             }
