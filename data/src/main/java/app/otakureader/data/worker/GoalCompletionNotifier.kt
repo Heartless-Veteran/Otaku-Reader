@@ -14,6 +14,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.model.AchievementDefinition
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import java.time.LocalDate
@@ -23,6 +24,7 @@ import javax.inject.Singleton
 
 internal const val GOAL_CHANNEL_ID = "reading_goal_channel"
 private const val GOAL_NOTIFICATION_ID = 4002
+private const val ACHIEVEMENT_NOTIFICATION_ID = 4003
 
 /**
  * Sends a one-time "daily goal reached!" notification the first time the user
@@ -100,6 +102,54 @@ class GoalCompletionNotifier @Inject constructor(
             .build()
 
         NotificationManagerCompat.from(context).notify(GOAL_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Posts a notification when an achievement is newly unlocked.
+     * Uses ID 4003 so it does not collide with the daily goal notification (4002).
+     */
+    @SuppressLint("MissingPermission")
+    fun notifyAchievementUnlocked(def: AchievementDefinition) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) return
+        }
+
+        createChannel()
+
+        val launchIntent = context.packageManager
+            .getLaunchIntentForPackage(context.packageName)
+            ?: Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                setPackage(context.packageName)
+            }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            ACHIEVEMENT_NOTIFICATION_ID,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val friendlyName = def.name
+            .lowercase()
+            .replace('_', ' ')
+            .replaceFirstChar { it.uppercase() }
+
+        val notification = NotificationCompat.Builder(context, GOAL_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setContentTitle("Achievement Unlocked!")
+            .setContentText(friendlyName)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setOnlyAlertOnce(true)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(ACHIEVEMENT_NOTIFICATION_ID, notification)
     }
 
     private fun createChannel() {

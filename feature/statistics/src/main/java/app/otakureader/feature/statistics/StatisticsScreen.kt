@@ -52,6 +52,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.components.MonoLabel
 import app.otakureader.core.ui.theme.LocalOtakuColors
+import app.otakureader.domain.model.Achievement
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
 
@@ -123,6 +124,7 @@ fun StatisticsScreen(
             else -> StatisticsContent(
                 stats = state.stats,
                 readingGoal = state.readingGoal,
+                achievements = state.achievements,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -133,6 +135,7 @@ fun StatisticsScreen(
 private fun StatisticsContent(
     stats: ReadingStats,
     readingGoal: ReadingGoal,
+    achievements: List<Achievement>,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -189,6 +192,15 @@ private fun StatisticsContent(
                 SectionTitle(stringResource(R.string.statistics_top_genres))
                 Spacer(modifier = Modifier.height(8.dp))
                 GenreDistributionBars(genres = stats.genreDistribution)
+            }
+        }
+
+        // Achievements
+        if (achievements.isNotEmpty()) {
+            item {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(4.dp))
+                AchievementsSection(achievements = achievements)
             }
         }
 

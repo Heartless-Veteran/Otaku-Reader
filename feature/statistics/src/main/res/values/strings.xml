@@ -39,4 +39,8 @@
     <string name="statistics_share_save_gallery">Save to gallery</string>
     <string name="statistics_share_saved">Saved to gallery</string>
     <string name="statistics_share_save_failed">Couldn\'t save image</string>
+
+    <!-- Achievements (#955) -->
+    <string name="achievements_title">Achievements</string>
+    <string name="achievement_unlocked_title">Achievement Unlocked!</string>
 </resources>

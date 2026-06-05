@@ -1,5 +1,6 @@
 package app.otakureader.data.repository
 
+import androidx.work.WorkManager
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.entity.ChapterEntity
@@ -8,6 +9,7 @@ import app.otakureader.core.database.entity.ChapterWithMangaEntity
 import app.otakureader.core.database.entity.HistoryWithMangaEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.MangaStatus as DbMangaStatus
+import app.otakureader.data.worker.AchievementCheckWorker
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.domain.model.ContinueReadingItem
@@ -27,7 +29,8 @@ private const val SQLITE_MAX_BIND_PARAMETERS = 999
 @Singleton
 class ChapterRepositoryImpl @Inject constructor(
     private val chapterDao: ChapterDao,
-    private val readingHistoryDao: ReadingHistoryDao
+    private val readingHistoryDao: ReadingHistoryDao,
+    private val workManager: WorkManager,
 ) : ChapterRepository {
     
     override fun getChaptersByMangaId(mangaId: Long): Flow<List<Chapter>> {
@@ -114,6 +117,7 @@ class ChapterRepositoryImpl @Inject constructor(
 
     override suspend fun recordHistory(chapterId: Long, readAt: Long, readDurationMs: Long) {
         readingHistoryDao.upsert(chapterId, readAt, readDurationMs)
+        AchievementCheckWorker.enqueue(workManager)
     }
 
     override suspend fun removeFromHistory(chapterId: Long) {

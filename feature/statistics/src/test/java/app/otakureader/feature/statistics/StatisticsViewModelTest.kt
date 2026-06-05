@@ -1,8 +1,10 @@
 package app.otakureader.feature.statistics
 
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.model.Achievement
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
+import app.otakureader.domain.repository.AchievementRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.usecase.GetReadingStatsUseCase
 import io.mockk.every
@@ -31,6 +33,7 @@ class StatisticsViewModelTest {
     private lateinit var getReadingStatsUseCase: GetReadingStatsUseCase
     private lateinit var statisticsRepository: StatisticsRepository
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
+    private lateinit var achievementRepository: AchievementRepository
 
     private val sampleStats = ReadingStats(
         totalMangaInLibrary = 15,
@@ -56,6 +59,9 @@ class StatisticsViewModelTest {
             every { dailyChapterGoal } returns flowOf(5)
             every { weeklyChapterGoal } returns flowOf(30)
         }
+        achievementRepository = mockk {
+            every { observeAll() } returns flowOf(emptyList<Achievement>())
+        }
     }
 
     @After
@@ -68,6 +74,7 @@ class StatisticsViewModelTest {
             getReadingStatsUseCase,
             statisticsRepository,
             readingGoalPreferences,
+            achievementRepository,
         )
     }
 

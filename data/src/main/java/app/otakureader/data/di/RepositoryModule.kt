@@ -1,5 +1,6 @@
 package app.otakureader.data.di
 
+import app.otakureader.domain.repository.AchievementRepository
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DynamicCategoryRepository
@@ -14,6 +15,7 @@ import app.otakureader.domain.repository.RecommendationRepository
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
+import app.otakureader.data.repository.AchievementRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
 import app.otakureader.data.repository.DownloadRepositoryImpl
@@ -51,15 +53,23 @@ import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.scheduler.TrackerSyncScheduler
 import app.otakureader.domain.tracking.TrackManager
 import app.otakureader.domain.updater.AppUpdateChecker
+import android.content.Context
+import androidx.work.WorkManager
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 /** Hilt module that binds data-layer repository implementations to their domain interfaces. */
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    abstract fun bindAchievementRepository(impl: AchievementRepositoryImpl): AchievementRepository
 
     @Binds
     abstract fun bindMangaRepository(impl: MangaRepositoryImpl): MangaRepository
@@ -138,4 +148,11 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindRecommendationRepository(impl: RecommendationRepositoryImpl): RecommendationRepository
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+            WorkManager.getInstance(context)
+    }
 }

@@ -3,6 +3,7 @@ package app.otakureader.core.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import app.otakureader.core.database.dao.AchievementDao
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.DownloadQueueDao
@@ -18,6 +19,7 @@ import app.otakureader.core.database.dao.ReadingStreakDao
 import app.otakureader.core.database.dao.RecommendationDao
 import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.dao.TrackerSyncDao
+import app.otakureader.core.database.entity.AchievementEntity
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.DownloadQueueEntity
@@ -67,8 +69,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         DynamicCategoryRuleEntity::class,
         // Recommendation cache (#895)
         RecommendationEntity::class,
+        // Reading achievements (#955)
+        AchievementEntity::class,
     ],
-    version = 28,
+    version = 29,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -90,6 +94,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun trackEntryDao(): TrackEntryDao
     abstract fun dynamicCategoryRuleDao(): DynamicCategoryRuleDao
     abstract fun recommendationDao(): RecommendationDao
+    abstract fun achievementDao(): AchievementDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

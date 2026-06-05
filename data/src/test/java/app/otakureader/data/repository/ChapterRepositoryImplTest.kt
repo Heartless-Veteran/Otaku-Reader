@@ -1,5 +1,6 @@
 package app.otakureader.data.repository
 
+import androidx.work.WorkManager
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.ChapterWithHistoryEntity
@@ -12,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -21,6 +23,7 @@ class ChapterRepositoryImplTest {
 
     private lateinit var chapterDao: ChapterDao
     private lateinit var repository: ChapterRepositoryImpl
+    private val workManager: WorkManager = mockk(relaxed = true)
 
     private fun makeEntity(
         id: Long = 1L,
@@ -48,7 +51,7 @@ class ChapterRepositoryImplTest {
     fun setUp() {
         chapterDao = mockk()
         readingHistoryDao = mockk()
-        repository = ChapterRepositoryImpl(chapterDao, readingHistoryDao)
+        repository = ChapterRepositoryImpl(chapterDao, readingHistoryDao, workManager)
     }
 
     // ---- getChaptersByMangaId ----
