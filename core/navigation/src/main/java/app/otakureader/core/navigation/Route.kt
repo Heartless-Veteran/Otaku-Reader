@@ -152,6 +152,9 @@ sealed interface Route {
     @Serializable
     data object LocalSourceBrowser : Route
 
+    @Serializable
+    data object SettingsSync : Route
+
     // ─── Downloads ───
 
     @Serializable
@@ -240,6 +243,11 @@ sealed interface Route {
         val url: String,
         val title: String = "",
     ) : Route
+
+    // ─── Data Usage ───
+
+    @Serializable
+    data object DataUsage : Route
 
     // ─── Deep-link only ───
 

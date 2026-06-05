@@ -24,6 +24,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import app.otakureader.core.network.RequestCategory
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
@@ -142,6 +143,7 @@ class AppUpdateChecker @Inject constructor(
             val request = Request.Builder()
                 .url(GITHUB_RELEASES_URL)
                 .header("Accept", "application/vnd.github+json")
+                .tag(RequestCategory::class.java, RequestCategory.UPDATE)
                 .build()
 
             val body = okHttpClient.newCall(request).execute().use { response ->

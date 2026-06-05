@@ -5,6 +5,7 @@ import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.entity.ChapterEntity
 import app.otakureader.core.database.entity.ChapterWithHistoryEntity
 import app.otakureader.domain.model.Chapter
+import app.otakureader.domain.repository.SyncRepository
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -22,6 +23,7 @@ import org.junit.Test
 class ChapterRepositoryImplTest {
 
     private lateinit var chapterDao: ChapterDao
+    private lateinit var syncRepository: SyncRepository
     private lateinit var repository: ChapterRepositoryImpl
     private val workManager: WorkManager = mockk(relaxed = true)
 
@@ -51,7 +53,8 @@ class ChapterRepositoryImplTest {
     fun setUp() {
         chapterDao = mockk()
         readingHistoryDao = mockk()
-        repository = ChapterRepositoryImpl(chapterDao, readingHistoryDao, workManager)
+        syncRepository = mockk(relaxed = true)
+        repository = ChapterRepositoryImpl(chapterDao, readingHistoryDao, workManager, syncRepository)
     }
 
     // ---- getChaptersByMangaId ----

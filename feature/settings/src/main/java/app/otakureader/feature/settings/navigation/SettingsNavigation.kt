@@ -9,12 +9,14 @@ import app.otakureader.feature.settings.settingsAppearanceScreen
 import app.otakureader.feature.settings.cloudbackup.cloudBackupSettingsScreen
 import app.otakureader.feature.settings.settingsBackupScreen
 import app.otakureader.feature.settings.settingsDiscordScreen
+import app.otakureader.feature.settings.datausage.dataUsageScreen
 import app.otakureader.feature.settings.settingsDownloadsScreen
 import app.otakureader.feature.settings.settingsLibraryScreen
 import app.otakureader.feature.settings.settingsNotificationsScreen
 import app.otakureader.feature.settings.settingsReaderScreen
 import app.otakureader.feature.settings.settingsSecurityScreen
 import app.otakureader.feature.settings.settingsTrackingScreen
+import app.otakureader.feature.settings.sync.syncSettingsScreen
 import app.otakureader.feature.settings.widgetConfigurationScreen
 
 /**
@@ -39,6 +41,8 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
     onNavigateToCloudBackup: () -> Unit = {},
+    onNavigateToDataUsage: () -> Unit = {},
+    onNavigateToSync: () -> Unit = {},
 ) {
     composable<Route.Settings> {
         SettingsScreen(
@@ -56,13 +60,18 @@ fun NavGraphBuilder.settingsScreen(
             onNavigateToNotifications = onNavigateToNotifications,
             onNavigateToWidgetConfiguration = onNavigateToWidgetConfiguration,
             onNavigateToLocalSourceBrowser = onNavigateToLocalSourceBrowser,
+            onNavigateToSync = onNavigateToSync,
         )
     }
 
     settingsAppearanceScreen(onNavigateBack = onNavigateBack)
     settingsLibraryScreen(onNavigateBack = onNavigateBack)
     settingsReaderScreen(onNavigateBack = onNavigateBack)
-    settingsDownloadsScreen(onNavigateBack = onNavigateBack)
+    settingsDownloadsScreen(
+        onNavigateBack = onNavigateBack,
+        onNavigateToDataUsage = onNavigateToDataUsage,
+    )
+    dataUsageScreen(onNavigateBack = onNavigateBack)
     settingsTrackingScreen(onNavigateBack = onNavigateBack)
     settingsSecurityScreen(onNavigateBack = onNavigateBack)
     settingsNotificationsScreen(onNavigateBack = onNavigateBack)
@@ -75,4 +84,5 @@ fun NavGraphBuilder.settingsScreen(
     settingsDiscordScreen(onNavigateBack = onNavigateBack)
     widgetConfigurationScreen(onNavigateBack = onNavigateBack)
     localSourceBrowserScreen(onNavigateBack = onNavigateBack)
+    syncSettingsScreen(onNavigateBack = onNavigateBack)
 }

@@ -1,8 +1,8 @@
 package app.otakureader.feature.reader.prefetch
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
+import app.otakureader.core.common.network.NetworkMonitor
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.domain.model.PrefetchStrategy
 import app.otakureader.domain.model.ReadingBehavior
 import app.otakureader.feature.reader.model.ReaderPage
@@ -28,7 +28,8 @@ import kotlinx.coroutines.CancellationException
 @Singleton
 class SmartPrefetchManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val imageLoader: ImageLoader
+    private val imageLoader: ImageLoader,
+    private val networkMonitor: NetworkMonitor,
 ) {
 
     // Current prefetch job
@@ -227,16 +228,7 @@ class SmartPrefetchManager @Inject constructor(
      *
      * @return True if connected to WiFi, false otherwise
      */
-    private fun isOnWiFi(): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            ?: return false
-
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-
-        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-    }
+    private fun isOnWiFi(): Boolean = networkMonitor.currentNetwork() == NetworkType.WIFI
 
     companion object {
         private const val MAX_PREFETCH_CACHE_SIZE = 500

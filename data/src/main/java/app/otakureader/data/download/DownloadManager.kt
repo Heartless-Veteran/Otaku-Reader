@@ -1,9 +1,12 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import app.otakureader.core.common.network.NetworkMonitor
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.entity.DownloadQueueEntity
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.DownloadPriority
 import app.otakureader.domain.model.DownloadStatus
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -63,6 +67,7 @@ class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloader: Downloader,
     private val downloadPreferences: DownloadPreferences,
+    private val networkMonitor: NetworkMonitor,
     private val downloadQueueDao: DownloadQueueDao,
     @ApplicationScope private val scope: CoroutineScope
 ) {
@@ -90,6 +95,9 @@ class DownloadManager @Inject constructor(
             }
         }
         scope.launch { restoreQueueFromDb() }
+        // Resume queued downloads when network improves or Data Saver is disabled.
+        scope.launch { networkMonitor.networkFlow().drop(1).collect { processPendingQueue() } }
+        scope.launch { downloadPreferences.dataSaverEnabled.drop(1).collect { processPendingQueue() } }
     }
 
     // -------------------------------------------------------------------------
@@ -97,6 +105,13 @@ class DownloadManager @Inject constructor(
     // -------------------------------------------------------------------------
 
     suspend fun enqueue(request: ChapterDownloadRequest) {
+        // Block downloads on mobile data when Data Saver is enabled.
+        if (downloadPreferences.dataSaverEnabled.first() &&
+            networkMonitor.currentNetwork() == NetworkType.MOBILE
+        ) {
+            throw DownloadBlockedException("Downloads blocked on mobile while Data Saver is enabled")
+        }
+
         val shouldStart = mutex.withLock {
             val existing = downloadMap[request.chapterId]
             // Allow re-enqueueing for terminal states (COMPLETED, FAILED) or when the item
@@ -475,9 +490,16 @@ class DownloadManager @Inject constructor(
 
     /**
      * Launches a download job for the given chapter. Must be called outside [mutex] lock.
+     *
+     * Returns without starting the job if Data Saver is enabled and the device is on mobile
+     * data; the item remains QUEUED and will be retried when connectivity or Data Saver changes.
      */
     @Suppress("LongMethod", "CognitiveComplexMethod")
     private suspend fun launchDownloadJob(chapterId: Long, request: ChapterDownloadRequest) {
+        if (downloadPreferences.dataSaverEnabled.first() &&
+            networkMonitor.currentNetwork() == NetworkType.MOBILE
+        ) return
+
         mutex.withLock {
             // Double-check we haven't exceeded the limit
             if (jobs.size >= maxConcurrentDownloads) return@withLock

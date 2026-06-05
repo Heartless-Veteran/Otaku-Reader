@@ -3,6 +3,8 @@ package app.otakureader.feature.reader.prefetch
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import app.otakureader.core.common.network.NetworkMonitor
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.domain.model.PrefetchStrategy
 import app.otakureader.domain.model.ReadingBehavior
 import app.otakureader.feature.reader.model.ReaderPage
@@ -25,6 +27,7 @@ class SmartPrefetchManagerTest {
     private lateinit var context: Context
     private lateinit var imageLoader: ImageLoader
     private lateinit var behaviorTracker: ReadingBehaviorTracker
+    private lateinit var networkMonitor: NetworkMonitor
     private lateinit var prefetchManager: SmartPrefetchManager
     private val testDispatcher = StandardTestDispatcher()
 
@@ -33,16 +36,11 @@ class SmartPrefetchManagerTest {
         context = mockk(relaxed = true)
         imageLoader = mockk(relaxed = true)
         behaviorTracker = mockk(relaxed = true)
+        networkMonitor = mockk(relaxed = true)
 
-        // Mock connectivity manager
-        val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
-        val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
-        every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
-        every { connectivityManager.activeNetwork } returns mockk()
-        every { connectivityManager.getNetworkCapabilities(any()) } returns networkCapabilities
-        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns true
+        every { networkMonitor.currentNetwork() } returns NetworkType.WIFI
 
-        prefetchManager = SmartPrefetchManager(context, imageLoader)
+        prefetchManager = SmartPrefetchManager(context, imageLoader, networkMonitor)
     }
 
     @Test
@@ -123,17 +121,12 @@ class SmartPrefetchManagerTest {
 
     @Test
     fun `prefetchPages skips on mobile data when onlyOnWiFi is true`() = runTest(testDispatcher) {
-        // Given: Mock mobile data connection
-        val networkCapabilities = mockk<NetworkCapabilities>(relaxed = true)
-        val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
-        every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
-        every { connectivityManager.activeNetwork } returns mockk()
-        every { connectivityManager.getNetworkCapabilities(any()) } returns networkCapabilities
-        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) } returns false
-        every { networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) } returns false
+        // Given: Mock mobile data connection via NetworkMonitor
+        val mobileNetworkMonitor = mockk<NetworkMonitor>(relaxed = true)
+        every { mobileNetworkMonitor.currentNetwork() } returns NetworkType.MOBILE
 
-        // Recreate manager with new context
-        val manager = SmartPrefetchManager(context, imageLoader)
+        // Recreate manager with mobile network monitor
+        val manager = SmartPrefetchManager(context, imageLoader, mobileNetworkMonitor)
 
         val pages = createTestPages(10)
 

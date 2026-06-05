@@ -14,6 +14,7 @@ import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
+import app.otakureader.core.network.RequestCategory
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.allowRgb565
 import coil3.request.crossfade
@@ -119,7 +120,17 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
                     .build()
             }
             .components {
-                add(OkHttpNetworkFetcherFactory(callFactory = { okHttpClient }))
+                add(OkHttpNetworkFetcherFactory(callFactory = {
+                    okHttpClient.newBuilder()
+                        .addInterceptor { chain ->
+                            chain.proceed(
+                                chain.request().newBuilder()
+                                    .tag(RequestCategory::class.java, RequestCategory.IMAGE_CACHE)
+                                    .build()
+                            )
+                        }
+                        .build()
+                }))
             }
             .allowRgb565(true)
             .crossfade(300)

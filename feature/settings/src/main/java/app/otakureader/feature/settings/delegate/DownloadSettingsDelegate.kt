@@ -18,6 +18,7 @@ class DownloadSettingsDelegate @Inject constructor(
     private val generalPreferences: GeneralPreferences,
 ) {
 
+    @Suppress("LongMethod")
     fun startObserving(
         scope: CoroutineScope,
         updateState: ((SettingsState) -> SettingsState) -> Unit,
@@ -76,8 +77,14 @@ class DownloadSettingsDelegate @Inject constructor(
                 updateState { it.copy(downloads = it.downloads.copy(smartDownloadMinStorageMb = mb)) }
             }
         }
+        scope.launch {
+            downloadPreferences.dataSaverEnabled.collect { enabled ->
+                updateState { it.copy(downloads = it.downloads.copy(downloadDataSaverEnabled = enabled)) }
+            }
+        }
     }
 
+    @Suppress("CyclomaticComplexMethod")
     suspend fun handleEvent(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,
@@ -105,6 +112,12 @@ class DownloadSettingsDelegate @Inject constructor(
             { generalPreferences.setSmartDownloadFavoritesOnly(event.enabled); true }
         is SettingsEvent.SetSmartDownloadMinStorageMb ->
             { generalPreferences.setSmartDownloadMinStorageMb(event.mb); true }
+        is SettingsEvent.SetDownloadDataSaverEnabled ->
+            { downloadPreferences.setDataSaverEnabled(event.enabled); true }
+        is SettingsEvent.NavigateToDataUsage -> {
+            sendEffect(SettingsEffect.NavigateToDataUsage)
+            true
+        }
         else -> false
     }
 }

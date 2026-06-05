@@ -28,5 +28,7 @@ data class DownloadQueueEntity(
     @ColumnInfo(defaultValue = "'QUEUED'")
     val status: String = "QUEUED",
     @ColumnInfo(name = "added_at")
-    val addedAt: Long
+    val addedAt: Long,
+    @ColumnInfo(name = "bytesDownloaded", defaultValue = "0")
+    val bytesDownloaded: Long = 0L
 )
