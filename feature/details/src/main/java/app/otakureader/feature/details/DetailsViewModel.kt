@@ -659,7 +659,7 @@ class DetailsViewModel @Inject constructor(
     }
 
     private suspend fun enqueueChapters(
-        chapters: List<Chapter>,
+        chapters: List<DetailsContract.ChapterItem>,
         sourceName: String,
         mangaTitle: String
     ): Int {
