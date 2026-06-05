@@ -36,7 +36,7 @@ class NetworkMonitor @Inject constructor(
     fun networkFlow(): Flow<NetworkType> = callbackFlow {
         val callback = object : ConnectivityManager.NetworkCallback() {
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                trySend(resolveType(caps))
+                trySend(currentNetwork())
             }
             override fun onLost(network: Network) { trySend(currentNetwork()) }
         }
@@ -55,5 +55,8 @@ class NetworkMonitor @Inject constructor(
         else -> NetworkType.OFFLINE
     }
 
-    fun isUnmetered(): Boolean = !connectivityManager.isActiveNetworkMetered
+    fun isUnmetered(): Boolean {
+        connectivityManager.activeNetwork ?: return false
+        return !connectivityManager.isActiveNetworkMetered
+    }
 }

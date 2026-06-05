@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -94,6 +95,9 @@ class DownloadManager @Inject constructor(
             }
         }
         scope.launch { restoreQueueFromDb() }
+        // Resume queued downloads when network improves or Data Saver is disabled.
+        scope.launch { networkMonitor.networkFlow().drop(1).collect { processPendingQueue() } }
+        scope.launch { downloadPreferences.dataSaverEnabled.drop(1).collect { processPendingQueue() } }
     }
 
     // -------------------------------------------------------------------------

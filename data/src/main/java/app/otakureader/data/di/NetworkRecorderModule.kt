@@ -32,11 +32,13 @@ object NetworkRecorderModule {
         @ApplicationScope appScope: CoroutineScope,
     ): BytesRecorder = BytesRecorder { category, bytes ->
         appScope.launch {
-            dataUsageRepositoryProvider.get().recordBytes(
-                category = category.name,
-                network = networkMonitor.currentNetwork().name,
-                bytes = bytes
-            )
+            try {
+                dataUsageRepositoryProvider.get().recordBytes(
+                    category = category.name,
+                    network = networkMonitor.currentNetwork().name,
+                    bytes = bytes
+                )
+            } catch (_: Exception) { /* recording failure must not crash the app */ }
         }
     }
 }

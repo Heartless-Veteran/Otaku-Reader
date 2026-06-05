@@ -34,6 +34,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.navigation.Route
 import app.otakureader.domain.model.DataUsageRecord
 
@@ -99,8 +100,8 @@ fun DataUsageScreen(
 
 @Composable
 private fun NetworkSummaryChips(entries: List<DataUsageRecord>) {
-    val wifiBytes = entries.filter { it.network == "WIFI" }.sumOf { it.bytes }
-    val mobileBytes = entries.filter { it.network == "MOBILE" }.sumOf { it.bytes }
+    val wifiBytes = entries.filter { it.network == NetworkType.WIFI.name }.sumOf { it.bytes }
+    val mobileBytes = entries.filter { it.network == NetworkType.MOBILE.name }.sumOf { it.bytes }
     Row(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -129,11 +130,15 @@ private fun DataUsageRow(category: String, bytes: Long) {
     }
 }
 
+private const val BYTES_PER_GB = 1_073_741_824L
+private const val BYTES_PER_MB = 1_048_576L
+private const val BYTES_PER_KB = 1_024L
+
 private fun formatBytes(bytes: Long): String = when {
-    bytes >= 1_073_741_824L -> "%.1f GB".format(bytes / 1_073_741_824.0)
-    bytes >= 1_048_576L     -> "%.1f MB".format(bytes / 1_048_576.0)
-    bytes >= 1_024L         -> "%.1f KB".format(bytes / 1_024.0)
-    else                    -> "$bytes B"
+    bytes >= BYTES_PER_GB -> "%.1f GB".format(bytes / BYTES_PER_GB.toDouble())
+    bytes >= BYTES_PER_MB -> "%.1f MB".format(bytes / BYTES_PER_MB.toDouble())
+    bytes >= BYTES_PER_KB -> "%.1f KB".format(bytes / BYTES_PER_KB.toDouble())
+    else                  -> "$bytes B"
 }
 
 fun NavGraphBuilder.dataUsageScreen(onNavigateBack: () -> Unit) {
