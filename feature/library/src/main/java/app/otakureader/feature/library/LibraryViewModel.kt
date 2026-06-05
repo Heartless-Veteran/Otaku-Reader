@@ -670,12 +670,25 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun applyAdvancedSearch(authorQuery: String, tagQuery: String) {
+        // Strip any existing author:/tag: operators from the current query before appending new ones
+        val baseQuery = _state.value.searchQuery
+            .replace(Regex("""author:"[^"]*""""), "")
+            .replace(Regex("""tag:"[^"]*""""), "")
+            .replace(Regex("""author:\S+"""), "")
+            .replace(Regex("""tag:\S+"""), "")
+            .trim()
+
         val parts = buildList {
-            if (authorQuery.isNotBlank()) add("author:${authorQuery.trim()}")
-            if (tagQuery.isNotBlank()) add("tag:${tagQuery.trim()}")
+            if (authorQuery.isNotBlank()) {
+                val value = authorQuery.trim()
+                add(if (' ' in value) """author:"$value"""" else "author:$value")
+            }
+            if (tagQuery.isNotBlank()) {
+                val value = tagQuery.trim()
+                add(if (' ' in value) """tag:"$value"""" else "tag:$value")
+            }
         }
-        val newQuery = if (parts.isEmpty()) _state.value.searchQuery
-        else "${_state.value.searchQuery.trim()} ${parts.joinToString(" ")}".trim()
+        val newQuery = listOf(baseQuery).plus(parts).filter { it.isNotBlank() }.joinToString(" ").trim()
         _state.update { it.copy(showAdvancedSearch = false, searchQuery = newQuery) }
         onSearchQueryChange(newQuery)
     }

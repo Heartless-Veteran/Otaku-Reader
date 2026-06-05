@@ -321,7 +321,7 @@ private fun LibraryContent(
             LibrarySearchFiltersRow(state = state, onEvent = onEvent)
         }
 
-        if (state.showAdvancedSearch) {
+        if (state.showSearchBar && state.showAdvancedSearch) {
             AdvancedSearchSheet(
                 onApply = { author, tag -> onEvent(LibraryEvent.ApplyAdvancedSearch(author, tag)) },
                 onDismiss = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
@@ -414,13 +414,20 @@ private fun LibrarySearchFiltersRow(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
 ) {
-    val statusFilters = listOf(
-        LibraryFilterMode.ALL to stringResource(R.string.library_filter_all),
-        LibraryFilterMode.UNREAD to stringResource(R.string.library_filter_unread),
-        LibraryFilterMode.DOWNLOADED to stringResource(R.string.library_filter_downloaded),
-        LibraryFilterMode.COMPLETED to stringResource(R.string.library_filter_completed),
-        LibraryFilterMode.DROPPED to stringResource(R.string.library_filter_dropped),
-    )
+    val allLabel = stringResource(R.string.library_filter_all)
+    val unreadLabel = stringResource(R.string.library_filter_unread)
+    val downloadedLabel = stringResource(R.string.library_filter_downloaded)
+    val completedLabel = stringResource(R.string.library_filter_completed)
+    val droppedLabel = stringResource(R.string.library_filter_dropped)
+    val statusFilters = remember(allLabel, unreadLabel, downloadedLabel, completedLabel, droppedLabel) {
+        listOf(
+            LibraryFilterMode.ALL to allLabel,
+            LibraryFilterMode.UNREAD to unreadLabel,
+            LibraryFilterMode.DOWNLOADED to downloadedLabel,
+            LibraryFilterMode.COMPLETED to completedLabel,
+            LibraryFilterMode.DROPPED to droppedLabel,
+        )
+    }
 
     LazyRow(
         modifier = Modifier

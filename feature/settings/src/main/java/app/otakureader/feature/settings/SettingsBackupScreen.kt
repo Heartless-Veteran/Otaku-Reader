@@ -166,7 +166,7 @@ fun SettingsBackupScreen(
         )
     }
 
-    if (state.isRestoreInProgress && state.tachiyomiImportTotal > 0) {
+    if (state.isTachiyomiImporting && state.tachiyomiImportTotal > 0) {
         TachiyomiImportProgressDialog(
             current = state.tachiyomiImportProgress,
             total = state.tachiyomiImportTotal,
@@ -315,7 +315,7 @@ private fun BackupContent(
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_import_tachiyomi)) },
         supportingContent = {
-            if (state.isRestoreInProgress && state.tachiyomiImportTotal > 0) {
+            if (state.isTachiyomiImporting && state.tachiyomiImportTotal > 0) {
                 Text(
                     stringResource(
                         R.string.settings_import_progress,

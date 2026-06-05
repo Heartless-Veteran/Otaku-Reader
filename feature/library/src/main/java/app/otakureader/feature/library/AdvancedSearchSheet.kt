@@ -18,7 +18,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,8 +31,8 @@ internal fun AdvancedSearchSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var authorQuery by remember { mutableStateOf("") }
-    var tagQuery by remember { mutableStateOf("") }
+    var authorQuery by rememberSaveable { mutableStateOf("") }
+    var tagQuery by rememberSaveable { mutableStateOf("") }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -86,7 +86,6 @@ internal fun AdvancedSearchSheet(
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(
                     onClick = { onApply(authorQuery, tagQuery) },
-                    enabled = authorQuery.isNotBlank() || tagQuery.isNotBlank(),
                 ) {
                     Text(stringResource(R.string.library_advanced_search_apply))
                 }
