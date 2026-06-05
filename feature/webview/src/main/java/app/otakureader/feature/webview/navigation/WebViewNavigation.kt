@@ -2,6 +2,7 @@ package app.otakureader.feature.webview.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.webview.WebViewScreen
 
