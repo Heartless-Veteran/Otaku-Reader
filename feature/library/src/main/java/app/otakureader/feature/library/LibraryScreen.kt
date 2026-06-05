@@ -101,15 +101,17 @@ fun LibraryScreen(
                     onNavigateToMigration(effect.selectedMangaIds)
                 }
                 is LibraryEffect.ShareManga -> {
+                    val shareText = if (effect.url.isNotEmpty()) "${effect.title}\n${effect.url}" else effect.title
                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(android.content.Intent.EXTRA_SUBJECT, effect.title)
-                        putExtra(android.content.Intent.EXTRA_TEXT, effect.url.ifEmpty { effect.title })
+                        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
                     }
                     runCatching {
                         context.startActivity(
                             android.content.Intent.createChooser(shareIntent, effect.title)
                         )
+                    }.onFailure {
+                        scope.launch { snackbarHostState.showSnackbar("Unable to open share sheet") }
                     }
                 }
             }

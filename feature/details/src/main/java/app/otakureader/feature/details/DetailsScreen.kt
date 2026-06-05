@@ -65,7 +65,9 @@ import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.core.ui.theme.MangaDynamicTheme
 import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 
@@ -142,18 +144,25 @@ fun DetailsScreen(
                 is DetailsContract.Effect.OpenDownloadFolder -> {
                     val externalFilesDir = context.getExternalFilesDir(null)
                     if (externalFilesDir != null) {
-                        val safeName = { s: String -> s.replace(Regex("[\\\\/:*?\"<>|]"), "_") }
+                        // Match DownloadProvider.sanitize() which also trims whitespace
+                        val safeName = { s: String -> s.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim() }
                         val mangaDir = java.io.File(
                             externalFilesDir,
                             "OtakuReader/${safeName(effect.sourceName)}/${safeName(effect.mangaTitle)}"
                         )
-                        if (mangaDir.exists()) {
+                        val uri = withContext(Dispatchers.IO) {
+                            if (mangaDir.exists()) {
+                                runCatching {
+                                    androidx.core.content.FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        mangaDir,
+                                    )
+                                }.getOrNull()
+                            } else null
+                        }
+                        if (uri != null) {
                             try {
-                                val uri = androidx.core.content.FileProvider.getUriForFile(
-                                    context,
-                                    "${context.packageName}.fileprovider",
-                                    mangaDir,
-                                )
                                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
                                     setDataAndType(uri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR)
                                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)

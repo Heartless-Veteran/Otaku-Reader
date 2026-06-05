@@ -752,12 +752,14 @@ class DetailsViewModel @Inject constructor(
             val state = _state.value
             val manga = state.manga ?: return@launch
             val downloadedChapters = state.chapters.filter {
-                it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADED
+                it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADED ||
+                    it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADING
             }
             if (downloadedChapters.isEmpty()) {
                 _effect.send(DetailsContract.Effect.ShowSnackbar("No downloaded chapters to clear"))
                 return@launch
             }
+            var cleared = 0
             downloadedChapters.forEach { chapter ->
                 try {
                     downloadRepository.deleteChapterDownload(
@@ -766,11 +768,12 @@ class DetailsViewModel @Inject constructor(
                         mangaTitle = manga.title,
                         chapterTitle = chapter.name,
                     )
+                    cleared++
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) { }
             }
-            _effect.send(DetailsContract.Effect.ShowSnackbar("${downloadedChapters.size} chapter download(s) cleared"))
+            _effect.send(DetailsContract.Effect.ShowSnackbar("$cleared chapter download(s) cleared"))
         }
     }
 

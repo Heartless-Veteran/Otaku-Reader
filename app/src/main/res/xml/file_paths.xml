@@ -3,5 +3,5 @@
     <files-path name="exts" path="exts/" />
     <files-path name="extension_downloads" path="extension_downloads/" />
     <cache-path name="shared_stats" path="shared_stats/" />
-    <external-files-path name="otakureader_downloads" path="." />
+    <external-files-path name="otakureader_downloads" path="OtakuReader/" />
 </paths>

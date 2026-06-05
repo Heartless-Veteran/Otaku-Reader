@@ -540,10 +540,10 @@ class LibraryViewModel @Inject constructor(
 
     private fun shareSelectedManga() {
         val mangaId = _state.value.selectedManga.singleOrNull() ?: return
+        selection.clear()
         viewModelScope.launch {
             val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
             val url = manga.url.takeIf { it.startsWith("http://") || it.startsWith("https://") } ?: ""
-            selection.clear()
             _effect.send(LibraryEffect.ShareManga(title = manga.title, url = url))
         }
     }
