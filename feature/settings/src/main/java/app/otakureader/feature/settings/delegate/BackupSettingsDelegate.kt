@@ -184,7 +184,14 @@ class BackupSettingsDelegate @Inject constructor(
         }
         is SettingsEvent.RestoreLocalBackup -> {
             updateState {
-                it.copy(backup = it.backup.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
+                it.copy(
+                    backup = it.backup.copy(
+                        isRestoreInProgress = true,
+                        restoringBackupFileName = event.fileName,
+                        tachiyomiImportTotal = 0,
+                        tachiyomiImportProgress = 0,
+                    )
+                )
             }
             try {
                 val allFiles = backupRepository.listLocalBackups()
