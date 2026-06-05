@@ -1002,7 +1002,7 @@ class DetailsViewModel @Inject constructor(
                 mangaRepository.updateReaderBackgroundColor(mangaId, null)
                 mangaRepository.updatePreloadPagesBefore(mangaId, null)
                 mangaRepository.updatePreloadPagesAfter(mangaId, null)
-                _effect.send(DetailsContract.Effect.ShowSnackbar("Reader settings reset to defaults"))
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Reader settings reset to global"))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
