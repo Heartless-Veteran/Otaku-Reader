@@ -53,3 +53,5 @@ server/.env
 .swarm/
 .hive-mind/
 ruvector.db
+.claude-flow/swarm/
+.claude/worktrees/
