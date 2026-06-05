@@ -4,6 +4,7 @@
     <string name="library_manage_categories">Manage categories</string>
     <string name="library_selected_count">%1$d selected</string>
     <string name="library_title">Library</string>
+    <string name="library_title_with_count">Library %1$d</string>
     <string name="library_more">More</string>
     <string name="library_downloads">Downloads</string>
     <string name="library_settings">Settings</string>
@@ -148,6 +149,12 @@
     <string name="browse_scope_sources">Sources</string>
     <string name="browse_search_history">Recent searches</string>
     <string name="browse_search_history_empty">No recent searches</string>
+    <string name="library_update_library">Update library</string>
+    <string name="library_update_category">Update category</string>
+    <string name="library_open_random">Open random entry</string>
+    <string name="library_reindex_downloads">Reindex downloads</string>
+    <string name="library_sync_eh_favorites">Sync EH favorites</string>
+    <string name="library_sync_library">Sync library</string>
     <!-- Reading Lists (#945) -->
     <string name="reading_lists_title">Reading Lists</string>
     <string name="reading_lists_back">Back</string>
