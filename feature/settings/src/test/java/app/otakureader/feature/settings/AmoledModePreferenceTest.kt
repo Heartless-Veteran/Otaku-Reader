@@ -6,7 +6,6 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LocalSourcePreferences
 import app.otakureader.feature.settings.delegate.AppearanceSettingsDelegate
 import app.otakureader.feature.settings.viewmodel.AppearanceViewModel
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -151,8 +150,6 @@ class AmoledModePreferenceTest {
 
     @Test
     fun `SetPureBlackDarkMode true calls setUsePureBlackDarkMode on GeneralPreferences`() = runTest {
-        coEvery { generalPreferences.setUsePureBlackDarkMode(true) } returns Unit
-
         val viewModel = createViewModel()
         viewModel.onEvent(SettingsEvent.SetPureBlackDarkMode(true))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -162,8 +159,6 @@ class AmoledModePreferenceTest {
 
     @Test
     fun `SetPureBlackDarkMode false calls setUsePureBlackDarkMode on GeneralPreferences`() = runTest {
-        coEvery { generalPreferences.setUsePureBlackDarkMode(false) } returns Unit
-
         val viewModel = createViewModel()
         viewModel.onEvent(SettingsEvent.SetPureBlackDarkMode(false))
         testDispatcher.scheduler.advanceUntilIdle()
