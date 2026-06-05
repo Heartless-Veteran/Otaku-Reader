@@ -97,8 +97,9 @@ class SyncRepositoryImpl @Inject constructor(
     override suspend fun pullAndApply(deviceId: String, since: Long) {
         val serverUrl = syncSettingsStore.serverUrl.first()
         if (serverUrl.isBlank()) return
+        val token = syncSettingsStore.bearerToken.first()
         try {
-            val api = buildApi(serverUrl)
+            val api = buildApi(serverUrl, token)
             val entries = api.pullProgress(deviceId, since)
             for (entry in entries) {
                 // Mark the chapter as read via the DAO directly to avoid a circular
