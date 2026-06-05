@@ -486,9 +486,16 @@ class DownloadManager @Inject constructor(
 
     /**
      * Launches a download job for the given chapter. Must be called outside [mutex] lock.
+     *
+     * Returns without starting the job if Data Saver is enabled and the device is on mobile
+     * data; the item remains QUEUED and will be retried when connectivity or Data Saver changes.
      */
     @Suppress("LongMethod", "CognitiveComplexMethod")
     private suspend fun launchDownloadJob(chapterId: Long, request: ChapterDownloadRequest) {
+        if (downloadPreferences.dataSaverEnabled.first() &&
+            networkMonitor.currentNetwork() == NetworkType.MOBILE
+        ) return
+
         mutex.withLock {
             // Double-check we haven't exceeded the limit
             if (jobs.size >= maxConcurrentDownloads) return@withLock

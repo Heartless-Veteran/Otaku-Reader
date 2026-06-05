@@ -63,8 +63,10 @@
     <!-- Download feedback -->
     <string name="updates_download_queued">Download queued: %1$s</string>
     <string name="updates_download_failed">Failed to queue download: %1$s</string>
+    <string name="updates_download_blocked_data_saver">Download blocked: Data Saver is on</string>
     <string name="updates_bulk_download_queued">%1$d chapter(s) queued for download</string>
     <string name="updates_bulk_download_partial">%1$d queued, %2$d failed</string>
+    <string name="updates_bulk_download_data_saver_blocked">Downloads blocked: Data Saver is on</string>
     <plurals name="updates_marked_as_read">
         <item quantity="one">Marked %1$d chapter as read</item>
         <item quantity="other">Marked %1$d chapters as read</item>

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
@@ -116,10 +117,13 @@ class UpdatesViewModel @Inject constructor(
                 _effect.send(UpdatesEffect.ShowSnackbar(
                     context.getString(R.string.updates_download_queued, update.chapter.name)
                 ))
-            }.onFailure {
-                _effect.send(UpdatesEffect.ShowSnackbar(
+            }.onFailure { e ->
+                val message = if (e is DownloadBlockedException) {
+                    context.getString(R.string.updates_download_blocked_data_saver)
+                } else {
                     context.getString(R.string.updates_download_failed, update.chapter.name)
-                ))
+                }
+                _effect.send(UpdatesEffect.ShowSnackbar(message))
             }
         }
     }
@@ -131,6 +135,7 @@ class UpdatesViewModel @Inject constructor(
             val updates = _state.value.updates.filter { it.chapter.id in selected }
             var successCount = 0
             var failCount = 0
+            var blockedByDataSaver = false
             updates.forEach { update ->
                 runCatching {
                     downloadRepository.enqueueChapter(
@@ -140,13 +145,16 @@ class UpdatesViewModel @Inject constructor(
                         chapterTitle = update.chapter.name,
                         sourceName = update.manga.sourceId.toString()
                     )
-                }.onSuccess { successCount++ }.onFailure { failCount++ }
+                }.onSuccess { successCount++ }.onFailure { e ->
+                    if (e is DownloadBlockedException) blockedByDataSaver = true
+                    failCount++
+                }
             }
             _state.update { it.copy(selectedItems = emptySet()) }
-            val message = if (failCount == 0) {
-                context.getString(R.string.updates_bulk_download_queued, successCount)
-            } else {
-                context.getString(R.string.updates_bulk_download_partial, successCount, failCount)
+            val message = when {
+                blockedByDataSaver -> context.getString(R.string.updates_bulk_download_data_saver_blocked)
+                failCount == 0 -> context.getString(R.string.updates_bulk_download_queued, successCount)
+                else -> context.getString(R.string.updates_bulk_download_partial, successCount, failCount)
             }
             _effect.send(UpdatesEffect.ShowSnackbar(message))
         }
