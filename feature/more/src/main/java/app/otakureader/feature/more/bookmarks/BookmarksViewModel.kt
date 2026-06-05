@@ -8,7 +8,10 @@ import app.otakureader.domain.repository.PageBookmarkRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,6 +64,14 @@ class BookmarksViewModel @Inject constructor(
                 .getMangaByIds(bookmarks.map { it.mangaId }.distinct())
                 .associate { manga -> manga.id to manga }
 
+            // Fetch all chapters in parallel to avoid N+1 sequential DB queries.
+            val chapterMap = coroutineScope {
+                bookmarks.map { it.chapterId }.distinct()
+                    .map { id -> async { id to chapterRepository.getChapterById(id) } }
+                    .awaitAll()
+                    .toMap()
+            }
+
             bookmarks.map { bm ->
                 val manga = mangaMap[bm.mangaId]
                 BookmarkItem(
@@ -70,7 +81,7 @@ class BookmarksViewModel @Inject constructor(
                     pageIndex = bm.pageIndex,
                     note = bm.note,
                     mangaTitle = manga?.title.orEmpty(),
-                    chapterName = chapterRepository.getChapterById(bm.chapterId)?.name.orEmpty(),
+                    chapterName = chapterMap[bm.chapterId]?.name.orEmpty(),
                     mangaCoverUrl = manga?.thumbnailUrl,
                 )
             }

@@ -389,9 +389,11 @@ private fun BookmarkRow(
         headlineContent = {
             Text(stringResource(R.string.bookmarks_page, bookmark.pageIndex + 1))
         },
-        supportingContent = bookmark.note
-            ?.takeIf { it.isNotBlank() }
-            ?.let { note -> { Text(note, maxLines = 2) } },
+        supportingContent = if (!bookmark.note.isNullOrBlank()) {
+            { Text(bookmark.note, maxLines = 2) }
+        } else {
+            null
+        },
         trailingContent = {
             IconButton(onClick = onDelete) {
                 Icon(
