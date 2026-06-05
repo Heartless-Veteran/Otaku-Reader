@@ -27,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.otakureader.feature.settings.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -46,10 +48,10 @@ fun DataUsageScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Data Usage") },
+                title = { Text(stringResource(R.string.settings_data_usage)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_data_usage_back))
                     }
                 }
             )
@@ -69,7 +71,7 @@ fun DataUsageScreen(
                     Tab(
                         selected = state.selectedTab == tab,
                         onClick = { viewModel.onEvent(DataUsageEvent.SelectTab(tab)) },
-                        text = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                        text = { Text(tab.label()) }
                     )
                 }
             }
@@ -103,8 +105,8 @@ private fun NetworkSummaryChips(entries: List<DataUsageRecord>) {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        SuggestionChip(onClick = {}, label = { Text("Wi-Fi: ${formatBytes(wifiBytes)}") })
-        SuggestionChip(onClick = {}, label = { Text("Mobile: ${formatBytes(mobileBytes)}") })
+        SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.settings_data_usage_wifi, formatBytes(wifiBytes))) })
+        SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.settings_data_usage_mobile, formatBytes(mobileBytes))) })
     }
 }
 
@@ -138,4 +140,11 @@ fun NavGraphBuilder.dataUsageScreen(onNavigateBack: () -> Unit) {
     composable<Route.DataUsage> {
         DataUsageScreen(onNavigateBack = onNavigateBack)
     }
+}
+
+@Composable
+private fun DataUsageTab.label(): String = when (this) {
+    DataUsageTab.TODAY -> stringResource(R.string.settings_data_usage_tab_today)
+    DataUsageTab.WEEK -> stringResource(R.string.settings_data_usage_tab_week)
+    DataUsageTab.MONTH -> stringResource(R.string.settings_data_usage_tab_month)
 }

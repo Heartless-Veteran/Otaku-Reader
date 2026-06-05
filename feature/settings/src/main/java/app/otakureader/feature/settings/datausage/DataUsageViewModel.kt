@@ -10,10 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,11 +21,9 @@ class DataUsageViewModel @Inject constructor(
     private val _state = MutableStateFlow(DataUsageState())
     val state: StateFlow<DataUsageState> = _state.asStateFlow()
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
     init {
-        val weekAgo = dateFormat.format(Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }.time)
-        val monthAgo = dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -1) }.time)
+        val weekAgo = LocalDate.now().minusWeeks(1).toString()
+        val monthAgo = LocalDate.now().minusMonths(1).toString()
 
         combine(
             repository.observeToday(),

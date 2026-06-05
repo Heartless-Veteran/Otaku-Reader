@@ -31,11 +31,10 @@ object NetworkRecorderModule {
         networkMonitor: NetworkMonitor,
         @ApplicationScope appScope: CoroutineScope,
     ): BytesRecorder = BytesRecorder { category, bytes ->
-        val network = networkMonitor.currentNetwork().name
         appScope.launch {
             dataUsageRepositoryProvider.get().recordBytes(
                 category = category.name,
-                network = network,
+                network = networkMonitor.currentNetwork().name,
                 bytes = bytes
             )
         }

@@ -38,7 +38,7 @@ class NetworkMonitor @Inject constructor(
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
                 trySend(resolveType(caps))
             }
-            override fun onLost(network: Network) { trySend(NetworkType.OFFLINE) }
+            override fun onLost(network: Network) { trySend(currentNetwork()) }
         }
         val request = NetworkRequest.Builder()
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -55,5 +55,5 @@ class NetworkMonitor @Inject constructor(
         else -> NetworkType.OFFLINE
     }
 
-    fun isUnmetered(): Boolean = currentNetwork() == NetworkType.WIFI
+    fun isUnmetered(): Boolean = !connectivityManager.isActiveNetworkMetered
 }

@@ -6,9 +6,7 @@ import app.otakureader.domain.model.DataUsageRecord
 import app.otakureader.domain.repository.DataUsageRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,9 +15,7 @@ class DataUsageRepositoryImpl @Inject constructor(
     private val dao: DataUsageDao
 ) : DataUsageRepository {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
-    private fun today() = dateFormat.format(Date())
+    private fun today() = LocalDate.now().toString()
 
     private fun DataUsageEntity.toDomain() = DataUsageRecord(
         date = date,
