@@ -19,4 +19,8 @@
     <string name="feed_add">Add</string>
     <string name="feed_no_sources_title">No feed sources</string>
     <string name="feed_no_sources_message">Add sources to customize your feed</string>
+    <!-- Discovery modes (#944) -->
+    <string name="feed_mode_latest">Latest</string>
+    <string name="feed_mode_trending">Trending</string>
+    <string name="feed_mode_random">Random</string>
 </resources>
