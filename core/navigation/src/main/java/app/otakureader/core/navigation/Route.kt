@@ -86,6 +86,12 @@ sealed interface Route {
     data object ExtensionInstall : Route
 
     /**
+     * Manage custom extension repository URLs (#953).
+     */
+    @Serializable
+    data object ExtensionRepositories : Route
+
+    /**
      * Source manga detail — browse a manga from a source before adding to library.
      * @param sourceId Source extension ID.
      * @param mangaUrl URL slug from the source.

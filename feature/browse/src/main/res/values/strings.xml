@@ -104,6 +104,18 @@
     <string name="extensions_repo_url_placeholder">https://raw.githubusercontent.com/komikku-app/extensions/repo</string>
     <string name="extensions_add_repository">Add repository</string>
     <string name="extensions_repositories_title">Repositories</string>
+    <string name="extensions_manage_repositories">Manage repositories</string>
+    <!-- Repository management screen (#953) -->
+    <string name="repos_screen_title">Extension Repositories</string>
+    <string name="repos_back">Back</string>
+    <string name="repos_add_url_label">Repository URL</string>
+    <string name="repos_add_url_placeholder">https://example.com/extensions/repo</string>
+    <string name="repos_add_url_helper">Point to the directory containing index.min.json or index.json</string>
+    <string name="repos_add_button">Add</string>
+    <string name="repos_remove">Remove repository</string>
+    <string name="repos_default_badge">Default</string>
+    <string name="repos_empty_title">No repositories configured</string>
+    <string name="repos_empty_subtitle">Add a URL above to discover community-maintained sources.</string>
     <string name="extensions_search_cd">Search</string>
     <string name="extensions_icon_cd">Extension icon</string>
     <string name="extensions_language_cd">Language</string>

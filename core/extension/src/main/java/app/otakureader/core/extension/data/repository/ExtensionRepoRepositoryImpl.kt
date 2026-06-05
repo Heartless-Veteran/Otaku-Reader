@@ -19,7 +19,6 @@ class ExtensionRepoRepositoryImpl(
 
     companion object {
         private val REPOSITORIES_KEY = stringSetPreferencesKey("extension_repositories")
-        private const val DEFAULT_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
     }
 
     override fun getRepositories(): Flow<List<String>> {
@@ -58,7 +57,7 @@ class ExtensionRepoRepositoryImpl(
         // the default and the user's "no repos" state evaporates.
         dataStore.edit { preferences ->
             if (preferences[REPOSITORIES_KEY] == null) {
-                preferences[REPOSITORIES_KEY] = setOf(DEFAULT_REPO_URL)
+                preferences[REPOSITORIES_KEY] = setOf(ExtensionRepoRepository.DEFAULT_REPO_URL)
             }
         }
     }
