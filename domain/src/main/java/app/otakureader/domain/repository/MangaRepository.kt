@@ -44,4 +44,7 @@ interface MangaRepository {
     // Dropped series tracking
     suspend fun markUserDropped(id: Long, dropped: Boolean)
     fun getDroppedManga(): Flow<List<Manga>>
+
+    /** Per-manga cover theme override (#947). Pass null to inherit global pref. */
+    suspend fun updateMangaThemeOverride(id: Long, override: Boolean?)
 }

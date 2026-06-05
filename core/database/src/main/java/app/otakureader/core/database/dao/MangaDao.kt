@@ -10,6 +10,7 @@ import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.MangaWithUnreadCount
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 @Dao
 interface MangaDao {
     @Query("SELECT * FROM manga WHERE favorite = 1 ORDER BY title ASC")
@@ -88,6 +89,10 @@ interface MangaDao {
 
     @Query("UPDATE manga SET userDropped = :dropped WHERE id = :id")
     suspend fun updateUserDropped(id: Long, dropped: Boolean)
+
+    /** Set per-manga cover-theme override; pass null to clear (inherit global). */
+    @Query("UPDATE manga SET mangaThemeOverride = :override WHERE id = :id")
+    suspend fun updateMangaThemeOverride(id: Long, override: Boolean?)
 
     @Query("SELECT * FROM manga WHERE favorite = 1 AND userCompleted = 1 ORDER BY title ASC")
     fun getCompletedManga(): Flow<List<MangaEntity>>
