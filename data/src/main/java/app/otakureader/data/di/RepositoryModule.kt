@@ -53,10 +53,15 @@ import app.otakureader.domain.scheduler.ReminderScheduler
 import app.otakureader.domain.scheduler.TrackerSyncScheduler
 import app.otakureader.domain.tracking.TrackManager
 import app.otakureader.domain.updater.AppUpdateChecker
+import android.content.Context
+import androidx.work.WorkManager
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 /** Hilt module that binds data-layer repository implementations to their domain interfaces. */
 @Module
@@ -143,4 +148,11 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindRecommendationRepository(impl: RecommendationRepositoryImpl): RecommendationRepository
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideWorkManager(@ApplicationContext context: Context): WorkManager =
+            WorkManager.getInstance(context)
+    }
 }

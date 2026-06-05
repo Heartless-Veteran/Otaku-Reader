@@ -55,9 +55,8 @@ class AchievementCheckWorker @AssistedInject constructor(
     }
 
     companion object {
-        fun enqueue(context: Context) {
-            WorkManager.getInstance(context)
-                .enqueue(OneTimeWorkRequestBuilder<AchievementCheckWorker>().build())
+        fun enqueue(workManager: WorkManager) {
+            workManager.enqueue(OneTimeWorkRequestBuilder<AchievementCheckWorker>().build())
         }
     }
 }
