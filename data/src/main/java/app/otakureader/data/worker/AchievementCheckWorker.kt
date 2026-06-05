@@ -61,7 +61,7 @@ class AchievementCheckWorker @AssistedInject constructor(
         fun enqueue(workManager: WorkManager) {
             workManager.enqueueUniqueWork(
                 WORK_NAME,
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP,
                 OneTimeWorkRequestBuilder<AchievementCheckWorker>().build()
             )
         }

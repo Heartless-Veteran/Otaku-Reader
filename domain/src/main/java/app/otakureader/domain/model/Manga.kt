@@ -50,6 +50,8 @@ data class Manga(
     val userCompleted: Boolean = false,
     /** User has dropped / abandoned this manga. */
     val userDropped: Boolean = false,
+    /** Per-manga UI theme color override as ARGB Long, or null to use the global theme. */
+    val mangaThemeOverride: Boolean? = null,
 )
 
 @Serializable
