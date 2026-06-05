@@ -338,7 +338,10 @@ private fun SwipeToDismissBookmarkRow(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDelete()
-                true
+                // Return false: the row stays until Room emits a new list without it.
+                // This avoids the UI/data race where the row disappears before the DB
+                // delete completes — if deletion fails the row never disappears at all.
+                false
             } else {
                 false
             }
@@ -389,9 +392,11 @@ private fun BookmarkRow(
         headlineContent = {
             Text(stringResource(R.string.bookmarks_page, bookmark.pageIndex + 1))
         },
-        supportingContent = bookmark.note
-            ?.takeIf { it.isNotBlank() }
-            ?.let { note -> { Text(note, maxLines = 2) } },
+        supportingContent = if (!bookmark.note.isNullOrBlank()) {
+            { Text(bookmark.note, maxLines = 2) }
+        } else {
+            null
+        },
         trailingContent = {
             IconButton(onClick = onDelete) {
                 Icon(

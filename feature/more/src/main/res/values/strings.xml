@@ -86,4 +86,5 @@
     <string name="bookmarks_unknown_manga">Unknown manga</string>
     <string name="bookmarks_expand">Expand manga bookmarks</string>
     <string name="bookmarks_collapse">Collapse manga bookmarks</string>
+    <string name="bookmarks_delete_failed">Failed to delete bookmark</string>
 </resources>

@@ -46,43 +46,41 @@ data class BookmarksState(
     val error: String? = null,
 ) : UiState {
 
-    /** Flat list filtered by [searchQuery]. */
-    val filteredBookmarks: List<BookmarkItem>
-        get() = if (searchQuery.isBlank()) bookmarks
-        else bookmarks.filter { bm ->
-            bm.mangaTitle.contains(searchQuery, ignoreCase = true) ||
-                bm.chapterName.contains(searchQuery, ignoreCase = true) ||
-                bm.note?.contains(searchQuery, ignoreCase = true) == true
+    /** Flat list filtered by [searchQuery]. Computed once at construction time. */
+    val filteredBookmarks: List<BookmarkItem> = if (searchQuery.isBlank()) bookmarks
+    else bookmarks.filter { bm ->
+        bm.mangaTitle.contains(searchQuery, ignoreCase = true) ||
+            bm.chapterName.contains(searchQuery, ignoreCase = true) ||
+            bm.note?.contains(searchQuery, ignoreCase = true) == true
+    }
+
+    /** Grouped structure consumed by the list UI. Computed once at construction time. */
+    val grouped: List<BookmarkGroup> = filteredBookmarks
+        .groupBy { it.mangaId }
+        .map { (mangaId, items) ->
+            val first = items.first()
+            val chapters = items
+                .groupBy { it.chapterId }
+                .map { (chapterId, chItems) ->
+                    ChapterGroup(
+                        chapterId = chapterId,
+                        chapterName = chItems.first().chapterName,
+                        bookmarks = chItems.sortedBy { it.pageIndex },
+                    )
+                }
+                .sortedBy { it.chapterName }
+            BookmarkGroup(
+                mangaTitle = first.mangaTitle,
+                mangaId = mangaId,
+                mangaCoverUrl = first.mangaCoverUrl,
+                isExpanded = mangaId !in collapsedManga,
+                chapters = chapters,
+            )
         }
+        .sortedBy { it.mangaTitle }
 
-    /** Grouped structure consumed by the list UI. */
-    val grouped: List<BookmarkGroup>
-        get() = filteredBookmarks
-            .groupBy { it.mangaId }
-            .map { (mangaId, items) ->
-                val first = items.first()
-                val chapters = items
-                    .groupBy { it.chapterId }
-                    .map { (chapterId, chItems) ->
-                        ChapterGroup(
-                            chapterId = chapterId,
-                            chapterName = chItems.first().chapterName,
-                            bookmarks = chItems.sortedBy { it.pageIndex },
-                        )
-                    }
-                    .sortedBy { it.chapterName }
-                BookmarkGroup(
-                    mangaTitle = first.mangaTitle,
-                    mangaId = mangaId,
-                    mangaCoverUrl = first.mangaCoverUrl,
-                    isExpanded = mangaId !in collapsedManga,
-                    chapters = chapters,
-                )
-            }
-            .sortedBy { it.mangaTitle }
-
-    val isEmpty: Boolean get() = !isLoading && filteredBookmarks.isEmpty()
-    val hasBookmarks: Boolean get() = !isLoading && bookmarks.isNotEmpty()
+    val isEmpty: Boolean = !isLoading && filteredBookmarks.isEmpty()
+    val hasBookmarks: Boolean = !isLoading && bookmarks.isNotEmpty()
 }
 
 // ─── Intent ───────────────────────────────────────────────────────────────────

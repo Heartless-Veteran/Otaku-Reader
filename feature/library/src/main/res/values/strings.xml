@@ -98,6 +98,8 @@
     <string name="library_more_actions">More actions</string>
     <string name="library_mark_selected_completed">Mark as completed</string>
     <string name="library_mark_selected_dropped">Mark as dropped</string>
+    <string name="library_share_manga">Share</string>
+    <string name="library_view_details">View details</string>
     <!-- Daily goal banner -->
     <string name="library_daily_goal_label">Daily Reading Goal</string>
     <string name="library_daily_goal_complete">Daily goal reached! 🎉</string>
