@@ -1,0 +1,21 @@
+# OISD-small ad block hosts
+# Format: one hostname per line, no leading 0.0.0.0
+doubleclick.net
+googleadservices.com
+googlesyndication.com
+adnxs.com
+ads.twitter.com
+analytics.google.com
+google-analytics.com
+connect.facebook.net
+scorecardresearch.com
+outbrain.com
+taboola.com
+pubmatic.com
+rubiconproject.com
+openx.net
+criteo.com
+adsafeprotected.com
+moatads.com
+omtrdc.net
+demdex.net

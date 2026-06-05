@@ -40,6 +40,7 @@ import app.otakureader.feature.settings.navigation.settingsScreen
 import app.otakureader.feature.statistics.navigation.statisticsScreen
 import app.otakureader.feature.tracking.navigation.trackerOAuthScreen
 import app.otakureader.feature.tracking.navigation.trackingScreen
+import app.otakureader.core.webview.webViewScreen
 import app.otakureader.feature.updates.navigation.downloadsScreen
 import app.otakureader.feature.updates.navigation.updatesScreen
 import app.otakureader.util.DeepLinkResult
@@ -502,6 +503,13 @@ fun OtakuReaderNavHost(
             },
             onNavigateToExtensions = {
                 navController.navigate(Route.ExtensionCatalog)
+            }
+        )
+
+        // WebView — embedded browser for CAPTCHA solving, OAuth, etc.
+        webViewScreen(
+            onClose = { _, _, _ ->
+                navController.popBackStack()
             }
         )
     }
