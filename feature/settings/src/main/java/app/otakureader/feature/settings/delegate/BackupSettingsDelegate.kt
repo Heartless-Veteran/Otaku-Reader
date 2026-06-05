@@ -156,7 +156,9 @@ class BackupSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.RestoreBackupFromUri -> {
-            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0)) }
+            updateState {
+                it.copy(backup = it.backup.copy(isRestoreInProgress = true, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
+            }
             try {
                 backupRepository.restoreBackup(event.uri.toString())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
@@ -181,7 +183,9 @@ class BackupSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.RestoreLocalBackup -> {
-            updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0)) }
+            updateState {
+                it.copy(backup = it.backup.copy(isRestoreInProgress = true, restoringBackupFileName = event.fileName, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
+            }
             try {
                 val allFiles = backupRepository.listLocalBackups()
                 val file = allFiles.firstOrNull { it.name == event.fileName }
