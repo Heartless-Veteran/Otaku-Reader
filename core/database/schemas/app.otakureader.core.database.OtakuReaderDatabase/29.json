@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 29,
-    "identityHash": "8d93b20bb2fe76c9c637b522a92a76fb",
+    "identityHash": "c4672ab17043568dc53f82ece8302b2d",
     "entities": [
       {
         "tableName": "manga",
@@ -1627,8 +1627,8 @@
         }
       },
       {
-        "tableName": "sync_queue",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `chapterId` INTEGER NOT NULL, `mangaId` INTEGER NOT NULL, `payload` TEXT NOT NULL, `attempts` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `lastError` TEXT)",
+        "tableName": "achievements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `definitionKey` TEXT NOT NULL, `unlockedAt` INTEGER NOT NULL, `progress` INTEGER NOT NULL, `target` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -1637,39 +1637,28 @@
             "notNull": true
           },
           {
-            "fieldPath": "chapterId",
-            "columnName": "chapterId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "mangaId",
-            "columnName": "mangaId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "payload",
-            "columnName": "payload",
+            "fieldPath": "definitionKey",
+            "columnName": "definitionKey",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "attempts",
-            "columnName": "attempts",
+            "fieldPath": "unlockedAt",
+            "columnName": "unlockedAt",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "createdAt",
-            "columnName": "createdAt",
+            "fieldPath": "progress",
+            "columnName": "progress",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "lastError",
-            "columnName": "lastError",
-            "affinity": "TEXT"
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -1682,7 +1671,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8d93b20bb2fe76c9c637b522a92a76fb')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c4672ab17043568dc53f82ece8302b2d')"
     ]
   }
 }

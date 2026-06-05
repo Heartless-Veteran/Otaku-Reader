@@ -70,7 +70,17 @@
     <string name="library_search_close">Close search</string>
     <string name="library_search_clear">Clear search</string>
     <string name="library_search_no_results_title">No results found</string>
-    <string name="library_search_no_results_message">No manga in your library match “%1$s”</string>
+    <string name="library_search_no_results_message">No manga in your library match "%1$s"</string>
+    <!-- Advanced search (#927) -->
+    <string name="library_advanced_search_title">Advanced Search</string>
+    <string name="library_advanced_search_author">Author / Artist</string>
+    <string name="library_advanced_search_author_hint">e.g. Oda Eiichiro</string>
+    <string name="library_advanced_search_tag">Genre / Tag</string>
+    <string name="library_advanced_search_tag_hint">e.g. action</string>
+    <string name="library_advanced_search_tip">Tip: you can also type author:name or tag:genre directly in the search bar</string>
+    <string name="library_advanced_search_apply">Apply</string>
+    <string name="library_advanced_search_cancel">Cancel</string>
+    <string name="library_advanced_search_open">Advanced filters</string>
 
     <!-- Filter chips -->
     <string name="library_filter_all">All</string>

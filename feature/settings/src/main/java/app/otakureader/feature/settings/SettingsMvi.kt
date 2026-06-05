@@ -151,6 +151,7 @@ data class SettingsState(
     val lastAutoBackupTimestamp get() = backup.lastAutoBackupTimestamp
     val localBackupFiles get() = backup.localBackupFiles
     val tachiyomiImportPreview get() = backup.tachiyomiImportPreview
+    val isTachiyomiImporting get() = backup.isTachiyomiImporting
     val tachiyomiImportProgress get() = backup.tachiyomiImportProgress
     val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
 

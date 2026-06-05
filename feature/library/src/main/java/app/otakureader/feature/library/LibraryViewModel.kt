@@ -120,6 +120,8 @@ class LibraryViewModel @Inject constructor(
                 viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
+            is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
+            is LibraryEvent.ApplyAdvancedSearch -> applyAdvancedSearch(event.authorQuery, event.tagQuery)
             is LibraryEvent.ToggleFavorite, is LibraryEvent.MarkSelectedAsRead,
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
@@ -454,10 +456,10 @@ class LibraryViewModel @Inject constructor(
     private fun toggleSearchBar() {
         _state.update { state ->
             if (state.showSearchBar) {
-                // Closing: also clear the query
+                // Closing: also clear the query and dismiss any open advanced search sheet
                 searchJob?.cancel()
                 _searchMatchingIds.value = null
-                state.copy(showSearchBar = false, searchQuery = "")
+                state.copy(showSearchBar = false, searchQuery = "", showAdvancedSearch = false)
             } else {
                 state.copy(showSearchBar = true)
             }
@@ -677,5 +679,29 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             libraryPreferences.dismissRecommendation(mangaId)
         }
+    }
+
+    private fun applyAdvancedSearch(authorQuery: String, tagQuery: String) {
+        // Strip any existing author:/tag: operators from the current query before appending new ones
+        val baseQuery = _state.value.searchQuery
+            .replace(Regex("""author:"[^"]*""""), "")
+            .replace(Regex("""tag:"[^"]*""""), "")
+            .replace(Regex("""author:\S+"""), "")
+            .replace(Regex("""tag:\S+"""), "")
+            .trim()
+
+        val parts = buildList {
+            if (authorQuery.isNotBlank()) {
+                val value = authorQuery.trim()
+                add(if (' ' in value) """author:"$value"""" else "author:$value")
+            }
+            if (tagQuery.isNotBlank()) {
+                val value = tagQuery.trim()
+                add(if (' ' in value) """tag:"$value"""" else "tag:$value")
+            }
+        }
+        val newQuery = listOf(baseQuery).plus(parts).filter { it.isNotBlank() }.joinToString(" ").trim()
+        _state.update { it.copy(showAdvancedSearch = false, searchQuery = newQuery) }
+        onSearchQueryChange(newQuery)
     }
 }

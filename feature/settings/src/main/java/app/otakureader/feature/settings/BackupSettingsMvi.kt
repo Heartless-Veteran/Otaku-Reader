@@ -17,6 +17,7 @@ data class BackupSettingsState(
     // Tachiyomi import: preview shown before the user confirms; progress shown during import.
     val tachiyomiImportPreview: TachiyomiBackupPreview? = null,
     val pendingTachiyomiImportUri: String? = null,
+    val isTachiyomiImporting: Boolean = false,
     val tachiyomiImportProgress: Int = 0,
     val tachiyomiImportTotal: Int = 0,
 )
