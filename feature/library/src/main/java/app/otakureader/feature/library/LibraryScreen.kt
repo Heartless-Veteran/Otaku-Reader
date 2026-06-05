@@ -194,7 +194,7 @@ fun LibraryScreen(
                     }
                 )
                 else -> TopAppBar(
-                    title = { Text(stringResource(R.string.library_title)) },
+                    title = { Text(stringResource(R.string.library_title_with_count, state.mangaList.size)) },
                     actions = {
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleIncognito) }) {
                             Icon(
@@ -220,6 +220,31 @@ fun LibraryScreen(
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.library_more))
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_update_library)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.UpdateLibrary) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_update_category)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.UpdateCategory) },
+                                enabled = state.selectedCategory != null
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_open_random)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.OpenRandomEntry) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_reindex_downloads)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.ReindexDownloads) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_sync_eh_favorites)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.SyncEhFavorites) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_sync_library)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.SyncLibrary) }
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_downloads)) },
                                 onClick = { showMenu = false; onNavigateToDownloads() }

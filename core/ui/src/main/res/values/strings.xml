@@ -4,6 +4,8 @@
     <string name="core_ui_error_title">Something went wrong</string>
     <string name="manga_cover_content_description">Cover image for %1$s</string>
     <string name="manga_card_selected">Selected</string>
+    <string name="manga_card_new_badge">NEW</string>
+    <string name="manga_card_continue_reading">Continue reading</string>
 
     <!-- Empty State Titles -->
     <string name="empty_library_title">Your library is empty</string>

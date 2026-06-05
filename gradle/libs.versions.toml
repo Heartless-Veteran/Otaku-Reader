@@ -52,6 +52,8 @@ okhttp = "4.12.0"
 netty = "4.2.12.Final"
 retrofit = "3.0.0"
 kotlinx-serialization = "1.11.0"
+# Crash reporting (#952) — Sentry SDK; user-supplied DSN, no upload until both DSN + opt-in set
+sentry = "7.18.1"
 
 # Image Loading
 coil = "3.4.0"
@@ -126,6 +128,7 @@ androidx-material = { group = "com.google.android.material", name = "material", 
 androidx-palette = { group = "androidx.palette", name = "palette", version.ref = "palette" }
 androidx-workmanager = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workmanager" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
+sentry-android = { group = "io.sentry", name = "sentry-android-core", version.ref = "sentry" }
 androidx-glance = { group = "androidx.glance", name = "glance", version.ref = "glance" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
