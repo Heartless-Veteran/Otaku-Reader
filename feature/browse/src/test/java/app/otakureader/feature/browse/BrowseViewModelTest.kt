@@ -18,8 +18,10 @@ import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import io.mockk.Awaits
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +80,8 @@ class BrowseViewModelTest {
         every { generalPreferences.showNsfwContent } returns flowOf(false)
         every { generalPreferences.browseSearchHistory } returns flowOf(emptyList())
         coEvery { generalPreferences.addBrowseSearchHistory(any()) } returns mockk(relaxed = true)
+        coEvery { generalPreferences.getBrowseFilterState(any()) } returns null
+        coEvery { generalPreferences.setBrowseFilterState(any(), any()) } just Awaits
         every { feedRepository.getSavedSearches() } returns flowOf(emptyList())
 
         // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
