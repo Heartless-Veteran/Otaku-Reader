@@ -1,11 +1,14 @@
 package app.otakureader.feature.settings.sync
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.SyncSettingsStore
 import app.otakureader.domain.repository.SyncRepository
 import app.otakureader.domain.scheduler.SyncScheduler
+import app.otakureader.feature.settings.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +34,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SyncSettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val syncSettingsStore: SyncSettingsStore,
     private val syncRepository: SyncRepository,
     private val syncScheduler: SyncScheduler,
@@ -73,11 +77,12 @@ class SyncSettingsViewModel @Inject constructor(
             }
 
             SyncSettingsEvent.SaveSettings -> viewModelScope.launch {
-                syncSettingsStore.setServerUrl(_uiState.value.serverUrl)
-                syncSettingsStore.setBearerToken(_uiState.value.bearerToken)
-                _effect.send(SyncSettingsEffect.ShowSnackbar("Sync settings saved"))
+                val state = _uiState.value
+                syncSettingsStore.setServerUrl(state.serverUrl)
+                syncSettingsStore.setBearerToken(state.bearerToken)
+                _effect.send(SyncSettingsEffect.ShowSnackbar(context.getString(R.string.settings_sync_settings_saved)))
                 // Reschedule the periodic worker with the (possibly new) server URL.
-                if (_uiState.value.serverUrl.isNotBlank()) {
+                if (state.serverUrl.isNotBlank()) {
                     syncScheduler.schedulePeriodicSync()
                 }
             }
@@ -85,25 +90,25 @@ class SyncSettingsViewModel @Inject constructor(
             SyncSettingsEvent.SyncNow -> viewModelScope.launch {
                 val currentState = _uiState.value
                 if (currentState.serverUrl.isBlank()) {
-                    _effect.send(SyncSettingsEffect.ShowSnackbar("No sync server configured"))
+                    _effect.send(SyncSettingsEffect.ShowSnackbar(context.getString(R.string.settings_sync_no_server_configured)))
                     return@launch
                 }
                 // Save latest drafts before enqueuing so the worker uses current settings.
                 syncSettingsStore.setServerUrl(currentState.serverUrl)
                 syncSettingsStore.setBearerToken(currentState.bearerToken)
                 syncScheduler.enqueueSingleSync()
-                _uiState.update { it.copy(lastSyncResult = "Sync enqueued") }
+                _uiState.update { it.copy(lastSyncResult = context.getString(R.string.settings_sync_enqueued)) }
             }
 
             SyncSettingsEvent.TestConnection -> viewModelScope.launch {
                 val url = _uiState.value.serverUrl
                 if (url.isBlank()) {
-                    _effect.send(SyncSettingsEffect.ShowSnackbar("Enter a server URL first"))
+                    _effect.send(SyncSettingsEffect.ShowSnackbar(context.getString(R.string.settings_sync_enter_url_first)))
                     return@launch
                 }
                 // A real connection test would make a HEAD request; for now we
                 // simply report the URL that would be used so the user can verify it.
-                _effect.send(SyncSettingsEffect.ShowSnackbar("Will connect to: $url"))
+                _effect.send(SyncSettingsEffect.ShowSnackbar(context.getString(R.string.settings_sync_will_connect_to, url)))
             }
         }
     }

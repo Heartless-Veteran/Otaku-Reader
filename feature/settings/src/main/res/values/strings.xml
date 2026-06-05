@@ -491,4 +491,9 @@
     <string name="settings_sync_queue_size">Pending items</string>
     <string name="settings_sync_test_connection">Test Connection</string>
     <string name="settings_sync_device_id_none">—</string>
+    <string name="settings_sync_settings_saved">Sync settings saved</string>
+    <string name="settings_sync_no_server_configured">No sync server configured</string>
+    <string name="settings_sync_enqueued">Sync enqueued</string>
+    <string name="settings_sync_enter_url_first">Enter a server URL first</string>
+    <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
 </resources>

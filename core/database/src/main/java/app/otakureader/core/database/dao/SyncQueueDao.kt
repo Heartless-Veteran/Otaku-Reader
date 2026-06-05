@@ -29,7 +29,15 @@ interface SyncQueueDao {
      * already exceeded [maxAttempts] to avoid re-queuing permanently failed entries.
      */
     @Query("SELECT * FROM sync_queue WHERE attempts < :maxAttempts ORDER BY createdAt ASC LIMIT :limit")
-    fun getPending(limit: Int = 50, maxAttempts: Int = 5): Flow<List<SyncQueueEntity>>
+    fun getPending(
+        limit: Int = DEFAULT_BATCH_SIZE,
+        maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
+    ): Flow<List<SyncQueueEntity>>
+
+    companion object {
+        const val DEFAULT_BATCH_SIZE = 50
+        const val DEFAULT_MAX_ATTEMPTS = 5
+    }
 
     @Delete
     suspend fun delete(entity: SyncQueueEntity)
