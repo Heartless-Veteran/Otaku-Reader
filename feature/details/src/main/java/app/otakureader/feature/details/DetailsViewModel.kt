@@ -469,25 +469,11 @@ class DetailsViewModel @Inject constructor(
             val mangaTitle = manga?.title ?: "Manga"
             val sourceName = manga?.sourceId?.toString() ?: ""
 
-            var enqueuedCount = 0
-            for (chapter in chapters) {
-                try {
-                    downloadRepository.enqueueChapter(
-                        mangaId = chapter.mangaId,
-                        chapterId = chapter.id,
-                        sourceName = sourceName,
-                        mangaTitle = mangaTitle,
-                        chapterTitle = chapter.name
-                    )
-                    enqueuedCount++
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: DownloadBlockedException) {
-                    _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
-                    return@launch
-                } catch (_: Exception) {
-                    // chapter failed to enqueue - continue with others
-                }
+            val enqueuedCount = try {
+                enqueueChapters(chapters, sourceName, mangaTitle)
+            } catch (e: DownloadBlockedException) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                return@launch
             }
             clearChapterSelection()
             val failCount = chapters.size - enqueuedCount
@@ -656,25 +642,11 @@ class DetailsViewModel @Inject constructor(
             }
             if (chapters.isEmpty()) return@launch
 
-            var enqueuedCount = 0
-            for (chapter in chapters) {
-                try {
-                    downloadRepository.enqueueChapter(
-                        mangaId = chapter.mangaId,
-                        chapterId = chapter.id,
-                        sourceName = sourceName,
-                        mangaTitle = manga.title,
-                        chapterTitle = chapter.name
-                    )
-                    enqueuedCount++
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: DownloadBlockedException) {
-                    _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
-                    return@launch
-                } catch (_: Exception) {
-                    // chapter failed to enqueue - continue with others
-                }
+            val enqueuedCount = try {
+                enqueueChapters(chapters, sourceName, manga.title)
+            } catch (e: DownloadBlockedException) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                return@launch
             }
             val label = if (unreadOnly) "unread" else "all"
             val failCount = chapters.size - enqueuedCount
@@ -684,6 +656,33 @@ class DetailsViewModel @Inject constructor(
                 _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
             }
         }
+    }
+
+    private suspend fun enqueueChapters(
+        chapters: List<Chapter>,
+        sourceName: String,
+        mangaTitle: String
+    ): Int {
+        var enqueuedCount = 0
+        for (chapter in chapters) {
+            try {
+                downloadRepository.enqueueChapter(
+                    mangaId = chapter.mangaId,
+                    chapterId = chapter.id,
+                    sourceName = sourceName,
+                    mangaTitle = mangaTitle,
+                    chapterTitle = chapter.name
+                )
+                enqueuedCount++
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: DownloadBlockedException) {
+                throw e
+            } catch (_: Exception) {
+                // chapter failed to enqueue - continue with others
+            }
+        }
+        return enqueuedCount
     }
 
     private fun deleteChapterDownload(chapterId: Long) {
