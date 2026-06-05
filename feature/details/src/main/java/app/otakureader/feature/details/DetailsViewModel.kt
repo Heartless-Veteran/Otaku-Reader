@@ -104,6 +104,8 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ExportChapterAsCbz -> exportChapterAsCbz(event.chapterId)
             is DetailsContract.Event.MarkPreviousAsRead -> markPreviousAsRead(event.chapterId)
             is DetailsContract.Event.ShareManga -> shareManga()
+            is DetailsContract.Event.OpenDownloadFolder -> openDownloadFolder()
+            is DetailsContract.Event.ClearMangaDownloads -> clearMangaDownloads()
             is DetailsContract.Event.SetDeleteAfterReadOverride -> setDeleteAfterReadOverride(event.mode)
             is DetailsContract.Event.ShowNoteEditor -> showNoteEditor()
             is DetailsContract.Event.HideNoteEditor -> hideNoteEditor()
@@ -729,6 +731,45 @@ class DetailsViewModel @Inject constructor(
                     )
                 )
             }
+        }
+    }
+
+    private fun openDownloadFolder() {
+        viewModelScope.launch {
+            val manga = _state.value.manga ?: return@launch
+            _effect.send(
+                DetailsContract.Effect.OpenDownloadFolder(
+                    sourceName = manga.sourceId.toString(),
+                    mangaTitle = manga.title,
+                )
+            )
+        }
+    }
+
+    private fun clearMangaDownloads() {
+        viewModelScope.launch {
+            val state = _state.value
+            val manga = state.manga ?: return@launch
+            val downloadedChapters = state.chapters.filter {
+                it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADED
+            }
+            if (downloadedChapters.isEmpty()) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("No downloaded chapters to clear"))
+                return@launch
+            }
+            downloadedChapters.forEach { chapter ->
+                try {
+                    downloadRepository.deleteChapterDownload(
+                        chapterId = chapter.id,
+                        sourceName = manga.sourceId.toString(),
+                        mangaTitle = manga.title,
+                        chapterTitle = chapter.name,
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) { }
+            }
+            _effect.send(DetailsContract.Effect.ShowSnackbar("${downloadedChapters.size} chapter download(s) cleared"))
         }
     }
 

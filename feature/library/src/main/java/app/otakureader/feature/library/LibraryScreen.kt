@@ -56,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -81,7 +82,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
@@ -98,6 +99,18 @@ fun LibraryScreen(
                 }
                 is LibraryEffect.NavigateToMigration -> {
                     onNavigateToMigration(effect.selectedMangaIds)
+                }
+                is LibraryEffect.ShareManga -> {
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_SUBJECT, effect.title)
+                        putExtra(android.content.Intent.EXTRA_TEXT, effect.url.ifEmpty { effect.title })
+                    }
+                    runCatching {
+                        context.startActivity(
+                            android.content.Intent.createChooser(shareIntent, effect.title)
+                        )
+                    }
                 }
             }
         }
@@ -156,6 +169,23 @@ fun LibraryScreen(
                                     selectionOverflowExpanded = false
                                 },
                             )
+                            if (state.selectedManga.size == 1) {
+                                androidx.compose.material3.HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_share_manga)) },
+                                    onClick = {
+                                        viewModel.onEvent(LibraryEvent.ShareSelectedManga)
+                                        selectionOverflowExpanded = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_view_details)) },
+                                    onClick = {
+                                        viewModel.onEvent(LibraryEvent.ViewSelectedManga)
+                                        selectionOverflowExpanded = false
+                                    },
+                                )
+                            }
                         }
                     }
                 )

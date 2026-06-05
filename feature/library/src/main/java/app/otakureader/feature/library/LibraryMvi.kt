@@ -139,6 +139,9 @@ sealed class LibraryEvent {
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
     data object ToggleAdvancedSearch : LibraryEvent()
     data class ApplyAdvancedSearch(val authorQuery: String, val tagQuery: String) : LibraryEvent()
+    // Single-manga selection actions (#995, #996)
+    data object ShareSelectedManga : LibraryEvent()
+    data object ViewSelectedManga : LibraryEvent()
 }
 
 sealed class LibraryEffect {
@@ -146,4 +149,5 @@ sealed class LibraryEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : LibraryEffect()
     data class ShowError(val message: String) : LibraryEffect()
     data class NavigateToMigration(val selectedMangaIds: List<Long>) : LibraryEffect()
+    data class ShareManga(val title: String, val url: String) : LibraryEffect()
 }

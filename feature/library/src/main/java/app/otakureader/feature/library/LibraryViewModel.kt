@@ -116,7 +116,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleFavorite, is LibraryEvent.MarkSelectedAsRead,
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
-            is LibraryEvent.MarkSelectedAsDropped -> handleActionEvent(event)
+            is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
+            is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
             // New overflow menu events — wired as no-ops/TODOs for now
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
@@ -177,6 +178,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.DownloadSelected -> downloadSelected()
             is LibraryEvent.MarkSelectedAsCompleted -> markSelectedAsCompleted()
             is LibraryEvent.MarkSelectedAsDropped -> markSelectedAsDropped()
+            is LibraryEvent.ShareSelectedManga -> shareSelectedManga()
+            is LibraryEvent.ViewSelectedManga -> viewSelectedManga()
             else -> Unit
         }
     }
@@ -521,6 +524,22 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             mangaIds.forEach { mangaRepository.markUserDropped(it, dropped = true) }
         }
+    }
+
+    private fun shareSelectedManga() {
+        val mangaId = _state.value.selectedManga.singleOrNull() ?: return
+        viewModelScope.launch {
+            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+            val url = manga.url.takeIf { it.startsWith("http://") || it.startsWith("https://") } ?: ""
+            selection.clear()
+            _effect.send(LibraryEffect.ShareManga(title = manga.title, url = url))
+        }
+    }
+
+    private fun viewSelectedManga() {
+        val mangaId = _state.value.selectedManga.singleOrNull() ?: return
+        selection.clear()
+        viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(mangaId)) }
     }
 
     private fun toggleFavorite(mangaId: Long) {

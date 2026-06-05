@@ -139,6 +139,34 @@ fun DetailsScreen(
                 is DetailsContract.Effect.NavigateToGlobalSearch -> {
                     onNavigateToGlobalSearch(effect.query)
                 }
+                is DetailsContract.Effect.OpenDownloadFolder -> {
+                    val externalFilesDir = context.getExternalFilesDir(null)
+                    if (externalFilesDir != null) {
+                        val safeName = { s: String -> s.replace(Regex("[\\\\/:*?\"<>|]"), "_") }
+                        val mangaDir = java.io.File(
+                            externalFilesDir,
+                            "OtakuReader/${safeName(effect.sourceName)}/${safeName(effect.mangaTitle)}"
+                        )
+                        if (mangaDir.exists()) {
+                            try {
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    context,
+                                    "${context.packageName}.fileprovider",
+                                    mangaDir,
+                                )
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                snackbarHostState.showSnackbar(context.getString(R.string.details_no_file_manager))
+                            }
+                        } else {
+                            snackbarHostState.showSnackbar(context.getString(R.string.details_no_downloads))
+                        }
+                    }
+                }
                 else -> { /* no-op */ }
             }
         }
@@ -227,6 +255,21 @@ fun DetailsScreen(
                             },
                             onClick = {
                                 viewModel.onEvent(DetailsContract.Event.ToggleUserDropped)
+                                overflowExpanded = false
+                            }
+                        )
+                        androidx.compose.material3.HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details_open_download_folder)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.OpenDownloadFolder)
+                                overflowExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details_clear_downloads)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ClearMangaDownloads)
                                 overflowExpanded = false
                             }
                         )
