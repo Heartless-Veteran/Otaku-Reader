@@ -13,6 +13,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -47,14 +48,17 @@ class SyncSettingsViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
-        // Observe each persistent value independently so that transient UI flags
-        // (isSyncing, lastSyncResult) are never overwritten by a preference emission.
-        syncSettingsStore.serverUrl
-            .onEach { v -> _uiState.update { it.copy(serverUrl = v) } }
-            .launchIn(viewModelScope)
-        syncSettingsStore.bearerToken
-            .onEach { v -> _uiState.update { it.copy(bearerToken = v) } }
-            .launchIn(viewModelScope)
+        // serverUrl and bearerToken are editable draft fields.  Reading them
+        // reactively would overwrite in-progress user edits whenever DataStore
+        // re-emits (e.g. after SaveSettings persists the value).  Use a
+        // one-shot read instead so the UI draft is only seeded once on start.
+        viewModelScope.launch {
+            val url = syncSettingsStore.serverUrl.first()
+            val token = syncSettingsStore.bearerToken.first()
+            _uiState.update { it.copy(serverUrl = url, bearerToken = token) }
+        }
+
+        // deviceId and queueSize are read-only display values — observe reactively.
         syncSettingsStore.deviceId
             .onEach { v -> _uiState.update { it.copy(deviceId = v) } }
             .launchIn(viewModelScope)
