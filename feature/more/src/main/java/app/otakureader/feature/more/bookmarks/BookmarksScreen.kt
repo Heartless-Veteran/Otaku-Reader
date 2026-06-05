@@ -44,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -73,6 +74,7 @@ fun BookmarksScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
@@ -81,6 +83,8 @@ fun BookmarksScreen(
                     onOpenBookmark(effect.mangaId, effect.chapterId)
                 is BookmarksEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
+                is BookmarksEffect.ShowSnackbarRes ->
+                    snackbarHostState.showSnackbar(context.getString(effect.resId))
             }
         }
     }

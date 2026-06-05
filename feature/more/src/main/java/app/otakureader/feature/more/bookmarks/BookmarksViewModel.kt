@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.feature.more.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -143,7 +144,7 @@ class BookmarksViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Failed to delete bookmark"))
+                _effect.send(BookmarksEffect.ShowSnackbarRes(R.string.bookmarks_delete_failed))
             }
         }
     }

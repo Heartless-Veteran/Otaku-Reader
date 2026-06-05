@@ -97,4 +97,9 @@ sealed interface BookmarksIntent : UiEvent {
 sealed interface BookmarksEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : BookmarksEffect
     data class ShowSnackbar(val message: String) : BookmarksEffect
+    /**
+     * Show a snackbar message resolved from a string resource.
+     * Using a resource ID keeps the ViewModel context-free.
+     */
+    data class ShowSnackbarRes(@androidx.annotation.StringRes val resId: Int) : BookmarksEffect
 }
