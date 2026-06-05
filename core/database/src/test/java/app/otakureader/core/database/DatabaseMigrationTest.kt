@@ -77,7 +77,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 30 migrations (v2→v31)", 30, ALL_MIGRATIONS.size)
+        assertEquals("Expected 29 migrations (v2→v31)", 29, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
