@@ -10,7 +10,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,26 +43,20 @@ class SyncSettingsViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
-        // Observe all persistent values and keep the UI state in sync.
-        viewModelScope.launch {
-            combine(
-                syncSettingsStore.serverUrl,
-                syncSettingsStore.bearerToken,
-                syncSettingsStore.deviceId,
-                syncRepository.observeQueueSize(),
-            ) { serverUrl, bearerToken, deviceId, queueSize ->
-                SyncSettingsState(
-                    serverUrl = serverUrl,
-                    bearerToken = bearerToken,
-                    deviceId = deviceId,
-                    queueSize = queueSize,
-                    isSyncing = _uiState.value.isSyncing,
-                    lastSyncResult = _uiState.value.lastSyncResult,
-                )
-            }.collect { newState ->
-                _uiState.value = newState
-            }
-        }
+        // Observe each persistent value independently so that transient UI flags
+        // (isSyncing, lastSyncResult) are never overwritten by a preference emission.
+        syncSettingsStore.serverUrl
+            .onEach { v -> _uiState.update { it.copy(serverUrl = v) } }
+            .launchIn(viewModelScope)
+        syncSettingsStore.bearerToken
+            .onEach { v -> _uiState.update { it.copy(bearerToken = v) } }
+            .launchIn(viewModelScope)
+        syncSettingsStore.deviceId
+            .onEach { v -> _uiState.update { it.copy(deviceId = v) } }
+            .launchIn(viewModelScope)
+        syncRepository.observeQueueSize()
+            .onEach { v -> _uiState.update { it.copy(queueSize = v) } }
+            .launchIn(viewModelScope)
 
         // Ensure a stable device ID is generated on first launch.
         viewModelScope.launch { syncSettingsStore.ensureDeviceId() }

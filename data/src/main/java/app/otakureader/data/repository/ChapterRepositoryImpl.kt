@@ -18,6 +18,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.repository.ChapterRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -130,6 +131,8 @@ class ChapterRepositoryImpl @Inject constructor(
                     chapterNumber = chapterEntity.chapterNumber,
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             // Intentionally swallowed: sync is best-effort and must not break reading.
         }

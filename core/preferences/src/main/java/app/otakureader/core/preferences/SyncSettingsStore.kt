@@ -41,14 +41,21 @@ class SyncSettingsStore @Inject constructor(private val dataStore: DataStore<Pre
 
     /**
      * Returns the persisted device ID, generating and persisting a new UUID if one does
-     * not yet exist. Safe to call from any coroutine context.
+     * not yet exist. Atomic: generates and writes in a single [DataStore.edit] transaction
+     * so concurrent callers cannot each write a different UUID.
      */
     suspend fun ensureDeviceId(): String {
-        val existing = dataStore.data.map { it[Keys.DEVICE_ID] }.first()
-        if (!existing.isNullOrBlank()) return existing
         val newId = UUID.randomUUID().toString()
-        dataStore.edit { it[Keys.DEVICE_ID] = newId }
-        return newId
+        var resultId = newId
+        dataStore.edit { prefs ->
+            val existing = prefs[Keys.DEVICE_ID]
+            if (!existing.isNullOrBlank()) {
+                resultId = existing
+            } else {
+                prefs[Keys.DEVICE_ID] = newId
+            }
+        }
+        return resultId
     }
 
     /** True when a non-blank server URL is configured. */

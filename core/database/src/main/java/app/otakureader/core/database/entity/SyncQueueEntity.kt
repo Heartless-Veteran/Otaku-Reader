@@ -1,6 +1,7 @@
 package app.otakureader.core.database.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
@@ -11,7 +12,7 @@ import androidx.room.PrimaryKey
  * [attempts] counter and [lastError] fields allow the drain loop to apply
  * exponential-back-off and surface error details for debugging.
  */
-@Entity(tableName = "sync_queue")
+@Entity(tableName = "sync_queue", indices = [Index("createdAt")])
 data class SyncQueueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val chapterId: Long,

@@ -73,13 +73,20 @@ class SyncRepositoryImpl @Inject constructor(
     override suspend fun drainQueue() {
         val serverUrl = syncSettingsStore.serverUrl.first()
         if (serverUrl.isBlank()) return
-        val api = buildApi(serverUrl)
+        val token = syncSettingsStore.bearerToken.first()
+        val api = buildApi(serverUrl, token)
         val pending = syncQueueDao.getPending()
         for (item in pending) {
             try {
                 val request = json.decodeFromString<PushProgressRequest>(item.payload)
-                api.pushProgress(request)
-                syncQueueDao.deleteById(item.id)
+                val response = api.pushProgress(request)
+                if (response.accepted) {
+                    syncQueueDao.deleteById(item.id)
+                } else {
+                    syncQueueDao.recordAttemptFailure(item.id, "Server rejected item")
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to push sync item ${item.id}", e)
                 syncQueueDao.recordAttemptFailure(item.id, e.message)
@@ -113,17 +120,27 @@ class SyncRepositoryImpl @Inject constructor(
     // ─── Private helpers ──────────────────────────────────────────────────────
 
     /**
-     * Builds a minimal Retrofit instance pointed at [serverUrl].
-     *
-     * We reuse the shared [OkHttpClient] (timeouts, logging, Brotli) and [Json]
-     * (lenient, ignores unknown keys) from the network module.
+     * Builds a minimal Retrofit instance pointed at [serverUrl], optionally adding
+     * a Bearer token authorization header when [token] is non-blank.
      */
-    private fun buildApi(serverUrl: String): SyncApi {
-        // Ensure the URL ends with "/" so that Retrofit resolves relative paths correctly.
+    private fun buildApi(serverUrl: String, token: String = ""): SyncApi {
         val normalised = if (serverUrl.endsWith("/")) serverUrl else "$serverUrl/"
+        val client = if (token.isNotBlank()) {
+            okHttpClient.newBuilder()
+                .addInterceptor { chain ->
+                    chain.proceed(
+                        chain.request().newBuilder()
+                            .header("Authorization", "Bearer $token")
+                            .build()
+                    )
+                }
+                .build()
+        } else {
+            okHttpClient
+        }
         return Retrofit.Builder()
             .baseUrl(normalised)
-            .client(okHttpClient)
+            .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
             .create(SyncApi::class.java)
