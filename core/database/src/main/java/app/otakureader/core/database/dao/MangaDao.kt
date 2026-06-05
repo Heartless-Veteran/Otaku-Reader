@@ -10,6 +10,7 @@ import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.MangaWithUnreadCount
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 @Dao
 interface MangaDao {
     @Query("SELECT * FROM manga WHERE favorite = 1 ORDER BY title ASC")
