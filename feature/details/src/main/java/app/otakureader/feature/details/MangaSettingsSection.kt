@@ -177,26 +177,27 @@ internal fun ReaderSettingsSection(
                     else stringResource(R.string.details_reader_default)
                 )
             },
-            // Badged icon: the badge dot appears only when at least one override is active,
-            // giving the user a quick visual cue without having to expand the section.
             leadingContent = {
-                BadgedBox(
-                    badge = {
-                        if (hasOverrides) {
-                            Badge(
-                                modifier = Modifier.semantics {
-                                    contentDescription = overridesActiveDesc
-                                }
-                            )
-                        }
-                    }
-                ) {
+                val settingsIcon: @Composable () -> Unit = {
                     Icon(
                         imageVector = Icons.Default.Settings,
                         contentDescription = null,
                         tint = if (hasOverrides) MaterialTheme.colorScheme.primary
                                else MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                if (hasOverrides) {
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                modifier = Modifier.semantics {
+                                    contentDescription = overridesActiveDesc
+                                }
+                            )
+                        }
+                    ) { settingsIcon() }
+                } else {
+                    settingsIcon()
                 }
             },
             trailingContent = {
