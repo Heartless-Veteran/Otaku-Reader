@@ -195,4 +195,35 @@ class DomainModelsTest {
         assertEquals(a, b)
         assertNotEquals(a, c)
     }
+
+    // ── ContinueReadingItem ───────────────────────────────────────────────────
+
+    @Test
+    fun `ContinueReadingItem fields are correctly stored`() {
+        val item = ContinueReadingItem(
+            mangaId = 1L,
+            chapterId = 10L,
+            mangaTitle = "Naruto",
+            thumbnailUrl = "https://example.com/cover.jpg",
+            chapterName = "Chapter 1",
+            chapterNumber = 1.0f,
+            lastPageRead = 5,
+            readAt = 1000L
+        )
+        assertEquals(1L, item.mangaId)
+        assertEquals(10L, item.chapterId)
+        assertEquals("Naruto", item.mangaTitle)
+        assertEquals(5, item.lastPageRead)
+        assertEquals(1000L, item.readAt)
+    }
+
+    @Test
+    fun `ContinueReadingItem nullable thumbnailUrl is allowed`() {
+        val item = ContinueReadingItem(
+            mangaId = 2L, chapterId = 20L, mangaTitle = "Bleach",
+            thumbnailUrl = null, chapterName = "Ch 2", chapterNumber = 2.0f,
+            lastPageRead = 0, readAt = 2000L
+        )
+        assertNull(item.thumbnailUrl)
+    }
 }

@@ -152,6 +152,9 @@ sealed interface Route {
     @Serializable
     data object LocalSourceBrowser : Route
 
+    @Serializable
+    data object SettingsSync : Route
+
     // ─── Downloads ───
 
     @Serializable

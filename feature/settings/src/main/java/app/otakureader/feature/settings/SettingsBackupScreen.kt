@@ -14,9 +14,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -28,6 +31,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -158,6 +165,13 @@ fun SettingsBackupScreen(
             onDismiss = { viewModel.onEvent(SettingsEvent.CancelTachiyomiImport) },
         )
     }
+
+    if (state.isTachiyomiImporting && state.tachiyomiImportTotal > 0) {
+        TachiyomiImportProgressDialog(
+            current = state.tachiyomiImportProgress,
+            total = state.tachiyomiImportTotal,
+        )
+    }
 }
 
 @Composable
@@ -209,6 +223,40 @@ private fun TachiyomiImportConfirmDialog(
             }
         },
     )
+}
+
+@Composable
+private fun TachiyomiImportProgressDialog(
+    current: Int,
+    total: Int,
+) {
+    Dialog(
+        onDismissRequest = {},
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+    ) {
+        Card {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_import_progress_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                LinearProgressIndicator(
+                    progress = { if (total > 0) current.toFloat() / total else 0f },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.settings_import_progress_count, current, total),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
 }
 
 fun NavGraphBuilder.settingsBackupScreen(
@@ -267,7 +315,7 @@ private fun BackupContent(
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_import_tachiyomi)) },
         supportingContent = {
-            if (state.isRestoreInProgress && state.tachiyomiImportTotal > 0) {
+            if (state.isTachiyomiImporting && state.tachiyomiImportTotal > 0) {
                 Text(
                     stringResource(
                         R.string.settings_import_progress,

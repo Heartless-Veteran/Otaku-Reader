@@ -8,6 +8,7 @@ import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.AchievementDao
 import app.otakureader.core.database.dao.DataUsageDao
 import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.database.dao.SyncQueueDao
 import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.migrations.ALL_MIGRATIONS
 import dagger.Module
@@ -95,4 +96,7 @@ object DatabaseModule {
 
     @Provides
     fun provideDataUsageDao(database: OtakuReaderDatabase): DataUsageDao = database.dataUsageDao()
+
+    @Provides
+    fun provideSyncQueueDao(database: OtakuReaderDatabase): SyncQueueDao = database.syncQueueDao()
 }

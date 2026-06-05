@@ -25,6 +25,7 @@ import app.otakureader.core.database.migrations.MIGRATION_27_28
 import app.otakureader.core.database.migrations.MIGRATION_28_29
 import app.otakureader.core.database.migrations.MIGRATION_29_30
 import app.otakureader.core.database.migrations.MIGRATION_30_31
+import app.otakureader.core.database.migrations.MIGRATION_31_32
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -50,7 +51,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 31", 31, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 32", 32, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -77,7 +78,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 29 migrations (v2→v31)", 29, ALL_MIGRATIONS.size)
+        assertEquals("Expected 30 migrations (v2→v32)", 30, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -555,14 +556,50 @@ class DatabaseMigrationTest {
     }
 
     // ── Migration 30 → 31 ───────────────────────────────────────────────────
+    // Adds: sync_queue table for reader progress sync (#958)
+
+    @Test
+    fun migration30To31_createsSyncQueue() {
+        val db = helper.createDatabase(TEST_DB, 30)
+        assertFalse("sync_queue must NOT exist at v30", "sync_queue" in db.tableNames())
+        MIGRATION_30_31.migrate(db)
+        assertTrue("sync_queue must exist after 30→31", "sync_queue" in db.tableNames())
+        val cols = db.columnNames("sync_queue")
+        assertTrue("id must exist", "id" in cols)
+        assertTrue("chapterId must exist", "chapterId" in cols)
+        assertTrue("mangaId must exist", "mangaId" in cols)
+        assertTrue("payload must exist", "payload" in cols)
+        assertTrue("attempts must exist", "attempts" in cols)
+        assertTrue("createdAt must exist", "createdAt" in cols)
+        assertTrue("lastError must exist", "lastError" in cols)
+        db.close()
+    }
+
+    @Test
+    fun migration30To31_syncQueueAcceptsInsert() {
+        val db = helper.createDatabase(TEST_DB, 30)
+        MIGRATION_30_31.migrate(db)
+        db.execSQL(
+            "INSERT INTO sync_queue (chapterId, mangaId, payload, attempts, createdAt, lastError) " +
+                "VALUES (1, 2, '{\"chapter\":1}', 0, 1234567890, NULL)",
+        )
+        val cursor = db.query("SELECT COUNT(*) FROM sync_queue")
+        assertTrue(cursor.moveToFirst())
+        assertEquals("sync_queue must have one row after insert", 1, cursor.getInt(0))
+        cursor.close()
+        db.close()
+    }
+
+    // ── Migration 31 → 32 ───────────────────────────────────────────────────
     // Adds: data_usage table; ALTER download_queue + bytesDownloaded column
 
     @Test
-    fun migration30To31_createsDataUsageTable() {
+    fun migration31To32_createsDataUsageTable() {
         val db = helper.createDatabase(TEST_DB, 30)
-        assertFalse("data_usage must NOT exist at v30", "data_usage" in db.tableNames())
         MIGRATION_30_31.migrate(db)
-        assertTrue("data_usage must exist after 30→31", "data_usage" in db.tableNames())
+        assertFalse("data_usage must NOT exist at v31", "data_usage" in db.tableNames())
+        MIGRATION_31_32.migrate(db)
+        assertTrue("data_usage must exist after 31→32", "data_usage" in db.tableNames())
         val cols = db.columnNames("data_usage")
         assertTrue("date must exist", "date" in cols)
         assertTrue("category must exist", "category" in cols)
@@ -572,18 +609,20 @@ class DatabaseMigrationTest {
     }
 
     @Test
-    fun migration30To31_addsBytesDownloadedToDownloadQueue() {
+    fun migration31To32_addsBytesDownloadedToDownloadQueue() {
         val db = helper.createDatabase(TEST_DB, 30)
-        assertFalse("bytesDownloaded must NOT exist at v30", "bytesDownloaded" in db.columnNames("download_queue"))
         MIGRATION_30_31.migrate(db)
-        assertTrue("bytesDownloaded must exist after 30→31", "bytesDownloaded" in db.columnNames("download_queue"))
+        assertFalse("bytesDownloaded must NOT exist at v31", "bytesDownloaded" in db.columnNames("download_queue"))
+        MIGRATION_31_32.migrate(db)
+        assertTrue("bytesDownloaded must exist after 31→32", "bytesDownloaded" in db.columnNames("download_queue"))
         db.close()
     }
 
     @Test
-    fun migration30To31_dataUsageAcceptsInsert() {
+    fun migration31To32_dataUsageAcceptsInsert() {
         val db = helper.createDatabase(TEST_DB, 30)
         MIGRATION_30_31.migrate(db)
+        MIGRATION_31_32.migrate(db)
         db.execSQL("INSERT INTO data_usage (date, category, network, bytes) VALUES ('2026-01-01', 'DOWNLOAD', 'WIFI', 1024)")
         val cursor = db.query("SELECT COUNT(*) FROM data_usage")
         assertTrue(cursor.moveToFirst())

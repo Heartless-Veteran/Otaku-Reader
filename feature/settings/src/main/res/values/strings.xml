@@ -149,6 +149,8 @@
     <string name="settings_import_preview_tracking">Tracking links: %1$d</string>
     <string name="settings_import_overwrite_existing">Overwrite manga already in my library</string>
     <string name="settings_import_progress">Importing %1$d / %2$d</string>
+    <string name="settings_import_progress_title">Importing Tachiyomi Backup…</string>
+    <string name="settings_import_progress_count">%1$d of %2$d manga imported</string>
     <string name="settings_automatic_backups">Automatic Backups</string>
     <string name="settings_enable_auto_backup">Enable automatic backups</string>
     <string name="settings_enable_auto_backup_description">Periodically save a backup to device storage</string>
@@ -490,4 +492,21 @@
     <string name="settings_data_usage_tab_month">Month</string>
     <string name="settings_download_data_saver">Data Saver</string>
     <string name="settings_download_data_saver_desc">Block downloads on mobile data</string>
+
+    <!-- Reader Sync (#958) -->
+    <string name="settings_sync">Reader Sync</string>
+    <string name="settings_sync_description">Sync your reading progress across devices using a self-hosted server. Leave blank to disable.</string>
+    <string name="settings_sync_server_url">Server URL</string>
+    <string name="settings_sync_bearer_token">Bearer Token</string>
+    <string name="settings_sync_save">Save</string>
+    <string name="settings_sync_now">Sync Now</string>
+    <string name="settings_sync_device_id">Device ID</string>
+    <string name="settings_sync_queue_size">Pending items</string>
+    <string name="settings_sync_test_connection">Test Connection</string>
+    <string name="settings_sync_device_id_none">—</string>
+    <string name="settings_sync_settings_saved">Sync settings saved</string>
+    <string name="settings_sync_no_server_configured">No sync server configured</string>
+    <string name="settings_sync_enqueued">Sync enqueued</string>
+    <string name="settings_sync_enter_url_first">Enter a server URL first</string>
+    <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
 </resources>

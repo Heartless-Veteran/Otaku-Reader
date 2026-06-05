@@ -65,7 +65,9 @@ import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.core.ui.theme.MangaDynamicTheme
 import app.otakureader.core.ui.theme.rememberCoverColorScheme
 import app.otakureader.feature.details.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 
@@ -138,6 +140,41 @@ fun DetailsScreen(
                 }
                 is DetailsContract.Effect.NavigateToGlobalSearch -> {
                     onNavigateToGlobalSearch(effect.query)
+                }
+                is DetailsContract.Effect.OpenDownloadFolder -> {
+                    val externalFilesDir = context.getExternalFilesDir(null)
+                    if (externalFilesDir != null) {
+                        // Match DownloadProvider.sanitize() which also trims whitespace
+                        val safeName = { s: String -> s.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim() }
+                        val mangaDir = java.io.File(
+                            externalFilesDir,
+                            "OtakuReader/${safeName(effect.sourceName)}/${safeName(effect.mangaTitle)}"
+                        )
+                        val uri = withContext(Dispatchers.IO) {
+                            if (mangaDir.exists()) {
+                                runCatching {
+                                    androidx.core.content.FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        mangaDir,
+                                    )
+                                }.getOrNull()
+                            } else null
+                        }
+                        if (uri != null) {
+                            try {
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, android.provider.DocumentsContract.Document.MIME_TYPE_DIR)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                snackbarHostState.showSnackbar(context.getString(R.string.details_no_file_manager))
+                            }
+                        } else {
+                            snackbarHostState.showSnackbar(context.getString(R.string.details_no_downloads))
+                        }
+                    }
                 }
                 else -> { /* no-op */ }
             }
@@ -244,6 +281,21 @@ fun DetailsScreen(
                                 viewModel.onEvent(DetailsContract.Event.CycleMangaThemeOverride)
                                 overflowExpanded = false
                             },
+                        )
+                        androidx.compose.material3.HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details_open_download_folder)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.OpenDownloadFolder)
+                                overflowExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details_clear_downloads)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ClearMangaDownloads)
+                                overflowExpanded = false
+                            }
                         )
                     }
                 }

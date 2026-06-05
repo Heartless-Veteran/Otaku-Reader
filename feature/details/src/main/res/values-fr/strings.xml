@@ -88,4 +88,8 @@
     <string name="details_no_manga">Aucun détail de manga disponible</string>
     <string name="details_stepper_decrement_description">Diminuer</string>
     <string name="details_stepper_increment_description">Augmenter</string>
+    <!-- Per-manga reader settings — "Use Global" options (#934) -->
+    <string name="details_use_global">Use Global</string>
+    <string name="details_reset_to_global">Reset to Global</string>
+    <string name="details_reader_overrides_active_cd">Reader settings overridden for this manga</string>
 </resources>

@@ -21,6 +21,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.NotificationsOff
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -132,7 +135,19 @@ internal fun NotificationOption(
 }
 
 /**
- * Reader settings section for per-manga configuration (#260, #264)
+ * Reader settings section for per-manga configuration (#934, #260, #264).
+ *
+ * Each setting defaults to null which means "use the global app setting". Setting a value
+ * overrides the global default for this manga only. The badged Settings icon in the leading
+ * position provides a visual cue that at least one override is active.
+ *
+ * Controls provided:
+ * - Reading Direction: Use Global / LTR / RTL (radio buttons)
+ * - Reader Mode: Use Global / Single / Dual / Webtoon / Smart Panels (filter chips)
+ * - Color Filter: None / Sepia / Greyscale / Invert / Custom Tint (filter chips)
+ * - Background Color: preset color chips with reset
+ * - Page Preload: stepper for pages-before and pages-after
+ * - Reset to Global: single button that clears all overrides at once
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -143,21 +158,47 @@ internal fun ReaderSettingsSection(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // True when any field deviates from global defaults (i.e., is not null / not 0).
+    val hasOverrides = manga.readerDirection != null ||
+                       manga.readerMode != null ||
+                       manga.readerColorFilter != null ||
+                       manga.readerCustomTintColor != null ||
+                       manga.readerBackgroundColor != null ||
+                       manga.preloadPagesBefore != null ||
+                       manga.preloadPagesAfter != null
+
+    val overridesActiveDesc = stringResource(R.string.details_reader_overrides_active_cd)
     Column(modifier = modifier) {
         ListItem(
             headlineContent = { Text(stringResource(R.string.details_reader_settings)) },
             supportingContent = {
-                val hasOverrides = manga.readerDirection != null ||
-                                   manga.readerMode != null ||
-                                   manga.readerColorFilter != null ||
-                                   manga.readerCustomTintColor != null ||
-                                   manga.readerBackgroundColor != null ||
-                                   manga.preloadPagesBefore != null ||
-                                   manga.preloadPagesAfter != null
                 Text(
                     if (hasOverrides) stringResource(R.string.details_reader_custom_applied)
                     else stringResource(R.string.details_reader_default)
                 )
+            },
+            leadingContent = {
+                val settingsIcon: @Composable () -> Unit = {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                        tint = if (hasOverrides) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (hasOverrides) {
+                    BadgedBox(
+                        badge = {
+                            Badge(
+                                modifier = Modifier.semantics {
+                                    contentDescription = overridesActiveDesc
+                                }
+                            )
+                        }
+                    ) { settingsIcon() }
+                } else {
+                    settingsIcon()
+                }
             },
             trailingContent = {
                 IconButton(onClick = { expanded = !expanded }) {
@@ -180,19 +221,38 @@ internal fun ReaderSettingsSection(
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 // Reading Direction
+                // null = use global setting; 0 = LTR; 1 = RTL
                 Text(
                     text = stringResource(R.string.details_reading_direction),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(modifier = Modifier.selectableGroup()) {
-                    DirectionOption(stringResource(R.string.details_direction_ltr), 0, manga.readerDirection, onEvent)
-                    DirectionOption(stringResource(R.string.details_direction_rtl), 1, manga.readerDirection, onEvent)
+                Column(modifier = Modifier.selectableGroup()) {
+                    // "Use Global" (null) — clears the per-manga direction override
+                    DirectionOption(
+                        label = stringResource(R.string.details_use_global),
+                        value = null,
+                        currentValue = manga.readerDirection,
+                        onEvent = onEvent
+                    )
+                    DirectionOption(
+                        label = stringResource(R.string.details_direction_ltr),
+                        value = 0,
+                        currentValue = manga.readerDirection,
+                        onEvent = onEvent
+                    )
+                    DirectionOption(
+                        label = stringResource(R.string.details_direction_rtl),
+                        value = 1,
+                        currentValue = manga.readerDirection,
+                        onEvent = onEvent
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Reader Mode
+                // null = use global setting; 0 = Single; 1 = Dual; 2 = Webtoon; 3 = Smart Panels
                 Text(
                     text = stringResource(R.string.details_reader_mode),
                     style = MaterialTheme.typography.labelMedium,
@@ -203,6 +263,13 @@ internal fun ReaderSettingsSection(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // "Use Global" chip deselects any active mode override (sends null)
+                    ReaderModeOption(
+                        label = stringResource(R.string.details_use_global),
+                        value = null,
+                        currentValue = manga.readerMode,
+                        onEvent = onEvent
+                    )
                     ReaderModeOption(stringResource(R.string.details_mode_single), 0, manga.readerMode, onEvent)
                     ReaderModeOption(stringResource(R.string.details_mode_dual), 1, manga.readerMode, onEvent)
                     ReaderModeOption(stringResource(R.string.details_mode_webtoon), 2, manga.readerMode, onEvent)
@@ -273,22 +340,28 @@ internal fun ReaderSettingsSection(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Reset button — single atomic event to avoid multiple snackbars
+                // Reset to Global — single atomic event to avoid multiple snackbars.
+                // Sets every per-manga reader field back to null so the global setting applies.
                 TextButton(
                     onClick = { onEvent(DetailsContract.Event.ResetReaderSettings) },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text(stringResource(R.string.details_reset_defaults))
+                    Text(stringResource(R.string.details_reset_to_global))
                 }
             }
         }
     }
 }
 
+/**
+ * A single radio-button row for the reading direction selector.
+ *
+ * [value] is nullable: passing null means "Use Global" (clears the override).
+ */
 @Composable
 internal fun DirectionOption(
     label: String,
-    value: Int,
+    value: Int?,
     currentValue: Int?,
     onEvent: (DetailsContract.Event) -> Unit,
     modifier: Modifier = Modifier
@@ -296,6 +369,7 @@ internal fun DirectionOption(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
+            .fillMaxWidth()
             .selectable(
                 selected = currentValue == value,
                 onClick = { onEvent(DetailsContract.Event.SetReaderDirection(value)) },
@@ -355,10 +429,15 @@ internal fun PreloadOption(
     }
 }
 
+/**
+ * A filter chip for selecting the reader mode.
+ *
+ * [value] is nullable: passing null means "Use Global" (sends null to clear the override).
+ */
 @Composable
 internal fun ReaderModeOption(
     label: String,
-    value: Int,
+    value: Int?,
     currentValue: Int?,
     onEvent: (DetailsContract.Event) -> Unit,
     modifier: Modifier = Modifier

@@ -20,6 +20,12 @@ import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -50,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -75,7 +82,7 @@ fun LibraryScreen(
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
@@ -92,6 +99,20 @@ fun LibraryScreen(
                 }
                 is LibraryEffect.NavigateToMigration -> {
                     onNavigateToMigration(effect.selectedMangaIds)
+                }
+                is LibraryEffect.ShareManga -> {
+                    val shareText = if (effect.url.isNotEmpty()) "${effect.title}\n${effect.url}" else effect.title
+                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                    }
+                    runCatching {
+                        context.startActivity(
+                            android.content.Intent.createChooser(shareIntent, effect.title)
+                        )
+                    }.onFailure {
+                        scope.launch { snackbarHostState.showSnackbar("Unable to open share sheet") }
+                    }
                 }
             }
         }
@@ -150,6 +171,23 @@ fun LibraryScreen(
                                     selectionOverflowExpanded = false
                                 },
                             )
+                            if (state.selectedManga.size == 1) {
+                                androidx.compose.material3.HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_share_manga)) },
+                                    onClick = {
+                                        viewModel.onEvent(LibraryEvent.ShareSelectedManga)
+                                        selectionOverflowExpanded = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_view_details)) },
+                                    onClick = {
+                                        viewModel.onEvent(LibraryEvent.ViewSelectedManga)
+                                        selectionOverflowExpanded = false
+                                    },
+                                )
+                            }
                         }
                     }
                 )
@@ -311,8 +349,19 @@ private fun LibraryContent(
             IncognitoBanner()
         }
 
+        if (state.showSearchBar) {
+            LibrarySearchFiltersRow(state = state, onEvent = onEvent)
+        }
+
+        if (state.showSearchBar && state.showAdvancedSearch) {
+            AdvancedSearchSheet(
+                onApply = { author, tag -> onEvent(LibraryEvent.ApplyAdvancedSearch(author, tag)) },
+                onDismiss = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+            )
+        }
+
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL || state.filterGenres.isNotEmpty()
-        if (hasActiveFilters) {
+        if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -388,6 +437,71 @@ private fun LibraryContent(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LibrarySearchFiltersRow(
+    state: LibraryState,
+    onEvent: (LibraryEvent) -> Unit,
+) {
+    val allLabel = stringResource(R.string.library_filter_all)
+    val unreadLabel = stringResource(R.string.library_filter_unread)
+    val downloadedLabel = stringResource(R.string.library_filter_downloaded)
+    val completedLabel = stringResource(R.string.library_filter_completed)
+    val droppedLabel = stringResource(R.string.library_filter_dropped)
+    val statusFilters = remember(allLabel, unreadLabel, downloadedLabel, completedLabel, droppedLabel) {
+        listOf(
+            LibraryFilterMode.ALL to allLabel,
+            LibraryFilterMode.UNREAD to unreadLabel,
+            LibraryFilterMode.DOWNLOADED to downloadedLabel,
+            LibraryFilterMode.COMPLETED to completedLabel,
+            LibraryFilterMode.DROPPED to droppedLabel,
+        )
+    }
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(statusFilters, key = { it.first.name }) { (mode, label) ->
+            FilterChip(
+                selected = state.filterMode == mode,
+                onClick = { onEvent(LibraryEvent.SetFilterMode(mode)) },
+                label = { Text(label) },
+            )
+        }
+        if (state.availableGenres.isNotEmpty()) {
+            items(state.availableGenres.take(12), key = { "genre_$it" }) { genre ->
+                FilterChip(
+                    selected = genre in state.filterGenres,
+                    onClick = {
+                        val updated = if (genre in state.filterGenres) {
+                            state.filterGenres - genre
+                        } else {
+                            state.filterGenres + genre
+                        }
+                        onEvent(LibraryEvent.SetGenreFilter(updated))
+                    },
+                    label = { Text(genre) },
+                )
+            }
+        }
+        item(key = "advanced") {
+            AssistChip(
+                onClick = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+                label = { Text(stringResource(R.string.library_advanced_search_open)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                    )
+                },
+            )
         }
     }
 }
