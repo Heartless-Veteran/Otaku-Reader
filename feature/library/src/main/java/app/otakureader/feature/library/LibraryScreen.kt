@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -294,6 +296,13 @@ private fun LibraryContent(
             LibrarySearchFiltersRow(state = state, onEvent = onEvent)
         }
 
+        if (state.showAdvancedSearch) {
+            AdvancedSearchSheet(
+                onApply = { author, tag -> onEvent(LibraryEvent.ApplyAdvancedSearch(author, tag)) },
+                onDismiss = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+            )
+        }
+
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL || state.filterGenres.isNotEmpty()
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
@@ -417,6 +426,18 @@ private fun LibrarySearchFiltersRow(
                     label = { Text(genre) },
                 )
             }
+        }
+        item(key = "advanced") {
+            AssistChip(
+                onClick = { onEvent(LibraryEvent.ToggleAdvancedSearch) },
+                label = { Text(stringResource(R.string.library_advanced_search_open)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                    )
+                },
+            )
         }
     }
 }

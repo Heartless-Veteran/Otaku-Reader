@@ -149,6 +149,8 @@
     <string name="settings_import_preview_tracking">Tracking links: %1$d</string>
     <string name="settings_import_overwrite_existing">Overwrite manga already in my library</string>
     <string name="settings_import_progress">Importing %1$d / %2$d</string>
+    <string name="settings_import_progress_title">Importing Tachiyomi Backup…</string>
+    <string name="settings_import_progress_count">%1$d of %2$d manga imported</string>
     <string name="settings_automatic_backups">Automatic Backups</string>
     <string name="settings_enable_auto_backup">Enable automatic backups</string>
     <string name="settings_enable_auto_backup_description">Periodically save a backup to device storage</string>

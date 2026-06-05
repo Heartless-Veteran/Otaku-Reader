@@ -111,6 +111,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showFilterSheet = !it.showFilterSheet) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
+            is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
+            is LibraryEvent.ApplyAdvancedSearch -> applyAdvancedSearch(event.authorQuery, event.tagQuery)
             is LibraryEvent.ToggleFavorite, is LibraryEvent.MarkSelectedAsRead,
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
@@ -626,5 +628,16 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             libraryPreferences.dismissRecommendation(mangaId)
         }
+    }
+
+    private fun applyAdvancedSearch(authorQuery: String, tagQuery: String) {
+        val parts = buildList {
+            if (authorQuery.isNotBlank()) add("author:${authorQuery.trim()}")
+            if (tagQuery.isNotBlank()) add("tag:${tagQuery.trim()}")
+        }
+        val newQuery = if (parts.isEmpty()) _state.value.searchQuery
+        else "${_state.value.searchQuery.trim()} ${parts.joinToString(" ")}".trim()
+        _state.update { it.copy(showAdvancedSearch = false, searchQuery = newQuery) }
+        onSearchQueryChange(newQuery)
     }
 }

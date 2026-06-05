@@ -63,6 +63,8 @@ data class LibraryState(
     // Recommendations carousel
     val recommendations: List<LibraryMangaItem> = emptyList(),
     val showRecommendations: Boolean = true,
+    // Advanced search sheet
+    val showAdvancedSearch: Boolean = false,
 )
 
 data class LibraryMangaItem(
@@ -128,6 +130,8 @@ sealed class LibraryEvent {
     data object ClearAllFilters : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
+    data object ToggleAdvancedSearch : LibraryEvent()
+    data class ApplyAdvancedSearch(val authorQuery: String, val tagQuery: String) : LibraryEvent()
 }
 
 sealed class LibraryEffect {
