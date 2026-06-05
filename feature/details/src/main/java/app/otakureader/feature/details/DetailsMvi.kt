@@ -187,6 +187,8 @@ object DetailsContract {
         data class ExportChapterAsCbz(val chapterId: Long) : Event
         data class MarkPreviousAsRead(val chapterId: Long) : Event
         data object ShareManga : Event
+        data object OpenDownloadFolder : Event
+        data object ClearMangaDownloads : Event
         data class SetDeleteAfterReadOverride(val mode: DeleteAfterReadMode) : Event
         data object ShowNoteEditor : Event
         data object HideNoteEditor : Event
@@ -250,6 +252,7 @@ object DetailsContract {
         data class NavigateToTracking(val mangaId: Long, val mangaTitle: String) : Effect
         data class OpenInBrowser(val url: String) : Effect
         data class NavigateToGlobalSearch(val query: String) : Effect
+        data class OpenDownloadFolder(val sourceName: String, val mangaTitle: String) : Effect
     }
 }
 
