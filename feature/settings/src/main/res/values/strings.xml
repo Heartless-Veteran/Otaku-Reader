@@ -170,8 +170,26 @@
     <string name="settings_restore_from_auto">Restore from automatic backup</string>
     <string name="settings_no_auto_backups">No automatic backups yet</string>
     <string name="settings_no_auto_backups_description">Backups will appear here once created</string>
+
+    <!-- Cloud Backup -->
+    <string name="settings_cloud_backup">Cloud Backup</string>
+    <string name="settings_cloud_backup_destination">Cloud destination</string>
+    <string name="settings_cloud_backup_webdav">WebDAV</string>
+    <string name="settings_cloud_backup_test_connection">Test connection</string>
+    <string name="settings_cloud_backup_save_credentials">Save credentials</string>
+    <string name="settings_cloud_backup_configure">Configure</string>
     <string name="settings_migrate_manga">Migrate manga</string>
     <string name="settings_migrate_manga_description">Move manga from one source to another</string>
+
+    <!-- Crash reporting (#952) — Sentry SDK, opt-in only -->
+    <string name="settings_crash_reporting">Crash Reporting</string>
+    <string name="settings_crash_opt_in">Send crash reports</string>
+    <string name="settings_crash_opt_in_description">Off by default. When on, fatal crashes are reported to the Sentry instance configured below. Disable at any time to stop reporting.</string>
+    <string name="settings_crash_dsn_label">Sentry DSN</string>
+    <string name="settings_crash_dsn_helper">Paste your Sentry project DSN. No DSN = no reporting, regardless of the switch above.</string>
+    <string name="settings_crash_save_dsn">Save DSN</string>
+    <string name="settings_crash_saved">Saved</string>
+    <string name="settings_crash_restart_hint">DSN changes take effect on the next app launch.</string>
 
     <!-- Data management -->
     <string name="settings_data_management">Data Management</string>

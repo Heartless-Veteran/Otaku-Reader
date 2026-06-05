@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.SubcomposeAsyncImage
@@ -52,6 +54,9 @@ import app.otakureader.core.ui.modifiers.bottomGradientScrim
  * @param isSelected Whether the card is in selected state (shows checkmark overlay)
  * @param readProgress 0f–1f fraction of chapters read; null hides the progress bar
  * @param onLongClick Optional long-click callback (enables multi-select)
+ * @param continueReading When true, shows a centered play button overlay on the cover
+ * @param isNew When true, shows a "NEW" badge in the top-left corner
+ * @param sourceIcon Optional composable for a small source favicon watermark (bottom-right corner)
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -66,6 +71,9 @@ fun MangaCard(
     isSelected: Boolean = false,
     readProgress: Float? = null,
     onLongClick: (() -> Unit)? = null,
+    continueReading: Boolean = false,
+    isNew: Boolean = false,
+    sourceIcon: @Composable (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
 
@@ -153,6 +161,60 @@ fun MangaCard(
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(4.dp)
+                ) {
+                    it()
+                }
+            }
+
+            // NEW badge — distinct from unread count, shown in top-left when fresh
+            if (isNew) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(4.dp)
+                        .padding(start = if (statusBadge != null) 32.dp else 0.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.manga_card_new_badge),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.White,
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // Continue reading — centered play button overlay
+            if (continueReading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .background(Color.Black.copy(alpha = 0.35f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PlayArrow,
+                        contentDescription = stringResource(R.string.manga_card_continue_reading),
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp)
+                    )
+                }
+            }
+
+            // Source favicon watermark — bottom-right corner
+            sourceIcon?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(4.dp)
+                        .padding(bottom = if (readProgress != null) 10.dp else 4.dp)
                 ) {
                     it()
                 }

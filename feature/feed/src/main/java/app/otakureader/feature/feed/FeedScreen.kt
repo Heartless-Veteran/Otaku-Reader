@@ -161,6 +161,12 @@ fun FeedScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
+                item(key = "discovery_chips") {
+                    DiscoveryModeChips(
+                        selected = state.discoveryMode,
+                        onSelect = { viewModel.onEvent(FeedEvent.SetDiscoveryMode(it)) },
+                    )
+                }
                 items(
                     items = state.feedItems,
                     key = { it.id }
@@ -250,6 +256,35 @@ private fun FeedItemRow(
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun DiscoveryModeChips(
+    selected: FeedDiscoveryMode,
+    onSelect: (FeedDiscoveryMode) -> Unit,
+) {
+    androidx.compose.foundation.lazy.LazyRow(
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        items(FeedDiscoveryMode.entries.toList()) { mode ->
+            androidx.compose.material3.FilterChip(
+                selected = selected == mode,
+                onClick = { onSelect(mode) },
+                label = {
+                    Text(
+                        when (mode) {
+                            FeedDiscoveryMode.LATEST -> stringResource(R.string.feed_mode_latest)
+                            FeedDiscoveryMode.TRENDING -> stringResource(R.string.feed_mode_trending)
+                            FeedDiscoveryMode.RANDOM -> stringResource(R.string.feed_mode_random)
+                        }
+                    )
+                },
+            )
         }
     }
 }

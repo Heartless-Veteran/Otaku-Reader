@@ -17,6 +17,11 @@ import kotlinx.coroutines.flow.Flow
  */
 interface ExtensionRepoRepository {
 
+    companion object {
+        /** The bundled default Tachiyomi/Komikku-compatible extensions repository. */
+        const val DEFAULT_REPO_URL = "https://raw.githubusercontent.com/keiyoushi/extensions/repo"
+    }
+
     /**
      * Get all configured repository URLs. All returned URLs are treated as active.
      */

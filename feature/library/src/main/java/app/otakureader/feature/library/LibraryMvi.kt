@@ -111,6 +111,13 @@ sealed class LibraryEvent {
     data class SetFilterMode(val mode: LibraryFilterMode) : LibraryEvent()
     data class SetFilterSource(val sourceId: Long?) : LibraryEvent()
     data class ToggleNsfw(val show: Boolean) : LibraryEvent()
+    // New overflow menu events
+    data object UpdateLibrary : LibraryEvent()
+    data object UpdateCategory : LibraryEvent()
+    data object OpenRandomEntry : LibraryEvent()
+    data object ReindexDownloads : LibraryEvent()
+    data object SyncEhFavorites : LibraryEvent()
+    data object SyncLibrary : LibraryEvent()
     // Bulk selection actions
     data object MarkSelectedAsRead : LibraryEvent()
     data object MarkSelectedAsUnread : LibraryEvent()

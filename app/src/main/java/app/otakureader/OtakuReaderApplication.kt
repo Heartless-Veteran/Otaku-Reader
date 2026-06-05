@@ -5,8 +5,10 @@ import android.content.ComponentCallbacks2
 import android.content.Context
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import app.otakureader.core.preferences.CrashReportingStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.crash.CrashHandler
+import app.otakureader.crash.CrashReporter
 import app.otakureader.shortcut.AppShortcutManager
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -53,9 +55,15 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
             .build()
 
     override fun onCreate() {
+        // Read crash-reporting prefs directly (no Hilt) since CrashHandler installs BEFORE
+        // super.onCreate() and the Hilt graph isn't constructed yet at that point. The store
+        // is keystore-backed encrypted SharedPreferences, safe to instantiate here. (#952)
+        val crashReportingStore = CrashReportingStore(this)
+        // Init Sentry first so the captureException() inside CrashHandler has a live SDK.
+        CrashReporter.initialize(this, crashReportingStore)
         // Install the crash handler first so failures during Hilt graph construction
         // or any other startup code are captured and shown on the next launch.
-        CrashHandler.install(this)
+        CrashHandler.install(this, crashReportingStore)
         super.onCreate()
         // Enable Material You dynamic colors on Android 12+ (API 31+)
         DynamicColors.applyToActivitiesIfAvailable(this)

@@ -115,6 +115,10 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
             is LibraryEvent.MarkSelectedAsDropped -> handleActionEvent(event)
+            // New overflow menu events — wired as no-ops/TODOs for now
+            is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
+            is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
+            is LibraryEvent.SyncEhFavorites, is LibraryEvent.SyncLibrary -> handleNewEvent(event)
         }
     }
 
@@ -171,6 +175,41 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.DownloadSelected -> downloadSelected()
             is LibraryEvent.MarkSelectedAsCompleted -> markSelectedAsCompleted()
             is LibraryEvent.MarkSelectedAsDropped -> markSelectedAsDropped()
+            else -> Unit
+        }
+    }
+
+    /** Temporary handler for new overflow menu events (#989). These are no-ops until the domain logic is implemented. */
+    private fun handleNewEvent(event: LibraryEvent) {
+        when (event) {
+            is LibraryEvent.UpdateLibrary -> {
+                // TODO: Trigger full library update (background refresh from all sources)
+                android.util.Log.d("LibraryViewModel", "UpdateLibrary requested — not yet implemented")
+            }
+            is LibraryEvent.UpdateCategory -> {
+                // TODO: Trigger update for the currently selected category only
+                android.util.Log.d("LibraryViewModel", "UpdateCategory requested — not yet implemented")
+            }
+            is LibraryEvent.OpenRandomEntry -> {
+                // TODO: Open a random manga from the current filtered list
+                val currentList = _state.value.mangaList
+                if (currentList.isNotEmpty()) {
+                    val random = currentList.random()
+                    viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(random.id)) }
+                }
+            }
+            is LibraryEvent.ReindexDownloads -> {
+                // TODO: Rebuild the download index / verify downloaded files
+                android.util.Log.d("LibraryViewModel", "ReindexDownloads requested — not yet implemented")
+            }
+            is LibraryEvent.SyncEhFavorites -> {
+                // TODO: Sync E-Hentai favorites list
+                android.util.Log.d("LibraryViewModel", "SyncEhFavorites requested — not yet implemented")
+            }
+            is LibraryEvent.SyncLibrary -> {
+                // TODO: Sync library with remote account (e.g., AniList, MAL, Kitsu)
+                android.util.Log.d("LibraryViewModel", "SyncLibrary requested — not yet implemented")
+            }
             else -> Unit
         }
     }

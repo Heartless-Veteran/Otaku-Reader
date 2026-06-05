@@ -328,6 +328,7 @@ sealed interface SettingsEvent : UiEvent {
 
     // Navigation
     data object NavigateToAbout : SettingsEvent
+    data object NavigateToCloudBackup : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {
@@ -339,4 +340,5 @@ sealed interface SettingsEffect : UiEffect {
     data object NavigateToAbout : SettingsEffect
     data class ShowDownloadLocationPicker(val currentLocation: String?) : SettingsEffect
     data object ShowAutoBackupLocationPicker : SettingsEffect
+    data object NavigateToCloudBackup : SettingsEffect
 }

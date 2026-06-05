@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import app.otakureader.core.preferences.CrashReportingStore
 
 /**
  * Custom [Thread.UncaughtExceptionHandler] that captures fatal crashes, writes the
@@ -28,12 +29,16 @@ object CrashHandler {
      * Must be called early in [app.otakureader.OtakuReaderApplication.onCreate] so
      * crashes during Hilt graph construction or any other startup code are captured.
      */
-    fun install(context: Context) {
+    fun install(context: Context, crashReportingStore: CrashReportingStore? = null) {
         val appContext = context.applicationContext
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
+                // Forward to Sentry first (synchronously flushes) so the report leaves the
+                // device before the system kills the process. Falls back to the local-only
+                // path when no store is wired or the user hasn't opted in (#952).
+                crashReportingStore?.let { CrashReporter.captureIfEnabled(it, throwable) }
                 saveReport(appContext, buildReport(thread, throwable))
             } catch (_: Throwable) {
                 // Never allow the crash handler itself to throw – always fall through.

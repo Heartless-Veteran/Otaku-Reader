@@ -86,6 +86,12 @@ sealed interface Route {
     data object ExtensionInstall : Route
 
     /**
+     * Manage custom extension repository URLs (#953).
+     */
+    @Serializable
+    data object ExtensionRepositories : Route
+
+    /**
      * Source manga detail — browse a manga from a source before adding to library.
      * @param sourceId Source extension ID.
      * @param mangaUrl URL slug from the source.
@@ -127,6 +133,9 @@ sealed interface Route {
 
     @Serializable
     data object SettingsBackup : Route
+
+    @Serializable
+    data object SettingsCloudBackup : Route
 
     @Serializable
     data object SettingsDiscord : Route
@@ -232,5 +241,23 @@ sealed interface Route {
         val tracker: String,
         val code: String,
         val state: String? = null,
+    ) : Route
+
+    // ─── WebView ───
+
+    /**
+     * Embedded WebView screen (e.g. CAPTCHA solving, OAuth).
+     *
+     * @param sourceId Extension source ID this WebView is serving.
+     * @param url      URL to open.
+     * @param purpose  [app.otakureader.core.webview.WebViewPurpose] as a String to avoid
+     *                 a cross-module enum reference in the navigation layer.
+     *                 Defaults to "GENERAL".
+     */
+    @Serializable
+    data class WebView(
+        val sourceId: Long,
+        val url: String,
+        val purpose: String = "GENERAL",
     ) : Route
 }

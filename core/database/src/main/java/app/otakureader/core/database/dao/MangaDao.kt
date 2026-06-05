@@ -110,6 +110,13 @@ interface MangaDao {
     @Query("SELECT genre FROM manga WHERE favorite = 1 AND genre IS NOT NULL")
     fun getFavoriteMangaGenres(): Flow<List<String>>
 
+    /**
+     * Browsed-but-not-in-library manga: candidates for the recommendation engine (#943).
+     * Includes only entries with a non-empty genre, since the scorer needs genres to compare.
+     */
+    @Query("SELECT * FROM manga WHERE favorite = 0 AND genre IS NOT NULL AND genre != '' LIMIT :limit")
+    suspend fun getRecommendationCandidates(limit: Int = 500): List<MangaEntity>
+
     @Query("""
         SELECT m.*, COALESCE(SUM(CASE WHEN c.read = 0 THEN 1 ELSE 0 END), 0) as unreadCount
         FROM manga m

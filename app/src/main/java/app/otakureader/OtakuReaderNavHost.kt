@@ -15,6 +15,7 @@ import app.otakureader.feature.about.navigation.aboutScreen
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.extensionInstallScreen
 import app.otakureader.feature.browse.navigation.extensionsBottomSheet
+import app.otakureader.feature.browse.repos.navigation.extensionRepositoriesScreen
 import app.otakureader.feature.browse.navigation.globalSearchScreen
 import app.otakureader.feature.browse.navigation.sourceMangaDetailScreen
 import app.otakureader.feature.browse.navigation.sourceDetailScreen
@@ -39,6 +40,7 @@ import app.otakureader.feature.settings.navigation.settingsScreen
 import app.otakureader.feature.statistics.navigation.statisticsScreen
 import app.otakureader.feature.tracking.navigation.trackerOAuthScreen
 import app.otakureader.feature.tracking.navigation.trackingScreen
+import app.otakureader.core.webview.webViewScreen
 import app.otakureader.feature.updates.navigation.downloadsScreen
 import app.otakureader.feature.updates.navigation.updatesScreen
 import app.otakureader.util.DeepLinkResult
@@ -239,7 +241,15 @@ fun OtakuReaderNavHost(
             },
             onNavigateToSettings = {
                 navController.navigate(Route.Settings)
-            }
+            },
+            onNavigateToRepositories = {
+                navController.navigate(Route.ExtensionRepositories)
+            },
+        )
+
+        // Extension repositories management screen (#953)
+        extensionRepositoriesScreen(
+            onNavigateBack = { navController.popBackStack() },
         )
 
         // Extension install screen
@@ -325,6 +335,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToLocalSourceBrowser = {
                 navController.navigate(Route.LocalSourceBrowser)
+            },
+            onNavigateToCloudBackup = {
+                navController.navigate(Route.SettingsCloudBackup)
             },
         )
 
@@ -490,6 +503,13 @@ fun OtakuReaderNavHost(
             },
             onNavigateToExtensions = {
                 navController.navigate(Route.ExtensionCatalog)
+            }
+        )
+
+        // WebView — embedded browser for CAPTCHA solving, OAuth, etc.
+        webViewScreen(
+            onClose = { _, _, _ ->
+                navController.popBackStack()
             }
         )
     }

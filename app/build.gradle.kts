@@ -134,6 +134,7 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.core.database)
     implementation(projects.core.discord)
+    implementation(projects.core.webview)
     implementation(projects.domain)
     implementation(projects.sourceApi)
 
@@ -181,6 +182,9 @@ dependencies {
 
     // Encrypted SharedPreferences for crash log storage
     implementation(libs.androidx.security.crypto)
+
+    // Crash reporting (#952) — Sentry SDK, configured at runtime via user-supplied DSN
+    implementation(libs.sentry.android)
 
     // Debug tools (LeakCanary — no-op in release builds)
     debugImplementation(libs.leakcanary)

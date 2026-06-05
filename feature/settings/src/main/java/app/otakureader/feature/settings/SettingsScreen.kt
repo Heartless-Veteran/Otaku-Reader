@@ -164,6 +164,10 @@ fun SettingsScreen(
             HorizontalDivider()
             ReadingGoalsSection(state = state, onEvent = viewModel::onEvent)
 
+            // ── Crash reporting (#952) ────────────────────────────────
+            HorizontalDivider()
+            CrashReportingSection()
+
             // ── Data management ───────────────────────────────────────
             HorizontalDivider()
             DataManagementSection(state = state, onEvent = viewModel::onEvent)
