@@ -338,7 +338,10 @@ private fun SwipeToDismissBookmarkRow(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDelete()
-                true
+                // Return false: the row stays until Room emits a new list without it.
+                // This avoids the UI/data race where the row disappears before the DB
+                // delete completes — if deletion fails the row never disappears at all.
+                false
             } else {
                 false
             }
