@@ -21,6 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -99,6 +102,7 @@ private fun DisplayTab(
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
+            var sliderValue by remember(state.gridSize) { mutableFloatStateOf(state.gridSize.toFloat()) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -106,8 +110,9 @@ private fun DisplayTab(
             ) {
                 Text("1", style = MaterialTheme.typography.bodySmall)
                 Slider(
-                    value = state.gridSize.toFloat(),
-                    onValueChange = { onEvent(LibraryEvent.SetGridSize(it.toInt())) },
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    onValueChangeFinished = { onEvent(LibraryEvent.SetGridSize(sliderValue.toInt())) },
                     valueRange = 1f..5f,
                     steps = 3,
                     modifier = Modifier.weight(1f),
@@ -115,7 +120,7 @@ private fun DisplayTab(
                 Text("5", style = MaterialTheme.typography.bodySmall)
             }
             Text(
-                text = stringResource(R.string.display_grid_size_value, state.gridSize),
+                text = stringResource(R.string.display_grid_size_value, sliderValue.toInt()),
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -131,7 +136,7 @@ private fun DisplayTab(
             Text(stringResource(R.string.display_show_badges))
             Switch(
                 checked = state.showBadges,
-                onCheckedChange = { onEvent(LibraryEvent.ToggleShowBadges) },
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowBadges(enabled)) },
             )
         }
 
@@ -144,7 +149,7 @@ private fun DisplayTab(
             Text(stringResource(R.string.display_show_download_badge))
             Switch(
                 checked = state.showDownloadBadge,
-                onCheckedChange = { onEvent(LibraryEvent.ToggleShowDownloadBadge) },
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowDownloadBadge(enabled)) },
             )
         }
 
@@ -157,7 +162,7 @@ private fun DisplayTab(
             Text(stringResource(R.string.display_staggered_grid))
             Switch(
                 checked = state.isStaggeredGrid,
-                onCheckedChange = { onEvent(LibraryEvent.ToggleStaggeredGrid) },
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetStaggeredGrid(enabled)) },
             )
         }
     }

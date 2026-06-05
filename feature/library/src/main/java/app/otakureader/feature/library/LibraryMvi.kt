@@ -139,9 +139,9 @@ sealed class LibraryEvent {
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
     data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
     data class SetGridSize(val size: Int) : LibraryEvent()
-    data object ToggleShowBadges : LibraryEvent()
-    data object ToggleShowDownloadBadge : LibraryEvent()
-    data object ToggleStaggeredGrid : LibraryEvent()
+    data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
+    data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
+    data class SetStaggeredGrid(val enabled: Boolean) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
 }

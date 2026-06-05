@@ -113,11 +113,11 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
             is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
             is LibraryEvent.SetGridSize -> viewModelScope.launch { libraryPreferences.setGridSize(event.size) }
-            is LibraryEvent.ToggleShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(!_state.value.showBadges) }
-            is LibraryEvent.ToggleShowDownloadBadge ->
-                viewModelScope.launch { libraryPreferences.setShowDownloadBadge(!_state.value.showDownloadBadge) }
-            is LibraryEvent.ToggleStaggeredGrid ->
-                viewModelScope.launch { libraryPreferences.setStaggeredGrid(!_state.value.isStaggeredGrid) }
+            is LibraryEvent.SetShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(event.enabled) }
+            is LibraryEvent.SetShowDownloadBadge ->
+                viewModelScope.launch { libraryPreferences.setShowDownloadBadge(event.enabled) }
+            is LibraryEvent.SetStaggeredGrid ->
+                viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleFavorite, is LibraryEvent.MarkSelectedAsRead,
