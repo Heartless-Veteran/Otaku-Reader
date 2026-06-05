@@ -264,8 +264,8 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
     SectionHeader(title = stringResource(R.string.settings_data_usage))
 
     ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_data_saver)) },
-        supportingContent = { Text(stringResource(R.string.settings_data_saver_desc)) },
+        headlineContent = { Text(stringResource(R.string.settings_download_data_saver)) },
+        supportingContent = { Text(stringResource(R.string.settings_download_data_saver_desc)) },
         trailingContent = {
             Switch(
                 checked = state.downloadDataSaverEnabled,

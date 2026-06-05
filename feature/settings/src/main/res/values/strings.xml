@@ -482,6 +482,6 @@
 
     <!-- Data Usage (#956) -->
     <string name="settings_data_usage">Data Usage</string>
-    <string name="settings_data_saver">Data Saver</string>
-    <string name="settings_data_saver_desc">Block downloads on mobile data</string>
+    <string name="settings_download_data_saver">Data Saver</string>
+    <string name="settings_download_data_saver_desc">Block downloads on mobile data</string>
 </resources>
