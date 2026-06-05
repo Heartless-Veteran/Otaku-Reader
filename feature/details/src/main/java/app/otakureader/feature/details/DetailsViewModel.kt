@@ -469,8 +469,9 @@ class DetailsViewModel @Inject constructor(
             val mangaTitle = manga?.title ?: "Manga"
             val sourceName = manga?.sourceId?.toString() ?: ""
 
+            var enqueuedCount = 0
             for (chapter in chapters) {
-                runCatching {
+                try {
                     downloadRepository.enqueueChapter(
                         mangaId = chapter.mangaId,
                         chapterId = chapter.id,
@@ -478,18 +479,23 @@ class DetailsViewModel @Inject constructor(
                         mangaTitle = mangaTitle,
                         chapterTitle = chapter.name
                     )
-                }.onFailure { e ->
-                    when (e) {
-                        is CancellationException -> throw e
-                        is DownloadBlockedException -> {
-                            _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
-                            return@launch
-                        }
-                    }
+                    enqueuedCount++
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: DownloadBlockedException) {
+                    _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                    return@launch
+                } catch (_: Exception) {
+                    // chapter failed to enqueue - continue with others
                 }
             }
             clearChapterSelection()
-            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
+            val failCount = chapters.size - enqueuedCount
+            if (failCount > 0) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("$enqueuedCount chapter(s) added, $failCount failed"))
+            } else {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} chapter(s) added to download queue"))
+            }
         }
     }
 
@@ -650,8 +656,9 @@ class DetailsViewModel @Inject constructor(
             }
             if (chapters.isEmpty()) return@launch
 
+            var enqueuedCount = 0
             for (chapter in chapters) {
-                runCatching {
+                try {
                     downloadRepository.enqueueChapter(
                         mangaId = chapter.mangaId,
                         chapterId = chapter.id,
@@ -659,18 +666,23 @@ class DetailsViewModel @Inject constructor(
                         mangaTitle = manga.title,
                         chapterTitle = chapter.name
                     )
-                }.onFailure { e ->
-                    when (e) {
-                        is CancellationException -> throw e
-                        is DownloadBlockedException -> {
-                            _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
-                            return@launch
-                        }
-                    }
+                    enqueuedCount++
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: DownloadBlockedException) {
+                    _effect.send(DetailsContract.Effect.ShowSnackbar(e.message ?: "Download blocked"))
+                    return@launch
+                } catch (_: Exception) {
+                    // chapter failed to enqueue - continue with others
                 }
             }
             val label = if (unreadOnly) "unread" else "all"
-            _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
+            val failCount = chapters.size - enqueuedCount
+            if (failCount > 0) {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("$enqueuedCount $label chapter(s) added, $failCount failed"))
+            } else {
+                _effect.send(DetailsContract.Effect.ShowSnackbar("${chapters.size} $label chapters added to queue"))
+            }
         }
     }
 

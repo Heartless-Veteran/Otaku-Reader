@@ -485,11 +485,11 @@
     <!-- Data Usage (#956) -->
     <string name="settings_data_usage">Data Usage</string>
     <string name="settings_data_usage_back">Back</string>
-    <string name="settings_data_usage_wifi">Wi-Fi: %s</string>
-    <string name="settings_data_usage_mobile">Mobile: %s</string>
+    <string name="settings_data_usage_wifi">Wi-Fi: %1$s</string>
+    <string name="settings_data_usage_mobile">Mobile: %1$s</string>
     <string name="settings_data_usage_tab_today">Today</string>
-    <string name="settings_data_usage_tab_week">Week</string>
-    <string name="settings_data_usage_tab_month">Month</string>
+    <string name="settings_data_usage_tab_week">This Week</string>
+    <string name="settings_data_usage_tab_month">This Month</string>
     <string name="settings_download_data_saver">Data Saver</string>
     <string name="settings_download_data_saver_desc">Block downloads on mobile data</string>
 

@@ -613,8 +613,21 @@ class DatabaseMigrationTest {
         val db = helper.createDatabase(TEST_DB, 30)
         MIGRATION_30_31.migrate(db)
         assertFalse("bytesDownloaded must NOT exist at v31", "bytesDownloaded" in db.columnNames("download_queue"))
+
+        db.execSQL("""
+            INSERT INTO download_queue
+            (chapter_id, manga_id, manga_title, chapter_title, source_name, page_urls_json, priority, status, added_at)
+            VALUES (1, 1, 'Manga', 'Chapter', 'Source', '[]', 1, 'QUEUED', 0)
+        """.trimIndent())
+
         MIGRATION_31_32.migrate(db)
         assertTrue("bytesDownloaded must exist after 31→32", "bytesDownloaded" in db.columnNames("download_queue"))
+
+        val cursor = db.query("SELECT bytesDownloaded FROM download_queue WHERE chapter_id = 1")
+        assertTrue("existing row must survive migration", cursor.moveToFirst())
+        assertEquals("bytesDownloaded must be backfilled to 0", 0L, cursor.getLong(0))
+        cursor.close()
+
         db.close()
     }
 
