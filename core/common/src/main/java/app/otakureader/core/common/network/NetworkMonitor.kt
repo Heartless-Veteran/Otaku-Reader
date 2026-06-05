@@ -48,13 +48,6 @@ class NetworkMonitor @Inject constructor(
         awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
     }.distinctUntilChanged()
 
-    private fun resolveType(caps: NetworkCapabilities) = when {
-        caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-        caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkType.WIFI
-        caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkType.MOBILE
-        else -> NetworkType.OFFLINE
-    }
-
     fun isUnmetered(): Boolean {
         connectivityManager.activeNetwork ?: return false
         return !connectivityManager.isActiveNetworkMetered
