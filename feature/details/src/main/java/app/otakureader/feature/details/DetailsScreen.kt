@@ -175,7 +175,8 @@ fun DetailsScreen(
     val dynamicScheme = rememberCoverColorScheme(
         imageUrl = state.manga?.thumbnailUrl,
         darkTheme = androidx.compose.foundation.isSystemInDarkTheme(),
-        enabled = state.autoThemeEnabled
+        // Per-manga override (#947) takes precedence over the global autoThemeColor pref.
+        enabled = state.manga?.mangaThemeOverride ?: state.autoThemeEnabled
     )
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
@@ -257,6 +258,20 @@ fun DetailsScreen(
                                 viewModel.onEvent(DetailsContract.Event.ToggleUserDropped)
                                 overflowExpanded = false
                             }
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                val label = when (state.manga?.mangaThemeOverride) {
+                                    null -> stringResource(R.string.details_theme_inherit)
+                                    true -> stringResource(R.string.details_theme_force_on)
+                                    false -> stringResource(R.string.details_theme_force_off)
+                                }
+                                Text(label)
+                            },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.CycleMangaThemeOverride)
+                                overflowExpanded = false
+                            },
                         )
                         androidx.compose.material3.HorizontalDivider()
                         DropdownMenuItem(

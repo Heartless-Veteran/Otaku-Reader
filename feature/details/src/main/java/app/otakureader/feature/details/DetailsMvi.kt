@@ -215,6 +215,9 @@ object DetailsContract {
         data object ToggleUserCompleted : Event
         data object ToggleUserDropped : Event
 
+        /** Cycles per-manga cover-theme override: null → true → false → null. (#947) */
+        data object CycleMangaThemeOverride : Event
+
         // Per-manga reader settings (#260)
         data class SetReaderDirection(val direction: Int?) : Event
         data class SetReaderMode(val mode: Int?) : Event

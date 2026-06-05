@@ -309,4 +309,30 @@ class SettingsViewModelTest {
 
         coVerify { appearanceDelegate.handleEvent(SettingsEvent.SetThemeMode(2), any()) }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Pure Black (AMOLED) mode — issue #948
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    fun `SetPureBlackDarkMode true routes to appearanceDelegate`() = runTest {
+        coEvery { appearanceDelegate.handleEvent(any(), any()) } returns true
+
+        val viewModel = createViewModel()
+        viewModel.onEvent(SettingsEvent.SetPureBlackDarkMode(true))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { appearanceDelegate.handleEvent(SettingsEvent.SetPureBlackDarkMode(true), any()) }
+    }
+
+    @Test
+    fun `SetPureBlackDarkMode false routes to appearanceDelegate`() = runTest {
+        coEvery { appearanceDelegate.handleEvent(any(), any()) } returns true
+
+        val viewModel = createViewModel()
+        viewModel.onEvent(SettingsEvent.SetPureBlackDarkMode(false))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { appearanceDelegate.handleEvent(SettingsEvent.SetPureBlackDarkMode(false), any()) }
+    }
 }

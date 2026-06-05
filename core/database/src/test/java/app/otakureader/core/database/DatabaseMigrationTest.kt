@@ -21,6 +21,7 @@ import app.otakureader.core.database.migrations.MIGRATION_23_24
 import app.otakureader.core.database.migrations.MIGRATION_24_25
 import app.otakureader.core.database.migrations.MIGRATION_25_26
 import app.otakureader.core.database.migrations.MIGRATION_28_29
+import app.otakureader.core.database.migrations.MIGRATION_29_30
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,7 +47,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 29", 29, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 30", 30, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -73,7 +74,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 27 migrations (v2→v29)", 27, ALL_MIGRATIONS.size)
+        assertEquals("Expected 28 migrations (v2→v30)", 28, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -535,6 +536,18 @@ class DatabaseMigrationTest {
             threw = true
         }
         assertTrue("Duplicate definitionKey must throw", threw)
+        db.close()
+    }
+
+    // ── Migration 29 → 30 ───────────────────────────────────────────────────
+    // Adds: manga.mangaThemeOverride (nullable INTEGER)
+
+    @Test
+    fun migration29To30_addsMangaThemeOverride() {
+        val db = helper.createDatabase(TEST_DB, 29)
+        assertFalse("mangaThemeOverride must NOT exist at v29", "mangaThemeOverride" in db.columnNames("manga"))
+        MIGRATION_29_30.migrate(db)
+        assertTrue("manga.mangaThemeOverride must exist after 29→30", "mangaThemeOverride" in db.columnNames("manga"))
         db.close()
     }
 

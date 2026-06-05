@@ -76,7 +76,15 @@
     <string name="bookmarks_title">Bookmarks</string>
     <string name="bookmarks_back">Back</string>
     <string name="bookmarks_empty">No bookmarks yet. Bookmark a page while reading to see it here.</string>
+    <string name="bookmarks_no_results">No bookmarks match your search.</string>
     <string name="bookmarks_page">Page %1$d</string>
     <string name="bookmarks_chapter_fallback">Chapter</string>
     <string name="bookmarks_delete">Delete bookmark</string>
+    <string name="bookmarks_search_placeholder">Search by manga, chapter, or note…</string>
+    <string name="bookmarks_clear_search">Clear search</string>
+    <string name="bookmarks_count">%1$d bookmark(s)</string>
+    <string name="bookmarks_unknown_manga">Unknown manga</string>
+    <string name="bookmarks_expand">Expand manga bookmarks</string>
+    <string name="bookmarks_collapse">Collapse manga bookmarks</string>
+    <string name="bookmarks_delete_failed">Failed to delete bookmark</string>
 </resources>
