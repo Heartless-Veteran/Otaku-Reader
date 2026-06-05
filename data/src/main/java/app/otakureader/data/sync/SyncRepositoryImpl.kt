@@ -75,7 +75,7 @@ class SyncRepositoryImpl @Inject constructor(
         if (serverUrl.isBlank()) return
         val token = syncSettingsStore.bearerToken.first()
         val api = buildApi(serverUrl, token)
-        val pending = syncQueueDao.getPending()
+        val pending = syncQueueDao.getPending().first()
         for (item in pending) {
             try {
                 val request = json.decodeFromString<PushProgressRequest>(item.payload)
@@ -111,6 +111,8 @@ class SyncRepositoryImpl @Inject constructor(
                     lastPageRead = 0,
                 )
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "Pull failed", e)
         }
@@ -126,7 +128,8 @@ class SyncRepositoryImpl @Inject constructor(
      */
     private fun buildApi(serverUrl: String, token: String = ""): SyncApi {
         val normalised = if (serverUrl.endsWith("/")) serverUrl else "$serverUrl/"
-        val client = if (token.isNotBlank()) {
+        val isHttps = normalised.startsWith("https://", ignoreCase = true)
+        val client = if (token.isNotBlank() && isHttps) {
             okHttpClient.newBuilder()
                 .addInterceptor { chain ->
                     chain.proceed(

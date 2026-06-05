@@ -45,14 +45,15 @@ class SyncSettingsStore @Inject constructor(private val dataStore: DataStore<Pre
      * so concurrent callers cannot each write a different UUID.
      */
     suspend fun ensureDeviceId(): String {
-        val newId = UUID.randomUUID().toString()
-        var resultId = newId
+        var resultId = ""
         dataStore.edit { prefs ->
             val existing = prefs[Keys.DEVICE_ID]
             if (!existing.isNullOrBlank()) {
                 resultId = existing
             } else {
+                val newId = UUID.randomUUID().toString()
                 prefs[Keys.DEVICE_ID] = newId
+                resultId = newId
             }
         }
         return resultId

@@ -189,7 +189,7 @@ fun SyncSettingsScreen(
             item(key = "sync_device_id") {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_sync_device_id)) },
-                    supportingContent = { Text(state.deviceId.ifBlank { "—" }) },
+                    supportingContent = { Text(state.deviceId.ifBlank { stringResource(R.string.settings_sync_device_id_none) }) },
                 )
             }
         }

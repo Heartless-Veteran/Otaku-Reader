@@ -24,9 +24,12 @@ interface SyncQueueDao {
     @Query("SELECT * FROM sync_queue ORDER BY createdAt ASC")
     fun observePending(): Flow<List<SyncQueueEntity>>
 
-    /** Fetch up to [limit] pending items to drain in one batch. */
-    @Query("SELECT * FROM sync_queue ORDER BY createdAt ASC LIMIT :limit")
-    suspend fun getPending(limit: Int = 50): List<SyncQueueEntity>
+    /**
+     * Observe up to [limit] pending items ordered oldest-first, skipping items that have
+     * already exceeded [maxAttempts] to avoid re-queuing permanently failed entries.
+     */
+    @Query("SELECT * FROM sync_queue WHERE attempts < :maxAttempts ORDER BY createdAt ASC LIMIT :limit")
+    fun getPending(limit: Int = 50, maxAttempts: Int = 5): Flow<List<SyncQueueEntity>>
 
     @Delete
     suspend fun delete(entity: SyncQueueEntity)

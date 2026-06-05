@@ -49,6 +49,8 @@ class SyncWorker @AssistedInject constructor(
                 since = System.currentTimeMillis() - PULL_WINDOW_MS,
             )
             Result.success()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             if (runAttemptCount < MAX_RETRIES) Result.retry() else Result.failure()
         }
@@ -59,6 +61,7 @@ class SyncWorker @AssistedInject constructor(
         const val WORK_NAME_ONE_SHOT = "sync_one_shot"
 
         private const val MAX_RETRIES = 3
+        private const val SYNC_INTERVAL_MINUTES = 15L
 
         /** Pull events from the last 7 days on each sync cycle. */
         private const val PULL_WINDOW_MS = 7L * 24 * 60 * 60 * 1_000L
@@ -71,7 +74,7 @@ class SyncWorker @AssistedInject constructor(
          * settings save) does not reset the existing timer unless the URL changed.
          */
         fun schedulePeriodicSync(workManager: WorkManager) {
-            val request = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
+            val request = PeriodicWorkRequestBuilder<SyncWorker>(SYNC_INTERVAL_MINUTES, TimeUnit.MINUTES)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)

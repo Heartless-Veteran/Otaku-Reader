@@ -1,5 +1,6 @@
 package app.otakureader.core.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -18,7 +19,7 @@ data class SyncQueueEntity(
     val chapterId: Long,
     val mangaId: Long,
     val payload: String,
-    val attempts: Int = 0,
+    @ColumnInfo(defaultValue = "0") val attempts: Int = 0,
     val createdAt: Long,
     val lastError: String? = null,
 )

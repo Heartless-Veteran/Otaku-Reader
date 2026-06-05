@@ -490,4 +490,5 @@
     <string name="settings_sync_device_id">Device ID</string>
     <string name="settings_sync_queue_size">Pending items</string>
     <string name="settings_sync_test_connection">Test Connection</string>
+    <string name="settings_sync_device_id_none">—</string>
 </resources>

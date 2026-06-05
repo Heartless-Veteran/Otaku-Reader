@@ -83,13 +83,16 @@ class SyncSettingsViewModel @Inject constructor(
             }
 
             SyncSettingsEvent.SyncNow -> viewModelScope.launch {
-                if (_uiState.value.serverUrl.isBlank()) {
+                val currentState = _uiState.value
+                if (currentState.serverUrl.isBlank()) {
                     _effect.send(SyncSettingsEffect.ShowSnackbar("No sync server configured"))
                     return@launch
                 }
-                _uiState.update { it.copy(isSyncing = true) }
+                // Save latest drafts before enqueuing so the worker uses current settings.
+                syncSettingsStore.setServerUrl(currentState.serverUrl)
+                syncSettingsStore.setBearerToken(currentState.bearerToken)
                 syncScheduler.enqueueSingleSync()
-                _uiState.update { it.copy(isSyncing = false, lastSyncResult = "Sync enqueued") }
+                _uiState.update { it.copy(lastSyncResult = "Sync enqueued") }
             }
 
             SyncSettingsEvent.TestConnection -> viewModelScope.launch {
