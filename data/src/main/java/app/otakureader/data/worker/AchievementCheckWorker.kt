@@ -3,6 +3,7 @@ package app.otakureader.data.worker
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
@@ -55,8 +56,14 @@ class AchievementCheckWorker @AssistedInject constructor(
     }
 
     companion object {
+        private const val WORK_NAME = "achievement_check"
+
         fun enqueue(workManager: WorkManager) {
-            workManager.enqueue(OneTimeWorkRequestBuilder<AchievementCheckWorker>().build())
+            workManager.enqueueUniqueWork(
+                WORK_NAME,
+                ExistingWorkPolicy.KEEP,
+                OneTimeWorkRequestBuilder<AchievementCheckWorker>().build()
+            )
         }
     }
 }

@@ -18,6 +18,9 @@ interface AchievementDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfAbsent(entity: AchievementEntity)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(entities: List<AchievementEntity>)
+
     @Query("UPDATE achievements SET unlockedAt = :timestamp WHERE definitionKey = :key AND unlockedAt = 0")
     suspend fun unlock(key: String, timestamp: Long)
 
