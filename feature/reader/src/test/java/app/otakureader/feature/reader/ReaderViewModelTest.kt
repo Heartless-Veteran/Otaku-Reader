@@ -190,6 +190,8 @@ class ReaderViewModelTest {
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
         coEvery { chapterRepository.getChapterById(chapterId) } returns null
         coEvery { mangaRepository.getMangaById(mangaId) } returns null
+        // chapters StateFlow is initialised during construction; return empty by default.
+        every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(emptyList())
 
         // Stub write operations called by page-change / jump-to-page paths.
         coEvery { chapterRepository.updateChapterProgress(any<Long>(), any<Boolean>(), any<Int>()) } just runs
