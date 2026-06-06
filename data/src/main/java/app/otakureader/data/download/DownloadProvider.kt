@@ -116,8 +116,9 @@ object DownloadProvider {
         context: Context,
         sourceName: String,
         mangaTitle: String,
-        chapterName: String
-    ): List<String> = getDownloadedPageUris(rootFor(context), sourceName, mangaTitle, chapterName)
+        chapterName: String,
+        cbzPassphrase: String? = null,
+    ): List<String> = getDownloadedPageUris(rootFor(context), sourceName, mangaTitle, chapterName, cbzPassphrase)
 
     /**
      * Deletes all downloaded files for the given chapter. Returns true if anything was removed.
@@ -261,7 +262,8 @@ object DownloadProvider {
         root: File,
         sourceName: String,
         mangaTitle: String,
-        chapterName: String
+        chapterName: String,
+        cbzPassphrase: String? = null,
     ): List<String> {
         val dir = getChapterDir(root, sourceName, mangaTitle, chapterName)
         if (!dir.isDirectory) return emptyList()
@@ -297,9 +299,20 @@ object DownloadProvider {
             return cachedFiles.take(MAX_PAGE_FILES).map { "file://${it.absolutePath}" }
         }
 
+        // If the CBZ is encrypted, decrypt to a temp file before extraction.
+        val sourceFile = if (CbzCreator.isEncrypted(cbzFile)) {
+            if (cbzPassphrase == null) return emptyList()
+            CbzCreator.decryptToTempFile(cbzFile, cbzPassphrase, cacheDir).getOrNull()
+                ?: return emptyList()
+        } else {
+            cbzFile
+        }
+
         // Extract CBZ pages into the cache subdirectory for this and future reads.
-        val extracted = CbzCreator.extractCbzPages(cbzFile, cacheDir).getOrNull()
+        val extracted = CbzCreator.extractCbzPages(sourceFile, cacheDir).getOrNull()
             ?: return emptyList()
+        // Clean up temp decrypted file if we created one.
+        if (sourceFile !== cbzFile) sourceFile.delete()
         return extracted.take(MAX_PAGE_FILES).map { "file://${it.absolutePath}" }
     }
 

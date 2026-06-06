@@ -36,7 +36,7 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
 
     /** Custom download directory URI (null = default app storage) */
     val downloadLocation: Flow<String?> = dataStore.data.map { it[Keys.DOWNLOAD_LOCATION] }
-    suspend fun setDownloadLocation(value: String?) = dataStore.edit { 
+    suspend fun setDownloadLocation(value: String?) = dataStore.edit {
         if (value != null) it[Keys.DOWNLOAD_LOCATION] = value else it.remove(Keys.DOWNLOAD_LOCATION)
     }
 
@@ -142,6 +142,7 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
      */
     val monthlyDataBudgetMb: Flow<Int> = dataStore.data.map { it[Keys.MONTHLY_DATA_BUDGET_MB] ?: 0 }
     suspend fun setMonthlyDataBudgetMb(mb: Int) = dataStore.edit { it[Keys.MONTHLY_DATA_BUDGET_MB] = mb }
+
     // --- Per-Category Auto-Download Filter ---
 
     /**
@@ -176,6 +177,10 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         it[Keys.AUTO_DOWNLOAD_CATEGORY_EXCLUDE] = ids.map { id -> id.toString() }.toSet()
     }
 
+    /** Whether to AES-GCM encrypt CBZ archives after creation. Passphrase stored in [CbzEncryptionStore]. */
+    val cbzEncryptionEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.CBZ_ENCRYPTION_ENABLED] ?: false }
+    suspend fun setCbzEncryptionEnabled(value: Boolean) = dataStore.edit { it[Keys.CBZ_ENCRYPTION_ENABLED] = value }
+
     private object Keys {
         val AUTO_DOWNLOAD_ENABLED = booleanPreferencesKey("auto_download_enabled")
         val DOWNLOAD_ONLY_ON_WIFI = booleanPreferencesKey("download_only_on_wifi")
@@ -191,5 +196,6 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         val MONTHLY_DATA_BUDGET_MB = intPreferencesKey("monthly_data_budget_mb")
         val AUTO_DOWNLOAD_CATEGORY_INCLUDE = stringSetPreferencesKey("auto_download_category_include")
         val AUTO_DOWNLOAD_CATEGORY_EXCLUDE = stringSetPreferencesKey("auto_download_category_exclude")
+        val CBZ_ENCRYPTION_ENABLED = booleanPreferencesKey("cbz_encryption_enabled")
     }
 }

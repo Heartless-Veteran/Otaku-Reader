@@ -1,6 +1,8 @@
 package app.otakureader.data.loader
 
 import android.content.Context
+import app.otakureader.core.preferences.CbzEncryptionStore
+import app.otakureader.data.download.CbzCreator
 import app.otakureader.data.download.DownloadProvider
 import app.otakureader.domain.loader.PageLoader as PageLoaderInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -16,7 +18,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class PageLoader @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val cbzEncryptionStore: CbzEncryptionStore,
 ) : PageLoaderInterface {
 
     /**
@@ -58,11 +61,13 @@ class PageLoader @Inject constructor(
             chapterName
         )
         if (cbzFile.exists()) {
+            val passphrase = if (CbzCreator.isEncrypted(cbzFile)) cbzEncryptionStore.getPassphrase() else null
             val pageUris = DownloadProvider.getDownloadedPageUris(
                 context,
                 sourceName,
                 mangaTitle,
-                chapterName
+                chapterName,
+                cbzPassphrase = passphrase,
             )
             if (pageIndex < pageUris.size) {
                 return pageUris[pageIndex]

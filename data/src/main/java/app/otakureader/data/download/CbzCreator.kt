@@ -1,9 +1,15 @@
 package app.otakureader.data.download
 
 import java.io.File
+import java.security.SecureRandom
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * Utility for creating and reading CBZ (Comic Book ZIP) archives.
@@ -25,6 +31,17 @@ object CbzCreator {
 
     /** Fixed filename used for the CBZ archive within each chapter directory. */
     const val CBZ_FILE_NAME = "chapter.cbz"
+
+    /**
+     * Magic header bytes prepended to AES-GCM encrypted CBZ files.
+     * Chosen to not overlap with the ZIP magic bytes (PK = 0x504B).
+     */
+    private val MAGIC = "OTKREADER_ENC".toByteArray(Charsets.US_ASCII) // 13 bytes
+    private const val SALT_LEN = 16
+    private const val IV_LEN = 12
+    private const val GCM_TAG_LEN = 128
+    private const val PBKDF2_ITERATIONS = 10_000
+    private const val KEY_LEN_BITS = 256
 
     /** Image file extensions that are included when packing or unpacking CBZ archives. */
     private val PAGE_EXTENSIONS get() = DownloadProvider.PAGE_EXTENSIONS
@@ -153,6 +170,73 @@ object CbzCreator {
                 }
         }
         extracted.sortedBy { it.nameWithoutExtension.toIntOrNull() ?: Int.MAX_VALUE }
+    }
+
+    // -------------------------------------------------------------------------
+    // Encryption helpers (AES-256-GCM with PBKDF2 key derivation)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns true if [cbzFile] has been encrypted with [encryptInPlace].
+     * Reads only the first [MAGIC].size bytes — fast and does not buffer the full file.
+     */
+    fun isEncrypted(cbzFile: File): Boolean {
+        if (!cbzFile.exists() || cbzFile.length() < MAGIC.size) return false
+        val header = ByteArray(MAGIC.size)
+        cbzFile.inputStream().use { it.read(header) }
+        return header.contentEquals(MAGIC)
+    }
+
+    /**
+     * Encrypts [cbzFile] in-place using AES-256-GCM.
+     *
+     * The resulting file layout is:
+     * `MAGIC (13) | SALT (16) | IV (12) | AES-GCM ciphertext+tag`
+     *
+     * The key is derived with PBKDF2-HMAC-SHA256 from [passphrase] + a random per-file [SALT].
+     */
+    fun encryptInPlace(cbzFile: File, passphrase: String) {
+        val plaintext = cbzFile.readBytes()
+        val salt = ByteArray(SALT_LEN).also { SecureRandom().nextBytes(it) }
+        val key = deriveKey(passphrase, salt)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key)
+        val iv = cipher.iv
+        val ciphertext = cipher.doFinal(plaintext)
+        cbzFile.outputStream().buffered().use { out ->
+            out.write(MAGIC)
+            out.write(salt)
+            out.write(iv)
+            out.write(ciphertext)
+        }
+    }
+
+    /**
+     * Decrypts an encrypted CBZ file to a temporary file inside [tempDir].
+     *
+     * @return [Result.success] wrapping the decrypted temp [File], or
+     *         [Result.failure] if the file is not encrypted or decryption fails.
+     */
+    fun decryptToTempFile(cbzFile: File, passphrase: String, tempDir: File): Result<File> = runCatching {
+        tempDir.mkdirs()
+        val bytes = cbzFile.readBytes()
+        require(bytes.size > MAGIC.size + SALT_LEN + IV_LEN) { "File too small to be an encrypted CBZ" }
+        val salt = bytes.copyOfRange(MAGIC.size, MAGIC.size + SALT_LEN)
+        val iv = bytes.copyOfRange(MAGIC.size + SALT_LEN, MAGIC.size + SALT_LEN + IV_LEN)
+        val ciphertext = bytes.copyOfRange(MAGIC.size + SALT_LEN + IV_LEN, bytes.size)
+        val key = deriveKey(passphrase, salt)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LEN, iv))
+        val plaintext = cipher.doFinal(ciphertext)
+        val tempFile = File(tempDir, "${cbzFile.name}.dec")
+        tempFile.writeBytes(plaintext)
+        tempFile
+    }
+
+    private fun deriveKey(passphrase: String, salt: ByteArray): SecretKeySpec {
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val spec = PBEKeySpec(passphrase.toCharArray(), salt, PBKDF2_ITERATIONS, KEY_LEN_BITS)
+        return SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
     }
 
     // -------------------------------------------------------------------------

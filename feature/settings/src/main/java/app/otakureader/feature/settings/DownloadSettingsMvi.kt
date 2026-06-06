@@ -27,4 +27,6 @@ data class DownloadSettingsState(
     val autoDownloadCategoryInclude: Set<Long> = emptySet(),
     val autoDownloadCategoryExclude: Set<Long> = emptySet(),
     val availableCategories: List<Category> = emptyList(),
+    // CBZ Encryption
+    val cbzEncryptionEnabled: Boolean = false,
 )
