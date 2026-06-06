@@ -120,8 +120,7 @@ fun TrackingScreen(
     if (loginDialogTrackerId != null) {
         val trackerName = state.trackers.find { it.id == loginDialogTrackerId }?.name ?: ""
         val securityNote = if (loginDialogTrackerId == TrackerType.MANGA_UPDATES) {
-            "MangaUpdates requires your password directly (OAuth not yet supported by their API). " +
-            "Your password is sent securely over HTTPS and is not stored — only the session token is saved."
+            stringResource(R.string.tracking_mangaupdates_security_note)
         } else null
         CredentialLoginDialog(
             trackerName = trackerName,
@@ -520,7 +519,7 @@ private fun CredentialLoginDialog(
                     Text(
                         text = securityNote,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFB25900),
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
