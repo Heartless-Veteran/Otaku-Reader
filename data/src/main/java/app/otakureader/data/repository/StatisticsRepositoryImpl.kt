@@ -22,7 +22,7 @@ class StatisticsRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
 ) : StatisticsRepository {
 
-    override fun getReadingStats(sinceMs: Long?): Flow<ReadingStats> = combine(
+    override fun getReadingStats(sinceMs: Long? = null): Flow<ReadingStats> = combine(
         readingHistoryDao.observeHistory(),
         mangaDao.countFavorites(),
         mangaDao.getFavoriteMangaGenres(),

@@ -57,13 +57,15 @@ class StatisticsViewModel @Inject constructor(
     private fun loadStats(period: StatsPeriod = _state.value.selectedPeriod) {
         statsJob?.cancel()
         _state.update { it.copy(isLoading = true) }
+        val sinceMs = period.days?.let { System.currentTimeMillis() - it * 86_400_000L }
+        val statsFlow = if (sinceMs != null) getReadingStatsUseCase(sinceMs = sinceMs) else getReadingStatsUseCase()
         statsJob = combine(
             readingGoalPreferences.dailyChapterGoal,
             readingGoalPreferences.weeklyChapterGoal
         ) { daily, weekly -> Pair(daily, weekly) }
             .flatMapLatest { (dailyGoal, weeklyGoal) ->
                 combine(
-                    getReadingStatsUseCase(sinceMs = period.days?.let { System.currentTimeMillis() - it * 86_400_000L }),
+                    statsFlow,
                     statisticsRepository.getReadingGoalProgress(dailyGoal, weeklyGoal)
                 ) { stats, goalProgress -> Pair(stats, goalProgress) }
             }
