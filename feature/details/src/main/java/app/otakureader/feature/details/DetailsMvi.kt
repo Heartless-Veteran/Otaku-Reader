@@ -98,12 +98,12 @@ object DetailsContract {
      * Active chapter list filter configuration, matching Mihon's filter sheet options.
      */
     data class ChapterFilter(
-        val chapterSearchQuery: String = "",
         val read: TriState = TriState.ALL,
         val bookmarked: TriState = TriState.ALL,
         val downloaded: TriState = TriState.ALL,
         /** When non-null, only chapters from this scanlator are shown. */
-        val scanlator: String? = null
+        val scanlator: String? = null,
+        val chapterSearchQuery: String = ""
     ) {
         val isActive: Boolean
             get() = read != TriState.ALL || bookmarked != TriState.ALL ||
