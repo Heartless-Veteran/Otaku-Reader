@@ -95,6 +95,9 @@ data class ReaderState(
     /** Current chapter title */
     val chapterTitle: String = "",
 
+    /** ID of the currently-loaded chapter; updated on every chapter switch. */
+    val currentChapterId: Long = 0L,
+
     /** Incognito mode - when enabled, reading history is not saved */
     val incognitoMode: Boolean = false,
 

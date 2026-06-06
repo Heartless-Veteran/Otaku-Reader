@@ -95,7 +95,7 @@ class ReaderViewModel @Inject constructor(
     private val mangaId: Long = checkNotNull(savedStateHandle["mangaId"])
     private var chapterId: Long = checkNotNull(savedStateHandle["chapterId"])
 
-    private val _state = MutableStateFlow(ReaderState())
+    private val _state = MutableStateFlow(ReaderState(currentChapterId = chapterId))
     val state: StateFlow<ReaderState> = _state.asStateFlow()
 
     private val _effect = Channel<ReaderEffect>(Channel.BUFFERED)
@@ -568,6 +568,7 @@ class ReaderViewModel @Inject constructor(
 
     private fun loadChapterById(chapterId: Long) {
         this.chapterId = chapterId
+        _state.update { it.copy(currentChapterId = chapterId) }
         loadChapter()
     }
 

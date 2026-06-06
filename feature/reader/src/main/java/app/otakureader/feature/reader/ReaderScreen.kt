@@ -437,7 +437,7 @@ fun ReaderScreen(
         ChapterListOverlay(
             isVisible = state.isChapterListOverlayVisible,
             chapters = chapters,
-            currentChapterId = chapterId,
+            currentChapterId = state.currentChapterId,
             onChapterClick = { targetChapterId ->
                 viewModel.onEvent(ReaderEvent.LoadChapter(targetChapterId))
                 viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay)
