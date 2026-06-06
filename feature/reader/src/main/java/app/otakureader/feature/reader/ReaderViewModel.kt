@@ -105,6 +105,11 @@ class ReaderViewModel @Inject constructor(
     val displayState: StateFlow<DisplayState> = state.map { it.displayState }.stateIn(viewModelScope, sharing, ReaderState().displayState)
     val webtoonState: StateFlow<WebtoonState> = state.map { it.webtoonState }.stateIn(viewModelScope, sharing, ReaderState().webtoonState)
 
+    /** All chapters for this manga — used by the chapter-list overlay. */
+    val chapters: StateFlow<List<Chapter>> = chapterRepository
+        .getChaptersByMangaId(mangaId)
+        .stateIn(viewModelScope, sharing, emptyList())
+
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null
 
@@ -403,6 +408,8 @@ class ReaderViewModel @Inject constructor(
             ReaderEvent.ToggleGallery -> displayDelegate.toggleGallery()
             is ReaderEvent.SetGalleryColumns -> displayDelegate.setGalleryColumns(event.columns)
             ReaderEvent.ToggleFullscreen -> displayDelegate.toggleFullscreen()
+            ReaderEvent.ToggleSettingsOverlay -> displayDelegate.toggleSettingsOverlay()
+            ReaderEvent.ToggleChapterListOverlay -> displayDelegate.toggleChapterListOverlay()
         }
     }
 

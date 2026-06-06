@@ -88,12 +88,14 @@ fun TapZoneOverlay(
 /**
  * Simple tap zone overlay with customizable zone widths.
  * For RTL reading, zones can be inverted.
+ * Long-pressing the center zone triggers [onCenterLongPress].
  */
 @Composable
 fun SimpleTapZoneOverlay(
     onLeftTap: () -> Unit,
     onCenterTap: () -> Unit,
     onRightTap: () -> Unit,
+    onCenterLongPress: () -> Unit = {},
     leftZoneWidth: Float = 0.25f,
     centerZoneWidth: Float = 0.5f,
     rightZoneWidth: Float = 0.25f,
@@ -105,7 +107,7 @@ fun SimpleTapZoneOverlay(
     } else {
         Pair(onLeftTap, onRightTap)
     }
-    
+
     Row(modifier = modifier.fillMaxSize()) {
         // Left zone
         Box(
@@ -118,19 +120,20 @@ fun SimpleTapZoneOverlay(
                     onClick = leftAction
                 )
         )
-        
-        // Center zone
+
+        // Center zone — tap toggles menu; long-press opens quick settings
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .weight(centerZoneWidth)
-                .clickable(
-                    interactionSource = null,
-                    indication = null,
-                    onClick = onCenterTap
-                )
+                .pointerInput(onCenterTap, onCenterLongPress) {
+                    detectTapGestures(
+                        onTap = { onCenterTap() },
+                        onLongPress = { onCenterLongPress() },
+                    )
+                }
         )
-        
+
         // Right zone
         Box(
             modifier = Modifier

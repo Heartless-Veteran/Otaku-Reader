@@ -95,6 +95,14 @@ class ReaderDisplayDelegate @Inject constructor(
         launchSave { setFullscreen(newValue) }
     }
 
+    fun toggleSettingsOverlay() {
+        update { it.copy(isSettingsOverlayVisible = !it.isSettingsOverlayVisible) }
+    }
+
+    fun toggleChapterListOverlay() {
+        update { it.copy(isChapterListOverlayVisible = !it.isChapterListOverlayVisible) }
+    }
+
     // ── Brightness ───────────────────────────────────────────────────────────
 
     fun updateBrightness(brightness: Float) {

@@ -102,6 +102,7 @@ fun ReaderMenuOverlay(
     onNavigateBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
     onToggleChapterFilter: (() -> Unit)? = null,
+    onToggleChapterList: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -143,6 +144,11 @@ fun ReaderMenuOverlay(
                         if (onToggleChapterFilter != null) {
                             IconButton(onClick = onToggleChapterFilter) {
                                 Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
+                            }
+                        }
+                        if (onToggleChapterList != null) {
+                            IconButton(onClick = onToggleChapterList) {
+                                Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.reader_chapter_list_title))
                             }
                         }
                         IconButton(onClick = onToggleFullscreen) {

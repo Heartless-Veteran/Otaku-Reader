@@ -47,6 +47,12 @@ data class ReaderState(
     /** Whether the page gallery/thumbnail view is open */
     val isGalleryOpen: Boolean = false,
 
+    /** Whether the quick-settings overlay is visible (triggered by long-press) */
+    val isSettingsOverlayVisible: Boolean = false,
+
+    /** Whether the chapter-list overlay is visible (slide-in from right edge) */
+    val isChapterListOverlayVisible: Boolean = false,
+
     /** Number of columns displayed in the gallery grid (2, 3, or 4) */
     val galleryColumns: Int = 3,
 
@@ -250,7 +256,9 @@ data class ReaderState(
             isGalleryOpen = isGalleryOpen,
             galleryColumns = galleryColumns,
             isFullscreen = isFullscreen,
-            showTapZonesOverlay = showTapZonesOverlay
+            showTapZonesOverlay = showTapZonesOverlay,
+            isSettingsOverlayVisible = isSettingsOverlayVisible,
+            isChapterListOverlayVisible = isChapterListOverlayVisible,
         )
 
     /** Display and rendering settings — changes infrequently. */
@@ -305,7 +313,9 @@ data class OverlayState(
     val isGalleryOpen: Boolean,
     val galleryColumns: Int,
     val isFullscreen: Boolean,
-    val showTapZonesOverlay: Boolean
+    val showTapZonesOverlay: Boolean,
+    val isSettingsOverlayVisible: Boolean = false,
+    val isChapterListOverlayVisible: Boolean = false,
 )
 
 /** Projection of rendering and display preference fields. */
@@ -483,6 +493,12 @@ sealed interface ReaderEvent {
 
     /** Toggle fullscreen mode. */
     data object ToggleFullscreen : OverlayControl
+
+    /** Toggle the quick-settings overlay (triggered by long-press on center tap zone). */
+    data object ToggleSettingsOverlay : OverlayControl
+
+    /** Toggle the chapter-list overlay (slide-in panel from right edge). */
+    data object ToggleChapterListOverlay : OverlayControl
 
     /** Toggle auto-scroll (webtoon mode). */
     data object ToggleAutoScroll : AutoScrollControl
