@@ -51,6 +51,23 @@ fun NavGraphBuilder.readerPresetsScreen(onNavigateBack: () -> Unit) {
     }
 }
 
+private fun readerModeName(mode: Int): String = when (mode) {
+    0 -> "Single Page"
+    1 -> "Dual Page"
+    2 -> "Webtoon"
+    3 -> "Smart Panels"
+    else -> "Mode $mode"
+}
+
+private fun readerScaleName(scale: Int): String = when (scale) {
+    0 -> "Fit Screen"
+    1 -> "Fit Width"
+    2 -> "Fit Height"
+    3 -> "Original"
+    4 -> "Smart Fit"
+    else -> "Scale $scale"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderPresetsScreen(
@@ -158,10 +175,22 @@ private fun PresetCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = preset.name, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = "Mode ${preset.readerMode} · Scale ${preset.readerScale}",
+                    text = "${readerModeName(preset.readerMode)} · ${readerScaleName(preset.readerScale)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val extras = buildList {
+                    if (preset.volumeKeysEnabled) add("Vol keys")
+                    if (preset.showPageNumber) add("Page #")
+                    if (preset.invertTapZones) add("Inverted taps")
+                }
+                if (extras.isNotEmpty()) {
+                    Text(
+                        text = extras.joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             TextButton(onClick = onApply) {
                 Text(stringResource(R.string.reader_presets_apply))
