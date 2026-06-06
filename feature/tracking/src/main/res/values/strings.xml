@@ -76,4 +76,5 @@
     <string name="tracking_push_success">Progress pushed to trackers</string>
     <string name="tracking_pull_success">Progress pulled from trackers</string>
     <string name="tracking_conflict_resolved">Conflict resolved</string>
+    <string name="tracking_mangaupdates_security_note">MangaUpdates requires your password directly (OAuth not yet supported by their API). Your password is sent securely over HTTPS and is not stored — only the session token is saved.</string>
 </resources>

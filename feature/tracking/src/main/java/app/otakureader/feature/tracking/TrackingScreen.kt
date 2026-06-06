@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.domain.model.SyncStatus
+import app.otakureader.domain.model.TrackerType
 import app.otakureader.domain.model.TrackEntry
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,8 +119,12 @@ fun TrackingScreen(
     val loginDialogTrackerId = state.loginDialogTrackerId
     if (loginDialogTrackerId != null) {
         val trackerName = state.trackers.find { it.id == loginDialogTrackerId }?.name ?: ""
+        val securityNote = if (loginDialogTrackerId == TrackerType.MANGA_UPDATES) {
+            stringResource(R.string.tracking_mangaupdates_security_note)
+        } else null
         CredentialLoginDialog(
             trackerName = trackerName,
+            securityNote = securityNote,
             onConfirm = { username, password ->
                 viewModel.onEvent(TrackingEvent.Login(loginDialogTrackerId, username, password))
             },
@@ -483,6 +488,7 @@ private fun LinkedMangaInfo(
 @Composable
 private fun CredentialLoginDialog(
     trackerName: String,
+    securityNote: String? = null,
     onConfirm: (username: String, password: String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -509,6 +515,13 @@ private fun CredentialLoginDialog(
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (securityNote != null) {
+                    Text(
+                        text = securityNote,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary,
+                    )
+                }
             }
         },
         confirmButton = {

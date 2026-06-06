@@ -27,6 +27,11 @@ class WebViewSession(
             useWideViewPort = true
             loadWithOverviewMode = true
             cacheMode = WebSettings.LOAD_DEFAULT
+            // Block local file/content access from web content (default true on API < 30)
+            allowFileAccess = false
+            allowContentAccess = false
+            // Flag malicious URLs via Google Safe Browsing
+            safeBrowsingEnabled = true
         }
         CookieManager.getInstance().apply {
             setAcceptCookie(true)
