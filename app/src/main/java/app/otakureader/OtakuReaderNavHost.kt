@@ -357,6 +357,9 @@ fun OtakuReaderNavHost(
             onNavigateToNavOrder = {
                 navController.navigate(Route.SettingsNavOrder)
             },
+            onNavigateToReaderPresets = {
+                navController.navigate(Route.ReaderPresets)
+            },
         )
 
         downloadsScreen(

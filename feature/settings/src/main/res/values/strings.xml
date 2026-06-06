@@ -510,6 +510,19 @@
     <string name="settings_sync_enter_url_first">Enter a server URL first</string>
     <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
 
+    <!-- Reader presets -->
+    <string name="reader_presets_title">Reader Presets</string>
+    <string name="reader_presets_subtitle">Saved reader configurations</string>
+    <string name="reader_presets_save_current">Save current settings</string>
+    <string name="reader_presets_save_dialog_title">Name this preset</string>
+    <string name="reader_presets_save_dialog_hint">e.g. Webtoon, Manga</string>
+    <string name="reader_presets_save">Save</string>
+    <string name="reader_presets_cancel">Cancel</string>
+    <string name="reader_presets_apply">Apply</string>
+    <string name="reader_presets_delete">Delete</string>
+    <string name="reader_presets_empty">No presets saved yet.\nSave your current settings to get started.</string>
+    <string name="reader_presets_mode_label">Mode %1$d</string>
+
     <!-- Dark mode schedule -->
     <string name="settings_dark_mode_schedule">Schedule dark mode</string>
     <string name="settings_dark_mode_schedule_description">Automatically switch to dark mode at set times</string>

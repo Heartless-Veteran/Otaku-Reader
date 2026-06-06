@@ -5,8 +5,11 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 
 /**
  * Preference store for reader-related settings such as reading mode, keep-screen-on, and scale.
@@ -138,6 +141,61 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
     val savePagesToSeparateFolders: Flow<Boolean> = dataStore.data.map { it[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] ?: false }
     suspend fun setSavePagesToSeparateFolders(value: Boolean) = dataStore.edit { it[Keys.SAVE_PAGES_TO_SEPARATE_FOLDERS] = value }
 
+    // --- Presets ---
+
+    /** List of user-saved reader presets. */
+    val presets: Flow<List<ReaderPreset>> = dataStore.data.map { prefs ->
+        prefs[Keys.READER_PRESETS]?.let { raw ->
+            runCatching { Json.decodeFromString<List<ReaderPreset>>(raw) }.getOrDefault(emptyList())
+        } ?: emptyList()
+    }
+
+    suspend fun savePreset(preset: ReaderPreset) {
+        dataStore.edit { prefs ->
+            val current = prefs[Keys.READER_PRESETS]
+                ?.let { runCatching { Json.decodeFromString<List<ReaderPreset>>(it) }.getOrDefault(emptyList()) }
+                ?.toMutableList() ?: mutableListOf()
+            current.removeAll { it.id == preset.id }
+            current.add(preset)
+            prefs[Keys.READER_PRESETS] = Json.encodeToString(current)
+        }
+    }
+
+    suspend fun deletePreset(id: String) {
+        dataStore.edit { prefs ->
+            val current = prefs[Keys.READER_PRESETS]
+                ?.let { runCatching { Json.decodeFromString<List<ReaderPreset>>(it) }.getOrDefault(emptyList()) }
+                ?.toMutableList() ?: return@edit
+            current.removeAll { it.id == id }
+            prefs[Keys.READER_PRESETS] = Json.encodeToString(current)
+        }
+    }
+
+    /** Applies a preset by writing its values to the individual reader preference keys. */
+    suspend fun applyPreset(preset: ReaderPreset) {
+        setReaderMode(preset.readerMode)
+        setBackgroundColor(preset.backgroundColor)
+        setReaderScale(preset.readerScale)
+        setAutoZoomWideImages(preset.autoZoomWideImages)
+        setAnimatePageTransitions(preset.animatePageTransitions)
+        setWebtoonSidePadding(preset.webtoonSidePadding)
+    }
+
+    /** Captures the current reader settings as a new [ReaderPreset] with the given [name]. */
+    suspend fun captureCurrentAsPreset(name: String, id: String): ReaderPreset {
+        val prefs = dataStore.data.first()
+        return ReaderPreset(
+            id = id,
+            name = name,
+            readerMode = prefs[Keys.READER_MODE] ?: 0,
+            backgroundColor = prefs[Keys.BACKGROUND_COLOR] ?: 0,
+            readerScale = prefs[Keys.READER_SCALE] ?: 0,
+            autoZoomWideImages = prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true,
+            animatePageTransitions = prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true,
+            webtoonSidePadding = prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0,
+        )
+    }
+
     private object Keys {
         val READER_MODE = intPreferencesKey("reader_mode_setting")
         val KEEP_SCREEN_ON = booleanPreferencesKey("reader_keep_screen_on")
@@ -169,5 +227,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         val ALWAYS_SHOW_CHAPTER_TRANSITION = booleanPreferencesKey("reader_always_show_chapter_transition")
         val SHOW_ACTIONS_ON_LONG_TAP = booleanPreferencesKey("reader_show_actions_on_long_tap")
         val SAVE_PAGES_TO_SEPARATE_FOLDERS = booleanPreferencesKey("reader_save_pages_to_separate_folders")
+        val READER_PRESETS = stringPreferencesKey("reader_presets_json")
     }
 }

@@ -1,5 +1,6 @@
 package app.otakureader.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,6 +50,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsReaderScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToReaderPresets: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ReaderSettingsViewModel = hiltViewModel(),
 ) {
@@ -75,14 +77,27 @@ fun SettingsReaderScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // Presets shortcut
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.reader_presets_title)) },
+                supportingContent = { Text(stringResource(R.string.reader_presets_subtitle)) },
+                modifier = Modifier.clickable(onClick = onNavigateToReaderPresets),
+            )
+            HorizontalDivider()
             ReaderContent(state = state, onEvent = viewModel::onEvent)
         }
     }
 }
 
-fun NavGraphBuilder.settingsReaderScreen(onNavigateBack: () -> Unit) {
+fun NavGraphBuilder.settingsReaderScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToReaderPresets: () -> Unit = {},
+) {
     composable<Route.SettingsReader> {
-        SettingsReaderScreen(onNavigateBack = onNavigateBack)
+        SettingsReaderScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToReaderPresets = onNavigateToReaderPresets,
+        )
     }
 }
 

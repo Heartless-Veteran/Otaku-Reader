@@ -158,6 +158,9 @@ sealed interface Route {
     @Serializable
     data object SettingsNavOrder : Route
 
+    @Serializable
+    data object ReaderPresets : Route
+
     // ─── Downloads ───
 
     @Serializable
