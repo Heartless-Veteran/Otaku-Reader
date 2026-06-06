@@ -191,7 +191,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] = preset.autoZoomWideImages
             prefs[Keys.ANIMATE_PAGE_TRANSITIONS] = preset.animatePageTransitions
             prefs[Keys.WEBTOON_SIDE_PADDING] = preset.webtoonSidePadding
-            prefs[Keys.TAP_ZONE_CONFIG] = preset.tapZoneConfig
             prefs[Keys.INVERT_TAP_ZONES] = preset.invertTapZones
             prefs[Keys.VOLUME_KEYS_ENABLED] = preset.volumeKeysEnabled
             prefs[Keys.VOLUME_KEYS_INVERTED] = preset.volumeKeysInverted
@@ -213,7 +212,6 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             autoZoomWideImages = prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true,
             animatePageTransitions = prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true,
             webtoonSidePadding = prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0,
-            tapZoneConfig = prefs[Keys.TAP_ZONE_CONFIG] ?: 0,
             invertTapZones = prefs[Keys.INVERT_TAP_ZONES] ?: false,
             volumeKeysEnabled = prefs[Keys.VOLUME_KEYS_ENABLED] ?: false,
             volumeKeysInverted = prefs[Keys.VOLUME_KEYS_INVERTED] ?: false,
