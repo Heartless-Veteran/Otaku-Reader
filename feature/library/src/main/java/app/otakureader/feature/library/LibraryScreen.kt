@@ -115,7 +115,7 @@ fun LibraryScreen(
                             android.content.Intent.createChooser(shareIntent, effect.title)
                         )
                     }.onFailure {
-                        scope.launch { snackbarHostState.showSnackbar("Unable to open share sheet") }
+                        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_share_error)) }
                     }
                 }
             }

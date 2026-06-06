@@ -202,7 +202,7 @@ class LibraryViewModel @Inject constructor(
             }
             is LibraryEvent.UpdateCategory -> viewModelScope.launch {
                 libraryUpdateScheduler.enqueueNow()
-                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_update_started))
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_update_full_started))
             }
             is LibraryEvent.OpenRandomEntry -> {
                 val currentList = _state.value.mangaList
