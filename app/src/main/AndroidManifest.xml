@@ -14,6 +14,9 @@
          automatic APK installs are performed. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
+    <!-- Camera: used for QR code scanning (library share/import via QR) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <!-- Storage permissions for legacy chapter downloads, local manga, covers, and CBZ export -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"

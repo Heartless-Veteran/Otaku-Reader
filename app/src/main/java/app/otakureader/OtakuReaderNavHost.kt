@@ -163,6 +163,12 @@ fun OtakuReaderNavHost(
             onNavigateToMergeDuplicates = {
                 navController.navigate(Route.MergeDuplicates)
             },
+            onNavigateToShareLibrary = {
+                navController.navigate(Route.ShareLibrary)
+            },
+            onNavigateToScanLibrary = {
+                navController.navigate(Route.ScanLibrary)
+            },
         )
 
         mergeDuplicatesScreen(

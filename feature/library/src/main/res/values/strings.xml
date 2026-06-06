@@ -181,6 +181,8 @@
     <string name="library_update_full_started">Full library update started</string>
     <string name="library_reindex_not_available">Download reindex not yet available</string>
     <string name="library_share_error">Unable to open share sheet</string>
+    <string name="library_share_via_qr">Share library via QR</string>
+    <string name="library_scan_qr">Scan library QR code</string>
     <!-- Reading Lists (#945) -->
     <string name="reading_lists_title">Reading Lists</string>
     <string name="reading_lists_back">Back</string>
