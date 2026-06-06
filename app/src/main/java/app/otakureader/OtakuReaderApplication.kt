@@ -10,10 +10,8 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.crash.CrashHandler
 import app.otakureader.crash.CrashReporter
 import app.otakureader.shortcut.AppShortcutManager
-import android.os.Build
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
-import coil3.decode.ImageDecoderDecoder
 import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import app.otakureader.core.network.RequestCategory
@@ -122,11 +120,6 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
                     .build()
             }
             .components {
-                // Hardware-accelerated HEIF / WebP / AVIF decoding via android.graphics.ImageDecoder
-                // (API 28+). Falls back to Coil's BitmapFactoryDecoder on older devices.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    add(ImageDecoderDecoder.Factory())
-                }
                 add(OkHttpNetworkFetcherFactory(callFactory = {
                     okHttpClient.newBuilder()
                         .addInterceptor { chain ->
