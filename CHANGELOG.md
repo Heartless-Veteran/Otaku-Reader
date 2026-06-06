@@ -7,21 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0-beta] - 2026-06-06
+
 ### Added
+- FTS4-powered library search — title, author, artist full-text search (closes #926)
+- Reader quick-settings overlay — long-press center tap zone opens a settings sheet
+- Reader chapter-list overlay — right-slide panel with current chapter highlighted
+- Reader presets quick-switch — FilterChip row in menu overlay for one-tap profile switch
+- Edit manga info — user metadata overrides (title, description, status, genres)
+- Merge duplicate library entries — merge screen accessible from library overflow menu
+- Per-reader-mode volume key behavior — Inherit / Disabled / Normal / Inverted per reading mode
+- Chapter list text search in Details screen — live filtering by chapter name
+- Swipe-to-delete in History — EndToStart swipe removes a history entry
+- Swipe-to-mark-read in Updates — EndToStart swipe marks a chapter as read
+- Statistics date range selector — All / 90d / 30d / 7d FilterChip row
+- Library sort mode indicator chip — dismissible chip shows active sort; tap × resets to Alphabetical
+- Reading list export as CSV and JSON — from reading list detail overflow menu
+- Dark mode scheduling — configurable on/off times in display settings
+- Backup encryption with password prompt — AES-256-GCM encrypted local backups
+- Bottom nav tab reorder screen — drag-to-reorder in Nav Order settings
 - Onboarding flow for first-time users (5-page intro)
 - `onboarding_completed` preference tracking
-- Comprehensive system audit documentation
 - Beta feature parity backlog: 35 GitHub issues created (#926–#958)
 
 ### Changed
-- Build is now a single flat artifact: removed `full` / `foss` product flavors and the `distribution` flavor dimension. Use `./gradlew assembleDebug` / `assembleRelease` directly (no more `assembleFullRelease` / `assembleFossRelease`).
-- Phase 5 renamed from "Pre-Release Audit" to "Beta Feature Parity" — all 35 beta features now tracked as GitHub issues
+- `versionCode` bumped to 2; `versionName` set to `0.1.0-beta`
+- Build is now a single flat artifact: removed `full` / `foss` product flavors and the `distribution` flavor dimension. Use `./gradlew assembleDebug` / `assembleRelease` directly.
+- Statistics screen period filtering applied in-memory; library count and streaks always show all-time data
 
 ### Fixed
 - H-6: DataStore write failures now show snackbar (no longer silent)
 - H-12: Reader chapter load failures show error message (no longer blank)
 - Onboarding screen now triggers for new users
 - Alpha readiness: all gates green (build ✅, tests ✅, security ✅, architecture ✅, extension compat ✅, notifications ✅, tracker sync ✅)
+- Override default-param Kotlin compile error in `StatisticsRepositoryImpl`
+- Removed stale `ImageDecoderDecoder` reference from `OtakuReaderApplication` (Coil 3 compat)
+- `MangaRepositoryImplTest` constructor mismatch after `mangaCategoryDao` was added
+- `ReaderViewModelTest` missing `readerPreferences` mock and `getChaptersByMangaId` stub
 
 ### Security
 - HTTPS-only extension downloads (C-3 compliance)

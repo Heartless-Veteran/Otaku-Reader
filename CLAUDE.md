@@ -153,14 +153,14 @@ Extensions load dynamically as APKs with classloader isolation. The interfaces i
 
 | Setting | Value |
 |---------|-------|
-| Kotlin | 2.3.20 |
+| Kotlin | 2.3.21 |
 | AGP | 9.1.1 |
-| KSP | 2.3.6 |
+| KSP | 2.3.7 |
 | compileSdk | 36 |
 | minSdk | 26 |
-| targetSdk | 35 |
+| targetSdk | 36 |
 | JVM target | 17 |
-| Compose BOM | 2026.03.01 |
+| Compose BOM | 2026.04.01 |
 
 ### Product Flavors
 
