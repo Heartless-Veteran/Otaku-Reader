@@ -25,8 +25,7 @@ class BackupRepository @Inject constructor(
 
     override suspend fun createBackup(uriString: String) = withContext(Dispatchers.IO) {
         val uri = Uri.parse(uriString)
-        val backupJson = backupCreator.createBackup()
-        context.contentResolver.openOutputStream(uri)?.use { it.write(backupJson.toByteArray()) }
+        context.contentResolver.openOutputStream(uri)?.use { backupCreator.createBackupToStream(it) }
             ?: error("Failed to open output stream for URI: $uriString")
     }
 
@@ -38,11 +37,10 @@ class BackupRepository @Inject constructor(
     }
 
     override suspend fun createLocalBackup(): File = withContext(Dispatchers.IO) {
-        val backupJson = backupCreator.createBackup()
         val dir = getLocalBackupDir()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val file = File(dir, "otakureader_backup_$timestamp.json")
-        file.writeText(backupJson)
+        file.outputStream().use { backupCreator.createBackupToStream(it) }
         file
     }
 

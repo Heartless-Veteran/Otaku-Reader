@@ -22,9 +22,12 @@ import app.otakureader.data.backup.mapper.toBackupSyncConfiguration
 import app.otakureader.data.backup.mapper.toBackupTrackerSyncState
 import app.otakureader.data.backup.model.BackupData
 import app.otakureader.data.backup.model.BackupManga
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.io.OutputStream
 import javax.inject.Inject
 
 /**
@@ -49,22 +52,57 @@ class BackupCreator @Inject constructor(
     }
 
     /**
+     * Streams a full backup directly to [output], serialising one manga at a time to avoid
+     * holding the entire library + chapters + JSON string in RAM simultaneously.
+     * Callers should wrap [output] in a [java.io.BufferedOutputStream] if the underlying
+     * stream is not already buffered.
+     */
+    suspend fun createBackupToStream(output: OutputStream) = withContext(Dispatchers.IO) {
+        val writer = output.bufferedWriter(Charsets.UTF_8)
+        writer.write("""{"version":${BackupData.CURRENT_VERSION},"createdAt":${System.currentTimeMillis()},"manga":[""")
+
+        // Load history map once — it's ID+timestamps, compact even for large libraries.
+        val historyByChapterId = readingHistoryDao.observeHistory().first().associateBy { it.chapterId }
+        val favoriteManga = mangaDao.getFavoriteManga().first()
+
+        favoriteManga.forEachIndexed { index, mangaEntity ->
+            if (index > 0) writer.write(",")
+            val chapters = chapterDao.getChaptersByMangaId(mangaEntity.id).first()
+            val backupChapters = chapters.map { chapterEntity ->
+                chapterEntity.toBackupChapter(readingHistory = historyByChapterId[chapterEntity.id]?.toBackupReadingHistory())
+            }
+            val categoryIds = categoryDao.getCategoryIdsForManga(mangaEntity.id).first()
+            writer.write(json.encodeToString(mangaEntity.toBackupManga(chapters = backupChapters, categoryIds = categoryIds)))
+            // Flush every 50 manga so buffered bytes don't accumulate unbounded.
+            if (index % 50 == 49) writer.flush()
+        }
+
+        writer.write("""],"categories":""")
+        writer.write(json.encodeToString(createCategoryBackup()))
+        writer.write(""","preferences":""")
+        writer.write(json.encodeToString(createPreferencesBackup()))
+        writer.write(""","opdsServers":""")
+        writer.write(json.encodeToString(createOpdsBackup()))
+        writer.write(""","feedSources":""")
+        writer.write(json.encodeToString(createFeedSourceBackup()))
+        writer.write(""","feedSavedSearches":""")
+        writer.write(json.encodeToString(createFeedSavedSearchBackup()))
+        writer.write(""","trackerSyncStates":""")
+        writer.write(json.encodeToString(createTrackerSyncStateBackup()))
+        writer.write(""","syncConfigurations":""")
+        writer.write(json.encodeToString(createSyncConfigBackup()))
+        writer.write("}")
+        writer.flush()
+    }
+
+    /**
      * Creates a full backup of all app data.
-     * @return JSON string containing the backup data
+     * For large libraries, prefer [createBackupToStream] to avoid a large intermediate String.
      */
     suspend fun createBackup(): String {
-        val backupData = BackupData(
-            manga = createMangaBackup(),
-            categories = createCategoryBackup(),
-            preferences = createPreferencesBackup(),
-            opdsServers = createOpdsBackup(),
-            feedSources = createFeedSourceBackup(),
-            feedSavedSearches = createFeedSavedSearchBackup(),
-            trackerSyncStates = createTrackerSyncStateBackup(),
-            syncConfigurations = createSyncConfigBackup()
-        )
-
-        return json.encodeToString(backupData)
+        val baos = java.io.ByteArrayOutputStream()
+        createBackupToStream(baos)
+        return baos.toString(Charsets.UTF_8.name())
     }
 
     /**
