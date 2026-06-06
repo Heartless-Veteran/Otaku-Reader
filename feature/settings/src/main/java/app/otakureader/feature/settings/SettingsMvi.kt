@@ -174,6 +174,9 @@ sealed interface SettingsEvent : UiEvent {
     data class SetLocale(val locale: String) : SettingsEvent
     data class SetAutoThemeColor(val enabled: Boolean) : SettingsEvent
     data class SetVisualEffectsEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetDarkModeScheduleEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetDarkModeStartMinute(val minute: Int) : SettingsEvent
+    data class SetDarkModeEndMinute(val minute: Int) : SettingsEvent
 
     // Reader - Display
     data class SetReaderMode(val mode: Int) : SettingsEvent

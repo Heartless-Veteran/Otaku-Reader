@@ -29,8 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.otakureader.security.BiometricLockGate
@@ -159,6 +162,23 @@ class MainActivity : FragmentActivity() {
                 .collectAsStateWithLifecycle(initialValue = false)
             val biometricLockTimeoutMinutes by generalPreferences.biometricLockTimeoutMinutes
                 .collectAsStateWithLifecycle(initialValue = 0)
+            val darkModeScheduleEnabled by generalPreferences.darkModeScheduleEnabled
+                .collectAsStateWithLifecycle(initialValue = false)
+            val darkModeStartMinute by generalPreferences.darkModeStartMinuteOfDay
+                .collectAsStateWithLifecycle(initialValue = 22 * 60)
+            val darkModeEndMinute by generalPreferences.darkModeEndMinuteOfDay
+                .collectAsStateWithLifecycle(initialValue = 7 * 60)
+
+            // Ticker that forces recomposition at each schedule boundary so the theme
+            // switches automatically while the app is in the foreground.
+            var scheduleTick by remember { mutableLongStateOf(0L) }
+            LaunchedEffect(darkModeScheduleEnabled, darkModeStartMinute, darkModeEndMinute) {
+                while (darkModeScheduleEnabled) {
+                    val msUntilBoundary = millisUntilNextScheduleBoundary(darkModeStartMinute, darkModeEndMinute)
+                    delay(msUntilBoundary + 1_000L) // +1 s to land safely past the boundary
+                    scheduleTick++
+                }
+            }
 
             // Hide app content in the recent-apps switcher while the lock is enabled.
             DisposableEffect(biometricLockEnabled) {
@@ -171,10 +191,17 @@ class MainActivity : FragmentActivity() {
             }
 
             // I-2: Use named constants instead of magic numbers for theme mode.
+            @Suppress("UNUSED_EXPRESSION") scheduleTick // subscribe so the tick drives recomposition
             val darkTheme = when (themeMode) {
                 THEME_MODE_LIGHT -> false
                 THEME_MODE_DARK -> true
-                else -> isSystemInDarkTheme() // THEME_MODE_SYSTEM (0) = follow system
+                else -> {
+                    if (darkModeScheduleEnabled) {
+                        isDarkModeScheduleActive(darkModeStartMinute, darkModeEndMinute)
+                    } else {
+                        isSystemInDarkTheme()
+                    }
+                }
             }
 
             OtakuReaderTheme(
@@ -378,4 +405,39 @@ private fun CrashReportDialog(
             }
         },
     )
+}
+
+/**
+ * Returns true when the current wall-clock time falls within the dark-mode window
+ * defined by [startMinute] and [endMinute] (both minutes-of-day, 0–1439).
+ * The window may cross midnight (e.g. 22:00 → 07:00 the next day).
+ */
+private fun isDarkModeScheduleActive(startMinute: Int, endMinute: Int): Boolean {
+    val cal = java.util.Calendar.getInstance()
+    val now = cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
+    return if (startMinute < endMinute) {
+        now in startMinute until endMinute
+    } else {
+        now >= startMinute || now < endMinute
+    }
+}
+
+/**
+ * Milliseconds until the next schedule boundary so the theme-switching LaunchedEffect
+ * wakes at exactly the right moment.
+ */
+private fun millisUntilNextScheduleBoundary(startMinute: Int, endMinute: Int): Long {
+    val nowMs = System.currentTimeMillis()
+
+    fun minuteToNextOccurrenceMs(minute: Int): Long {
+        val c = java.util.Calendar.getInstance()
+        c.set(java.util.Calendar.HOUR_OF_DAY, minute / 60)
+        c.set(java.util.Calendar.MINUTE, minute % 60)
+        c.set(java.util.Calendar.SECOND, 0)
+        c.set(java.util.Calendar.MILLISECOND, 0)
+        if (c.timeInMillis <= nowMs) c.add(java.util.Calendar.DAY_OF_MONTH, 1)
+        return c.timeInMillis
+    }
+
+    return minOf(minuteToNextOccurrenceMs(startMinute), minuteToNextOccurrenceMs(endMinute)) - nowMs
 }

@@ -510,6 +510,14 @@
     <string name="settings_sync_enter_url_first">Enter a server URL first</string>
     <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
 
+    <!-- Dark mode schedule -->
+    <string name="settings_dark_mode_schedule">Schedule dark mode</string>
+    <string name="settings_dark_mode_schedule_description">Automatically switch to dark mode at set times</string>
+    <string name="settings_dark_mode_turn_on_at">Turn on at</string>
+    <string name="settings_dark_mode_turn_off_at">Turn off at</string>
+    <string name="settings_dark_mode_time_picker_ok">OK</string>
+    <string name="settings_dark_mode_time_picker_cancel">Cancel</string>
+
     <!-- Nav tab order (#Komikku) -->
     <string name="nav_order_title">Tab Order</string>
     <string name="nav_order_subtitle">Reorder the bottom navigation tabs</string>

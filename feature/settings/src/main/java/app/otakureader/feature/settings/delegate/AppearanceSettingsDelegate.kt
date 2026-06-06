@@ -77,6 +77,23 @@ class AppearanceSettingsDelegate @Inject constructor(
         }
         scope.launch {
             combine(
+                generalPreferences.darkModeScheduleEnabled,
+                generalPreferences.darkModeStartMinuteOfDay,
+                generalPreferences.darkModeEndMinuteOfDay,
+            ) { schedEnabled, startMin, endMin ->
+                updateState {
+                    it.copy(
+                        appearance = it.appearance.copy(
+                            darkModeScheduleEnabled = schedEnabled,
+                            darkModeStartMinuteOfDay = startMin,
+                            darkModeEndMinuteOfDay = endMin,
+                        )
+                    )
+                }
+            }.collect { }
+        }
+        scope.launch {
+            combine(
                 generalPreferences.appUpdateCheckEnabled,
                 generalPreferences.lastAppUpdateCheck,
             ) { enabled, lastCheck ->
@@ -102,6 +119,9 @@ class AppearanceSettingsDelegate @Inject constructor(
         is SettingsEvent.SetLocale -> { generalPreferences.setLocale(event.locale); true }
         is SettingsEvent.SetAutoThemeColor -> { generalPreferences.setAutoThemeColor(event.enabled); true }
         is SettingsEvent.SetVisualEffectsEnabled -> { generalPreferences.setVisualEffectsEnabled(event.enabled); true }
+        is SettingsEvent.SetDarkModeScheduleEnabled -> { generalPreferences.setDarkModeScheduleEnabled(event.enabled); true }
+        is SettingsEvent.SetDarkModeStartMinute -> { generalPreferences.setDarkModeStartMinuteOfDay(event.minute); true }
+        is SettingsEvent.SetDarkModeEndMinute -> { generalPreferences.setDarkModeEndMinuteOfDay(event.minute); true }
         is SettingsEvent.SetDiscordRpcEnabled -> { handleSetDiscordRpcEnabled(event.enabled); true }
         is SettingsEvent.SetNotificationsEnabled -> { generalPreferences.setNotificationsEnabled(event.enabled); true }
         is SettingsEvent.SetShowNsfwContent -> { generalPreferences.setShowNsfwContent(event.enabled); true }

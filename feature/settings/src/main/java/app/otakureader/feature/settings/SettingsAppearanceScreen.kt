@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,9 +33,15 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -177,6 +184,56 @@ private fun AppearanceContent(state: SettingsState, onEvent: (SettingsEvent) -> 
             )
         },
     )
+
+    // Dark mode schedule
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_dark_mode_schedule)) },
+        supportingContent = { Text(stringResource(R.string.settings_dark_mode_schedule_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.appearance.darkModeScheduleEnabled,
+                onCheckedChange = { onEvent(SettingsEvent.SetDarkModeScheduleEnabled(it)) },
+            )
+        },
+    )
+    if (state.appearance.darkModeScheduleEnabled) {
+        var showStartPicker by remember { mutableStateOf(false) }
+        var showEndPicker by remember { mutableStateOf(false) }
+
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_dark_mode_turn_on_at)) },
+            trailingContent = {
+                TextButton(onClick = { showStartPicker = true }) {
+                    Text(formatMinuteOfDay(state.appearance.darkModeStartMinuteOfDay))
+                }
+            },
+            modifier = androidx.compose.ui.Modifier.clickable { showStartPicker = true },
+        )
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_dark_mode_turn_off_at)) },
+            trailingContent = {
+                TextButton(onClick = { showEndPicker = true }) {
+                    Text(formatMinuteOfDay(state.appearance.darkModeEndMinuteOfDay))
+                }
+            },
+            modifier = androidx.compose.ui.Modifier.clickable { showEndPicker = true },
+        )
+
+        if (showStartPicker) {
+            TimePickerDialog(
+                initialMinute = state.appearance.darkModeStartMinuteOfDay,
+                onConfirm = { onEvent(SettingsEvent.SetDarkModeStartMinute(it)); showStartPicker = false },
+                onDismiss = { showStartPicker = false },
+            )
+        }
+        if (showEndPicker) {
+            TimePickerDialog(
+                initialMinute = state.appearance.darkModeEndMinuteOfDay,
+                onConfirm = { onEvent(SettingsEvent.SetDarkModeEndMinute(it)); showEndPicker = false },
+                onDismiss = { showEndPicker = false },
+            )
+        }
+    }
 
     // Color scheme picker
     ListItem(
@@ -432,4 +489,38 @@ private fun AccentColorPicker(
         },
         modifier = modifier,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    initialMinute: Int,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val state = rememberTimePickerState(
+        initialHour = initialMinute / 60,
+        initialMinute = initialMinute % 60,
+        is24Hour = true,
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = { onConfirm(state.hour * 60 + state.minute) }) {
+                Text(stringResource(R.string.settings_dark_mode_time_picker_ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_dark_mode_time_picker_cancel))
+            }
+        },
+        text = { TimePicker(state = state) },
+    )
+}
+
+private fun formatMinuteOfDay(minuteOfDay: Int): String {
+    val h = minuteOfDay / 60
+    val m = minuteOfDay % 60
+    return "%02d:%02d".format(h, m)
 }

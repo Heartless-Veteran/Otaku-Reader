@@ -267,6 +267,23 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val extensionAutoUpdateIntervalHours: Flow<Int> = dataStore.data.map { it[Keys.EXT_AUTO_UPDATE_INTERVAL] ?: 24 }
     suspend fun setExtensionAutoUpdateIntervalHours(value: Int) = dataStore.edit { it[Keys.EXT_AUTO_UPDATE_INTERVAL] = value }
 
+    // --- Dark Mode Schedule ---
+
+    /** Whether to automatically switch to dark mode on a schedule. */
+    val darkModeScheduleEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.DARK_MODE_SCHEDULE_ENABLED] ?: false }
+    suspend fun setDarkModeScheduleEnabled(value: Boolean) =
+        dataStore.edit { it[Keys.DARK_MODE_SCHEDULE_ENABLED] = value }
+
+    /** Minutes-of-day (0–1439) when dark mode should turn ON. Default: 22:00 (1320). */
+    val darkModeStartMinuteOfDay: Flow<Int> = dataStore.data.map { it[Keys.DARK_MODE_START_MINUTE] ?: (22 * 60) }
+    suspend fun setDarkModeStartMinuteOfDay(value: Int) =
+        dataStore.edit { it[Keys.DARK_MODE_START_MINUTE] = value.coerceIn(0, 1439) }
+
+    /** Minutes-of-day (0–1439) when dark mode should turn OFF. Default: 07:00 (420). */
+    val darkModeEndMinuteOfDay: Flow<Int> = dataStore.data.map { it[Keys.DARK_MODE_END_MINUTE] ?: (7 * 60) }
+    suspend fun setDarkModeEndMinuteOfDay(value: Int) =
+        dataStore.edit { it[Keys.DARK_MODE_END_MINUTE] = value.coerceIn(0, 1439) }
+
     // --- Image Cache ---
 
     /**
@@ -314,6 +331,9 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val BROWSE_FILTER_STATES = stringPreferencesKey("browse_filter_states")
         val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
         val BIOMETRIC_LOCK_TIMEOUT_MINUTES = intPreferencesKey("biometric_lock_timeout_minutes")
+        val DARK_MODE_SCHEDULE_ENABLED = booleanPreferencesKey("dark_mode_schedule_enabled")
+        val DARK_MODE_START_MINUTE = intPreferencesKey("dark_mode_start_minute")
+        val DARK_MODE_END_MINUTE = intPreferencesKey("dark_mode_end_minute")
     }
 
     companion object {
