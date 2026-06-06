@@ -1,7 +1,7 @@
 package app.otakureader.feature.reader.ui
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,7 +64,7 @@ fun ReaderSettingsOverlay(
                 text = stringResource(R.string.reader_mode_title),
                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
             )
-            Row(modifier = Modifier.fillMaxWidth()) {
+            FlowRow(modifier = Modifier.fillMaxWidth()) {
                 ReaderMode.entries.forEach { mode ->
                     FilterChip(
                         selected = currentMode == mode,
@@ -84,7 +84,7 @@ fun ReaderSettingsOverlay(
                 text = stringResource(R.string.reader_direction_title),
                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
             )
-            Row(modifier = Modifier.fillMaxWidth()) {
+            FlowRow(modifier = Modifier.fillMaxWidth()) {
                 ReadingDirection.entries.forEach { direction ->
                     FilterChip(
                         selected = readingDirection == direction,
@@ -120,7 +120,7 @@ fun ReaderSettingsOverlay(
                 text = stringResource(R.string.reader_color_filter),
                 style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
             )
-            Row(modifier = Modifier.fillMaxWidth()) {
+            FlowRow(modifier = Modifier.fillMaxWidth()) {
                 ColorFilterMode.entries.forEach { mode ->
                     FilterChip(
                         selected = colorFilterMode == mode,

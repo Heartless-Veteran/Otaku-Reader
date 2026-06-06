@@ -93,7 +93,7 @@ class ReaderViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val mangaId: Long = checkNotNull(savedStateHandle["mangaId"])
-    private val chapterId: Long = checkNotNull(savedStateHandle["chapterId"])
+    private var chapterId: Long = checkNotNull(savedStateHandle["chapterId"])
 
     private val _state = MutableStateFlow(ReaderState())
     val state: StateFlow<ReaderState> = _state.asStateFlow()
@@ -567,9 +567,8 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun loadChapterById(chapterId: Long) {
-        viewModelScope.launch {
-            _effect.send(ReaderEffect.NavigateToChapter(chapterId))
-        }
+        this.chapterId = chapterId
+        loadChapter()
     }
 
     private fun toggleBookmark() {

@@ -5,6 +5,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -72,7 +74,7 @@ fun ChapterListOverlay(
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.4f))
                     .clickable(
-                        interactionSource = null,
+                        interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = onDismiss,
                     )
@@ -110,7 +112,7 @@ fun ChapterListOverlay(
 
                     LaunchedEffect(isVisible, chapters.size) {
                         if (isVisible && currentIndex >= 0) {
-                            listState.animateScrollToItem(currentIndex)
+                            listState.scrollToItem(currentIndex)
                         }
                     }
 
