@@ -184,15 +184,26 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     // Per-manga autoDownload can opt-in even when global is off,
                     // but cannot opt-out when global is on.
                     if (newChapterCount > 0 && onWifi) {
-                        val shouldDownloadForManga = (manga.autoDownload || autoDownloadEnabled) &&
-                            isCategoryAllowedForAutoDownload(
-                                mangaCategoryIds = manga.categoryIds.toSet(),
-                                includeList = autoDownloadCategoryInclude,
-                                excludeList = autoDownloadCategoryExclude,
-                            )
+                        val shouldDownloadForManga = manga.autoDownload || autoDownloadEnabled
 
                         if (shouldDownloadForManga) {
-                            enqueueAutoDownloads(manga.id, manga.sourceId, manga.title, autoDownloadLimit)
+                            // Category-level auto-download filter.
+                            // manga.categoryIds comes from the domain model that is already
+                            // populated by GetLibraryMangaUseCase (it includes category joins).
+                            val mangaCategoryIds = manga.categoryIds
+
+                            // Include list: if non-empty, manga must belong to at least one
+                            // listed category. An empty include list means "all categories".
+                            val passesInclude = autoDownloadCategoryInclude.isEmpty() ||
+                                mangaCategoryIds.any { it in autoDownloadCategoryInclude }
+
+                            // Exclude list: if the manga belongs to ANY excluded category,
+                            // skip it regardless of the include list.
+                            val passesExclude = mangaCategoryIds.none { it in autoDownloadCategoryExclude }
+
+                            if (passesInclude && passesExclude) {
+                                enqueueAutoDownloads(manga.id, manga.sourceId, manga.title, autoDownloadLimit)
+                            }
                         }
                     }
                 }.onFailure {
@@ -292,25 +303,6 @@ class LibraryUpdateWorker @AssistedInject constructor(
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
 
         return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-    }
-
-    /**
-     * Returns true if a manga with [mangaCategoryIds] is eligible for auto-download given the
-     * current [includeList] and [excludeList].
-     *
-     * Rules (mirroring komikku-HV category download policy):
-     * 1. If any of the manga's categories are in [excludeList], auto-download is suppressed.
-     * 2. If [includeList] is non-empty, the manga must belong to at least one included category.
-     * 3. If both lists are empty, all categories are eligible.
-     */
-    private fun isCategoryAllowedForAutoDownload(
-        mangaCategoryIds: Set<Long>,
-        includeList: Set<Long>,
-        excludeList: Set<Long>,
-    ): Boolean {
-        if (excludeList.isNotEmpty() && mangaCategoryIds.any { it in excludeList }) return false
-        if (includeList.isEmpty()) return true
-        return mangaCategoryIds.any { it in includeList }
     }
 
     companion object {
