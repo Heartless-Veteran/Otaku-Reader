@@ -195,6 +195,9 @@ data class ReaderState(
 
     /** Whether screentone/glassmorphism/neon visual effects are enabled globally */
     val visualEffectsEnabled: Boolean = true,
+
+    /** Saved reader presets available for one-tap profile switching from the menu. */
+    val presets: List<app.otakureader.core.preferences.ReaderPreset> = emptyList(),
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size
@@ -584,6 +587,9 @@ sealed interface ReaderEvent {
 
     /** Retry the last failed operation. */
     data object Retry : ActionEvent
+
+    /** Apply a saved reader preset (mode, scale, background colour, etc.). */
+    data class ApplyPreset(val preset: app.otakureader.core.preferences.ReaderPreset) : ActionEvent
 
     // ──────────────────────────────────────────────────────────────────────────
     // Constants

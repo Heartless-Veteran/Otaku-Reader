@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PageNavigationEvent
@@ -87,6 +88,7 @@ class ReaderViewModel @Inject constructor(
     private val downloadAheadDelegate: ReaderDownloadAheadDelegate,
     private val trackerSyncRepository: TrackerSyncRepository,
     private val displayDelegate: ReaderDisplayDelegate,
+    private val readerPreferences: ReaderPreferences,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -146,6 +148,9 @@ class ReaderViewModel @Inject constructor(
             getState = { _state.value },
         )
         observeSettingsWriteFailures()
+        readerPreferences.presets
+            .onEach { presets -> _state.update { it.copy(presets = presets) } }
+            .launchIn(viewModelScope)
         // Wire display delegate to shared state and scope
         displayDelegate.stateFlow = _state
         displayDelegate.scope = viewModelScope
@@ -461,6 +466,10 @@ class ReaderViewModel @Inject constructor(
             ReaderEvent.SharePage -> sharePage()
             ReaderEvent.DismissError -> dismissError()
             ReaderEvent.Retry -> loadChapter()
+            is ReaderEvent.ApplyPreset -> viewModelScope.launch {
+                readerPreferences.applyPreset(event.preset)
+                loadSettings()
+            }
         }
     }
 

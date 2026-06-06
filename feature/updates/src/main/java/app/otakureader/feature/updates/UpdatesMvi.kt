@@ -52,6 +52,7 @@ sealed interface UpdatesEvent : UiEvent {
     data object SelectAll : UpdatesEvent
     data object DownloadSelected : UpdatesEvent
     data object MarkSelectedAsRead : UpdatesEvent
+    data class MarkChapterAsRead(val chapterId: Long) : UpdatesEvent
 
     // Update Error Screen events
     data object ShowUpdateErrors : UpdatesEvent

@@ -365,7 +365,9 @@ private fun LibraryContent(
             )
         }
 
-        val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL || state.filterGenres.isNotEmpty()
+        val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL ||
+            state.filterGenres.isNotEmpty() ||
+            state.sortMode != LibrarySortMode.ALPHABETICAL
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier
@@ -386,6 +388,21 @@ private fun LibraryContent(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetGenreFilter(state.filterGenres - genre)) },
                         label = { Text(genre) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.sortMode != LibrarySortMode.ALPHABETICAL) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetSortMode(LibrarySortMode.ALPHABETICAL)) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    R.string.library_sort_chip,
+                                    state.sortMode.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')
+                                )
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }

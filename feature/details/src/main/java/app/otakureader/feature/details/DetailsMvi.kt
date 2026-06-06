@@ -98,6 +98,7 @@ object DetailsContract {
      * Active chapter list filter configuration, matching Mihon's filter sheet options.
      */
     data class ChapterFilter(
+        val chapterSearchQuery: String = "",
         val read: TriState = TriState.ALL,
         val bookmarked: TriState = TriState.ALL,
         val downloaded: TriState = TriState.ALL,
@@ -106,7 +107,7 @@ object DetailsContract {
     ) {
         val isActive: Boolean
             get() = read != TriState.ALL || bookmarked != TriState.ALL ||
-                    downloaded != TriState.ALL || scanlator != null
+                    downloaded != TriState.ALL || scanlator != null || chapterSearchQuery.isNotBlank()
 
         fun apply(chapters: List<ChapterItem>): List<ChapterItem> = chapters.filter { ch ->
             val readOk = when (read) {
@@ -125,7 +126,9 @@ object DetailsContract {
                 TriState.EXCLUDE -> ch.downloadStatus != DownloadStatus.DOWNLOADED
             }
             val scanlatorOk = scanlator == null || ch.scanlator == scanlator
-            readOk && bookmarkOk && downloadOk && scanlatorOk
+            val nameOk = chapterSearchQuery.isBlank() ||
+                ch.name.contains(chapterSearchQuery, ignoreCase = true)
+            readOk && bookmarkOk && downloadOk && scanlatorOk && nameOk
         }
     }
 
@@ -178,6 +181,7 @@ object DetailsContract {
         data object ShowChapterFilter : Event
         data object HideChapterFilter : Event
         data class SetChapterFilter(val filter: ChapterFilter) : Event
+        data class SetChapterSearchQuery(val query: String) : Event
         data object StartReading : Event
         data object ContinueReading : Event
         data class ChapterClick(val chapterId: Long) : Event

@@ -7,17 +7,26 @@ import app.otakureader.domain.model.Achievement
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.ReadingStats
 
+enum class StatsPeriod(val days: Int?) {
+    ALL(null),
+    DAYS_90(90),
+    DAYS_30(30),
+    DAYS_7(7),
+}
+
 data class StatisticsState(
     val isLoading: Boolean = true,
     val stats: ReadingStats = ReadingStats(),
     val readingGoal: ReadingGoal = ReadingGoal(),
     val achievements: List<Achievement> = emptyList(),
+    val selectedPeriod: StatsPeriod = StatsPeriod.ALL,
     val error: String? = null,
 ) : UiState
 
 sealed interface StatisticsEvent : UiEvent {
     data object Refresh : StatisticsEvent
     data object LoadAchievements : StatisticsEvent
+    data class SelectPeriod(val period: StatsPeriod) : StatisticsEvent
 }
 
 sealed interface StatisticsEffect : UiEffect

@@ -22,31 +22,32 @@ class StatisticsRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
 ) : StatisticsRepository {
 
-    override fun getReadingStats(): Flow<ReadingStats> = combine(
+    override fun getReadingStats(sinceMs: Long?): Flow<ReadingStats> = combine(
         readingHistoryDao.observeHistory(),
         mangaDao.countFavorites(),
         mangaDao.getFavoriteMangaGenres(),
-    ) { history, libraryCount, favoriteGenreValues ->
+    ) { allHistory, libraryCount, favoriteGenreValues ->
+        val history = if (sinceMs != null) allHistory.filter { it.readAt >= sinceMs } else allHistory
         val today = LocalDate.now()
-        
-        val readingDays = history
+
+        val readingDays = allHistory
             .map { Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() }
             .distinct()
             .sorted()
-        
+
         val currentStreak = calculateCurrentStreak(readingDays, today)
         val bestStreak = calculateBestStreak(readingDays)
         val totalChaptersRead = history.size
         val totalReadingTimeMs = history.sumOf { it.readDurationMs }
-        
+
         val activityByDay = (0..29).associate { daysAgo ->
             val date = today.minusDays(daysAgo.toLong())
-            val count = history.count { 
-                Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == date 
+            val count = history.count {
+                Instant.ofEpochMilli(it.readAt).atZone(ZoneId.systemDefault()).toLocalDate() == date
             }
             date.toString() to count
         }
-        
+
         ReadingStats(
             totalMangaInLibrary = libraryCount,
             totalChaptersRead = totalChaptersRead,

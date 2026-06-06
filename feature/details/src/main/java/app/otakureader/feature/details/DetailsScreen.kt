@@ -542,6 +542,8 @@ private fun LazyListScope.detailsChapterItems(
             sortOrder = state.chapterSortOrder,
             isFilterActive = state.chapterFilter.isActive,
             estimatedRemainingTimeMs = state.estimatedRemainingTimeMs,
+            chapterSearchQuery = state.chapterFilter.chapterSearchQuery,
+            onSearchQueryChange = { q -> onEvent(DetailsContract.Event.SetChapterSearchQuery(q)) },
             onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
             onShowFilter = { onEvent(DetailsContract.Event.ShowChapterFilter) }
         )

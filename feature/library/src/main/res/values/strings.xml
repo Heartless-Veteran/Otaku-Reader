@@ -207,6 +207,9 @@
     <string name="reading_list_more_options">More options</string>
     <string name="reading_list_export_chooser">Export reading list via</string>
 
+    <!-- Sort mode indicator chip (Change F) -->
+    <string name="library_sort_chip">Sort: %1$s</string>
+
     <!-- Merge duplicates (#997) -->
     <string name="merge_duplicates_back">Back</string>
     <string name="merge_duplicates_title">Merge Duplicates</string>

@@ -23,8 +23,12 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.background
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -225,6 +229,7 @@ private sealed interface HistoryListItem {
     data class Entry(val entry: ChapterWithHistory) : HistoryListItem
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoryList(
     history: List<ChapterWithHistory>,
@@ -259,13 +264,41 @@ private fun HistoryList(
             when (item) {
                 is HistoryListItem.Header -> HistoryDateHeader(label = historyBucketLabel(item.bucket))
                 is HistoryListItem.Entry -> {
-                    HistoryItem(
-                        entry = item.entry,
-                        isSelected = selectedItems.contains(item.entry.chapter.id),
-                        onItemClick = { onItemClick(item.entry) },
-                        onItemLongClick = { onItemLongClick(item.entry) },
-                        onRemoveClick = { onRemoveClick(item.entry) }
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                onRemoveClick(item.entry)
+                                true
+                            } else false
+                        }
                     )
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.errorContainer),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = androidx.compose.ui.Modifier.padding(end = 16.dp)
+                                )
+                            }
+                        }
+                    ) {
+                        HistoryItem(
+                            entry = item.entry,
+                            isSelected = selectedItems.contains(item.entry.chapter.id),
+                            onItemClick = { onItemClick(item.entry) },
+                            onItemLongClick = { onItemLongClick(item.entry) },
+                            onRemoveClick = { onRemoveClick(item.entry) }
+                        )
+                    }
                     HorizontalDivider()
                 }
             }

@@ -334,6 +334,8 @@ fun ReaderScreen(
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
             onToggleChapterFilter = { showChapterFilterSheet = true },
             onToggleChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
+            presets = state.presets,
+            onApplyPreset = { viewModel.onEvent(ReaderEvent.ApplyPreset(it)) },
         )
 
         if (showChapterFilterSheet) {

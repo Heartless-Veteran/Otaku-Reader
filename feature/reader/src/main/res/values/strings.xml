@@ -162,4 +162,7 @@
 
     <!-- Chapter-list overlay (#986) -->
     <string name="reader_chapter_list_title">Chapters</string>
+
+    <!-- Reader presets quick-switch -->
+    <string name="reader_presets_quick">Presets</string>
 </resources>

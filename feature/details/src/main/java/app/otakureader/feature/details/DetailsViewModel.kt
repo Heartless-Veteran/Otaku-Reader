@@ -92,6 +92,8 @@ class DetailsViewModel @Inject constructor(
                 _state.update { it.copy(showChapterFilter = false) }
             is DetailsContract.Event.SetChapterFilter ->
                 _state.update { it.copy(chapterFilter = event.filter, showChapterFilter = false) }
+            is DetailsContract.Event.SetChapterSearchQuery ->
+                _state.update { it.copy(chapterFilter = it.chapterFilter.copy(chapterSearchQuery = event.query)) }
             is DetailsContract.Event.StartReading -> startReading()
             is DetailsContract.Event.ContinueReading -> continueReading()
             is DetailsContract.Event.ChapterClick -> onChapterClick(event.chapterId)

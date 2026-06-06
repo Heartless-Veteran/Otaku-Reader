@@ -1,6 +1,7 @@
 @file:Suppress("MaxLineLength")
 package app.otakureader.feature.details
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,23 +10,30 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,50 +46,90 @@ internal fun ChapterListHeader(
     sortOrder: DetailsContract.ChapterSortOrder,
     isFilterActive: Boolean = false,
     estimatedRemainingTimeMs: Long = 0L,
+    chapterSearchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {},
     onToggleSort: () -> Unit,
     onShowFilter: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = pluralStringResource(R.plurals.details_chapter_count, chapterCount, chapterCount),
-                style = MaterialTheme.typography.titleMedium
-            )
-            if (estimatedRemainingTimeMs > 0L) {
-                val minutes = (estimatedRemainingTimeMs / 60_000L).toInt()
+    val focusRequester = remember { FocusRequester() }
+    var searchVisible by remember(chapterSearchQuery) { mutableStateOf(chapterSearchQuery.isNotBlank()) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(
-                        R.string.details_remaining_read_time,
-                        app.otakureader.core.common.formatReadTime(minutes),
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = pluralStringResource(R.plurals.details_chapter_count, chapterCount, chapterCount),
+                    style = MaterialTheme.typography.titleMedium
                 )
+                if (estimatedRemainingTimeMs > 0L) {
+                    val minutes = (estimatedRemainingTimeMs / 60_000L).toInt()
+                    Text(
+                        text = stringResource(
+                            R.string.details_remaining_read_time,
+                            app.otakureader.core.common.formatReadTime(minutes),
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    searchVisible = !searchVisible
+                    if (!searchVisible) onSearchQueryChange("")
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.details_chapter_search),
+                        tint = if (searchVisible || chapterSearchQuery.isNotBlank())
+                            MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onShowFilter) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = stringResource(R.string.details_filter_chapters),
+                        tint = if (isFilterActive) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                TextButton(onClick = onToggleSort) {
+                    Text(
+                        when (sortOrder) {
+                            DetailsContract.ChapterSortOrder.ASCENDING -> stringResource(R.string.details_sort_ascending)
+                            DetailsContract.ChapterSortOrder.DESCENDING -> stringResource(R.string.details_sort_descending)
+                        }
+                    )
+                }
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShowFilter) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = stringResource(R.string.details_filter_chapters),
-                    tint = if (isFilterActive) MaterialTheme.colorScheme.primary
-                           else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            TextButton(onClick = onToggleSort) {
-                Text(
-                    when (sortOrder) {
-                        DetailsContract.ChapterSortOrder.ASCENDING -> stringResource(R.string.details_sort_ascending)
-                        DetailsContract.ChapterSortOrder.DESCENDING -> stringResource(R.string.details_sort_descending)
+        AnimatedVisibility(visible = searchVisible) {
+            LaunchedEffect(searchVisible) { if (searchVisible) focusRequester.requestFocus() }
+            OutlinedTextField(
+                value = chapterSearchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 4.dp)
+                    .focusRequester(focusRequester),
+                placeholder = { Text(stringResource(R.string.details_chapter_search)) },
+                singleLine = true,
+                trailingIcon = {
+                    if (chapterSearchQuery.isNotBlank()) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                        }
                     }
-                )
-            }
+                }
+            )
         }
     }
 }
