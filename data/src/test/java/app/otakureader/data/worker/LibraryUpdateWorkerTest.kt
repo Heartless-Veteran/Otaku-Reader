@@ -130,6 +130,8 @@ class LibraryUpdateWorkerTest {
         every { downloadPreferences.autoDownloadEnabled } returns flowOf(false)
         every { downloadPreferences.downloadOnlyOnWifi } returns flowOf(false)
         every { downloadPreferences.autoDownloadLimit } returns flowOf(3)
+        every { downloadPreferences.autoDownloadCategoryInclude } returns flowOf(emptySet())
+        every { downloadPreferences.autoDownloadCategoryExclude } returns flowOf(emptySet())
         every { generalPreferences.notificationsEnabled } returns flowOf(true)
         every { libraryPreferences.updateOnlyOnWifi } returns flowOf(false)
         every { libraryPreferences.skipUpdateCategoryIds } returns flowOf(emptySet())
