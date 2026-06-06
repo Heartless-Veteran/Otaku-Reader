@@ -3,6 +3,7 @@ package app.otakureader.feature.settings.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
@@ -30,6 +31,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DownloadViewModel @Inject constructor(
     private val downloadDelegate: DownloadSettingsDelegate,
+    private val categoryRepository: CategoryRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -40,6 +42,11 @@ class DownloadViewModel @Inject constructor(
 
     init {
         downloadDelegate.startObserving(viewModelScope) { reducer -> _state.update(reducer) }
+        viewModelScope.launch {
+            categoryRepository.getCategories().collect { cats ->
+                _state.update { it.copy(downloads = it.downloads.copy(availableCategories = cats)) }
+            }
+        }
     }
 
     fun onEvent(event: SettingsEvent) {

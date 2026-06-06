@@ -71,6 +71,14 @@
     <string name="settings_download_only_wifi">Download Only on Wi-Fi</string>
     <string name="settings_download_only_wifi_description">Restrict downloads to Wi-Fi connections only</string>
     <string name="settings_auto_download_limit">Auto-Download Limit: %1$d chapter(s)</string>
+    <string name="settings_auto_download_category_include">Include categories</string>
+    <string name="settings_auto_download_category_include_description">Auto-download only for these categories (empty = all)</string>
+    <string name="settings_auto_download_category_exclude">Exclude categories</string>
+    <string name="settings_auto_download_category_exclude_description">Skip auto-download for these categories</string>
+    <string name="settings_auto_download_category_all">All categories</string>
+    <string name="settings_auto_download_category_count">%1$d selected</string>
+    <string name="settings_auto_download_category_none_excluded">None excluded</string>
+    <string name="settings_configure">Configure</string>
 
     <!-- Reader -->
     <string name="settings_reader">Reader</string>

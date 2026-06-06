@@ -10,6 +10,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
+private fun parseLongSet(raw: String): Set<Long> =
+    raw.split(",").mapNotNull { it.trim().toLongOrNull() }.toSet()
+
+private fun encodeLongSet(ids: Set<Long>): String = ids.joinToString(",")
+
 /**
  * Preference store for download settings including auto-download configuration
  * and delete-after-reading behaviour.
@@ -22,6 +27,24 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
     /** Whether to automatically download new chapters when library update finds them. Default: false. */
     val autoDownloadEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.AUTO_DOWNLOAD_ENABLED] ?: false }
     suspend fun setAutoDownloadEnabled(value: Boolean) = dataStore.edit { it[Keys.AUTO_DOWNLOAD_ENABLED] = value }
+
+    /**
+     * Category allowlist: auto-download is limited to manga in these categories.
+     * Empty = no category restriction (all categories are eligible).
+     */
+    val autoDownloadCategoryInclude: Flow<Set<Long>> =
+        dataStore.data.map { parseLongSet(it[Keys.AUTO_DOWNLOAD_CATEGORY_INCLUDE] ?: "") }
+    suspend fun setAutoDownloadCategoryInclude(ids: Set<Long>) =
+        dataStore.edit { it[Keys.AUTO_DOWNLOAD_CATEGORY_INCLUDE] = encodeLongSet(ids) }
+
+    /**
+     * Category denylist: auto-download is suppressed for manga whose only categories
+     * appear in this set. Takes precedence over the allowlist.
+     */
+    val autoDownloadCategoryExclude: Flow<Set<Long>> =
+        dataStore.data.map { parseLongSet(it[Keys.AUTO_DOWNLOAD_CATEGORY_EXCLUDE] ?: "") }
+    suspend fun setAutoDownloadCategoryExclude(ids: Set<Long>) =
+        dataStore.edit { it[Keys.AUTO_DOWNLOAD_CATEGORY_EXCLUDE] = encodeLongSet(ids) }
 
     /** Whether to download only when connected to Wi-Fi. Default: true. */
     val downloadOnlyOnWifi: Flow<Boolean> = dataStore.data.map { it[Keys.DOWNLOAD_ONLY_ON_WIFI] ?: true }
@@ -144,5 +167,7 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         val DELETE_AFTER_READING = booleanPreferencesKey("delete_after_reading")
         val PER_MANGA_OVERRIDES = stringPreferencesKey("delete_after_reading_overrides")
         val DATA_SAVER_ENABLED = booleanPreferencesKey("data_saver_enabled")
+        val AUTO_DOWNLOAD_CATEGORY_INCLUDE = stringPreferencesKey("auto_download_category_include")
+        val AUTO_DOWNLOAD_CATEGORY_EXCLUDE = stringPreferencesKey("auto_download_category_exclude")
     }
 }

@@ -82,6 +82,17 @@ class DownloadSettingsDelegate @Inject constructor(
                 updateState { it.copy(downloads = it.downloads.copy(downloadDataSaverEnabled = enabled)) }
             }
         }
+        scope.launch {
+            combine(
+                downloadPreferences.autoDownloadCategoryInclude,
+                downloadPreferences.autoDownloadCategoryExclude,
+            ) { include, exclude ->
+                updateState { it.copy(downloads = it.downloads.copy(
+                    autoDownloadCategoryInclude = include,
+                    autoDownloadCategoryExclude = exclude,
+                )) }
+            }.collect { }
+        }
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -114,6 +125,10 @@ class DownloadSettingsDelegate @Inject constructor(
             { generalPreferences.setSmartDownloadMinStorageMb(event.mb); true }
         is SettingsEvent.SetDownloadDataSaverEnabled ->
             { downloadPreferences.setDataSaverEnabled(event.enabled); true }
+        is SettingsEvent.SetAutoDownloadCategoryInclude ->
+            { downloadPreferences.setAutoDownloadCategoryInclude(event.categoryIds); true }
+        is SettingsEvent.SetAutoDownloadCategoryExclude ->
+            { downloadPreferences.setAutoDownloadCategoryExclude(event.categoryIds); true }
         is SettingsEvent.NavigateToDataUsage -> {
             sendEffect(SettingsEffect.NavigateToDataUsage)
             true
