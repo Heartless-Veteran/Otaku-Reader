@@ -360,6 +360,9 @@ fun OtakuReaderNavHost(
             onNavigateToReaderPresets = {
                 navController.navigate(Route.ReaderPresets)
             },
+            onNavigateToStorageAnalytics = {
+                navController.navigate(Route.StorageAnalytics)
+            },
         )
 
         downloadsScreen(

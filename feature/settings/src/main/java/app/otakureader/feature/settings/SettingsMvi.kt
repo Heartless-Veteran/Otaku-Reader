@@ -335,6 +335,7 @@ sealed interface SettingsEvent : UiEvent {
     data object NavigateToAbout : SettingsEvent
     data object NavigateToCloudBackup : SettingsEvent
     data object NavigateToDataUsage : SettingsEvent
+    data object NavigateToStorageAnalytics : SettingsEvent
 
     // Downloads — Data Saver
     data class SetDownloadDataSaverEnabled(val enabled: Boolean) : SettingsEvent
@@ -351,4 +352,5 @@ sealed interface SettingsEffect : UiEffect {
     data object ShowAutoBackupLocationPicker : SettingsEffect
     data object NavigateToCloudBackup : SettingsEffect
     data object NavigateToDataUsage : SettingsEffect
+    data object NavigateToStorageAnalytics : SettingsEffect
 }

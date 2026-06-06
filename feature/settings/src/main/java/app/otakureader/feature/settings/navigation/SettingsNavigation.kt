@@ -18,6 +18,7 @@ import app.otakureader.feature.settings.settingsSecurityScreen
 import app.otakureader.feature.settings.settingsTrackingScreen
 import app.otakureader.feature.settings.navorder.settingsNavOrderScreen
 import app.otakureader.feature.settings.readerpresets.readerPresetsScreen
+import app.otakureader.feature.settings.storage.storageAnalyticsScreen
 import app.otakureader.feature.settings.sync.syncSettingsScreen
 import app.otakureader.feature.settings.widgetConfigurationScreen
 
@@ -47,6 +48,7 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToSync: () -> Unit = {},
     onNavigateToNavOrder: () -> Unit = {},
     onNavigateToReaderPresets: () -> Unit = {},
+    onNavigateToStorageAnalytics: () -> Unit = {},
 ) {
     composable<Route.Settings> {
         SettingsScreen(
@@ -78,6 +80,7 @@ fun NavGraphBuilder.settingsScreen(
     settingsDownloadsScreen(
         onNavigateBack = onNavigateBack,
         onNavigateToDataUsage = onNavigateToDataUsage,
+        onNavigateToStorageAnalytics = onNavigateToStorageAnalytics,
     )
     dataUsageScreen(onNavigateBack = onNavigateBack)
     settingsTrackingScreen(onNavigateBack = onNavigateBack)
@@ -95,4 +98,5 @@ fun NavGraphBuilder.settingsScreen(
     syncSettingsScreen(onNavigateBack = onNavigateBack)
     settingsNavOrderScreen(onNavigateBack = onNavigateBack)
     readerPresetsScreen(onNavigateBack = onNavigateBack)
+    storageAnalyticsScreen(onNavigateBack = onNavigateBack)
 }

@@ -510,6 +510,13 @@
     <string name="settings_sync_enter_url_first">Enter a server URL first</string>
     <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
 
+    <!-- Storage analytics -->
+    <string name="storage_analytics_title">Storage Analytics</string>
+    <string name="storage_analytics_subtitle">Download size by source and manga</string>
+    <string name="storage_analytics_total">Total: %1$s</string>
+    <string name="storage_analytics_empty">No downloaded chapters found.</string>
+    <string name="storage_analytics_refresh">Refresh</string>
+
     <!-- Reader presets -->
     <string name="reader_presets_title">Reader Presets</string>
     <string name="reader_presets_subtitle">Saved reader configurations</string>

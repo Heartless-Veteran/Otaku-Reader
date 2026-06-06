@@ -51,6 +51,7 @@ import kotlin.math.roundToInt
 fun SettingsDownloadsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDataUsage: () -> Unit = {},
+    onNavigateToStorageAnalytics: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: DownloadViewModel = hiltViewModel(),
 ) {
@@ -69,6 +70,7 @@ fun SettingsDownloadsScreen(
                 is SettingsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is SettingsEffect.ShowDownloadLocationPicker -> downloadLocationLauncher.launch(null)
                 is SettingsEffect.NavigateToDataUsage -> onNavigateToDataUsage()
+                is SettingsEffect.NavigateToStorageAnalytics -> onNavigateToStorageAnalytics()
                 else -> Unit
             }
         }
@@ -104,11 +106,13 @@ fun SettingsDownloadsScreen(
 fun NavGraphBuilder.settingsDownloadsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDataUsage: () -> Unit = {},
+    onNavigateToStorageAnalytics: () -> Unit = {},
 ) {
     composable<Route.SettingsDownloads> {
         SettingsDownloadsScreen(
             onNavigateBack = onNavigateBack,
             onNavigateToDataUsage = onNavigateToDataUsage,
+            onNavigateToStorageAnalytics = onNavigateToStorageAnalytics,
         )
     }
 }
@@ -277,6 +281,12 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
     ListItem(
         headlineContent = { Text(stringResource(R.string.settings_data_usage)) },
         modifier = Modifier.clickable { onEvent(SettingsEvent.NavigateToDataUsage) },
+    )
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.storage_analytics_title)) },
+        supportingContent = { Text(stringResource(R.string.storage_analytics_subtitle)) },
+        modifier = Modifier.clickable { onEvent(SettingsEvent.NavigateToStorageAnalytics) },
     )
 }
 

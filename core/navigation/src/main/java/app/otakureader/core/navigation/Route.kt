@@ -161,6 +161,9 @@ sealed interface Route {
     @Serializable
     data object ReaderPresets : Route
 
+    @Serializable
+    data object StorageAnalytics : Route
+
     // ─── Downloads ───
 
     @Serializable
