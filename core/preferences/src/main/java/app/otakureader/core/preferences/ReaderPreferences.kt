@@ -190,6 +190,13 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         setAutoZoomWideImages(preset.autoZoomWideImages)
         setAnimatePageTransitions(preset.animatePageTransitions)
         setWebtoonSidePadding(preset.webtoonSidePadding)
+        setTapZoneConfig(preset.tapZoneConfig)
+        setInvertTapZones(preset.invertTapZones)
+        setVolumeKeysEnabled(preset.volumeKeysEnabled)
+        setVolumeKeysInverted(preset.volumeKeysInverted)
+        setShowPageNumber(preset.showPageNumber)
+        setSkipReadChapters(preset.skipReadChapters)
+        setSkipFilteredChapters(preset.skipFilteredChapters)
     }
 
     /** Captures the current reader settings as a new [ReaderPreset] with the given [name]. */
@@ -204,6 +211,13 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             autoZoomWideImages = prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true,
             animatePageTransitions = prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true,
             webtoonSidePadding = prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0,
+            tapZoneConfig = prefs[Keys.TAP_ZONE_CONFIG] ?: 0,
+            invertTapZones = prefs[Keys.INVERT_TAP_ZONES] ?: false,
+            volumeKeysEnabled = prefs[Keys.VOLUME_KEYS_ENABLED] ?: false,
+            volumeKeysInverted = prefs[Keys.VOLUME_KEYS_INVERTED] ?: false,
+            showPageNumber = prefs[Keys.SHOW_PAGE_NUMBER] ?: true,
+            skipReadChapters = prefs[Keys.SKIP_READ_CHAPTERS] ?: false,
+            skipFilteredChapters = prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true,
         )
     }
 
