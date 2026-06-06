@@ -1,6 +1,7 @@
 package app.otakureader.domain.repository
 
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.ReindexResult
 import kotlinx.coroutines.flow.Flow
 
 interface DownloadRepository {
@@ -128,6 +129,13 @@ interface DownloadRepository {
      * @param copy If true, copies files (COPY mode). If false, moves files (MOVE mode)
      * @return true if migration was successful, false if no files to migrate or migration failed
      */
+    /**
+     * Scans the downloads directory and reconciles it with the database.
+     * Returns counts of chapters with verified files on disk and chapter directories
+     * that exist but contain no valid page files or CBZ archive.
+     */
+    suspend fun reindexDownloads(): ReindexResult
+
     suspend fun migrateChapterDownload(
         fromSourceName: String,
         fromMangaTitle: String,

@@ -23,6 +23,8 @@ import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
+import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.cash.turbine.test
 import io.mockk.coEvery
@@ -66,6 +68,9 @@ class LibraryViewModelTest {
     private lateinit var readingListRepository: ReadingListRepository
     private lateinit var getRecommendations: GetRecommendationsUseCase
     private val libraryUpdateScheduler: LibraryUpdateScheduler = mockk(relaxed = true)
+    private val reindexDownloads: ReindexDownloadsUseCase = mockk {
+        coEvery { this@mockk.invoke() } returns ReindexResult(verifiedDownloads = 5, emptyDirs = 0)
+    }
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -158,6 +163,7 @@ class LibraryViewModelTest {
             readingListRepository,
             getRecommendations,
             libraryUpdateScheduler,
+            reindexDownloads,
         )
     }
 
@@ -655,5 +661,24 @@ class LibraryViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(viewModel.state.value.incognitoMode)
+    }
+
+    @Test
+    fun reindexDownloads_callsUseCaseAndEmitsSnackbar() = runTest {
+        every { getLibraryManga() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(LibraryEvent.ReindexDownloads)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is LibraryEffect.ShowSnackbar)
+            val snackbar = effect as LibraryEffect.ShowSnackbar
+            assertEquals(R.string.library_reindex_complete, snackbar.messageRes)
+            assertEquals(listOf(5), snackbar.formatArgs)
+        }
     }
 }
