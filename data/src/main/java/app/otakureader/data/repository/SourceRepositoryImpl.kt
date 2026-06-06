@@ -81,13 +81,14 @@ class SourceRepositoryImpl @Inject constructor(
     )
 
     /**
-     * Returns a fresh [LocalSource] using the current scan directory from preferences.
-     * Reading from the Flow is deferred to suspend call-sites so no blocking occurs at init.
+     * Returns a fresh [LocalSource] using the current scan directory and hidden-folder
+     * preference from preferences. Reading from the Flows is deferred to suspend call-sites
+     * so no blocking occurs at init.
      */
     private suspend fun currentLocalSource(): LocalSource {
         val dir = localSourcePreferences.localSourceDirectory.first()
         val allowHidden = localSourcePreferences.allowLocalSourceHiddenFolders.first()
-        return LocalSource(context, dir, allowHiddenFolders = allowHidden)
+        return LocalSource(context, dir, allowHidden)
     }
 
     private val _sources = MutableStateFlow<List<MangaSource>>(emptyList())

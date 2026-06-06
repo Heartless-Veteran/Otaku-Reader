@@ -96,7 +96,7 @@ class SettingsViewModel @Inject constructor(
             is SettingsEvent.SetLocalSourceDirectory ->
                 localSourcePreferences.setLocalSourceDirectory(event.path)
             is SettingsEvent.SetAllowLocalSourceHiddenFolders ->
-                localSourcePreferences.setAllowLocalSourceHiddenFolders(event.allowed)
+                localSourcePreferences.setAllowLocalSourceHiddenFolders(event.enabled)
 
             // Migration
             is SettingsEvent.SetMigrationSimilarityThreshold ->
@@ -154,14 +154,15 @@ class SettingsViewModel @Inject constructor(
 
     private fun observeLocalSourcePreferences() {
         viewModelScope.launch {
-            localSourcePreferences.localSourceDirectory.collect { dir ->
-                _state.update { it.copy(localSourceDirectory = dir) }
-            }
-        }
-        viewModelScope.launch {
-            localSourcePreferences.allowLocalSourceHiddenFolders.collect { allowed ->
-                _state.update { it.copy(allowLocalSourceHiddenFolders = allowed) }
-            }
+            combine(
+                localSourcePreferences.localSourceDirectory,
+                localSourcePreferences.allowLocalSourceHiddenFolders,
+            ) { dir, allowHidden ->
+                _state.update { it.copy(
+                    localSourceDirectory = dir,
+                    allowLocalSourceHiddenFolders = allowHidden,
+                ) }
+            }.collect { }
         }
     }
 
