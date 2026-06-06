@@ -52,6 +52,8 @@ okhttp = "5.3.2"
 netty = "4.2.12.Final"
 retrofit = "3.0.0"
 kotlinx-serialization = "1.11.0"
+# Crash reporting (#952) — Sentry SDK; user-supplied DSN, no upload until both DSN + opt-in set
+sentry = "7.18.1"
 
 # Image Loading
 coil = "3.4.0"
@@ -106,7 +108,7 @@ espresso = "3.7.0"
 mockk = "1.14.11"
 turbine = "1.2.1"
 robolectric = "4.16.1"
-kover = "0.9.8"
+kover = "0.8.3"
 
 [libraries]
 # Kotlin
@@ -116,6 +118,7 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-protobuf = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
 
 # AndroidX
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -131,6 +134,8 @@ androidx-glance-material3 = { group = "androidx.glance", name = "glance-material
 androidx-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version = "1.0.1" }
+androidx-biometric = { group = "androidx.biometric", name = "biometric", version = "1.1.0" }
 # Aliases matching code-style references (libs.paging.runtime, libs.paging.compose)
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
@@ -200,6 +205,7 @@ retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", n
 # Aliases matching libs.retrofit.core / libs.retrofit.kotlinx.serialization
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+sentry-android = { group = "io.sentry", name = "sentry-android-core", version.ref = "sentry" }
 
 # Image Loading
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
