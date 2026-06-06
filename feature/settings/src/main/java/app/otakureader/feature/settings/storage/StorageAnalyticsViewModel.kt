@@ -3,6 +3,7 @@ package app.otakureader.feature.settings.storage
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.data.download.DownloadProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,12 @@ class StorageAnalyticsViewModel @Inject constructor(
                 val next = it.expandedSources.toMutableSet()
                 if (event.sourceName in next) next.remove(event.sourceName) else next.add(event.sourceName)
                 it.copy(expandedSources = next)
+            }
+            is StorageAnalyticsEvent.DeleteMangaDownloads -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    DownloadProvider.deleteMangaDownloads(context, event.sourceName, event.mangaTitle)
+                    load()
+                }
             }
             StorageAnalyticsEvent.Refresh -> load()
         }
@@ -61,6 +68,7 @@ class StorageAnalyticsViewModel @Inject constructor(
                     ?.filter { it.isDirectory }
                     ?.map { mangaDir ->
                         MangaStorageEntry(
+                            sourceName = sourceDir.name,
                             title = mangaDir.name,
                             totalBytes = mangaDir.walkTopDown().filter { it.isFile }.sumOf { it.length() },
                         )

@@ -7,6 +7,7 @@ data class SourceStorageEntry(
 )
 
 data class MangaStorageEntry(
+    val sourceName: String,
     val title: String,
     val totalBytes: Long,
 )
@@ -20,5 +21,6 @@ data class StorageAnalyticsState(
 
 sealed interface StorageAnalyticsEvent {
     data class ToggleSource(val sourceName: String) : StorageAnalyticsEvent
+    data class DeleteMangaDownloads(val sourceName: String, val mangaTitle: String) : StorageAnalyticsEvent
     data object Refresh : StorageAnalyticsEvent
 }

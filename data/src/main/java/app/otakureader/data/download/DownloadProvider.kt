@@ -130,6 +130,22 @@ object DownloadProvider {
     ): Boolean = deleteChapter(rootFor(context), sourceName, mangaTitle, chapterName)
 
     /**
+     * Deletes all downloaded chapters for the given manga. Returns true if the directory existed
+     * and was removed successfully.
+     */
+    fun deleteMangaDownloads(context: Context, sourceName: String, mangaTitle: String): Boolean =
+        deleteMangaDownloads(rootFor(context), sourceName, mangaTitle)
+
+    /**
+     * Deletes all downloaded chapters for the given manga using an explicit root directory.
+     * Provided so that pure-JVM unit tests can exercise the logic without an Android Context.
+     */
+    fun deleteMangaDownloads(root: File, sourceName: String, mangaTitle: String): Boolean {
+        val dir = File(root, "$ROOT_DIR/${sanitize(sourceName)}/${sanitize(mangaTitle)}")
+        return if (dir.exists()) dir.deleteRecursively() else false
+    }
+
+    /**
      * Migrates downloaded chapter files from one location to another.
      * Used during manga migration to preserve downloads when moving between sources.
      *

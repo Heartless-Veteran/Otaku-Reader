@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,9 +27,13 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -103,6 +109,7 @@ fun StorageAnalyticsScreen(
                         totalBytes = state.totalBytes,
                         expanded = source.sourceName in state.expandedSources,
                         onClick = { viewModel.onEvent(StorageAnalyticsEvent.ToggleSource(source.sourceName)) },
+                        onEvent = { viewModel.onEvent(it) },
                     )
                     HorizontalDivider()
                 }
@@ -117,6 +124,7 @@ private fun SourceRow(
     totalBytes: Long,
     expanded: Boolean,
     onClick: () -> Unit,
+    onEvent: (StorageAnalyticsEvent) -> Unit,
 ) {
     val barColor = MaterialTheme.colorScheme.primary
     Column {
@@ -151,27 +159,73 @@ private fun SourceRow(
         AnimatedVisibility(visible = expanded) {
             Column {
                 entry.manga.forEach { manga ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 32.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = manga.title,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            text = formatBytes(manga.totalBytes),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    MangaRow(entry = manga, onEvent = onEvent)
                 }
                 Spacer(Modifier.height(4.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun MangaRow(
+    entry: MangaStorageEntry,
+    onEvent: (StorageAnalyticsEvent) -> Unit,
+) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 32.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = entry.title,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = formatBytes(entry.totalBytes),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        IconButton(onClick = { showDeleteConfirm = true }) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = stringResource(R.string.storage_delete_title),
+                tint = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.storage_delete_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.storage_delete_message,
+                        entry.title,
+                        formatBytes(entry.totalBytes),
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onEvent(StorageAnalyticsEvent.DeleteMangaDownloads(entry.sourceName, entry.title))
+                    showDeleteConfirm = false
+                }) {
+                    Text(stringResource(R.string.storage_delete_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text(stringResource(R.string.storage_delete_cancel))
+                }
+            },
+        )
     }
 }
 
