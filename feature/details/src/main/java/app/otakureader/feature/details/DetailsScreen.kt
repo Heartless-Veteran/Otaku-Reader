@@ -297,6 +297,15 @@ fun DetailsScreen(
                                 overflowExpanded = false
                             }
                         )
+                        androidx.compose.material3.HorizontalDivider()
+                        DropdownMenuItem(
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                            text = { Text(stringResource(R.string.details_edit_info)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ShowEditInfoSheet)
+                                overflowExpanded = false
+                            }
+                        )
                     }
                 }
             )
@@ -424,6 +433,27 @@ private fun DetailsContent(
             scanlators = state.chapters.mapNotNull { it.scanlator }.distinct().sorted(),
             onApply = { newFilter -> onEvent(DetailsContract.Event.SetChapterFilter(newFilter)) },
             onDismiss = { onEvent(DetailsContract.Event.HideChapterFilter) }
+        )
+    }
+
+    if (state.isEditInfoSheetVisible) {
+        EditMangaInfoSheet(
+            manga = manga,
+            onSave = { title, description, author, artist, thumbnailUrl, genres, status ->
+                onEvent(
+                    DetailsContract.Event.SaveMangaInfo(
+                        title = title,
+                        description = description,
+                        author = author,
+                        artist = artist,
+                        thumbnailUrl = thumbnailUrl,
+                        genres = genres,
+                        status = status,
+                    )
+                )
+            },
+            onReset = { onEvent(DetailsContract.Event.ResetMangaInfo) },
+            onDismiss = { onEvent(DetailsContract.Event.HideEditInfoSheet) },
         )
     }
 }

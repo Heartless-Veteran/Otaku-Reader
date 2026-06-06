@@ -1,6 +1,7 @@
 package app.otakureader.domain.repository
 
 import app.otakureader.domain.model.Manga
+import app.otakureader.domain.model.MangaStatus
 import kotlinx.coroutines.flow.Flow
 
 interface MangaRepository {
@@ -47,4 +48,23 @@ interface MangaRepository {
 
     /** Per-manga cover theme override (#947). Pass null to inherit global pref. */
     suspend fun updateMangaThemeOverride(id: Long, override: Boolean?)
+
+    // User-info overrides (#998)
+    /**
+     * Persist user-edited metadata overrides. A null argument clears that field's override
+     * (the source value is then shown). Pass all nulls to fully reset.
+     */
+    suspend fun updateLocalOverrides(
+        id: Long,
+        title: String?,
+        description: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        genres: List<String>?,
+        status: MangaStatus?,
+    )
+
+    /** Remove all user-info overrides for this manga, reverting to source metadata. */
+    suspend fun clearLocalOverrides(id: Long)
 }

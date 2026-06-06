@@ -192,17 +192,53 @@ class MangaRepositoryImpl @Inject constructor(
         mangaDao.updateMangaThemeOverride(id, override)
     }
 
+    override suspend fun updateLocalOverrides(
+        id: Long,
+        title: String?,
+        description: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        genres: List<String>?,
+        status: MangaStatus?,
+    ) {
+        mangaDao.updateUserOverrides(
+            id = id,
+            title = title,
+            description = description,
+            author = author,
+            artist = artist,
+            thumbnailUrl = thumbnailUrl,
+            genre = genres?.joinToString("|||"),
+            status = status?.ordinal,
+        )
+    }
+
+    override suspend fun clearLocalOverrides(id: Long) {
+        mangaDao.updateUserOverrides(
+            id = id,
+            title = null,
+            description = null,
+            author = null,
+            artist = null,
+            thumbnailUrl = null,
+            genre = null,
+            status = null,
+        )
+    }
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
         url = url,
-        title = title,
-        thumbnailUrl = thumbnailUrl,
-        author = author,
-        artist = artist,
-        description = description,
-        genre = genre?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
-        status = MangaStatus.fromOrdinal(status),
+        // User overrides take precedence over source values (#998)
+        title = userTitle ?: title,
+        thumbnailUrl = userThumbnailUrl ?: thumbnailUrl,
+        author = userAuthor ?: author,
+        artist = userArtist ?: artist,
+        description = userDescription ?: description,
+        genre = (userGenre ?: genre)?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
+        status = if (userStatus != null) MangaStatus.fromOrdinal(userStatus) else MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
         unreadCount = unreadCount,
@@ -224,6 +260,8 @@ class MangaRepositoryImpl @Inject constructor(
         userCompleted = userCompleted,
         userDropped = userDropped,
         mangaThemeOverride = mangaThemeOverride,
+        isUserEdited = userTitle != null || userDescription != null || userAuthor != null ||
+            userArtist != null || userThumbnailUrl != null || userGenre != null || userStatus != null,
     )
 
     private fun Manga.toEntity() = MangaEntity(

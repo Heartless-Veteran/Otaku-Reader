@@ -94,6 +94,21 @@ interface MangaDao {
     @Query("UPDATE manga SET mangaThemeOverride = :override WHERE id = :id")
     suspend fun updateMangaThemeOverride(id: Long, override: Boolean?)
 
+    /** Persist user-info overrides (#998). Pass null for any field to clear that override. */
+    @Query("""UPDATE manga SET userTitle = :title, userDescription = :description,
+        userAuthor = :author, userArtist = :artist, userThumbnailUrl = :thumbnailUrl,
+        userGenre = :genre, userStatus = :status WHERE id = :id""")
+    suspend fun updateUserOverrides(
+        id: Long,
+        title: String?,
+        description: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        genre: String?,
+        status: Int?,
+    )
+
     @Query("SELECT * FROM manga WHERE favorite = 1 AND userCompleted = 1 ORDER BY title ASC")
     fun getCompletedManga(): Flow<List<MangaEntity>>
 

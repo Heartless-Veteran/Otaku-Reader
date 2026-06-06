@@ -53,7 +53,9 @@ object DetailsContract {
         /** Whether automatic theme color extraction from cover is enabled. */
         val autoThemeEnabled: Boolean = true,
         /** User's average per-chapter reading duration in milliseconds; used to estimate remaining time. */
-        val averageChapterDurationMs: Long = 0L
+        val averageChapterDurationMs: Long = 0L,
+        /** Whether the Edit Manga Info bottom-sheet is open (#998). */
+        val isEditInfoSheetVisible: Boolean = false,
     ) : UiState {
 
         /** Estimated time remaining to finish all unread chapters of this manga. */
@@ -239,6 +241,20 @@ object DetailsContract {
         
         // Panorama cover
         data object TogglePanoramaCover : Event
+
+        // Edit manga info (#998)
+        data object ShowEditInfoSheet : Event
+        data object HideEditInfoSheet : Event
+        data class SaveMangaInfo(
+            val title: String?,
+            val description: String?,
+            val author: String?,
+            val artist: String?,
+            val thumbnailUrl: String?,
+            val genres: List<String>?,
+            val status: MangaStatus?,
+        ) : Event
+        data object ResetMangaInfo : Event
     }
 
     /**

@@ -177,4 +177,22 @@
     <string name="details_theme_inherit">Cover theme: follow app setting</string>
     <string name="details_theme_force_on">Cover theme: force on</string>
     <string name="details_theme_force_off">Cover theme: force off</string>
+
+    <!-- Edit manga info (#998) -->
+    <string name="details_edit_info">Edit Info</string>
+    <string name="details_edit_info_title">Edit Manga Info</string>
+    <string name="details_edit_info_save">Save</string>
+    <string name="details_edit_info_reset">Reset to source</string>
+    <string name="details_edit_info_cancel">Cancel</string>
+    <string name="details_edit_field_title">Title</string>
+    <string name="details_edit_field_description">Description</string>
+    <string name="details_edit_field_author">Author</string>
+    <string name="details_edit_field_artist">Artist</string>
+    <string name="details_edit_field_cover_url">Cover URL</string>
+    <string name="details_edit_field_genres">Genres (comma-separated)</string>
+    <string name="details_edit_field_status">Status</string>
+    <string name="details_edit_user_edited_badge">Custom info</string>
+    <string name="details_edit_reset_confirm_title">Reset manga info?</string>
+    <string name="details_edit_reset_confirm_body">This will clear all your custom edits and restore the original source data.</string>
+    <string name="details_edit_reset_confirm_ok">Reset</string>
 </resources>

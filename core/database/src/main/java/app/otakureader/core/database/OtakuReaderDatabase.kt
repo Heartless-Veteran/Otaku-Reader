@@ -80,7 +80,7 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         // Reader progress sync queue (#958)
         SyncQueueEntity::class,
     ],
-    version = 32,
+    version = 33,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

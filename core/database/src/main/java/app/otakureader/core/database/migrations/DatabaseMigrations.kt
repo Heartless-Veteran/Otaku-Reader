@@ -361,6 +361,19 @@ internal val MIGRATION_31_32 = object : Migration(31, 32) {
     }
 }
 
+/** User-info overrides for edit-manga-info feature (#998). */
+internal val MIGRATION_32_33 = object : Migration(32, 33) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userTitle` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userDescription` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userAuthor` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userArtist` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userThumbnailUrl` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userGenre` TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE `manga` ADD COLUMN `userStatus` INTEGER DEFAULT NULL")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -370,5 +383,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
-    MIGRATION_31_32
+    MIGRATION_31_32, MIGRATION_32_33
 )
