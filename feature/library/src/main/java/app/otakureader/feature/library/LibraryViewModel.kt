@@ -20,6 +20,7 @@ import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -65,6 +66,7 @@ class LibraryViewModel @Inject constructor(
     private val readingListRepository: ReadingListRepository,
     private val getRecommendations: GetRecommendationsUseCase,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
+    private val reindexDownloads: ReindexDownloadsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -212,7 +214,13 @@ class LibraryViewModel @Inject constructor(
                 }
             }
             is LibraryEvent.ReindexDownloads -> viewModelScope.launch {
-                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_reindex_not_available))
+                val result = reindexDownloads()
+                _effect.send(
+                    LibraryEffect.ShowSnackbar(
+                        R.string.library_reindex_complete,
+                        formatArgs = listOf(result.verifiedDownloads)
+                    )
+                )
             }
             else -> Unit
         }

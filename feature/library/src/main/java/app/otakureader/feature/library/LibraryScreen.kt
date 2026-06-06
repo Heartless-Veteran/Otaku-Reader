@@ -102,7 +102,12 @@ fun LibraryScreen(
                     onNavigateToMigration(effect.selectedMangaIds)
                 }
                 is LibraryEffect.ShowSnackbar -> scope.launch {
-                    snackbarHostState.showSnackbar(context.getString(effect.messageRes))
+                    val msg = if (effect.formatArgs.isEmpty()) {
+                        context.getString(effect.messageRes)
+                    } else {
+                        context.getString(effect.messageRes, *effect.formatArgs.toTypedArray())
+                    }
+                    snackbarHostState.showSnackbar(msg)
                 }
                 is LibraryEffect.ShareManga -> {
                     val shareText = if (effect.url.isNotEmpty()) "${effect.title}\n${effect.url}" else effect.title

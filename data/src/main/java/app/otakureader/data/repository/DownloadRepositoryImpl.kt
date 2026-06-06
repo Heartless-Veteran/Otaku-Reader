@@ -7,6 +7,7 @@ import app.otakureader.data.download.DownloadManager
 import app.otakureader.data.download.DownloadProvider
 import app.otakureader.core.common.di.ApplicationScope
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.repository.DownloadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -147,6 +148,30 @@ class DownloadRepositoryImpl @Inject constructor(
         }
 
         CbzCreator.createCbz(chapterDir).map { }
+    }
+
+    override suspend fun reindexDownloads(): ReindexResult = withContext(Dispatchers.IO) {
+        val rootDir = DownloadProvider.getRootDir(context)
+        if (!rootDir.isDirectory) return@withContext ReindexResult(0, 0)
+
+        var verified = 0
+        var empty = 0
+        val sourceDirs = rootDir.listFiles { f -> f.isDirectory } ?: return@withContext ReindexResult(0, 0)
+        for (sourceDir in sourceDirs) {
+            val mangaDirs = sourceDir.listFiles { f -> f.isDirectory } ?: continue
+            for (mangaDir in mangaDirs) {
+                val chapterDirs = mangaDir.listFiles { f -> f.isDirectory } ?: continue
+                for (chapterDir in chapterDirs) {
+                    val fileList = chapterDir.list() ?: continue
+                    val hasContent = fileList.any { name ->
+                        name == CbzCreator.CBZ_FILE_NAME ||
+                            name.substringAfterLast('.', "").lowercase() in DownloadProvider.PAGE_EXTENSIONS
+                    }
+                    if (hasContent) verified++ else empty++
+                }
+            }
+        }
+        ReindexResult(verified, empty)
     }
 
     override suspend fun migrateChapterDownload(

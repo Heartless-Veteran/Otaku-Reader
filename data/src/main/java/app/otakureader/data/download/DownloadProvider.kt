@@ -163,6 +163,13 @@ object DownloadProvider {
         copy
     )
 
+    /**
+     * Returns the root download directory (OtakuReader/) for the given context.
+     * May not exist if no chapters have been downloaded yet.
+     */
+    fun getRootDir(context: Context): File =
+        File(rootFor(context), ROOT_DIR)
+
     // -------------------------------------------------------------------------
     // Internal root-File overloads (used for testing without a real Context)
     // -------------------------------------------------------------------------
