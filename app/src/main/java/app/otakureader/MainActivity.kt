@@ -92,7 +92,7 @@ class MainActivity : FragmentActivity() {
     // Crash report from the previous run – shown once, then cleared from SharedPreferences
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)

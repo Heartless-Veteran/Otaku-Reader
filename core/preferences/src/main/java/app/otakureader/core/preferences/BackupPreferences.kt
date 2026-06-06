@@ -79,7 +79,7 @@ class BackupPreferences(private val dataStore: DataStore<Preferences>) {
     /** Returns the stored password hash, or null if no password has been set. */
     suspend fun getBackupEncryptionPasswordHash(): String? =
         dataStore.data.map { it[Keys.BACKUP_ENCRYPTION_PASSWORD_HASH] }.let { flow ->
-            kotlinx.coroutines.flow.first(flow)
+            flow.first()
         }
 
     private object Keys {

@@ -4,6 +4,7 @@ import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface MangaRepository {
     fun getLibraryManga(): Flow<List<Manga>>
     fun searchLibraryManga(query: String): Flow<List<Manga>>

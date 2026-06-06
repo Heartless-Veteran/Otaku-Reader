@@ -108,6 +108,7 @@ class BackupCreator @Inject constructor(
     /**
      * Creates backup data for all favorite manga with their chapters and reading history.
      */
+    @Suppress("UnusedPrivateMember")
     private suspend fun createMangaBackup(): List<BackupManga> {
         // Get all favorite manga
         val favoriteManga = mangaDao.getFavoriteManga().first()

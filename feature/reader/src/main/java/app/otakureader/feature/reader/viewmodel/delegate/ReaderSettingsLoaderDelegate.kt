@@ -223,7 +223,10 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             VolumeKeyBehavior.DISABLED -> { effectiveVolKeysEnabled = false; effectiveVolKeysInverted = globalVolKeysInverted }
             VolumeKeyBehavior.NORMAL   -> { effectiveVolKeysEnabled = true;  effectiveVolKeysInverted = false }
             VolumeKeyBehavior.INVERTED -> { effectiveVolKeysEnabled = true;  effectiveVolKeysInverted = true }
-            else                       -> { effectiveVolKeysEnabled = globalVolKeysEnabled; effectiveVolKeysInverted = globalVolKeysInverted }
+            else -> {
+                effectiveVolKeysEnabled = globalVolKeysEnabled
+                effectiveVolKeysInverted = globalVolKeysInverted
+            }
         }
 
         current.copy(
