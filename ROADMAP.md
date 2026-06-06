@@ -1,7 +1,7 @@
 # ROADMAP.md — Otaku Reader
 
-**Status:** Alpha Ready ✅ | **Current Phase:** Beta Feature Parity (35 issues tracked)
-**Updated:** 2026-05-26
+**Status:** Beta: In Progress | **Current Phase:** Feature Parity (P3 QoL batch shipped 2026-06-06)
+**Updated:** 2026-06-06
 
 ---
 
@@ -23,7 +23,7 @@ All alpha readiness gates pass:
 - [x] Tests: All unit tests passing ✅
 - [x] Security: No unencrypted creds, AES-256-GCM, HTTPS-only extensions ✅
 - [x] Architecture: Clean Architecture enforced, zero layer violations ✅
-- [x] DB: 26 clean migrations, no destructive fallback ✅
+- [x] DB: 32 migrations (schema v34), no destructive fallback in production ✅
 - [x] Extension system: Tachiyomi API intact, classloader isolation ✅
 - [x] Notification system: UpdateNotifier, DownloadNotifier, ReadingReminderWorker ✅
 - [x] Tracker auto-sync: ReaderViewModel → TrackerSyncRepository wired ✅
@@ -47,7 +47,7 @@ The beta phase focuses on achieving competitive parity with Mihon/Komikku. All 3
 
 | Issue | Feature | Status |
 |-------|---------|--------|
-| #926 | Library Search | 🔴 Not started |
+| #926 | Library Search | ✅ Shipped — FTS4 library search (PR #1011, 2026-06-06) |
 | #927 | Advanced Search & Filtering | 🔴 Not started |
 | #928 | Biometric App Lock | 🔴 Not started |
 | #929 | Tachiyomi Backup Import | 🟡 Data layer exists, needs UI |
@@ -106,6 +106,31 @@ The beta phase focuses on achieving competitive parity with Mihon/Komikku. All 3
 4. Reference the issue in your PR: `Closes #NNN`
 
 **Priority order:** Start with P0, then P1. P2 and P3 can run in parallel.
+
+---
+
+## ✅ P3 QoL Batch Shipped (PR #1011, 2026-06-06)
+
+Mihon/Komikku parity improvements and reader enhancements shipped alongside the beta rollout:
+
+| Feature | Notes |
+|---------|-------|
+| FTS4 library search | Title, author, artist full-text search (closes #926) |
+| Reader quick-settings overlay | Long-press center tap zone → settings sheet |
+| Reader chapter-list overlay | Right-slide panel with current chapter highlighted |
+| Reader presets quick-switch | FilterChip row in menu overlay |
+| Edit manga info | User overrides for title, description, status, genres |
+| Merge duplicate library entries | Merge screen + action from library overflow |
+| Per-reader-mode volume key behavior | Inherit / Disabled / Normal / Inverted per mode |
+| Chapter list text search | Live search in Details screen chapter list |
+| Swipe-to-delete in History | EndToStart swipe removes entry |
+| Swipe-to-mark-read in Updates | EndToStart swipe marks chapter read |
+| Statistics date range selector | All / 90d / 30d / 7d FilterChip row |
+| Library sort mode indicator chip | Dismissible chip shows active sort; X resets |
+| Reading list export (CSV/JSON) | Export from reading list detail overflow |
+| Dark mode scheduling | Scheduled on/off times in display settings |
+| Backup encryption | Password-protected local backups |
+| Bottom nav tab reorder | Nav Order settings screen |
 
 ---
 
