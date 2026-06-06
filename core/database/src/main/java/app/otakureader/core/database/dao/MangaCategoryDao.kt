@@ -17,4 +17,7 @@ interface MangaCategoryDao {
 
     @Query("DELETE FROM manga_categories WHERE mangaId = :mangaId")
     suspend fun deleteAllForManga(mangaId: Long)
+
+    @Query("SELECT categoryId FROM manga_categories WHERE mangaId = :mangaId")
+    suspend fun getCategoryIdsForManga(mangaId: Long): List<Long>
 }

@@ -79,6 +79,7 @@ fun LibraryScreen(
     onNavigateToMigration: (List<Long>) -> Unit = {},
     onNavigateToCategoryManagement: () -> Unit = {},
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
+    onNavigateToMergeDuplicates: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -304,6 +305,10 @@ fun LibraryScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_manage_categories)) },
                                 onClick = { showMenu = false; onNavigateToCategoryManagement() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.merge_duplicates_menu_item)) },
+                                onClick = { showMenu = false; onNavigateToMergeDuplicates() }
                             )
                         }
                     }

@@ -67,4 +67,11 @@ interface MangaRepository {
 
     /** Remove all user-info overrides for this manga, reverting to source metadata. */
     suspend fun clearLocalOverrides(id: Long)
+
+    // Duplicate detection (#997)
+    /** Groups of library manga sharing the same normalised title (≥2 entries per group). */
+    fun findDuplicates(): Flow<List<List<Manga>>>
+
+    /** Returns the category IDs that a manga belongs to. */
+    suspend fun getCategoryIdsForManga(mangaId: Long): List<Long>
 }

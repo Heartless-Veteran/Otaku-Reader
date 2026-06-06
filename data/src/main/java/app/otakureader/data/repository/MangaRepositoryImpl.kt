@@ -1,6 +1,7 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.domain.model.ContentRating
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
+    private val mangaCategoryDao: MangaCategoryDao,
     private val downloadRepository: dagger.Lazy<app.otakureader.domain.repository.DownloadRepository>
 ) : MangaRepository {
 
@@ -227,6 +229,18 @@ class MangaRepositoryImpl @Inject constructor(
         )
     }
 
+    override fun findDuplicates(): Flow<List<List<Manga>>> =
+        getLibraryManga().map { library ->
+            library
+                .groupBy { it.title.lowercase().trim() }
+                .values
+                .filter { it.size > 1 }
+                .toList()
+        }
+
+    override suspend fun getCategoryIdsForManga(mangaId: Long): List<Long> =
+        mangaCategoryDao.getCategoryIdsForManga(mangaId)
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
@@ -238,7 +252,7 @@ class MangaRepositoryImpl @Inject constructor(
         artist = userArtist ?: artist,
         description = userDescription ?: description,
         genre = (userGenre ?: genre)?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
-        status = if (userStatus != null) MangaStatus.fromOrdinal(userStatus) else MangaStatus.fromOrdinal(status),
+        status = userStatus?.let { MangaStatus.fromOrdinal(it) } ?: MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
         unreadCount = unreadCount,

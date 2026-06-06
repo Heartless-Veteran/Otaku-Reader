@@ -11,7 +11,8 @@ fun NavGraphBuilder.libraryScreen(
     onNavigateToDownloads: () -> Unit,
     onNavigateToMigration: (List<Long>) -> Unit = {},
     onNavigateToCategoryManagement: () -> Unit = {},
-    onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> }
+    onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
+    onNavigateToMergeDuplicates: () -> Unit = {},
 ) {
     composable<Route.Library> {
         LibraryScreen(
@@ -20,7 +21,8 @@ fun NavGraphBuilder.libraryScreen(
             onNavigateToDownloads = onNavigateToDownloads,
             onNavigateToMigration = onNavigateToMigration,
             onNavigateToCategoryManagement = onNavigateToCategoryManagement,
-            onNavigateToReader = onNavigateToReader
+            onNavigateToReader = onNavigateToReader,
+            onNavigateToMergeDuplicates = onNavigateToMergeDuplicates,
         )
     }
 }
