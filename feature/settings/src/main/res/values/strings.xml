@@ -503,6 +503,8 @@
     <string name="settings_local_source_folders_description">Plain folders containing readable image files are exposed as local manga.</string>
     <string name="settings_local_source_metadata">Metadata</string>
     <string name="settings_local_source_metadata_description">series.json and ComicInfo.xml metadata are recognized when present, and directory traversal is constrained to the configured base directory.</string>
+    <string name="settings_local_source_allow_hidden_folders">Allow hidden folders</string>
+    <string name="settings_local_source_allow_hidden_folders_description">Include dot-prefixed directories (e.g. .manga) when scanning the local source. Off by default to avoid surfacing system folders.</string>
 
     <!-- About section (settings hub) -->
     <string name="settings_about">About</string>

@@ -86,7 +86,8 @@ class SourceRepositoryImpl @Inject constructor(
      */
     private suspend fun currentLocalSource(): LocalSource {
         val dir = localSourcePreferences.localSourceDirectory.first()
-        return LocalSource(context, dir)
+        val allowHidden = localSourcePreferences.allowLocalSourceHiddenFolders.first()
+        return LocalSource(context, dir, allowHiddenFolders = allowHidden)
     }
 
     private val _sources = MutableStateFlow<List<MangaSource>>(emptyList())

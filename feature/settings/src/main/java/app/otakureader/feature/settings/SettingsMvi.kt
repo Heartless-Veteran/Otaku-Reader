@@ -27,6 +27,7 @@ data class SettingsState(
 
     // --- Local Source ---
     val localSourceDirectory: String = LocalSourcePreferences.defaultDirectory(),
+    val allowLocalSourceHiddenFolders: Boolean = false,
 
     // --- Notifications ---
     val notificationsEnabled: Boolean = true,
@@ -273,6 +274,7 @@ sealed interface SettingsEvent : UiEvent {
 
     // Local Source
     data class SetLocalSourceDirectory(val path: String) : SettingsEvent
+    data class SetAllowLocalSourceHiddenFolders(val allowed: Boolean) : SettingsEvent
 
     // Notifications
     data class SetNotificationsEnabled(val enabled: Boolean) : SettingsEvent

@@ -44,7 +44,8 @@ import kotlinx.coroutines.CancellationException
  */
 class LocalSource(
     private val context: Context,
-    private val directory: String
+    private val directory: String,
+    private val allowHiddenFolders: Boolean = false,
 ) : MangaSource {
 
     override val id: String = "local"
@@ -69,6 +70,7 @@ class LocalSource(
 
         return buildList {
             root.listFiles()?.forEach { entry ->
+                if (!allowHiddenFolders && entry.name.startsWith(".")) return@forEach
                 when {
                     // Sub-directory → manga with one or more chapters
                     entry.isDirectory -> add(LocalMangaEntry.Folder(entry))

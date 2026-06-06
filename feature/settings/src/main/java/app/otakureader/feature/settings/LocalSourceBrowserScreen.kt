@@ -15,6 +15,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -103,6 +104,19 @@ fun LocalSourceBrowserScreen(
                                 Text(stringResource(R.string.settings_save))
                             }
                         }
+                    },
+                )
+            }
+            item(key = "hidden_folders_divider") { HorizontalDivider() }
+            item(key = "hidden_folders") {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_local_source_allow_hidden_folders)) },
+                    supportingContent = { Text(stringResource(R.string.settings_local_source_allow_hidden_folders_description)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.allowLocalSourceHiddenFolders,
+                            onCheckedChange = { viewModel.onEvent(SettingsEvent.SetAllowLocalSourceHiddenFolders(it)) },
+                        )
                     },
                 )
             }
