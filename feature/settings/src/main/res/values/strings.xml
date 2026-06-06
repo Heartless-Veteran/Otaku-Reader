@@ -278,6 +278,19 @@
     <string name="settings_lock_timeout_1min">After 1 minute</string>
     <string name="settings_lock_timeout_5min">After 5 minutes</string>
     <string name="settings_lock_timeout_15min">After 15 minutes</string>
+    <string name="settings_lock_schedule">Lock Schedule</string>
+    <string name="settings_lock_schedule_enabled">Enable lock schedule</string>
+    <string name="settings_lock_schedule_enabled_description">Enforce the lock only during specific hours and days</string>
+    <string name="settings_lock_schedule_start">Lock from %1$d:00</string>
+    <string name="settings_lock_schedule_end">Lock until %1$d:00</string>
+    <string name="settings_lock_schedule_days">Active days</string>
+    <string name="day_sun">Sun</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
     <string name="settings_discord_rich_presence">Rich Presence</string>
     <string name="settings_discord_rich_presence_description">Show current reading activity as your Discord status</string>
 

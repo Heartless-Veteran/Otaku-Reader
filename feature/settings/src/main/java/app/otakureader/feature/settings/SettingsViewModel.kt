@@ -128,6 +128,14 @@ class SettingsViewModel @Inject constructor(
                 generalPreferences.setBiometricLockEnabled(event.enabled)
             is SettingsEvent.SetBiometricLockTimeout ->
                 generalPreferences.setBiometricLockTimeoutMinutes(event.minutes)
+            is SettingsEvent.SetBiometricLockScheduleEnabled ->
+                generalPreferences.setBiometricLockScheduleEnabled(event.enabled)
+            is SettingsEvent.SetBiometricLockStartHour ->
+                generalPreferences.setBiometricLockStartHour(event.hour)
+            is SettingsEvent.SetBiometricLockEndHour ->
+                generalPreferences.setBiometricLockEndHour(event.hour)
+            is SettingsEvent.SetBiometricLockActiveDays ->
+                generalPreferences.setBiometricLockActiveDays(event.days)
 
             // Navigation
             SettingsEvent.NavigateToAbout -> _effect.send(SettingsEffect.NavigateToAbout)
@@ -145,6 +153,21 @@ class SettingsViewModel @Inject constructor(
                 _state.update { it.copy(
                     biometricLockEnabled = enabled,
                     biometricLockTimeoutMinutes = timeout,
+                ) }
+            }.collect { }
+        }
+        viewModelScope.launch {
+            combine(
+                generalPreferences.biometricLockScheduleEnabled,
+                generalPreferences.biometricLockStartHour,
+                generalPreferences.biometricLockEndHour,
+                generalPreferences.biometricLockActiveDays,
+            ) { schedEnabled, startHour, endHour, activeDays ->
+                _state.update { it.copy(
+                    biometricLockScheduleEnabled = schedEnabled,
+                    biometricLockStartHour = startHour,
+                    biometricLockEndHour = endHour,
+                    biometricLockActiveDays = activeDays,
                 ) }
             }.collect { }
         }
