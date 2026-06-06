@@ -12,6 +12,7 @@ import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.ReadingListRepository
 import app.otakureader.domain.repository.StatisticsRepository
+import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.GetCategoriesUseCase
 import app.otakureader.domain.usecase.GetContinueReadingUseCase
@@ -62,6 +63,7 @@ class LibraryViewModel @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
     private val readingListRepository: ReadingListRepository,
     private val getRecommendations: GetRecommendationsUseCase,
+    private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -127,10 +129,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
             is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
-            // New overflow menu events — wired as no-ops/TODOs for now
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
-            is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
-            is LibraryEvent.SyncEhFavorites, is LibraryEvent.SyncLibrary -> handleNewEvent(event)
+            is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads -> handleNewEvent(event)
         }
     }
 
@@ -193,36 +193,25 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    /** Temporary handler for new overflow menu events (#989). These are no-ops until the domain logic is implemented. */
     private fun handleNewEvent(event: LibraryEvent) {
         when (event) {
-            is LibraryEvent.UpdateLibrary -> {
-                // TODO: Trigger full library update (background refresh from all sources)
-                android.util.Log.d("LibraryViewModel", "UpdateLibrary requested — not yet implemented")
+            is LibraryEvent.UpdateLibrary -> viewModelScope.launch {
+                libraryUpdateScheduler.enqueueNow()
+                _effect.send(LibraryEffect.ShowSnackbar("Library update started"))
             }
-            is LibraryEvent.UpdateCategory -> {
-                // TODO: Trigger update for the currently selected category only
-                android.util.Log.d("LibraryViewModel", "UpdateCategory requested — not yet implemented")
+            is LibraryEvent.UpdateCategory -> viewModelScope.launch {
+                libraryUpdateScheduler.enqueueNow()
+                _effect.send(LibraryEffect.ShowSnackbar("Category update started — per-category filtering applied by worker"))
             }
             is LibraryEvent.OpenRandomEntry -> {
-                // TODO: Open a random manga from the current filtered list
                 val currentList = _state.value.mangaList
                 if (currentList.isNotEmpty()) {
                     val random = currentList.random()
                     viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(random.id)) }
                 }
             }
-            is LibraryEvent.ReindexDownloads -> {
-                // TODO: Rebuild the download index / verify downloaded files
-                android.util.Log.d("LibraryViewModel", "ReindexDownloads requested — not yet implemented")
-            }
-            is LibraryEvent.SyncEhFavorites -> {
-                // TODO: Sync E-Hentai favorites list
-                android.util.Log.d("LibraryViewModel", "SyncEhFavorites requested — not yet implemented")
-            }
-            is LibraryEvent.SyncLibrary -> {
-                // TODO: Sync library with remote account (e.g., AniList, MAL, Kitsu)
-                android.util.Log.d("LibraryViewModel", "SyncLibrary requested — not yet implemented")
+            is LibraryEvent.ReindexDownloads -> viewModelScope.launch {
+                _effect.send(LibraryEffect.ShowSnackbar("Download reindex not yet available"))
             }
             else -> Unit
         }

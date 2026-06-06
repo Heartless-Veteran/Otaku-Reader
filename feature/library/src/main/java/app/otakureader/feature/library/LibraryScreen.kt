@@ -101,6 +101,9 @@ fun LibraryScreen(
                 is LibraryEffect.NavigateToMigration -> {
                     onNavigateToMigration(effect.selectedMangaIds)
                 }
+                is LibraryEffect.ShowSnackbar -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
                 is LibraryEffect.ShareManga -> {
                     val shareText = if (effect.url.isNotEmpty()) "${effect.title}\n${effect.url}" else effect.title
                     val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
@@ -269,14 +272,6 @@ fun LibraryScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_reindex_downloads)) },
                                 onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.ReindexDownloads) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_sync_eh_favorites)) },
-                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.SyncEhFavorites) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_sync_library)) },
-                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.SyncLibrary) }
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_downloads)) },

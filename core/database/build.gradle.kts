@@ -18,10 +18,8 @@ android {
         }
     }
 
-    sourceSets {
-        getByName("test") {
-            assets.srcDir("schemas")
-        }
+    sourceSets.getByName("test") {
+        assets.srcDirs(files("schemas"))
     }
 }
 

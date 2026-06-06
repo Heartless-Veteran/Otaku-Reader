@@ -127,8 +127,6 @@ sealed class LibraryEvent {
     data object UpdateCategory : LibraryEvent()
     data object OpenRandomEntry : LibraryEvent()
     data object ReindexDownloads : LibraryEvent()
-    data object SyncEhFavorites : LibraryEvent()
-    data object SyncLibrary : LibraryEvent()
     // Bulk selection actions
     data object MarkSelectedAsRead : LibraryEvent()
     data object MarkSelectedAsUnread : LibraryEvent()
@@ -164,6 +162,7 @@ sealed class LibraryEffect {
     data class NavigateToManga(val mangaId: Long) : LibraryEffect()
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : LibraryEffect()
     data class ShowError(val message: String) : LibraryEffect()
+    data class ShowSnackbar(val message: String) : LibraryEffect()
     data class NavigateToMigration(val selectedMangaIds: List<Long>) : LibraryEffect()
     data class ShareManga(val title: String, val url: String) : LibraryEffect()
 }
