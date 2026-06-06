@@ -33,7 +33,10 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override fun searchLibraryManga(query: String): Flow<List<Manga>> {
-        return mangaDao.searchFavoriteManga(query).map { entities ->
+        if (query.isBlank()) return getLibraryManga()
+        // Append * for prefix matching; escape special FTS chars to avoid query parse errors
+        val ftsQuery = query.trim().replace("\"", "\"\"") + "*"
+        return mangaDao.searchFts(ftsQuery).map { entities ->
             entities.map { it.toDomain() }
         }
     }

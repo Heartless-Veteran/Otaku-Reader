@@ -131,6 +131,18 @@ interface MangaDao {
     fun getFavoriteMangaGenres(): Flow<List<String>>
 
     /**
+     * Full-text search across title, author, and artist for favorited manga.
+     * Append '*' to the query for prefix matching (e.g. "one*" matches "One Piece").
+     */
+    @Query("""
+        SELECT manga.* FROM manga
+        INNER JOIN manga_fts ON manga.rowid = manga_fts.rowid
+        WHERE manga_fts MATCH :query AND manga.favorite = 1
+        ORDER BY manga.title ASC
+    """)
+    fun searchFts(query: String): Flow<List<MangaEntity>>
+
+    /**
      * Browsed-but-not-in-library manga: candidates for the recommendation engine (#943).
      * Includes only entries with a non-empty genre, since the scorer needs genres to compare.
      */

@@ -435,6 +435,9 @@ sealed interface ReaderEvent {
     /** Navigate to last page of chapter. */
     data object LastPage : PageNavigation
 
+    /** Skip [count] pages forward (positive) or back (negative); used for volume-key hold. */
+    data class SkipPages(val count: Int) : PageNavigation
+
     /** Navigate to next panel (smart panel mode). */
     data object NextPanel : PanelNavigation
 

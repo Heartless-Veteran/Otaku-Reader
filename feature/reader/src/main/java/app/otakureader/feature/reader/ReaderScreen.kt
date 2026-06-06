@@ -85,6 +85,9 @@ import kotlinx.coroutines.launch
  * - Brightness and zoom controls
  * - Settings persistence
  */
+
+private const val VOLUME_HOLD_SKIP_PAGES = 5
+
 @Composable
 @Suppress("UnusedParameter")
 fun ReaderScreen(
@@ -194,13 +197,20 @@ fun ReaderScreen(
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
-                // Volume key navigation (existing behaviour — suppress system volume UI).
+                // Volume key navigation — single tap = 1 page, hold = 5 pages.
                 if (event.key == Key.VolumeUp || event.key == Key.VolumeDown) {
                     if (!state.volumeKeysEnabled) return@onPreviewKeyEvent false
                     if (event.type == KeyEventType.KeyDown) {
                         val navigateNext = (event.key == Key.VolumeDown && !state.volumeKeysInverted) ||
                             (event.key == Key.VolumeUp && state.volumeKeysInverted)
-                        viewModel.onEvent(if (navigateNext) ReaderEvent.NextPage else ReaderEvent.PrevPage)
+                        val isHeld = event.nativeKeyEvent.repeatCount > 0
+                        val readerEvent = when {
+                            isHeld && navigateNext -> ReaderEvent.SkipPages(VOLUME_HOLD_SKIP_PAGES)
+                            isHeld -> ReaderEvent.SkipPages(-VOLUME_HOLD_SKIP_PAGES)
+                            navigateNext -> ReaderEvent.NextPage
+                            else -> ReaderEvent.PrevPage
+                        }
+                        viewModel.onEvent(readerEvent)
                     }
                     return@onPreviewKeyEvent true
                 }

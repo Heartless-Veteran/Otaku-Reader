@@ -33,9 +33,13 @@ data class ReadingListDetailState(
 sealed interface ReadingListDetailEvent : UiEvent {
     data class RemoveManga(val mangaId: Long) : ReadingListDetailEvent
     data class OpenManga(val mangaId: Long) : ReadingListDetailEvent
+    data object ExportAsCsv : ReadingListDetailEvent
+    data object ExportAsJson : ReadingListDetailEvent
 }
 
 sealed interface ReadingListDetailEffect : UiEffect {
     data class ShowSnackbar(val message: String) : ReadingListDetailEffect
     data class NavigateToManga(val mangaId: Long) : ReadingListDetailEffect
+    /** Share a text file with the exported content. */
+    data class ShareExport(val content: String, val fileName: String, val mimeType: String) : ReadingListDetailEffect
 }

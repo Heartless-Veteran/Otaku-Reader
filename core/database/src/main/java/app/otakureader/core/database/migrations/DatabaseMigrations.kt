@@ -374,6 +374,43 @@ internal val MIGRATION_32_33 = object : Migration(32, 33) {
     }
 }
 
+/**
+ * v33 → v34: FTS4 full-text index on manga title/author/artist for instant library search.
+ *
+ * A content FTS4 virtual table (`manga_fts`) is created backed by the `manga` table.
+ * Three triggers keep the index in sync with inserts, updates, and deletes.
+ * Existing rows are bulk-inserted into the FTS index after the triggers are created.
+ */
+internal val MIGRATION_33_34 = object : Migration(33, 34) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS `manga_fts` " +
+                "USING fts4(content=`manga`, tokenize=unicode61, `title`, `author`, `artist`)"
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS manga_fts_insert AFTER INSERT ON manga BEGIN " +
+                "INSERT INTO manga_fts(rowid, title, author, artist) " +
+                "VALUES (new.rowid, new.title, new.author, new.artist); END"
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS manga_fts_delete AFTER DELETE ON manga BEGIN " +
+                "INSERT INTO manga_fts(manga_fts, rowid, title, author, artist) " +
+                "VALUES ('delete', old.rowid, old.title, old.author, old.artist); END"
+        )
+        db.execSQL(
+            "CREATE TRIGGER IF NOT EXISTS manga_fts_update AFTER UPDATE ON manga BEGIN " +
+                "INSERT INTO manga_fts(manga_fts, rowid, title, author, artist) " +
+                "VALUES ('delete', old.rowid, old.title, old.author, old.artist); " +
+                "INSERT INTO manga_fts(rowid, title, author, artist) " +
+                "VALUES (new.rowid, new.title, new.author, new.artist); END"
+        )
+        db.execSQL(
+            "INSERT INTO manga_fts(rowid, title, author, artist) " +
+                "SELECT rowid, title, author, artist FROM manga"
+        )
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -383,5 +420,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
-    MIGRATION_31_32, MIGRATION_32_33
+    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34
 )

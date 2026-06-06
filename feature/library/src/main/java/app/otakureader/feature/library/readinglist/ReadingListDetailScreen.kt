@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -37,9 +39,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.content.Intent
+import androidx.core.content.FileProvider
 import app.otakureader.core.ui.components.MangaCard
 import app.otakureader.feature.library.R
 import kotlinx.coroutines.flow.collectLatest
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,12 +55,24 @@ fun ReadingListDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var overflowExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is ReadingListDetailEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
                 is ReadingListDetailEffect.NavigateToManga -> onNavigateToManga(effect.mangaId)
+                is ReadingListDetailEffect.ShareExport -> {
+                    val file = File(context.cacheDir, effect.fileName).also { it.writeText(effect.content) }
+                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = effect.mimeType
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.reading_list_export_chooser)))
+                }
             }
         }
     }
@@ -73,6 +90,32 @@ fun ReadingListDetailScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.reading_lists_back),
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { overflowExpanded = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.reading_list_more_options))
+                    }
+                    DropdownMenu(
+                        expanded = overflowExpanded,
+                        onDismissRequest = { overflowExpanded = false },
+                    ) {
+                        DropdownMenuItem(
+                            leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                            text = { Text(stringResource(R.string.reading_list_export_csv)) },
+                            onClick = {
+                                overflowExpanded = false
+                                viewModel.onEvent(ReadingListDetailEvent.ExportAsCsv)
+                            },
+                        )
+                        DropdownMenuItem(
+                            leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                            text = { Text(stringResource(R.string.reading_list_export_json)) },
+                            onClick = {
+                                overflowExpanded = false
+                                viewModel.onEvent(ReadingListDetailEvent.ExportAsJson)
+                            },
                         )
                     }
                 },

@@ -355,6 +355,7 @@ class ReaderViewModel @Inject constructor(
     private fun handlePageNavigation(event: ReaderEvent.PageNavigation) {
         when (event) {
             ReaderEvent.NextPage -> navigatePage(1)
+                is ReaderEvent.SkipPages -> navigatePage(event.count)
             ReaderEvent.PrevPage -> navigatePage(-1)
             ReaderEvent.FirstPage -> changePage(0)
             ReaderEvent.LastPage -> changePage(_state.value.pages.size - 1)
