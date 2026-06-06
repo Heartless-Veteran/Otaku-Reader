@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import app.otakureader.feature.library.R
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
@@ -197,11 +198,11 @@ class LibraryViewModel @Inject constructor(
         when (event) {
             is LibraryEvent.UpdateLibrary -> viewModelScope.launch {
                 libraryUpdateScheduler.enqueueNow()
-                _effect.send(LibraryEffect.ShowSnackbar("Library update started"))
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_update_started))
             }
             is LibraryEvent.UpdateCategory -> viewModelScope.launch {
                 libraryUpdateScheduler.enqueueNow()
-                _effect.send(LibraryEffect.ShowSnackbar("Category update started — per-category filtering applied by worker"))
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_update_started))
             }
             is LibraryEvent.OpenRandomEntry -> {
                 val currentList = _state.value.mangaList
@@ -211,7 +212,7 @@ class LibraryViewModel @Inject constructor(
                 }
             }
             is LibraryEvent.ReindexDownloads -> viewModelScope.launch {
-                _effect.send(LibraryEffect.ShowSnackbar("Download reindex not yet available"))
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_reindex_not_available))
             }
             else -> Unit
         }

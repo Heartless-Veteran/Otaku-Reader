@@ -177,8 +177,8 @@
     <string name="library_update_category">Update category</string>
     <string name="library_open_random">Open random entry</string>
     <string name="library_reindex_downloads">Reindex downloads</string>
-    <string name="library_sync_eh_favorites">Sync EH favorites</string>
-    <string name="library_sync_library">Sync library</string>
+    <string name="library_update_started">Library update started</string>
+    <string name="library_reindex_not_available">Download reindex not yet available</string>
     <!-- Reading Lists (#945) -->
     <string name="reading_lists_title">Reading Lists</string>
     <string name="reading_lists_back">Back</string>

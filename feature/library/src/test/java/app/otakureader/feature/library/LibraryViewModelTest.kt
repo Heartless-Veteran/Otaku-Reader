@@ -23,6 +23,7 @@ import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.every
@@ -64,6 +65,7 @@ class LibraryViewModelTest {
     private lateinit var statisticsRepository: StatisticsRepository
     private lateinit var readingListRepository: ReadingListRepository
     private lateinit var getRecommendations: GetRecommendationsUseCase
+    private lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -130,6 +132,7 @@ class LibraryViewModelTest {
         getRecommendations = mockk {
             every { this@mockk.invoke() } returns flowOf(emptyList())
         }
+        libraryUpdateScheduler = mockk(relaxed = true)
     }
 
     @After
@@ -155,6 +158,7 @@ class LibraryViewModelTest {
             statisticsRepository,
             readingListRepository,
             getRecommendations,
+            libraryUpdateScheduler,
         )
     }
 
