@@ -3,6 +3,7 @@ package app.otakureader.data.repository
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.entity.ReadingHistoryEntity
+import app.otakureader.domain.repository.StatisticsRepository
 import app.cash.turbine.test
 import io.mockk.every
 import io.mockk.mockk
@@ -19,7 +20,7 @@ class StatisticsRepositoryImplTest {
 
     private lateinit var readingHistoryDao: ReadingHistoryDao
     private lateinit var mangaDao: MangaDao
-    private lateinit var repository: StatisticsRepositoryImpl
+    private lateinit var repository: StatisticsRepository
 
     private fun makeEntry(readAt: Long, durationMs: Long = 0L) =
         ReadingHistoryEntity(chapterId = 1L, readAt = readAt, readDurationMs = durationMs)
