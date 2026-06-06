@@ -29,8 +29,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.otakureader.security.BiometricLockGate
@@ -48,6 +51,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.NavOrderPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.crash.CrashHandler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
@@ -78,6 +82,7 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var generalPreferences: GeneralPreferences
     @Inject lateinit var libraryPreferences: LibraryPreferences
+    @Inject lateinit var navOrderPreferences: NavOrderPreferences
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var trackerSyncScheduler: TrackerSyncScheduler
 
@@ -87,7 +92,7 @@ class MainActivity : FragmentActivity() {
     // Crash report from the previous run – shown once, then cleared from SharedPreferences
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -157,6 +162,23 @@ class MainActivity : FragmentActivity() {
                 .collectAsStateWithLifecycle(initialValue = false)
             val biometricLockTimeoutMinutes by generalPreferences.biometricLockTimeoutMinutes
                 .collectAsStateWithLifecycle(initialValue = 0)
+            val darkModeScheduleEnabled by generalPreferences.darkModeScheduleEnabled
+                .collectAsStateWithLifecycle(initialValue = false)
+            val darkModeStartMinute by generalPreferences.darkModeStartMinuteOfDay
+                .collectAsStateWithLifecycle(initialValue = 22 * 60)
+            val darkModeEndMinute by generalPreferences.darkModeEndMinuteOfDay
+                .collectAsStateWithLifecycle(initialValue = 7 * 60)
+
+            // Ticker that forces recomposition at each schedule boundary so the theme
+            // switches automatically while the app is in the foreground.
+            var scheduleTick by remember { mutableLongStateOf(0L) }
+            LaunchedEffect(darkModeScheduleEnabled, darkModeStartMinute, darkModeEndMinute) {
+                while (darkModeScheduleEnabled) {
+                    val msUntilBoundary = millisUntilNextScheduleBoundary(darkModeStartMinute, darkModeEndMinute)
+                    delay(msUntilBoundary + 1_000L) // +1 s to land safely past the boundary
+                    scheduleTick++
+                }
+            }
 
             // Hide app content in the recent-apps switcher while the lock is enabled.
             DisposableEffect(biometricLockEnabled) {
@@ -169,10 +191,17 @@ class MainActivity : FragmentActivity() {
             }
 
             // I-2: Use named constants instead of magic numbers for theme mode.
+            @Suppress("UNUSED_EXPRESSION") scheduleTick // subscribe so the tick drives recomposition
             val darkTheme = when (themeMode) {
                 THEME_MODE_LIGHT -> false
                 THEME_MODE_DARK -> true
-                else -> isSystemInDarkTheme() // THEME_MODE_SYSTEM (0) = follow system
+                else -> {
+                    if (darkModeScheduleEnabled) {
+                        isDarkModeScheduleActive(darkModeStartMinute, darkModeEndMinute)
+                    } else {
+                        isSystemInDarkTheme()
+                    }
+                }
             }
 
             OtakuReaderTheme(
@@ -193,6 +222,7 @@ class MainActivity : FragmentActivity() {
                         OtakuReaderApp(
                             generalPreferences = generalPreferences,
                             libraryPreferences = libraryPreferences,
+                            navOrderPreferences = navOrderPreferences,
                             onboardingCompleted = onboardingCompleted,
                             deepLinkResult = pendingDeepLinkResult,
                             onDeepLinkConsumed = { pendingDeepLinkResult = null }
@@ -251,6 +281,7 @@ class MainActivity : FragmentActivity() {
 fun OtakuReaderApp(
     generalPreferences: GeneralPreferences,
     libraryPreferences: LibraryPreferences,
+    navOrderPreferences: NavOrderPreferences,
     onboardingCompleted: Boolean,
     deepLinkResult: DeepLinkResult? = null,
     onDeepLinkConsumed: () -> Unit = {}
@@ -266,7 +297,8 @@ fun OtakuReaderApp(
         bottomBar = {
             OtakuReaderBottomBar(
                 navController = navController,
-                newUpdatesCount = newUpdatesCount
+                navOrderPreferences = navOrderPreferences,
+                newUpdatesCount = newUpdatesCount,
             )
         }
     ) { padding ->
@@ -373,4 +405,39 @@ private fun CrashReportDialog(
             }
         },
     )
+}
+
+/**
+ * Returns true when the current wall-clock time falls within the dark-mode window
+ * defined by [startMinute] and [endMinute] (both minutes-of-day, 0–1439).
+ * The window may cross midnight (e.g. 22:00 → 07:00 the next day).
+ */
+private fun isDarkModeScheduleActive(startMinute: Int, endMinute: Int): Boolean {
+    val cal = java.util.Calendar.getInstance()
+    val now = cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE)
+    return if (startMinute < endMinute) {
+        now in startMinute until endMinute
+    } else {
+        now >= startMinute || now < endMinute
+    }
+}
+
+/**
+ * Milliseconds until the next schedule boundary so the theme-switching LaunchedEffect
+ * wakes at exactly the right moment.
+ */
+private fun millisUntilNextScheduleBoundary(startMinute: Int, endMinute: Int): Long {
+    val nowMs = System.currentTimeMillis()
+
+    fun minuteToNextOccurrenceMs(minute: Int): Long {
+        val c = java.util.Calendar.getInstance()
+        c.set(java.util.Calendar.HOUR_OF_DAY, minute / 60)
+        c.set(java.util.Calendar.MINUTE, minute % 60)
+        c.set(java.util.Calendar.SECOND, 0)
+        c.set(java.util.Calendar.MILLISECOND, 0)
+        if (c.timeInMillis <= nowMs) c.add(java.util.Calendar.DAY_OF_MONTH, 1)
+        return c.timeInMillis
+    }
+
+    return minOf(minuteToNextOccurrenceMs(startMinute), minuteToNextOccurrenceMs(endMinute)) - nowMs
 }

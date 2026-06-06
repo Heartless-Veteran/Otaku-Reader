@@ -20,4 +20,6 @@ data class BackupSettingsState(
     val isTachiyomiImporting: Boolean = false,
     val tachiyomiImportProgress: Int = 0,
     val tachiyomiImportTotal: Int = 0,
+    val backupEncryptionEnabled: Boolean = false,
+    val backupEncryptionPasswordSet: Boolean = false,
 )

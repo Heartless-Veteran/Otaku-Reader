@@ -26,6 +26,17 @@ enum class ReaderMode {
 }
 
 /**
+ * Volume-key navigation behaviour for a specific [ReaderMode].
+ * INHERIT falls back to the global `volumeKeysEnabled` / `volumeKeysInverted` preferences.
+ */
+object VolumeKeyBehavior {
+    const val INHERIT   = 0  // use global settings
+    const val DISABLED  = 1
+    const val NORMAL    = 2  // Vol-Down = next, Vol-Up = prev
+    const val INVERTED  = 3  // Vol-Down = prev, Vol-Up = next
+}
+
+/**
  * Reading directions.
  */
 enum class ReadingDirection {

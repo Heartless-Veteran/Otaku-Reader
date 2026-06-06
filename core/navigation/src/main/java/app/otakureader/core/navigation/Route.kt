@@ -155,6 +155,15 @@ sealed interface Route {
     @Serializable
     data object SettingsSync : Route
 
+    @Serializable
+    data object SettingsNavOrder : Route
+
+    @Serializable
+    data object ReaderPresets : Route
+
+    @Serializable
+    data object StorageAnalytics : Route
+
     // ─── Downloads ───
 
     @Serializable
@@ -248,6 +257,11 @@ sealed interface Route {
 
     @Serializable
     data object DataUsage : Route
+
+    // ─── Merge Duplicates (#997) ───
+
+    @Serializable
+    data object MergeDuplicates : Route
 
     // ─── Deep-link only ───
 

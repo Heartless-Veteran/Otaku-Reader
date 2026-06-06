@@ -55,6 +55,9 @@ data class Manga(
      * null = inherit the global `autoThemeColor` setting; true/false = explicit override.
      */
     val mangaThemeOverride: Boolean? = null,
+
+    /** True when the user has manually overridden at least one metadata field (#998). */
+    val isUserEdited: Boolean = false,
 )
 
 @Serializable

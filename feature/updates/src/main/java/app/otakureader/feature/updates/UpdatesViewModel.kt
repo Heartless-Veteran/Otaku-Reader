@@ -58,6 +58,7 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.SelectAll -> selectAll()
             UpdatesEvent.DownloadSelected -> downloadSelected()
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
+            is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
 
             // Update Error Screen events
             UpdatesEvent.ShowUpdateErrors -> _state.update { it.copy(showUpdateErrors = true) }
@@ -178,6 +179,18 @@ class UpdatesViewModel @Inject constructor(
                         context.resources.getQuantityString(R.plurals.updates_marked_as_read, count, count)
                     )
                 )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    private fun markSingleChapterAsRead(chapterId: Long) {
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(setOf(chapterId), read = true, lastPageRead = 0)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

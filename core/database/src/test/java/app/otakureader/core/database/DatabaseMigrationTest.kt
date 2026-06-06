@@ -51,7 +51,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 32", 32, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 34", 34, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -78,7 +78,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 30 migrations (v2→v32)", 30, ALL_MIGRATIONS.size)
+        assertEquals("Expected 32 migrations (v2→v34)", 32, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────

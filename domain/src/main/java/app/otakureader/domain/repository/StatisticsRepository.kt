@@ -5,7 +5,7 @@ import app.otakureader.domain.model.ReadingStats
 import kotlinx.coroutines.flow.Flow
 
 interface StatisticsRepository {
-    fun getReadingStats(): Flow<ReadingStats>
+    fun getReadingStats(sinceMs: Long? = null): Flow<ReadingStats>
     fun getReadingGoalProgress(dailyGoal: Int, weeklyGoal: Int): Flow<ReadingGoal>
 
     /**

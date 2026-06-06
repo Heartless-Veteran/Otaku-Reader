@@ -57,6 +57,19 @@ data class MangaEntity(
      * - false → always use the base app theme for this manga
      */
     val mangaThemeOverride: Boolean? = null,
+
+    // ── User-info overrides (#998) ────────────────────────────────────────────
+    // When set, these values take precedence over the source-fetched metadata.
+    // null means "use source value". All nullable so older rows default to null.
+    val userTitle: String? = null,
+    val userDescription: String? = null,
+    val userAuthor: String? = null,
+    val userArtist: String? = null,
+    val userThumbnailUrl: String? = null,
+    /** Genres stored as "|||"-separated string, mirroring the `genre` column. */
+    val userGenre: String? = null,
+    /** MangaStatus ordinal, or null to inherit source status. */
+    val userStatus: Int? = null,
 )
 
 enum class MangaStatus {

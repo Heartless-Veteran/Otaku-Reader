@@ -13,6 +13,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,12 +25,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -43,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -69,6 +73,11 @@ fun SettingsBackupScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showEncryptionSetupDialog by remember { mutableStateOf(false) }
+    var showBackupPasswordDialog by remember { mutableStateOf(false) }
+    var showRestorePasswordDialog by remember { mutableStateOf(false) }
+    var pendingBackupUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
 
     val backupFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json"),
@@ -123,6 +132,15 @@ fun SettingsBackupScreen(
                     backupLocationLauncher.launch(null)
                 SettingsEffect.NavigateToMigrationEntry -> onNavigateToMigrationEntry()
                 SettingsEffect.NavigateToCloudBackup -> onNavigateToCloudBackup()
+                SettingsEffect.ShowEncryptionPasswordSetupDialog -> showEncryptionSetupDialog = true
+                is SettingsEffect.ShowEncryptionPasswordForBackupDialog -> {
+                    pendingBackupUri = effect.uri
+                    showBackupPasswordDialog = true
+                }
+                is SettingsEffect.ShowEncryptionPasswordForRestoreDialog -> {
+                    pendingRestoreUri = effect.uri
+                    showRestorePasswordDialog = true
+                }
                 else -> Unit
             }
         }
@@ -171,6 +189,44 @@ fun SettingsBackupScreen(
             current = state.tachiyomiImportProgress,
             total = state.tachiyomiImportTotal,
         )
+    }
+
+    if (showEncryptionSetupDialog) {
+        EncryptionPasswordSetupDialog(
+            onDismiss = { showEncryptionSetupDialog = false },
+            onConfirm = { password ->
+                viewModel.onEvent(SettingsEvent.SetBackupEncryptionPassword(password))
+                showEncryptionSetupDialog = false
+            },
+        )
+    }
+
+    if (showBackupPasswordDialog) {
+        pendingBackupUri?.let { uri ->
+            EncryptionPasswordDialog(
+                title = stringResource(R.string.settings_backup_encryption_enter_password),
+                onDismiss = { showBackupPasswordDialog = false; pendingBackupUri = null },
+                onConfirm = { password ->
+                    viewModel.onEvent(SettingsEvent.CreateEncryptedBackupWithUri(uri, password))
+                    showBackupPasswordDialog = false
+                    pendingBackupUri = null
+                },
+            )
+        }
+    }
+
+    if (showRestorePasswordDialog) {
+        pendingRestoreUri?.let { uri ->
+            EncryptionPasswordDialog(
+                title = stringResource(R.string.settings_backup_encryption_enter_password_restore),
+                onDismiss = { showRestorePasswordDialog = false; pendingRestoreUri = null },
+                onConfirm = { password ->
+                    viewModel.onEvent(SettingsEvent.RestoreEncryptedBackupFromUri(uri, password))
+                    showRestorePasswordDialog = false
+                    pendingRestoreUri = null
+                },
+            )
+        }
     }
 }
 
@@ -491,6 +547,132 @@ private fun BackupContent(
         trailingContent = {
             OutlinedButton(onClick = onNavigateToCloudBackup) {
                 Text(stringResource(R.string.settings_cloud_backup_configure))
+            }
+        },
+    )
+
+    HorizontalDivider()
+    SectionHeader(title = stringResource(R.string.settings_backup_encryption))
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_backup_encryption_enabled)) },
+        supportingContent = { Text(stringResource(R.string.settings_backup_encryption_enabled_description)) },
+        trailingContent = {
+            Switch(
+                checked = state.backupEncryptionEnabled,
+                onCheckedChange = { onEvent(SettingsEvent.SetBackupEncryptionEnabled(it)) },
+            )
+        },
+    )
+
+    if (state.backupEncryptionEnabled) {
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_backup_encryption_password)) },
+            supportingContent = {
+                Text(
+                    if (state.backupEncryptionPasswordSet)
+                        stringResource(R.string.settings_backup_encryption_password_set)
+                    else
+                        stringResource(R.string.settings_backup_encryption_password_not_set),
+                )
+            },
+            trailingContent = {
+                OutlinedButton(onClick = { onEvent(SettingsEvent.RequestSetBackupPassword) }) {
+                    Text(
+                        if (state.backupEncryptionPasswordSet)
+                            stringResource(R.string.settings_backup_encryption_change_password)
+                        else
+                            stringResource(R.string.settings_backup_encryption_set_password),
+                    )
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun EncryptionPasswordSetupDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (password: String) -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    var confirm  by remember { mutableStateOf("") }
+    val mismatch = confirm.isNotEmpty() && password != confirm
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_backup_encryption_setup_title)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(stringResource(R.string.settings_backup_encryption_new_password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it },
+                    label = { Text(stringResource(R.string.settings_backup_encryption_confirm_password)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = mismatch,
+                    supportingText = if (mismatch) {
+                        { Text(stringResource(R.string.settings_backup_encryption_passwords_mismatch)) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (password.isNotEmpty() && !mismatch) onConfirm(password) },
+                enabled = password.isNotEmpty() && !mismatch,
+            ) {
+                Text(stringResource(R.string.settings_backup_encryption_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_import_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun EncryptionPasswordDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    onConfirm: (password: String) -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.settings_backup_encryption_password_label)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (password.isNotEmpty()) onConfirm(password) },
+                enabled = password.isNotEmpty(),
+            ) {
+                Text(stringResource(R.string.settings_import_button))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_import_cancel))
             }
         },
     )

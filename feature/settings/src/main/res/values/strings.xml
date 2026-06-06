@@ -180,6 +180,25 @@
     <string name="settings_cloud_backup_test_connection">Test connection</string>
     <string name="settings_cloud_backup_save_credentials">Save credentials</string>
     <string name="settings_cloud_backup_configure">Configure</string>
+
+    <!-- Backup Encryption -->
+    <string name="settings_backup_encryption">Backup Encryption</string>
+    <string name="settings_backup_encryption_enabled">Encrypt backups</string>
+    <string name="settings_backup_encryption_enabled_description">Protect exported backup files with AES-256 encryption. You will be prompted for a password when creating or restoring an encrypted backup.</string>
+    <string name="settings_backup_encryption_password">Encryption password</string>
+    <string name="settings_backup_encryption_password_set">Password set</string>
+    <string name="settings_backup_encryption_password_not_set">No password set — set one before creating an encrypted backup</string>
+    <string name="settings_backup_encryption_set_password">Set password</string>
+    <string name="settings_backup_encryption_change_password">Change password</string>
+    <string name="settings_backup_encryption_setup_title">Set backup password</string>
+    <string name="settings_backup_encryption_new_password">New password</string>
+    <string name="settings_backup_encryption_confirm_password">Confirm password</string>
+    <string name="settings_backup_encryption_passwords_mismatch">Passwords do not match</string>
+    <string name="settings_backup_encryption_save">Save</string>
+    <string name="settings_backup_encryption_enter_password">Enter backup password</string>
+    <string name="settings_backup_encryption_enter_password_restore">Enter backup password to restore</string>
+    <string name="settings_backup_encryption_password_label">Password</string>
+
     <string name="settings_migrate_manga">Migrate manga</string>
     <string name="settings_migrate_manga_description">Move manga from one source to another</string>
 
@@ -364,6 +383,14 @@
     <string name="settings_volume_keys_paging_description">Use volume buttons to turn pages</string>
     <string name="settings_volume_keys_inverted">Invert Volume Keys</string>
     <string name="settings_volume_keys_inverted_description">Volume up goes to next page</string>
+    <string name="settings_vol_key_single_page">Single Page</string>
+    <string name="settings_vol_key_dual_page">Dual Page</string>
+    <string name="settings_vol_key_webtoon">Webtoon</string>
+    <string name="settings_vol_key_smart_panels">Smart Panels</string>
+    <string name="settings_vol_key_behavior_inherit">Inherit</string>
+    <string name="settings_vol_key_behavior_disabled">Disabled</string>
+    <string name="settings_vol_key_behavior_normal">Normal</string>
+    <string name="settings_vol_key_behavior_inverted">Inverted</string>
 
     <!-- Reader Interaction -->
     <string name="settings_reader_interaction">Interaction</string>
@@ -509,4 +536,44 @@
     <string name="settings_sync_enqueued">Sync enqueued</string>
     <string name="settings_sync_enter_url_first">Enter a server URL first</string>
     <string name="settings_sync_will_connect_to">Will connect to: %1$s</string>
+
+    <!-- Storage analytics -->
+    <string name="storage_analytics_title">Storage Analytics</string>
+    <string name="storage_analytics_subtitle">Download size by source and manga</string>
+    <string name="storage_analytics_total">Total: %1$s</string>
+    <string name="storage_analytics_empty">No downloaded chapters found.</string>
+    <string name="storage_analytics_refresh">Refresh</string>
+
+    <!-- Reader presets -->
+    <string name="reader_presets_title">Reader Presets</string>
+    <string name="reader_presets_subtitle">Saved reader configurations</string>
+    <string name="reader_presets_save_current">Save current settings</string>
+    <string name="reader_presets_save_dialog_title">Name this preset</string>
+    <string name="reader_presets_save_dialog_hint">e.g. Webtoon, Manga</string>
+    <string name="reader_presets_save">Save</string>
+    <string name="reader_presets_cancel">Cancel</string>
+    <string name="reader_presets_apply">Apply</string>
+    <string name="reader_presets_delete">Delete</string>
+    <string name="reader_presets_empty">No presets saved yet.\nSave your current settings to get started.</string>
+    <string name="reader_presets_mode_label">Mode %1$d</string>
+
+    <!-- Dark mode schedule -->
+    <string name="settings_dark_mode_schedule">Schedule dark mode</string>
+    <string name="settings_dark_mode_schedule_description">Automatically switch to dark mode at set times</string>
+    <string name="settings_dark_mode_turn_on_at">Turn on at</string>
+    <string name="settings_dark_mode_turn_off_at">Turn off at</string>
+    <string name="settings_dark_mode_time_picker_ok">OK</string>
+    <string name="settings_dark_mode_time_picker_cancel">Cancel</string>
+
+    <!-- Nav tab order (#Komikku) -->
+    <string name="nav_order_title">Tab Order</string>
+    <string name="nav_order_subtitle">Reorder the bottom navigation tabs</string>
+    <string name="nav_order_reset">Reset to default</string>
+    <string name="nav_order_move_up">Move up</string>
+    <string name="nav_order_move_down">Move down</string>
+    <string name="nav_tab_library">Library</string>
+    <string name="nav_tab_updates">Updates</string>
+    <string name="nav_tab_browse">Browse</string>
+    <string name="nav_tab_history">History</string>
+    <string name="nav_tab_more">More</string>
 </resources>

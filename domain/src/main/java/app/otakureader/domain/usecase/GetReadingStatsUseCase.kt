@@ -8,5 +8,5 @@ import javax.inject.Inject
 class GetReadingStatsUseCase @Inject constructor(
     private val statisticsRepository: StatisticsRepository
 ) {
-    operator fun invoke(): Flow<ReadingStats> = statisticsRepository.getReadingStats()
+    operator fun invoke(sinceMs: Long? = null): Flow<ReadingStats> = statisticsRepository.getReadingStats(sinceMs)
 }

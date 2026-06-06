@@ -85,6 +85,21 @@ class ReaderSettingsDelegate @Inject constructor(
         }
         scope.launch {
             combine(
+                readerPreferences.volumeKeyBehaviorSinglePage,
+                readerPreferences.volumeKeyBehaviorDualPage,
+                readerPreferences.volumeKeyBehaviorWebtoon,
+                readerPreferences.volumeKeyBehaviorSmartPanels,
+            ) { single, dual, webtoon, smart ->
+                updateState { it.copy(reader = it.reader.copy(
+                    volumeKeyBehaviorSinglePage = single,
+                    volumeKeyBehaviorDualPage = dual,
+                    volumeKeyBehaviorWebtoon = webtoon,
+                    volumeKeyBehaviorSmartPanels = smart,
+                )) }
+            }.collect { }
+        }
+        scope.launch {
+            combine(
                 readerPreferences.showActionsOnLongTap,
                 readerPreferences.savePagesToSeparateFolders,
                 readerPreferences.webtoonSidePadding,
@@ -172,6 +187,15 @@ class ReaderSettingsDelegate @Inject constructor(
         is SettingsEvent.SetInvertTapZones -> { readerPreferences.setInvertTapZones(event.enabled); true }
         is SettingsEvent.SetVolumeKeysEnabled -> { readerPreferences.setVolumeKeysEnabled(event.enabled); true }
         is SettingsEvent.SetVolumeKeysInverted -> { readerPreferences.setVolumeKeysInverted(event.enabled); true }
+        is SettingsEvent.SetVolumeKeyBehaviorForMode -> {
+            when (event.mode) {
+                0 -> readerPreferences.setVolumeKeyBehaviorSinglePage(event.behavior)
+                1 -> readerPreferences.setVolumeKeyBehaviorDualPage(event.behavior)
+                2 -> readerPreferences.setVolumeKeyBehaviorWebtoon(event.behavior)
+                3 -> readerPreferences.setVolumeKeyBehaviorSmartPanels(event.behavior)
+            }
+            true
+        }
         is SettingsEvent.SetShowActionsOnLongTap -> { readerPreferences.setShowActionsOnLongTap(event.enabled); true }
         is SettingsEvent.SetSavePagesToSeparateFolders -> { readerPreferences.setSavePagesToSeparateFolders(event.enabled); true }
         is SettingsEvent.SetWebtoonSidePadding -> { readerPreferences.setWebtoonSidePadding(event.padding); true }

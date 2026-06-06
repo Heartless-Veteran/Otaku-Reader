@@ -12,4 +12,8 @@ data class AppearanceState(
     val locale: String = "",
     val autoThemeColor: Boolean = false,
     val visualEffectsEnabled: Boolean = true,
+    // Dark mode schedule
+    val darkModeScheduleEnabled: Boolean = false,
+    val darkModeStartMinuteOfDay: Int = 22 * 60,
+    val darkModeEndMinuteOfDay: Int = 7 * 60,
 )

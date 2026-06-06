@@ -297,6 +297,15 @@ fun DetailsScreen(
                                 overflowExpanded = false
                             }
                         )
+                        androidx.compose.material3.HorizontalDivider()
+                        DropdownMenuItem(
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                            text = { Text(stringResource(R.string.details_edit_info)) },
+                            onClick = {
+                                viewModel.onEvent(DetailsContract.Event.ShowEditInfoSheet)
+                                overflowExpanded = false
+                            }
+                        )
                     }
                 }
             )
@@ -426,6 +435,27 @@ private fun DetailsContent(
             onDismiss = { onEvent(DetailsContract.Event.HideChapterFilter) }
         )
     }
+
+    if (state.isEditInfoSheetVisible) {
+        EditMangaInfoSheet(
+            manga = manga,
+            onSave = { title, description, author, artist, thumbnailUrl, genres, status ->
+                onEvent(
+                    DetailsContract.Event.SaveMangaInfo(
+                        title = title,
+                        description = description,
+                        author = author,
+                        artist = artist,
+                        thumbnailUrl = thumbnailUrl,
+                        genres = genres,
+                        status = status,
+                    )
+                )
+            },
+            onReset = { onEvent(DetailsContract.Event.ResetMangaInfo) },
+            onDismiss = { onEvent(DetailsContract.Event.HideEditInfoSheet) },
+        )
+    }
 }
 
 /** Manga header, description, notes, source suggestions, and per-manga options. */
@@ -512,6 +542,8 @@ private fun LazyListScope.detailsChapterItems(
             sortOrder = state.chapterSortOrder,
             isFilterActive = state.chapterFilter.isActive,
             estimatedRemainingTimeMs = state.estimatedRemainingTimeMs,
+            chapterSearchQuery = state.chapterFilter.chapterSearchQuery,
+            onSearchQueryChange = { q -> onEvent(DetailsContract.Event.SetChapterSearchQuery(q)) },
             onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
             onShowFilter = { onEvent(DetailsContract.Event.ShowChapterFilter) }
         )

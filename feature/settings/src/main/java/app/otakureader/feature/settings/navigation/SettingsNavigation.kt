@@ -16,6 +16,9 @@ import app.otakureader.feature.settings.settingsNotificationsScreen
 import app.otakureader.feature.settings.settingsReaderScreen
 import app.otakureader.feature.settings.settingsSecurityScreen
 import app.otakureader.feature.settings.settingsTrackingScreen
+import app.otakureader.feature.settings.navorder.settingsNavOrderScreen
+import app.otakureader.feature.settings.readerpresets.readerPresetsScreen
+import app.otakureader.feature.settings.storage.storageAnalyticsScreen
 import app.otakureader.feature.settings.sync.syncSettingsScreen
 import app.otakureader.feature.settings.widgetConfigurationScreen
 
@@ -43,6 +46,9 @@ fun NavGraphBuilder.settingsScreen(
     onNavigateToCloudBackup: () -> Unit = {},
     onNavigateToDataUsage: () -> Unit = {},
     onNavigateToSync: () -> Unit = {},
+    onNavigateToNavOrder: () -> Unit = {},
+    onNavigateToReaderPresets: () -> Unit = {},
+    onNavigateToStorageAnalytics: () -> Unit = {},
 ) {
     composable<Route.Settings> {
         SettingsScreen(
@@ -61,15 +67,20 @@ fun NavGraphBuilder.settingsScreen(
             onNavigateToWidgetConfiguration = onNavigateToWidgetConfiguration,
             onNavigateToLocalSourceBrowser = onNavigateToLocalSourceBrowser,
             onNavigateToSync = onNavigateToSync,
+            onNavigateToNavOrder = onNavigateToNavOrder,
         )
     }
 
     settingsAppearanceScreen(onNavigateBack = onNavigateBack)
     settingsLibraryScreen(onNavigateBack = onNavigateBack)
-    settingsReaderScreen(onNavigateBack = onNavigateBack)
+    settingsReaderScreen(
+        onNavigateBack = onNavigateBack,
+        onNavigateToReaderPresets = onNavigateToReaderPresets,
+    )
     settingsDownloadsScreen(
         onNavigateBack = onNavigateBack,
         onNavigateToDataUsage = onNavigateToDataUsage,
+        onNavigateToStorageAnalytics = onNavigateToStorageAnalytics,
     )
     dataUsageScreen(onNavigateBack = onNavigateBack)
     settingsTrackingScreen(onNavigateBack = onNavigateBack)
@@ -85,4 +96,7 @@ fun NavGraphBuilder.settingsScreen(
     widgetConfigurationScreen(onNavigateBack = onNavigateBack)
     localSourceBrowserScreen(onNavigateBack = onNavigateBack)
     syncSettingsScreen(onNavigateBack = onNavigateBack)
+    settingsNavOrderScreen(onNavigateBack = onNavigateBack)
+    readerPresetsScreen(onNavigateBack = onNavigateBack)
+    storageAnalyticsScreen(onNavigateBack = onNavigateBack)
 }

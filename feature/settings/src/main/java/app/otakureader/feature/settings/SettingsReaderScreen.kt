@@ -1,5 +1,6 @@
 package app.otakureader.feature.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +39,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import app.otakureader.core.navigation.Route
 import app.otakureader.domain.model.ImageQuality
+import app.otakureader.domain.model.VolumeKeyBehavior
 import app.otakureader.feature.settings.viewmodel.ReaderSettingsViewModel
 import kotlin.math.roundToInt
 
@@ -49,6 +52,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SettingsReaderScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToReaderPresets: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ReaderSettingsViewModel = hiltViewModel(),
 ) {
@@ -75,14 +79,27 @@ fun SettingsReaderScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState()),
         ) {
+            // Presets shortcut
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.reader_presets_title)) },
+                supportingContent = { Text(stringResource(R.string.reader_presets_subtitle)) },
+                modifier = Modifier.clickable(onClick = onNavigateToReaderPresets),
+            )
+            HorizontalDivider()
             ReaderContent(state = state, onEvent = viewModel::onEvent)
         }
     }
 }
 
-fun NavGraphBuilder.settingsReaderScreen(onNavigateBack: () -> Unit) {
+fun NavGraphBuilder.settingsReaderScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToReaderPresets: () -> Unit = {},
+) {
     composable<Route.SettingsReader> {
-        SettingsReaderScreen(onNavigateBack = onNavigateBack)
+        SettingsReaderScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToReaderPresets = onNavigateToReaderPresets,
+        )
     }
 }
 
@@ -478,6 +495,33 @@ private fun ReaderContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit
             )
         },
     )
+
+    if (state.volumeKeysEnabled) {
+        val perModeRows = listOf(
+            Triple(0, stringResource(R.string.settings_vol_key_single_page), state.volumeKeyBehaviorSinglePage),
+            Triple(1, stringResource(R.string.settings_vol_key_dual_page),   state.volumeKeyBehaviorDualPage),
+            Triple(2, stringResource(R.string.settings_vol_key_webtoon),     state.volumeKeyBehaviorWebtoon),
+            Triple(3, stringResource(R.string.settings_vol_key_smart_panels),state.volumeKeyBehaviorSmartPanels),
+        )
+        perModeRows.forEach { (modeIndex, modeName, behavior) ->
+            val behaviorLabel = when (behavior) {
+                VolumeKeyBehavior.DISABLED -> stringResource(R.string.settings_vol_key_behavior_disabled)
+                VolumeKeyBehavior.NORMAL   -> stringResource(R.string.settings_vol_key_behavior_normal)
+                VolumeKeyBehavior.INVERTED -> stringResource(R.string.settings_vol_key_behavior_inverted)
+                else                       -> stringResource(R.string.settings_vol_key_behavior_inherit)
+            }
+            ListItem(
+                headlineContent = { Text(modeName) },
+                trailingContent = {
+                    TextButton(onClick = {
+                        onEvent(SettingsEvent.SetVolumeKeyBehaviorForMode(modeIndex, (behavior + 1) % 4))
+                    }) {
+                        Text(behaviorLabel)
+                    }
+                },
+            )
+        }
+    }
 
     // ── Interaction ───────────────────────────────────────────────────
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))

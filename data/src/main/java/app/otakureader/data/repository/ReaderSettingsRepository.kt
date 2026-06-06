@@ -152,7 +152,12 @@ class ReaderSettingsRepository @Inject constructor(
     override suspend fun setVolumeKeysInverted(inverted: Boolean) {
         safeEdit { it[Keys.VOLUME_KEYS_INVERTED] = inverted }
     }
-    
+
+    override val volumeKeyBehaviorSinglePage:  Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_SINGLE]  ?: 0 }
+    override val volumeKeyBehaviorDualPage:    Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_DUAL]    ?: 0 }
+    override val volumeKeyBehaviorWebtoon:     Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_WEBTOON] ?: 0 }
+    override val volumeKeyBehaviorSmartPanels: Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_SMART]   ?: 0 }
+
     // ==================== Fullscreen ====================
     
     override val fullscreen: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -591,6 +596,10 @@ class ReaderSettingsRepository @Inject constructor(
         val READING_DIRECTION = intPreferencesKey("reader_direction")
         val VOLUME_KEYS_ENABLED = booleanPreferencesKey("reader_volume_keys_enabled")
         val VOLUME_KEYS_INVERTED = booleanPreferencesKey("reader_volume_keys_inverted")
+        val VOL_KEY_SINGLE  = intPreferencesKey("reader_vol_key_behavior_single")
+        val VOL_KEY_DUAL    = intPreferencesKey("reader_vol_key_behavior_dual")
+        val VOL_KEY_WEBTOON = intPreferencesKey("reader_vol_key_behavior_webtoon")
+        val VOL_KEY_SMART   = intPreferencesKey("reader_vol_key_behavior_smart")
         val FULLSCREEN = booleanPreferencesKey("reader_fullscreen")
         val AUTO_SCROLL_SPEED = floatPreferencesKey("reader_auto_scroll_speed")
         val TAP_ZONE_LEFT = floatPreferencesKey("reader_tap_zone_left")

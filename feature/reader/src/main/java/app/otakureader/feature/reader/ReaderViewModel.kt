@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
+import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PageNavigationEvent
@@ -87,13 +88,14 @@ class ReaderViewModel @Inject constructor(
     private val downloadAheadDelegate: ReaderDownloadAheadDelegate,
     private val trackerSyncRepository: TrackerSyncRepository,
     private val displayDelegate: ReaderDisplayDelegate,
+    private val readerPreferences: ReaderPreferences,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val mangaId: Long = checkNotNull(savedStateHandle["mangaId"])
-    private val chapterId: Long = checkNotNull(savedStateHandle["chapterId"])
+    private var chapterId: Long = checkNotNull(savedStateHandle["chapterId"])
 
-    private val _state = MutableStateFlow(ReaderState())
+    private val _state = MutableStateFlow(ReaderState(currentChapterId = chapterId))
     val state: StateFlow<ReaderState> = _state.asStateFlow()
 
     private val _effect = Channel<ReaderEffect>(Channel.BUFFERED)
@@ -104,6 +106,11 @@ class ReaderViewModel @Inject constructor(
     val overlayState: StateFlow<OverlayState> = state.map { it.overlayState }.stateIn(viewModelScope, sharing, ReaderState().overlayState)
     val displayState: StateFlow<DisplayState> = state.map { it.displayState }.stateIn(viewModelScope, sharing, ReaderState().displayState)
     val webtoonState: StateFlow<WebtoonState> = state.map { it.webtoonState }.stateIn(viewModelScope, sharing, ReaderState().webtoonState)
+
+    /** All chapters for this manga — used by the chapter-list overlay. */
+    val chapters: StateFlow<List<Chapter>> = chapterRepository
+        .getChaptersByMangaId(mangaId)
+        .stateIn(viewModelScope, sharing, emptyList())
 
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null
@@ -141,6 +148,9 @@ class ReaderViewModel @Inject constructor(
             getState = { _state.value },
         )
         observeSettingsWriteFailures()
+        readerPreferences.presets
+            .onEach { presets -> _state.update { it.copy(presets = presets) } }
+            .launchIn(viewModelScope)
         // Wire display delegate to shared state and scope
         displayDelegate.stateFlow = _state
         displayDelegate.scope = viewModelScope
@@ -350,6 +360,7 @@ class ReaderViewModel @Inject constructor(
     private fun handlePageNavigation(event: ReaderEvent.PageNavigation) {
         when (event) {
             ReaderEvent.NextPage -> navigatePage(1)
+                is ReaderEvent.SkipPages -> navigatePage(event.count)
             ReaderEvent.PrevPage -> navigatePage(-1)
             ReaderEvent.FirstPage -> changePage(0)
             ReaderEvent.LastPage -> changePage(_state.value.pages.size - 1)
@@ -403,6 +414,8 @@ class ReaderViewModel @Inject constructor(
             ReaderEvent.ToggleGallery -> displayDelegate.toggleGallery()
             is ReaderEvent.SetGalleryColumns -> displayDelegate.setGalleryColumns(event.columns)
             ReaderEvent.ToggleFullscreen -> displayDelegate.toggleFullscreen()
+            ReaderEvent.ToggleSettingsOverlay -> displayDelegate.toggleSettingsOverlay()
+            ReaderEvent.ToggleChapterListOverlay -> displayDelegate.toggleChapterListOverlay()
         }
     }
 
@@ -453,6 +466,10 @@ class ReaderViewModel @Inject constructor(
             ReaderEvent.SharePage -> sharePage()
             ReaderEvent.DismissError -> dismissError()
             ReaderEvent.Retry -> loadChapter()
+            is ReaderEvent.ApplyPreset -> viewModelScope.launch {
+                readerPreferences.applyPreset(event.preset)
+                loadSettings()
+            }
         }
     }
 
@@ -550,9 +567,9 @@ class ReaderViewModel @Inject constructor(
     }
 
     private fun loadChapterById(chapterId: Long) {
-        viewModelScope.launch {
-            _effect.send(ReaderEffect.NavigateToChapter(chapterId))
-        }
+        this.chapterId = chapterId
+        _state.update { it.copy(currentChapterId = chapterId) }
+        loadChapter()
     }
 
     private fun toggleBookmark() {

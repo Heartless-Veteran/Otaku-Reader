@@ -1,8 +1,10 @@
 package app.otakureader.domain.repository
 
 import app.otakureader.domain.model.Manga
+import app.otakureader.domain.model.MangaStatus
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface MangaRepository {
     fun getLibraryManga(): Flow<List<Manga>>
     fun searchLibraryManga(query: String): Flow<List<Manga>>
@@ -47,4 +49,30 @@ interface MangaRepository {
 
     /** Per-manga cover theme override (#947). Pass null to inherit global pref. */
     suspend fun updateMangaThemeOverride(id: Long, override: Boolean?)
+
+    // User-info overrides (#998)
+    /**
+     * Persist user-edited metadata overrides. A null argument clears that field's override
+     * (the source value is then shown). Pass all nulls to fully reset.
+     */
+    suspend fun updateLocalOverrides(
+        id: Long,
+        title: String?,
+        description: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        genres: List<String>?,
+        status: MangaStatus?,
+    )
+
+    /** Remove all user-info overrides for this manga, reverting to source metadata. */
+    suspend fun clearLocalOverrides(id: Long)
+
+    // Duplicate detection (#997)
+    /** Groups of library manga sharing the same normalised title (≥2 entries per group). */
+    fun findDuplicates(): Flow<List<List<Manga>>>
+
+    /** Returns the category IDs that a manga belongs to. */
+    suspend fun getCategoryIdsForManga(mangaId: Long): List<Long>
 }

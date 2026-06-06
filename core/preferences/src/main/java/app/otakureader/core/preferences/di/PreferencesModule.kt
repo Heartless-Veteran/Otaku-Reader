@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.otakureader.core.preferences.AppPreferences
 import app.otakureader.core.preferences.BackupPreferences
+import app.otakureader.core.preferences.NavOrderPreferences
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.CloudBackupCredentialsStore
 import app.otakureader.core.preferences.EncryptedOpdsCredentialStore
@@ -122,6 +123,11 @@ object PreferencesModule {
     @Singleton
     fun provideSearchHistoryPreferences(dataStore: DataStore<Preferences>): SearchHistoryPreferences =
         SearchHistoryPreferences(dataStore)
+
+    @Provides
+    @Singleton
+    fun provideNavOrderPreferences(dataStore: DataStore<Preferences>): NavOrderPreferences =
+        NavOrderPreferences(dataStore)
 
     @Provides
     @Singleton

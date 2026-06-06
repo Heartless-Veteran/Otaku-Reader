@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -54,6 +55,34 @@ class BackupPreferences(private val dataStore: DataStore<Preferences>) {
     val cloudDestination: Flow<String> = dataStore.data.map { it[Keys.CLOUD_DESTINATION] ?: "NONE" }
     suspend fun setCloudDestination(value: String) = dataStore.edit { it[Keys.CLOUD_DESTINATION] = value }
 
+    // --- Backup Encryption ---
+
+    /** Whether AES-256-GCM backup encryption is enabled. */
+    val backupEncryptionEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.BACKUP_ENCRYPTION_ENABLED] ?: false }
+    suspend fun setBackupEncryptionEnabled(value: Boolean) =
+        dataStore.edit { it[Keys.BACKUP_ENCRYPTION_ENABLED] = value }
+
+    /**
+     * PBKDF2-derived key material stored as a hex string.
+     * The actual password is never stored — only whether a password has been set is tracked here.
+     * The password itself is prompted at export/import time.
+     */
+    val backupEncryptionPasswordSet: Flow<Boolean> = dataStore.data.map {
+        it[Keys.BACKUP_ENCRYPTION_PASSWORD_HASH] != null
+    }
+
+    /** Stores a SHA-256 hash of the password so we can verify it at restore time. */
+    suspend fun setBackupEncryptionPasswordHash(hash: String?) = dataStore.edit { prefs ->
+        if (hash != null) prefs[Keys.BACKUP_ENCRYPTION_PASSWORD_HASH] = hash
+        else prefs.remove(Keys.BACKUP_ENCRYPTION_PASSWORD_HASH)
+    }
+
+    /** Returns the stored password hash, or null if no password has been set. */
+    suspend fun getBackupEncryptionPasswordHash(): String? =
+        dataStore.data.map { it[Keys.BACKUP_ENCRYPTION_PASSWORD_HASH] }.let { flow ->
+            flow.first()
+        }
+
     private object Keys {
         val AUTO_BACKUP_ENABLED = booleanPreferencesKey("auto_backup_enabled")
         val AUTO_BACKUP_INTERVAL_HOURS = intPreferencesKey("auto_backup_interval_hours")
@@ -61,5 +90,7 @@ class BackupPreferences(private val dataStore: DataStore<Preferences>) {
         val AUTO_BACKUP_LOCATION_URI = stringPreferencesKey("auto_backup_location_uri")
         val LAST_AUTO_BACKUP_TIMESTAMP = longPreferencesKey("last_auto_backup_timestamp")
         val CLOUD_DESTINATION = stringPreferencesKey("cloud_destination")
+        val BACKUP_ENCRYPTION_ENABLED = booleanPreferencesKey("backup_encryption_enabled")
+        val BACKUP_ENCRYPTION_PASSWORD_HASH = stringPreferencesKey("backup_encryption_password_hash")
     }
 }

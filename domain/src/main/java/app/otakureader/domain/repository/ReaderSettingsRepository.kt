@@ -18,6 +18,10 @@ interface ReaderSettingsRepository {
     val showPageNumber: Flow<Boolean>
     val volumeKeysEnabled: Flow<Boolean>
     val volumeKeysInverted: Flow<Boolean>
+    val volumeKeyBehaviorSinglePage: Flow<Int>
+    val volumeKeyBehaviorDualPage: Flow<Int>
+    val volumeKeyBehaviorWebtoon: Flow<Int>
+    val volumeKeyBehaviorSmartPanels: Flow<Int>
     val fullscreen: Flow<Boolean>
     val incognitoMode: Flow<Boolean>
     val colorFilterMode: Flow<ColorFilterMode>

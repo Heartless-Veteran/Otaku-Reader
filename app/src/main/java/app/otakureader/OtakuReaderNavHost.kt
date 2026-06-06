@@ -25,6 +25,7 @@ import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.category.navigation.categoryManagementScreen
 import app.otakureader.feature.library.navigation.libraryScreen
+import app.otakureader.feature.library.navigation.mergeDuplicatesScreen
 import app.otakureader.feature.library.readinglist.navigation.readingListDetailScreen
 import app.otakureader.feature.library.readinglist.navigation.readingListsScreen
 import app.otakureader.feature.migration.navigation.migrationEntryScreen
@@ -158,7 +159,14 @@ fun OtakuReaderNavHost(
             },
             onNavigateToReader = { mangaId, chapterId ->
                 navController.navigate(Route.Reader(mangaId, chapterId))
-            }
+            },
+            onNavigateToMergeDuplicates = {
+                navController.navigate(Route.MergeDuplicates)
+            },
+        )
+
+        mergeDuplicatesScreen(
+            onNavigateBack = { navController.popBackStack() }
         )
 
         // Updates screen - new chapters
@@ -345,6 +353,15 @@ fun OtakuReaderNavHost(
             },
             onNavigateToSync = {
                 navController.navigate(Route.SettingsSync)
+            },
+            onNavigateToNavOrder = {
+                navController.navigate(Route.SettingsNavOrder)
+            },
+            onNavigateToReaderPresets = {
+                navController.navigate(Route.ReaderPresets)
+            },
+            onNavigateToStorageAnalytics = {
+                navController.navigate(Route.StorageAnalytics)
             },
         )
 

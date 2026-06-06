@@ -47,19 +47,25 @@ class StatisticsViewModel @Inject constructor(
         when (event) {
             is StatisticsEvent.Refresh -> loadStats()
             is StatisticsEvent.LoadAchievements -> { /* observer already active from init */ }
+            is StatisticsEvent.SelectPeriod -> {
+                _state.update { it.copy(selectedPeriod = event.period) }
+                loadStats(event.period)
+            }
         }
     }
 
-    private fun loadStats() {
+    private fun loadStats(period: StatsPeriod = _state.value.selectedPeriod) {
         statsJob?.cancel()
         _state.update { it.copy(isLoading = true) }
+        val sinceMs = period.days?.let { System.currentTimeMillis() - it * 86_400_000L }
+        val statsFlow = if (sinceMs != null) getReadingStatsUseCase(sinceMs = sinceMs) else getReadingStatsUseCase()
         statsJob = combine(
             readingGoalPreferences.dailyChapterGoal,
             readingGoalPreferences.weeklyChapterGoal
         ) { daily, weekly -> Pair(daily, weekly) }
             .flatMapLatest { (dailyGoal, weeklyGoal) ->
                 combine(
-                    getReadingStatsUseCase(),
+                    statsFlow,
                     statisticsRepository.getReadingGoalProgress(dailyGoal, weeklyGoal)
                 ) { stats, goalProgress -> Pair(stats, goalProgress) }
             }

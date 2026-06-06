@@ -32,6 +32,7 @@ import app.otakureader.core.database.entity.FeedSavedSearchEntity
 import app.otakureader.core.database.entity.FeedSourceEntity
 import app.otakureader.core.database.entity.MangaCategoryEntity
 import app.otakureader.core.database.entity.MangaEntity
+import app.otakureader.core.database.entity.MangaFtsEntity
 import app.otakureader.core.database.entity.OpdsServerEntity
 import app.otakureader.core.database.entity.PageBookmarkEntity
 import app.otakureader.core.database.entity.ReadingHistoryEntity
@@ -79,8 +80,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         DataUsageEntity::class,
         // Reader progress sync queue (#958)
         SyncQueueEntity::class,
+        // FTS index for library search (#997/Phase5)
+        MangaFtsEntity::class,
     ],
-    version = 32,
+    version = 34,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)

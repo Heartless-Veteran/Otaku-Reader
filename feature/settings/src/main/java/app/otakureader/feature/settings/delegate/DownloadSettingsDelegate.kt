@@ -118,6 +118,10 @@ class DownloadSettingsDelegate @Inject constructor(
             sendEffect(SettingsEffect.NavigateToDataUsage)
             true
         }
+        is SettingsEvent.NavigateToStorageAnalytics -> {
+            sendEffect(SettingsEffect.NavigateToStorageAnalytics)
+            true
+        }
         else -> false
     }
 }

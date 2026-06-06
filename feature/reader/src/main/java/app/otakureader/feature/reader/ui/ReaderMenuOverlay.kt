@@ -61,6 +61,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.otakureader.core.preferences.ReaderPreset
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.PageRotation
@@ -102,6 +103,9 @@ fun ReaderMenuOverlay(
     onNavigateBack: () -> Unit,
     onToggleFullscreen: () -> Unit,
     onToggleChapterFilter: (() -> Unit)? = null,
+    onToggleChapterList: (() -> Unit)? = null,
+    presets: List<ReaderPreset> = emptyList(),
+    onApplyPreset: (ReaderPreset) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -145,6 +149,11 @@ fun ReaderMenuOverlay(
                                 Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
                             }
                         }
+                        if (onToggleChapterList != null) {
+                            IconButton(onClick = onToggleChapterList) {
+                                Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.reader_chapter_list_title))
+                            }
+                        }
                         IconButton(onClick = onToggleFullscreen) {
                             Icon(Icons.Default.Fullscreen, contentDescription = stringResource(R.string.reader_fullscreen))
                         }
@@ -158,7 +167,28 @@ fun ReaderMenuOverlay(
                 )
                 
                 HorizontalDivider()
-                
+
+                if (presets.isNotEmpty()) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(R.string.reader_presets_quick),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(presets, key = { it.id }) { preset ->
+                                FilterChip(
+                                    selected = false,
+                                    onClick = { onApplyPreset(preset) },
+                                    label = { Text(preset.name) }
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+
                 // Mode selector
                 ReaderModeSelector(
                     currentMode = currentMode,

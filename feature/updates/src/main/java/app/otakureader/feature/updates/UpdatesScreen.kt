@@ -1,5 +1,6 @@
 package app.otakureader.feature.updates
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -209,6 +213,7 @@ fun UpdatesScreen(
                         )
                     )
                 },
+                onMarkAsRead = { chapterId -> viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId)) },
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -267,6 +272,7 @@ private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
     UpdateDateBucket.OLDER -> stringResource(R.string.updates_date_older)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UpdatesList(
     updates: List<MangaUpdate>,
@@ -274,6 +280,7 @@ private fun UpdatesList(
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
     onDownloadClick: (MangaUpdate) -> Unit,
+    onMarkAsRead: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listItems = remember(updates) {
@@ -300,13 +307,41 @@ private fun UpdatesList(
             when (item) {
                 is UpdateListItem.Header -> UpdatesDateHeader(label = bucketLabel(item.bucket))
                 is UpdateListItem.Entry -> {
-                    UpdateItem(
-                        update = item.update,
-                        isSelected = selectedItems.contains(item.update.chapter.id),
-                        onClick = { onChapterClick(item.update) },
-                        onLongClick = { onChapterLongClick(item.update) },
-                        onDownloadClick = { onDownloadClick(item.update) }
+                    val dismissState = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            if (value == SwipeToDismissBoxValue.EndToStart) {
+                                onMarkAsRead(item.update.chapter.id)
+                                true
+                            } else false
+                        }
                     )
+                    SwipeToDismissBox(
+                        state = dismissState,
+                        enableDismissFromStartToEnd = false,
+                        backgroundContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = androidx.compose.ui.Modifier.padding(end = 16.dp)
+                                )
+                            }
+                        }
+                    ) {
+                        UpdateItem(
+                            update = item.update,
+                            isSelected = selectedItems.contains(item.update.chapter.id),
+                            onClick = { onChapterClick(item.update) },
+                            onLongClick = { onChapterLongClick(item.update) },
+                            onDownloadClick = { onDownloadClick(item.update) }
+                        )
+                    }
                     HorizontalDivider()
                 }
             }

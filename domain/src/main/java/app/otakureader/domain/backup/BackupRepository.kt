@@ -24,4 +24,13 @@ interface BackupRepository {
      * [maxCount] is coerced to at least 1 to always retain the most recent backup.
      */
     suspend fun pruneLocalBackups(maxCount: Int)
+
+    /** Creates an AES-256-GCM encrypted backup and writes it to the provided URI. */
+    suspend fun createEncryptedBackup(uriString: String, password: CharArray)
+
+    /** Decrypts and restores a backup from the provided URI. */
+    suspend fun restoreEncryptedBackup(uriString: String, password: CharArray)
+
+    /** Returns true if the file at [uriString] begins with the encrypted-backup magic bytes. */
+    suspend fun isBackupEncrypted(uriString: String): Boolean
 }

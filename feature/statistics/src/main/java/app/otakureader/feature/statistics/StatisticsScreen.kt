@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
@@ -125,6 +126,8 @@ fun StatisticsScreen(
                 stats = state.stats,
                 readingGoal = state.readingGoal,
                 achievements = state.achievements,
+                selectedPeriod = state.selectedPeriod,
+                onSelectPeriod = { viewModel.onEvent(StatisticsEvent.SelectPeriod(it)) },
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -136,6 +139,8 @@ private fun StatisticsContent(
     stats: ReadingStats,
     readingGoal: ReadingGoal,
     achievements: List<Achievement>,
+    selectedPeriod: StatsPeriod,
+    onSelectPeriod: (StatsPeriod) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -144,6 +149,32 @@ private fun StatisticsContent(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                StatsPeriod.entries.forEach { period ->
+                    FilterChip(
+                        selected = selectedPeriod == period,
+                        onClick = { onSelectPeriod(period) },
+                        label = {
+                            Text(
+                                when (period) {
+                                    StatsPeriod.ALL -> stringResource(R.string.statistics_period_all)
+                                    StatsPeriod.DAYS_90 -> stringResource(R.string.statistics_period_90d)
+                                    StatsPeriod.DAYS_30 -> stringResource(R.string.statistics_period_30d)
+                                    StatsPeriod.DAYS_7 -> stringResource(R.string.statistics_period_7d)
+                                }
+                            )
+                        }
+                    )
+                }
+            }
+        }
+
         item { Spacer(modifier = Modifier.height(4.dp)) }
 
         // Gradient hero card — reading overview

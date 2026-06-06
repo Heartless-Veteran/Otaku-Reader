@@ -1,6 +1,7 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.domain.model.ContentRating
@@ -19,6 +20,7 @@ import javax.inject.Singleton
 class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
+    private val mangaCategoryDao: MangaCategoryDao,
     private val downloadRepository: dagger.Lazy<app.otakureader.domain.repository.DownloadRepository>
 ) : MangaRepository {
 
@@ -31,7 +33,10 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override fun searchLibraryManga(query: String): Flow<List<Manga>> {
-        return mangaDao.searchFavoriteManga(query).map { entities ->
+        if (query.isBlank()) return getLibraryManga()
+        // Append * for prefix matching; escape special FTS chars to avoid query parse errors
+        val ftsQuery = query.trim().replace("\"", "\"\"") + "*"
+        return mangaDao.searchFts(ftsQuery).map { entities ->
             entities.map { it.toDomain() }
         }
     }
@@ -192,17 +197,65 @@ class MangaRepositoryImpl @Inject constructor(
         mangaDao.updateMangaThemeOverride(id, override)
     }
 
+    override suspend fun updateLocalOverrides(
+        id: Long,
+        title: String?,
+        description: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        genres: List<String>?,
+        status: MangaStatus?,
+    ) {
+        mangaDao.updateUserOverrides(
+            id = id,
+            title = title,
+            description = description,
+            author = author,
+            artist = artist,
+            thumbnailUrl = thumbnailUrl,
+            genre = genres?.joinToString("|||"),
+            status = status?.ordinal,
+        )
+    }
+
+    override suspend fun clearLocalOverrides(id: Long) {
+        mangaDao.updateUserOverrides(
+            id = id,
+            title = null,
+            description = null,
+            author = null,
+            artist = null,
+            thumbnailUrl = null,
+            genre = null,
+            status = null,
+        )
+    }
+
+    override fun findDuplicates(): Flow<List<List<Manga>>> =
+        getLibraryManga().map { library ->
+            library
+                .groupBy { it.title.lowercase().trim() }
+                .values
+                .filter { it.size > 1 }
+                .toList()
+        }
+
+    override suspend fun getCategoryIdsForManga(mangaId: Long): List<Long> =
+        mangaCategoryDao.getCategoryIdsForManga(mangaId)
+
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
         sourceId = sourceId,
         url = url,
-        title = title,
-        thumbnailUrl = thumbnailUrl,
-        author = author,
-        artist = artist,
-        description = description,
-        genre = genre?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
-        status = MangaStatus.fromOrdinal(status),
+        // User overrides take precedence over source values (#998)
+        title = userTitle ?: title,
+        thumbnailUrl = userThumbnailUrl ?: thumbnailUrl,
+        author = userAuthor ?: author,
+        artist = userArtist ?: artist,
+        description = userDescription ?: description,
+        genre = (userGenre ?: genre)?.split("|||")?.filter { it.isNotBlank() } ?: emptyList(),
+        status = userStatus?.let { MangaStatus.fromOrdinal(it) } ?: MangaStatus.fromOrdinal(status),
         favorite = favorite,
         initialized = initialized,
         unreadCount = unreadCount,
@@ -224,6 +277,8 @@ class MangaRepositoryImpl @Inject constructor(
         userCompleted = userCompleted,
         userDropped = userDropped,
         mangaThemeOverride = mangaThemeOverride,
+        isUserEdited = userTitle != null || userDescription != null || userAuthor != null ||
+            userArtist != null || userThumbnailUrl != null || userGenre != null || userStatus != null,
     )
 
     private fun Manga.toEntity() = MangaEntity(

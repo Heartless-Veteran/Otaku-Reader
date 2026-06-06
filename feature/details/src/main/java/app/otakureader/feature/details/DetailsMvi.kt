@@ -53,7 +53,9 @@ object DetailsContract {
         /** Whether automatic theme color extraction from cover is enabled. */
         val autoThemeEnabled: Boolean = true,
         /** User's average per-chapter reading duration in milliseconds; used to estimate remaining time. */
-        val averageChapterDurationMs: Long = 0L
+        val averageChapterDurationMs: Long = 0L,
+        /** Whether the Edit Manga Info bottom-sheet is open (#998). */
+        val isEditInfoSheetVisible: Boolean = false,
     ) : UiState {
 
         /** Estimated time remaining to finish all unread chapters of this manga. */
@@ -100,11 +102,12 @@ object DetailsContract {
         val bookmarked: TriState = TriState.ALL,
         val downloaded: TriState = TriState.ALL,
         /** When non-null, only chapters from this scanlator are shown. */
-        val scanlator: String? = null
+        val scanlator: String? = null,
+        val chapterSearchQuery: String = ""
     ) {
         val isActive: Boolean
             get() = read != TriState.ALL || bookmarked != TriState.ALL ||
-                    downloaded != TriState.ALL || scanlator != null
+                    downloaded != TriState.ALL || scanlator != null || chapterSearchQuery.isNotBlank()
 
         fun apply(chapters: List<ChapterItem>): List<ChapterItem> = chapters.filter { ch ->
             val readOk = when (read) {
@@ -123,7 +126,9 @@ object DetailsContract {
                 TriState.EXCLUDE -> ch.downloadStatus != DownloadStatus.DOWNLOADED
             }
             val scanlatorOk = scanlator == null || ch.scanlator == scanlator
-            readOk && bookmarkOk && downloadOk && scanlatorOk
+            val nameOk = chapterSearchQuery.isBlank() ||
+                ch.name.contains(chapterSearchQuery, ignoreCase = true)
+            readOk && bookmarkOk && downloadOk && scanlatorOk && nameOk
         }
     }
 
@@ -176,6 +181,7 @@ object DetailsContract {
         data object ShowChapterFilter : Event
         data object HideChapterFilter : Event
         data class SetChapterFilter(val filter: ChapterFilter) : Event
+        data class SetChapterSearchQuery(val query: String) : Event
         data object StartReading : Event
         data object ContinueReading : Event
         data class ChapterClick(val chapterId: Long) : Event
@@ -239,6 +245,20 @@ object DetailsContract {
         
         // Panorama cover
         data object TogglePanoramaCover : Event
+
+        // Edit manga info (#998)
+        data object ShowEditInfoSheet : Event
+        data object HideEditInfoSheet : Event
+        data class SaveMangaInfo(
+            val title: String?,
+            val description: String?,
+            val author: String?,
+            val artist: String?,
+            val thumbnailUrl: String?,
+            val genres: List<String>?,
+            val status: MangaStatus?,
+        ) : Event
+        data object ResetMangaInfo : Event
     }
 
     /**

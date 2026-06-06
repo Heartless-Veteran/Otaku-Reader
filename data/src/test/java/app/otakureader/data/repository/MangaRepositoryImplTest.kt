@@ -1,6 +1,7 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.domain.model.Manga
@@ -25,6 +26,7 @@ class MangaRepositoryImplTest {
 
     private lateinit var mangaDao: MangaDao
     private lateinit var chapterDao: ChapterDao
+    private lateinit var mangaCategoryDao: MangaCategoryDao
     private lateinit var downloadRepository: Lazy<DownloadRepository>
     private lateinit var repository: MangaRepositoryImpl
 
@@ -48,8 +50,9 @@ class MangaRepositoryImplTest {
     fun setUp() {
         mangaDao = mockk()
         chapterDao = mockk()
+        mangaCategoryDao = mockk()
         downloadRepository = mockk()
-        repository = MangaRepositoryImpl(mangaDao, chapterDao, downloadRepository)
+        repository = MangaRepositoryImpl(mangaDao, chapterDao, mangaCategoryDao, downloadRepository)
     }
 
     // ---- getLibraryManga ----
@@ -160,7 +163,7 @@ class MangaRepositoryImplTest {
     @Test
     fun searchLibraryManga_delegatesToSearchFavoriteManga() = runTest {
         val entity = makeEntity(1L, title = "Naruto")
-        every { mangaDao.searchFavoriteManga("Naru") } returns flowOf(listOf(entity))
+        every { mangaDao.searchFts("Naru*") } returns flowOf(listOf(entity))
 
         repository.searchLibraryManga("Naru").test {
             val results = awaitItem()
@@ -172,7 +175,7 @@ class MangaRepositoryImplTest {
 
     @Test
     fun searchLibraryManga_withNoMatches_returnsEmptyList() = runTest {
-        every { mangaDao.searchFavoriteManga("xyz") } returns flowOf(emptyList())
+        every { mangaDao.searchFts("xyz*") } returns flowOf(emptyList())
 
         repository.searchLibraryManga("xyz").test {
             assertEquals(emptyList<app.otakureader.domain.model.Manga>(), awaitItem())

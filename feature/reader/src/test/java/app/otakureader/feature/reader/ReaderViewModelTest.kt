@@ -16,6 +16,7 @@ import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.core.discord.DiscordRpcService
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.DownloadPreferences
+import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
@@ -92,6 +93,7 @@ class ReaderViewModelTest {
     private lateinit var trackerSyncRepository: TrackerSyncRepository
     private lateinit var historyScheduler: ReadingHistoryScheduler
     private lateinit var displayDelegate: ReaderDisplayDelegate
+    private lateinit var readerPreferences: ReaderPreferences
 
     @Before
     @Suppress("LongMethod")
@@ -117,6 +119,8 @@ class ReaderViewModelTest {
         panelDetectionService = mockk()
         historyScheduler = mockk(relaxed = true)
         trackerSyncRepository = mockk(relaxed = true)
+        readerPreferences = mockk()
+        every { readerPreferences.presets } returns flowOf(emptyList())
         displayDelegate = ReaderDisplayDelegate(
             settingsRepository = settingsRepository,
         )
@@ -186,6 +190,8 @@ class ReaderViewModelTest {
         // Return null for chapter/manga so loadChapter() exits early without side-effects.
         coEvery { chapterRepository.getChapterById(chapterId) } returns null
         coEvery { mangaRepository.getMangaById(mangaId) } returns null
+        // chapters StateFlow is initialised during construction; return empty by default.
+        every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(emptyList())
 
         // Stub write operations called by page-change / jump-to-page paths.
         coEvery { chapterRepository.updateChapterProgress(any<Long>(), any<Boolean>(), any<Int>()) } just runs
@@ -242,6 +248,7 @@ class ReaderViewModelTest {
             ),
             displayDelegate = displayDelegate,
             trackerSyncRepository = trackerSyncRepository,
+            readerPreferences = readerPreferences,
             savedStateHandle = SavedStateHandle(
                 mapOf("mangaId" to mangaId, "chapterId" to chapterId)
             )

@@ -92,6 +92,8 @@ class DetailsViewModel @Inject constructor(
                 _state.update { it.copy(showChapterFilter = false) }
             is DetailsContract.Event.SetChapterFilter ->
                 _state.update { it.copy(chapterFilter = event.filter, showChapterFilter = false) }
+            is DetailsContract.Event.SetChapterSearchQuery ->
+                _state.update { it.copy(chapterFilter = it.chapterFilter.copy(chapterSearchQuery = event.query)) }
             is DetailsContract.Event.StartReading -> startReading()
             is DetailsContract.Event.ContinueReading -> continueReading()
             is DetailsContract.Event.ChapterClick -> onChapterClick(event.chapterId)
@@ -153,6 +155,14 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.TogglePanoramaCover -> togglePanoramaCover()
 
             is DetailsContract.Event.OpenTracking -> openTracking()
+
+            // Edit manga info (#998)
+            is DetailsContract.Event.ShowEditInfoSheet ->
+                _state.update { it.copy(isEditInfoSheetVisible = true) }
+            is DetailsContract.Event.HideEditInfoSheet ->
+                _state.update { it.copy(isEditInfoSheetVisible = false) }
+            is DetailsContract.Event.SaveMangaInfo -> saveMangaInfo(event)
+            is DetailsContract.Event.ResetMangaInfo -> resetMangaInfo()
         }
     }
 
@@ -1190,5 +1200,42 @@ class DetailsViewModel @Inject constructor(
 
     private fun togglePanoramaCover() {
         _state.update { it.copy(showPanoramaCover = !it.showPanoramaCover) }
+    }
+
+    private fun saveMangaInfo(event: DetailsContract.Event.SaveMangaInfo) {
+        viewModelScope.launch {
+            try {
+                mangaRepository.updateLocalOverrides(
+                    id = mangaId,
+                    title = event.title,
+                    description = event.description,
+                    author = event.author,
+                    artist = event.artist,
+                    thumbnailUrl = event.thumbnailUrl,
+                    genres = event.genres,
+                    status = event.status,
+                )
+                _state.update { it.copy(isEditInfoSheetVisible = false) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Manga info updated"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to save manga info: ${e.message}"))
+            }
+        }
+    }
+
+    private fun resetMangaInfo() {
+        viewModelScope.launch {
+            try {
+                mangaRepository.clearLocalOverrides(mangaId)
+                _state.update { it.copy(isEditInfoSheetVisible = false) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Manga info reset to source data"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to reset manga info: ${e.message}"))
+            }
+        }
     }
 }

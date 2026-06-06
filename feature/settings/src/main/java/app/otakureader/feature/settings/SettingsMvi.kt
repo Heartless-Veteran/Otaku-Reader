@@ -90,6 +90,10 @@ data class SettingsState(
     val invertTapZones get() = reader.invertTapZones
     val volumeKeysEnabled get() = reader.volumeKeysEnabled
     val volumeKeysInverted get() = reader.volumeKeysInverted
+    val volumeKeyBehaviorSinglePage get() = reader.volumeKeyBehaviorSinglePage
+    val volumeKeyBehaviorDualPage get() = reader.volumeKeyBehaviorDualPage
+    val volumeKeyBehaviorWebtoon get() = reader.volumeKeyBehaviorWebtoon
+    val volumeKeyBehaviorSmartPanels get() = reader.volumeKeyBehaviorSmartPanels
     val showActionsOnLongTap get() = reader.showActionsOnLongTap
     val savePagesToSeparateFolders get() = reader.savePagesToSeparateFolders
     val webtoonSidePadding get() = reader.webtoonSidePadding
@@ -155,6 +159,8 @@ data class SettingsState(
     val isTachiyomiImporting get() = backup.isTachiyomiImporting
     val tachiyomiImportProgress get() = backup.tachiyomiImportProgress
     val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
+    val backupEncryptionEnabled get() = backup.backupEncryptionEnabled
+    val backupEncryptionPasswordSet get() = backup.backupEncryptionPasswordSet
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
@@ -174,6 +180,9 @@ sealed interface SettingsEvent : UiEvent {
     data class SetLocale(val locale: String) : SettingsEvent
     data class SetAutoThemeColor(val enabled: Boolean) : SettingsEvent
     data class SetVisualEffectsEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetDarkModeScheduleEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetDarkModeStartMinute(val minute: Int) : SettingsEvent
+    data class SetDarkModeEndMinute(val minute: Int) : SettingsEvent
 
     // Reader - Display
     data class SetReaderMode(val mode: Int) : SettingsEvent
@@ -198,6 +207,7 @@ sealed interface SettingsEvent : UiEvent {
     // Reader - Volume Keys
     data class SetVolumeKeysEnabled(val enabled: Boolean) : SettingsEvent
     data class SetVolumeKeysInverted(val enabled: Boolean) : SettingsEvent
+    data class SetVolumeKeyBehaviorForMode(val mode: Int, val behavior: Int) : SettingsEvent
 
     // Reader - Interaction
     data class SetShowActionsOnLongTap(val enabled: Boolean) : SettingsEvent
@@ -285,6 +295,13 @@ sealed interface SettingsEvent : UiEvent {
     data object RefreshLocalBackups : SettingsEvent
     data class RestoreLocalBackup(val fileName: String) : SettingsEvent
 
+    // Backup Encryption
+    data class SetBackupEncryptionEnabled(val enabled: Boolean) : SettingsEvent
+    data object RequestSetBackupPassword : SettingsEvent
+    data class SetBackupEncryptionPassword(val password: String) : SettingsEvent
+    data class CreateEncryptedBackupWithUri(val uri: Uri, val password: String) : SettingsEvent
+    data class RestoreEncryptedBackupFromUri(val uri: Uri, val password: String) : SettingsEvent
+
     // Tracking
     data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
     data class LogoutTracker(val trackerId: Int) : SettingsEvent
@@ -332,6 +349,7 @@ sealed interface SettingsEvent : UiEvent {
     data object NavigateToAbout : SettingsEvent
     data object NavigateToCloudBackup : SettingsEvent
     data object NavigateToDataUsage : SettingsEvent
+    data object NavigateToStorageAnalytics : SettingsEvent
 
     // Downloads — Data Saver
     data class SetDownloadDataSaverEnabled(val enabled: Boolean) : SettingsEvent
@@ -348,4 +366,8 @@ sealed interface SettingsEffect : UiEffect {
     data object ShowAutoBackupLocationPicker : SettingsEffect
     data object NavigateToCloudBackup : SettingsEffect
     data object NavigateToDataUsage : SettingsEffect
+    data object NavigateToStorageAnalytics : SettingsEffect
+    data object ShowEncryptionPasswordSetupDialog : SettingsEffect
+    data class ShowEncryptionPasswordForBackupDialog(val uri: Uri) : SettingsEffect
+    data class ShowEncryptionPasswordForRestoreDialog(val uri: Uri) : SettingsEffect
 }

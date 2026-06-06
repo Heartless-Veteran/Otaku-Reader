@@ -47,6 +47,12 @@ data class ReaderState(
     /** Whether the page gallery/thumbnail view is open */
     val isGalleryOpen: Boolean = false,
 
+    /** Whether the quick-settings overlay is visible (triggered by long-press) */
+    val isSettingsOverlayVisible: Boolean = false,
+
+    /** Whether the chapter-list overlay is visible (slide-in from right edge) */
+    val isChapterListOverlayVisible: Boolean = false,
+
     /** Number of columns displayed in the gallery grid (2, 3, or 4) */
     val galleryColumns: Int = 3,
 
@@ -74,10 +80,10 @@ data class ReaderState(
     /** Whether double-tap to zoom is enabled */
     val doubleTapZoomEnabled: Boolean = true,
 
-    /** Whether volume keys can be used for navigation */
+    /** Whether volume keys can be used for navigation (resolved from per-mode behavior) */
     val volumeKeysEnabled: Boolean = false,
 
-    /** Whether volume key directions are inverted (up=next) */
+    /** Whether volume key directions are inverted (resolved from per-mode behavior) */
     val volumeKeysInverted: Boolean = false,
 
     /** Keep screen on while reading */
@@ -88,6 +94,9 @@ data class ReaderState(
 
     /** Current chapter title */
     val chapterTitle: String = "",
+
+    /** ID of the currently-loaded chapter; updated on every chapter switch. */
+    val currentChapterId: Long = 0L,
 
     /** Incognito mode - when enabled, reading history is not saved */
     val incognitoMode: Boolean = false,
@@ -189,6 +198,9 @@ data class ReaderState(
 
     /** Whether screentone/glassmorphism/neon visual effects are enabled globally */
     val visualEffectsEnabled: Boolean = true,
+
+    /** Saved reader presets available for one-tap profile switching from the menu. */
+    val presets: List<app.otakureader.core.preferences.ReaderPreset> = emptyList(),
 ) {
     /** Total pages in chapter (derived from pages.size) */
     val totalPages: Int get() = pages.size
@@ -250,7 +262,9 @@ data class ReaderState(
             isGalleryOpen = isGalleryOpen,
             galleryColumns = galleryColumns,
             isFullscreen = isFullscreen,
-            showTapZonesOverlay = showTapZonesOverlay
+            showTapZonesOverlay = showTapZonesOverlay,
+            isSettingsOverlayVisible = isSettingsOverlayVisible,
+            isChapterListOverlayVisible = isChapterListOverlayVisible,
         )
 
     /** Display and rendering settings — changes infrequently. */
@@ -305,7 +319,9 @@ data class OverlayState(
     val isGalleryOpen: Boolean,
     val galleryColumns: Int,
     val isFullscreen: Boolean,
-    val showTapZonesOverlay: Boolean
+    val showTapZonesOverlay: Boolean,
+    val isSettingsOverlayVisible: Boolean = false,
+    val isChapterListOverlayVisible: Boolean = false,
 )
 
 /** Projection of rendering and display preference fields. */
@@ -425,6 +441,9 @@ sealed interface ReaderEvent {
     /** Navigate to last page of chapter. */
     data object LastPage : PageNavigation
 
+    /** Skip [count] pages forward (positive) or back (negative); used for volume-key hold. */
+    data class SkipPages(val count: Int) : PageNavigation
+
     /** Navigate to next panel (smart panel mode). */
     data object NextPanel : PanelNavigation
 
@@ -483,6 +502,12 @@ sealed interface ReaderEvent {
 
     /** Toggle fullscreen mode. */
     data object ToggleFullscreen : OverlayControl
+
+    /** Toggle the quick-settings overlay (triggered by long-press on center tap zone). */
+    data object ToggleSettingsOverlay : OverlayControl
+
+    /** Toggle the chapter-list overlay (slide-in panel from right edge). */
+    data object ToggleChapterListOverlay : OverlayControl
 
     /** Toggle auto-scroll (webtoon mode). */
     data object ToggleAutoScroll : AutoScrollControl
@@ -565,6 +590,9 @@ sealed interface ReaderEvent {
 
     /** Retry the last failed operation. */
     data object Retry : ActionEvent
+
+    /** Apply a saved reader preset (mode, scale, background colour, etc.). */
+    data class ApplyPreset(val preset: app.otakureader.core.preferences.ReaderPreset) : ActionEvent
 
     // ──────────────────────────────────────────────────────────────────────────
     // Constants

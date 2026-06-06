@@ -61,6 +61,8 @@ import app.otakureader.feature.reader.ui.PageThumbnailStrip
 import app.otakureader.feature.reader.ui.ReadingTimerOverlay
 import app.otakureader.feature.reader.ui.ReaderContentOverlay
 import app.otakureader.feature.reader.ui.ReaderMenuOverlay
+import app.otakureader.feature.reader.ui.ChapterListOverlay
+import app.otakureader.feature.reader.ui.ReaderSettingsOverlay
 import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
 import app.otakureader.feature.reader.ReaderEffect
@@ -83,6 +85,9 @@ import kotlinx.coroutines.launch
  * - Brightness and zoom controls
  * - Settings persistence
  */
+
+private const val VOLUME_HOLD_SKIP_PAGES = 5
+
 @Composable
 @Suppress("UnusedParameter")
 fun ReaderScreen(
@@ -93,6 +98,7 @@ fun ReaderScreen(
     viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val chapters by viewModel.chapters.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -173,9 +179,14 @@ fun ReaderScreen(
     // android:enableOnBackInvokedCallback="true" in AndroidManifest.xml) so
     // that when an overlay is open the back gesture dismisses it rather than
     // triggering a full screen transition.
-    BackHandler(enabled = state.isGalleryOpen || state.isMenuVisible) {
+    BackHandler(
+        enabled = state.isGalleryOpen || state.isMenuVisible ||
+            state.isSettingsOverlayVisible || state.isChapterListOverlayVisible
+    ) {
         when {
             state.isGalleryOpen -> viewModel.onEvent(ReaderEvent.ToggleGallery)
+            state.isChapterListOverlayVisible -> viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay)
+            state.isSettingsOverlayVisible -> viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay)
             state.isMenuVisible -> viewModel.onEvent(ReaderEvent.ToggleMenu)
         }
     }
@@ -186,13 +197,20 @@ fun ReaderScreen(
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
-                // Volume key navigation (existing behaviour — suppress system volume UI).
+                // Volume key navigation — single tap = 1 page, hold = 5 pages.
                 if (event.key == Key.VolumeUp || event.key == Key.VolumeDown) {
                     if (!state.volumeKeysEnabled) return@onPreviewKeyEvent false
                     if (event.type == KeyEventType.KeyDown) {
                         val navigateNext = (event.key == Key.VolumeDown && !state.volumeKeysInverted) ||
                             (event.key == Key.VolumeUp && state.volumeKeysInverted)
-                        viewModel.onEvent(if (navigateNext) ReaderEvent.NextPage else ReaderEvent.PrevPage)
+                        val isHeld = event.nativeKeyEvent.repeatCount > 0
+                        val readerEvent = when {
+                            isHeld && navigateNext -> ReaderEvent.SkipPages(VOLUME_HOLD_SKIP_PAGES)
+                            isHeld -> ReaderEvent.SkipPages(-VOLUME_HOLD_SKIP_PAGES)
+                            navigateNext -> ReaderEvent.NextPage
+                            else -> ReaderEvent.PrevPage
+                        }
+                        viewModel.onEvent(readerEvent)
                     }
                     return@onPreviewKeyEvent true
                 }
@@ -256,6 +274,7 @@ fun ReaderScreen(
             SimpleTapZoneOverlay(
                 onLeftTap = { viewModel.onEvent(ReaderEvent.PrevPage) },
                 onCenterTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+                onCenterLongPress = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
                 onRightTap = { viewModel.onEvent(ReaderEvent.NextPage) },
                 isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL,
                 modifier = Modifier.fillMaxSize()
@@ -314,6 +333,9 @@ fun ReaderScreen(
             onNavigateBack = onNavigateBack,
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
             onToggleChapterFilter = { showChapterFilterSheet = true },
+            onToggleChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
+            presets = state.presets,
+            onApplyPreset = { viewModel.onEvent(ReaderEvent.ApplyPreset(it)) },
         )
 
         if (showChapterFilterSheet) {
@@ -397,6 +419,31 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
+        // Quick-settings overlay — compact sheet triggered by long-press on center zone
+        ReaderSettingsOverlay(
+            isVisible = state.isSettingsOverlayVisible,
+            currentMode = state.mode,
+            readingDirection = state.readingDirection,
+            brightness = state.brightness,
+            colorFilterMode = state.colorFilterMode,
+            onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
+            onDirectionChange = { viewModel.onEvent(ReaderEvent.OnDirectionChange(it)) },
+            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
+            onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
+            onDismiss = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+        )
+
+        // Chapter-list overlay — right-side sliding panel
+        ChapterListOverlay(
+            isVisible = state.isChapterListOverlayVisible,
+            chapters = chapters,
+            currentChapterId = state.currentChapterId,
+            onChapterClick = { targetChapterId ->
+                viewModel.onEvent(ReaderEvent.LoadChapter(targetChapterId))
+                viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay)
+            },
+            onDismiss = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
+        )
     }
 }
 

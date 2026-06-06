@@ -25,6 +25,10 @@ data class ReaderSettingsState(
     // Volume keys
     val volumeKeysEnabled: Boolean = false,
     val volumeKeysInverted: Boolean = false,
+    val volumeKeyBehaviorSinglePage: Int = 0,
+    val volumeKeyBehaviorDualPage: Int = 0,
+    val volumeKeyBehaviorWebtoon: Int = 0,
+    val volumeKeyBehaviorSmartPanels: Int = 0,
     // Interaction
     val showActionsOnLongTap: Boolean = true,
     val savePagesToSeparateFolders: Boolean = false,

@@ -2,6 +2,7 @@ package app.otakureader.data.backup.repository
 
 import android.content.Context
 import android.net.Uri
+import app.otakureader.data.backup.AesBackupCipher
 import app.otakureader.data.backup.BackupCreator
 import app.otakureader.data.backup.BackupRestorer
 import app.otakureader.domain.backup.BackupRepository as BackupRepositoryInterface
@@ -24,8 +25,7 @@ class BackupRepository @Inject constructor(
 
     override suspend fun createBackup(uriString: String) = withContext(Dispatchers.IO) {
         val uri = Uri.parse(uriString)
-        val backupJson = backupCreator.createBackup()
-        context.contentResolver.openOutputStream(uri)?.use { it.write(backupJson.toByteArray()) }
+        context.contentResolver.openOutputStream(uri)?.use { backupCreator.createBackupToStream(it) }
             ?: error("Failed to open output stream for URI: $uriString")
     }
 
@@ -37,11 +37,10 @@ class BackupRepository @Inject constructor(
     }
 
     override suspend fun createLocalBackup(): File = withContext(Dispatchers.IO) {
-        val backupJson = backupCreator.createBackup()
         val dir = getLocalBackupDir()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val file = File(dir, "otakureader_backup_$timestamp.json")
-        file.writeText(backupJson)
+        file.outputStream().use { backupCreator.createBackupToStream(it) }
         file
     }
 
@@ -62,6 +61,30 @@ class BackupRepository @Inject constructor(
         if (backups.size > safeMax) {
             backups.drop(safeMax).forEach { it.delete() }
         }
+    }
+
+    override suspend fun createEncryptedBackup(uriString: String, password: CharArray) = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(uriString)
+        val backupJson = backupCreator.createBackup()
+        val encrypted = AesBackupCipher.encrypt(backupJson.toByteArray(Charsets.UTF_8), password)
+        context.contentResolver.openOutputStream(uri)?.use { it.write(encrypted) }
+            ?: error("Failed to open output stream for URI: $uriString")
+    }
+
+    override suspend fun restoreEncryptedBackup(uriString: String, password: CharArray) = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(uriString)
+        val data = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+            ?: error("Failed to open input stream for URI: $uriString")
+        val decrypted = AesBackupCipher.decrypt(data, password)
+        backupRestorer.restoreBackup(decrypted.decodeToString())
+    }
+
+    override suspend fun isBackupEncrypted(uriString: String): Boolean = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(uriString)
+        val header = context.contentResolver.openInputStream(uri)?.use { stream ->
+            ByteArray(6).also { stream.read(it) }
+        } ?: ByteArray(0)
+        AesBackupCipher.isEncrypted(header)
     }
 
     private fun getLocalBackupDir(): File {
