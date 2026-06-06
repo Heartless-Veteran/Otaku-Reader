@@ -57,6 +57,17 @@ class BackupSettingsDelegate @Inject constructor(
                 )) }
             }.collect { }
         }
+        scope.launch {
+            combine(
+                backupPreferences.backupEncryptionEnabled,
+                backupPreferences.backupEncryptionPasswordSet,
+            ) { encEnabled, encPasswordSet ->
+                updateState { it.copy(backup = it.backup.copy(
+                    backupEncryptionEnabled = encEnabled,
+                    backupEncryptionPasswordSet = encPasswordSet,
+                )) }
+            }.collect { }
+        }
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod", "InstanceOfCheckForException")
@@ -141,14 +152,31 @@ class BackupSettingsDelegate @Inject constructor(
             }
         }
         is SettingsEvent.CreateBackupWithUri -> {
+            if (backupPreferences.backupEncryptionEnabled.first()) {
+                sendEffect(SettingsEffect.ShowEncryptionPasswordForBackupDialog(event.uri))
+            } else {
+                updateState { it.copy(backup = it.backup.copy(isBackupInProgress = true)) }
+                try {
+                    backupRepository.createBackup(event.uri.toString())
+                    sendEffect(SettingsEffect.ShowSnackbar("Backup created successfully"))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    sendEffect(SettingsEffect.ShowSnackbar("Failed to create backup: ${e.message}"))
+                } finally {
+                    updateState { it.copy(backup = it.backup.copy(isBackupInProgress = false)) }
+                }
+            }
+            true
+        }
+        is SettingsEvent.CreateEncryptedBackupWithUri -> {
             updateState { it.copy(backup = it.backup.copy(isBackupInProgress = true)) }
             try {
-                backupRepository.createBackup(event.uri.toString())
-                sendEffect(SettingsEffect.ShowSnackbar("Backup created successfully"))
+                backupRepository.createEncryptedBackup(event.uri.toString(), event.password.toCharArray())
+                sendEffect(SettingsEffect.ShowSnackbar("Encrypted backup created successfully"))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to create backup: ${e.message}"))
             } finally {
                 updateState { it.copy(backup = it.backup.copy(isBackupInProgress = false)) }
@@ -156,16 +184,38 @@ class BackupSettingsDelegate @Inject constructor(
             true
         }
         is SettingsEvent.RestoreBackupFromUri -> {
+            val encrypted = try { backupRepository.isBackupEncrypted(event.uri.toString()) } catch (_: Exception) { false }
+            if (encrypted) {
+                sendEffect(SettingsEffect.ShowEncryptionPasswordForRestoreDialog(event.uri))
+            } else {
+                updateState {
+                    it.copy(backup = it.backup.copy(isRestoreInProgress = true, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
+                }
+                try {
+                    backupRepository.restoreBackup(event.uri.toString())
+                    sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
+                } finally {
+                    updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
+                }
+            }
+            true
+        }
+        is SettingsEvent.RestoreEncryptedBackupFromUri -> {
             updateState {
                 it.copy(backup = it.backup.copy(isRestoreInProgress = true, tachiyomiImportTotal = 0, tachiyomiImportProgress = 0))
             }
             try {
-                backupRepository.restoreBackup(event.uri.toString())
+                backupRepository.restoreEncryptedBackup(event.uri.toString(), event.password.toCharArray())
                 sendEffect(SettingsEffect.ShowSnackbar("Backup restored successfully"))
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: javax.crypto.AEADBadTagException) {
+                sendEffect(SettingsEffect.ShowSnackbar("Wrong password — could not decrypt backup"))
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
                 sendEffect(SettingsEffect.ShowSnackbar("Failed to restore backup: ${e.message}"))
             } finally {
                 updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false)) }
@@ -207,6 +257,22 @@ class BackupSettingsDelegate @Inject constructor(
             } finally {
                 updateState { it.copy(backup = it.backup.copy(isRestoreInProgress = false, restoringBackupFileName = null)) }
             }
+            true
+        }
+        is SettingsEvent.SetBackupEncryptionEnabled -> {
+            backupPreferences.setBackupEncryptionEnabled(event.enabled)
+            true
+        }
+        SettingsEvent.RequestSetBackupPassword -> {
+            sendEffect(SettingsEffect.ShowEncryptionPasswordSetupDialog)
+            true
+        }
+        is SettingsEvent.SetBackupEncryptionPassword -> {
+            val bytes = event.password.toByteArray(Charsets.UTF_8)
+            val hash  = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+                .joinToString("") { "%02x".format(it) }
+            backupPreferences.setBackupEncryptionPasswordHash(hash)
+            sendEffect(SettingsEffect.ShowSnackbar("Backup password set"))
             true
         }
         else -> false

@@ -180,6 +180,25 @@
     <string name="settings_cloud_backup_test_connection">Test connection</string>
     <string name="settings_cloud_backup_save_credentials">Save credentials</string>
     <string name="settings_cloud_backup_configure">Configure</string>
+
+    <!-- Backup Encryption -->
+    <string name="settings_backup_encryption">Backup Encryption</string>
+    <string name="settings_backup_encryption_enabled">Encrypt backups</string>
+    <string name="settings_backup_encryption_enabled_description">Protect exported backup files with AES-256 encryption. You will be prompted for a password when creating or restoring an encrypted backup.</string>
+    <string name="settings_backup_encryption_password">Encryption password</string>
+    <string name="settings_backup_encryption_password_set">Password set</string>
+    <string name="settings_backup_encryption_password_not_set">No password set — set one before creating an encrypted backup</string>
+    <string name="settings_backup_encryption_set_password">Set password</string>
+    <string name="settings_backup_encryption_change_password">Change password</string>
+    <string name="settings_backup_encryption_setup_title">Set backup password</string>
+    <string name="settings_backup_encryption_new_password">New password</string>
+    <string name="settings_backup_encryption_confirm_password">Confirm password</string>
+    <string name="settings_backup_encryption_passwords_mismatch">Passwords do not match</string>
+    <string name="settings_backup_encryption_save">Save</string>
+    <string name="settings_backup_encryption_enter_password">Enter backup password</string>
+    <string name="settings_backup_encryption_enter_password_restore">Enter backup password to restore</string>
+    <string name="settings_backup_encryption_password_label">Password</string>
+
     <string name="settings_migrate_manga">Migrate manga</string>
     <string name="settings_migrate_manga_description">Move manga from one source to another</string>
 

@@ -155,6 +155,8 @@ data class SettingsState(
     val isTachiyomiImporting get() = backup.isTachiyomiImporting
     val tachiyomiImportProgress get() = backup.tachiyomiImportProgress
     val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
+    val backupEncryptionEnabled get() = backup.backupEncryptionEnabled
+    val backupEncryptionPasswordSet get() = backup.backupEncryptionPasswordSet
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
@@ -288,6 +290,13 @@ sealed interface SettingsEvent : UiEvent {
     data object RefreshLocalBackups : SettingsEvent
     data class RestoreLocalBackup(val fileName: String) : SettingsEvent
 
+    // Backup Encryption
+    data class SetBackupEncryptionEnabled(val enabled: Boolean) : SettingsEvent
+    data object RequestSetBackupPassword : SettingsEvent
+    data class SetBackupEncryptionPassword(val password: String) : SettingsEvent
+    data class CreateEncryptedBackupWithUri(val uri: Uri, val password: String) : SettingsEvent
+    data class RestoreEncryptedBackupFromUri(val uri: Uri, val password: String) : SettingsEvent
+
     // Tracking
     data class LoginTracker(val trackerId: Int, val username: String, val password: String) : SettingsEvent
     data class LogoutTracker(val trackerId: Int) : SettingsEvent
@@ -353,4 +362,7 @@ sealed interface SettingsEffect : UiEffect {
     data object NavigateToCloudBackup : SettingsEffect
     data object NavigateToDataUsage : SettingsEffect
     data object NavigateToStorageAnalytics : SettingsEffect
+    data object ShowEncryptionPasswordSetupDialog : SettingsEffect
+    data class ShowEncryptionPasswordForBackupDialog(val uri: Uri) : SettingsEffect
+    data class ShowEncryptionPasswordForRestoreDialog(val uri: Uri) : SettingsEffect
 }
