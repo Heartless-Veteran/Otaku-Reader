@@ -16,4 +16,10 @@ data class ReaderPreset(
     val autoZoomWideImages: Boolean = true,
     val animatePageTransitions: Boolean = true,
     val webtoonSidePadding: Int = 0,
+    val invertTapZones: Boolean = false,
+    val volumeKeysEnabled: Boolean = false,
+    val volumeKeysInverted: Boolean = false,
+    val showPageNumber: Boolean = true,
+    val skipReadChapters: Boolean = false,
+    val skipFilteredChapters: Boolean = true,
 )

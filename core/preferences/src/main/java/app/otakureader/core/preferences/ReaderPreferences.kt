@@ -184,12 +184,20 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
 
     /** Applies a preset by writing its values to the individual reader preference keys. */
     suspend fun applyPreset(preset: ReaderPreset) {
-        setReaderMode(preset.readerMode)
-        setBackgroundColor(preset.backgroundColor)
-        setReaderScale(preset.readerScale)
-        setAutoZoomWideImages(preset.autoZoomWideImages)
-        setAnimatePageTransitions(preset.animatePageTransitions)
-        setWebtoonSidePadding(preset.webtoonSidePadding)
+        dataStore.edit { prefs ->
+            prefs[Keys.READER_MODE] = preset.readerMode
+            prefs[Keys.BACKGROUND_COLOR] = preset.backgroundColor
+            prefs[Keys.READER_SCALE] = preset.readerScale
+            prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] = preset.autoZoomWideImages
+            prefs[Keys.ANIMATE_PAGE_TRANSITIONS] = preset.animatePageTransitions
+            prefs[Keys.WEBTOON_SIDE_PADDING] = preset.webtoonSidePadding
+            prefs[Keys.INVERT_TAP_ZONES] = preset.invertTapZones
+            prefs[Keys.VOLUME_KEYS_ENABLED] = preset.volumeKeysEnabled
+            prefs[Keys.VOLUME_KEYS_INVERTED] = preset.volumeKeysInverted
+            prefs[Keys.SHOW_PAGE_NUMBER] = preset.showPageNumber
+            prefs[Keys.SKIP_READ_CHAPTERS] = preset.skipReadChapters
+            prefs[Keys.SKIP_FILTERED_CHAPTERS] = preset.skipFilteredChapters
+        }
     }
 
     /** Captures the current reader settings as a new [ReaderPreset] with the given [name]. */
@@ -204,6 +212,12 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             autoZoomWideImages = prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true,
             animatePageTransitions = prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true,
             webtoonSidePadding = prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0,
+            invertTapZones = prefs[Keys.INVERT_TAP_ZONES] ?: false,
+            volumeKeysEnabled = prefs[Keys.VOLUME_KEYS_ENABLED] ?: false,
+            volumeKeysInverted = prefs[Keys.VOLUME_KEYS_INVERTED] ?: false,
+            showPageNumber = prefs[Keys.SHOW_PAGE_NUMBER] ?: true,
+            skipReadChapters = prefs[Keys.SKIP_READ_CHAPTERS] ?: false,
+            skipFilteredChapters = prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true,
         )
     }
 
