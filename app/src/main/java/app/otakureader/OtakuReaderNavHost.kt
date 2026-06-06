@@ -354,6 +354,9 @@ fun OtakuReaderNavHost(
             onNavigateToSync = {
                 navController.navigate(Route.SettingsSync)
             },
+            onNavigateToNavOrder = {
+                navController.navigate(Route.SettingsNavOrder)
+            },
         )
 
         downloadsScreen(

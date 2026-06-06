@@ -155,6 +155,9 @@ sealed interface Route {
     @Serializable
     data object SettingsSync : Route
 
+    @Serializable
+    data object SettingsNavOrder : Route
+
     // ─── Downloads ───
 
     @Serializable

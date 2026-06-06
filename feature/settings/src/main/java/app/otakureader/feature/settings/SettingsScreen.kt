@@ -72,6 +72,7 @@ fun SettingsScreen(
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
     onNavigateToSync: () -> Unit = {},
+    onNavigateToNavOrder: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -159,6 +160,10 @@ fun SettingsScreen(
             SettingsCategoryRow(
                 title = stringResource(R.string.settings_sync),
                 onClick = onNavigateToSync,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.nav_order_title),
+                onClick = onNavigateToNavOrder,
             )
 
             // ── Local source ──────────────────────────────────────────

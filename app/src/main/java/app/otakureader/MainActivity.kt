@@ -48,6 +48,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.rememberNavController
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.preferences.NavOrderPreferences
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.crash.CrashHandler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
@@ -78,6 +79,7 @@ class MainActivity : FragmentActivity() {
 
     @Inject lateinit var generalPreferences: GeneralPreferences
     @Inject lateinit var libraryPreferences: LibraryPreferences
+    @Inject lateinit var navOrderPreferences: NavOrderPreferences
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var trackerSyncScheduler: TrackerSyncScheduler
 
@@ -193,6 +195,7 @@ class MainActivity : FragmentActivity() {
                         OtakuReaderApp(
                             generalPreferences = generalPreferences,
                             libraryPreferences = libraryPreferences,
+                            navOrderPreferences = navOrderPreferences,
                             onboardingCompleted = onboardingCompleted,
                             deepLinkResult = pendingDeepLinkResult,
                             onDeepLinkConsumed = { pendingDeepLinkResult = null }
@@ -251,6 +254,7 @@ class MainActivity : FragmentActivity() {
 fun OtakuReaderApp(
     generalPreferences: GeneralPreferences,
     libraryPreferences: LibraryPreferences,
+    navOrderPreferences: NavOrderPreferences,
     onboardingCompleted: Boolean,
     deepLinkResult: DeepLinkResult? = null,
     onDeepLinkConsumed: () -> Unit = {}
@@ -266,7 +270,8 @@ fun OtakuReaderApp(
         bottomBar = {
             OtakuReaderBottomBar(
                 navController = navController,
-                newUpdatesCount = newUpdatesCount
+                navOrderPreferences = navOrderPreferences,
+                newUpdatesCount = newUpdatesCount,
             )
         }
     ) { padding ->
