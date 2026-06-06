@@ -383,6 +383,14 @@
     <string name="settings_volume_keys_paging_description">Use volume buttons to turn pages</string>
     <string name="settings_volume_keys_inverted">Invert Volume Keys</string>
     <string name="settings_volume_keys_inverted_description">Volume up goes to next page</string>
+    <string name="settings_vol_key_single_page">Single Page</string>
+    <string name="settings_vol_key_dual_page">Dual Page</string>
+    <string name="settings_vol_key_webtoon">Webtoon</string>
+    <string name="settings_vol_key_smart_panels">Smart Panels</string>
+    <string name="settings_vol_key_behavior_inherit">Inherit</string>
+    <string name="settings_vol_key_behavior_disabled">Disabled</string>
+    <string name="settings_vol_key_behavior_normal">Normal</string>
+    <string name="settings_vol_key_behavior_inverted">Inverted</string>
 
     <!-- Reader Interaction -->
     <string name="settings_reader_interaction">Interaction</string>

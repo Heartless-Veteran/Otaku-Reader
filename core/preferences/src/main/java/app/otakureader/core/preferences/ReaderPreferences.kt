@@ -79,6 +79,17 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
     val volumeKeysInverted: Flow<Boolean> = dataStore.data.map { it[Keys.VOLUME_KEYS_INVERTED] ?: false }
     suspend fun setVolumeKeysInverted(inverted: Boolean) = dataStore.edit { it[Keys.VOLUME_KEYS_INVERTED] = inverted }
 
+    // Per-mode volume key behavior overrides (0 = INHERIT global settings)
+    val volumeKeyBehaviorSinglePage:  Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_SINGLE]  ?: 0 }
+    val volumeKeyBehaviorDualPage:    Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_DUAL]    ?: 0 }
+    val volumeKeyBehaviorWebtoon:     Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_WEBTOON] ?: 0 }
+    val volumeKeyBehaviorSmartPanels: Flow<Int> = dataStore.data.map { it[Keys.VOL_KEY_SMART]   ?: 0 }
+
+    suspend fun setVolumeKeyBehaviorSinglePage(behavior: Int)  = dataStore.edit { it[Keys.VOL_KEY_SINGLE]  = behavior }
+    suspend fun setVolumeKeyBehaviorDualPage(behavior: Int)    = dataStore.edit { it[Keys.VOL_KEY_DUAL]    = behavior }
+    suspend fun setVolumeKeyBehaviorWebtoon(behavior: Int)     = dataStore.edit { it[Keys.VOL_KEY_WEBTOON] = behavior }
+    suspend fun setVolumeKeyBehaviorSmartPanels(behavior: Int) = dataStore.edit { it[Keys.VOL_KEY_SMART]   = behavior }
+
     // --- Page Thumbnail Strip ---
     val showPageThumbnailStrip: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] ?: true }
     suspend fun setShowPageThumbnailStrip(value: Boolean) = dataStore.edit { it[Keys.SHOW_PAGE_THUMBNAIL_STRIP] = value }
@@ -228,5 +239,9 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
         val SHOW_ACTIONS_ON_LONG_TAP = booleanPreferencesKey("reader_show_actions_on_long_tap")
         val SAVE_PAGES_TO_SEPARATE_FOLDERS = booleanPreferencesKey("reader_save_pages_to_separate_folders")
         val READER_PRESETS = stringPreferencesKey("reader_presets_json")
+        val VOL_KEY_SINGLE  = intPreferencesKey("reader_vol_key_behavior_single")
+        val VOL_KEY_DUAL    = intPreferencesKey("reader_vol_key_behavior_dual")
+        val VOL_KEY_WEBTOON = intPreferencesKey("reader_vol_key_behavior_webtoon")
+        val VOL_KEY_SMART   = intPreferencesKey("reader_vol_key_behavior_smart")
     }
 }

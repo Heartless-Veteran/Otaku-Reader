@@ -6,6 +6,7 @@ import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.VolumeKeyBehavior
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.feature.reader.ReaderState
 import kotlinx.coroutines.async
@@ -157,6 +158,30 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
                 false
             }
         }
+        val volBehaviorSingleD = async {
+            try { settingsRepository.volumeKeyBehaviorSinglePage.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                VolumeKeyBehavior.INHERIT
+            }
+        }
+        val volBehaviorDualD = async {
+            try { settingsRepository.volumeKeyBehaviorDualPage.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                VolumeKeyBehavior.INHERIT
+            }
+        }
+        val volBehaviorWebtoonD = async {
+            try { settingsRepository.volumeKeyBehaviorWebtoon.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                VolumeKeyBehavior.INHERIT
+            }
+        }
+        val volBehaviorSmartD = async {
+            try { settingsRepository.volumeKeyBehaviorSmartPanels.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                VolumeKeyBehavior.INHERIT
+            }
+        }
 
         val mode = modeD.await()
         val direction = directionD.await()
@@ -184,14 +209,31 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         } ?: colorFilterMode
         val effectiveTintColor = manga?.readerCustomTintColor ?: customTintColor
 
+        val globalVolKeysEnabled = volumeKeysEnabledD.await()
+        val globalVolKeysInverted = volumeKeysInvertedD.await()
+        val modeBehavior = when (effectiveMode) {
+            ReaderMode.SINGLE_PAGE  -> volBehaviorSingleD.await()
+            ReaderMode.DUAL_PAGE    -> volBehaviorDualD.await()
+            ReaderMode.WEBTOON      -> volBehaviorWebtoonD.await()
+            ReaderMode.SMART_PANELS -> volBehaviorSmartD.await()
+        }
+        val effectiveVolKeysEnabled: Boolean
+        val effectiveVolKeysInverted: Boolean
+        when (modeBehavior) {
+            VolumeKeyBehavior.DISABLED -> { effectiveVolKeysEnabled = false; effectiveVolKeysInverted = globalVolKeysInverted }
+            VolumeKeyBehavior.NORMAL   -> { effectiveVolKeysEnabled = true;  effectiveVolKeysInverted = false }
+            VolumeKeyBehavior.INVERTED -> { effectiveVolKeysEnabled = true;  effectiveVolKeysInverted = true }
+            else                       -> { effectiveVolKeysEnabled = globalVolKeysEnabled; effectiveVolKeysInverted = globalVolKeysInverted }
+        }
+
         current.copy(
             mode = effectiveMode,
             brightness = brightnessD.await(),
             keepScreenOn = keepScreenOnD.await(),
             showPageNumber = showPageNumberD.await(),
             readingDirection = effectiveDirection,
-            volumeKeysEnabled = volumeKeysEnabledD.await(),
-            volumeKeysInverted = volumeKeysInvertedD.await(),
+            volumeKeysEnabled = effectiveVolKeysEnabled,
+            volumeKeysInverted = effectiveVolKeysInverted,
             isFullscreen = fullscreenD.await(),
             incognitoMode = incognitoModeD.await(),
             colorFilterMode = effectiveColorFilter,

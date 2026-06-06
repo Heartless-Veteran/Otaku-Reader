@@ -90,6 +90,10 @@ data class SettingsState(
     val invertTapZones get() = reader.invertTapZones
     val volumeKeysEnabled get() = reader.volumeKeysEnabled
     val volumeKeysInverted get() = reader.volumeKeysInverted
+    val volumeKeyBehaviorSinglePage get() = reader.volumeKeyBehaviorSinglePage
+    val volumeKeyBehaviorDualPage get() = reader.volumeKeyBehaviorDualPage
+    val volumeKeyBehaviorWebtoon get() = reader.volumeKeyBehaviorWebtoon
+    val volumeKeyBehaviorSmartPanels get() = reader.volumeKeyBehaviorSmartPanels
     val showActionsOnLongTap get() = reader.showActionsOnLongTap
     val savePagesToSeparateFolders get() = reader.savePagesToSeparateFolders
     val webtoonSidePadding get() = reader.webtoonSidePadding
@@ -203,6 +207,7 @@ sealed interface SettingsEvent : UiEvent {
     // Reader - Volume Keys
     data class SetVolumeKeysEnabled(val enabled: Boolean) : SettingsEvent
     data class SetVolumeKeysInverted(val enabled: Boolean) : SettingsEvent
+    data class SetVolumeKeyBehaviorForMode(val mode: Int, val behavior: Int) : SettingsEvent
 
     // Reader - Interaction
     data class SetShowActionsOnLongTap(val enabled: Boolean) : SettingsEvent

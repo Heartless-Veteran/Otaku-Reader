@@ -80,10 +80,10 @@ data class ReaderState(
     /** Whether double-tap to zoom is enabled */
     val doubleTapZoomEnabled: Boolean = true,
 
-    /** Whether volume keys can be used for navigation */
+    /** Whether volume keys can be used for navigation (resolved from per-mode behavior) */
     val volumeKeysEnabled: Boolean = false,
 
-    /** Whether volume key directions are inverted (up=next) */
+    /** Whether volume key directions are inverted (resolved from per-mode behavior) */
     val volumeKeysInverted: Boolean = false,
 
     /** Keep screen on while reading */
