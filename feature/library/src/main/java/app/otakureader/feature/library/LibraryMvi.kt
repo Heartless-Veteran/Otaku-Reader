@@ -3,6 +3,7 @@ package app.otakureader.feature.library
 import app.otakureader.domain.model.ContinueReadingItem
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.ReadingGoal
+import app.otakureader.domain.model.SavedLibraryView
 
 enum class LibrarySortMode {
     ALPHABETICAL,
@@ -74,6 +75,10 @@ data class LibraryState(
     val showRecommendations: Boolean = true,
     // Advanced search sheet
     val showAdvancedSearch: Boolean = false,
+    // Saved views (#1039)
+    val savedViews: List<SavedLibraryView> = emptyList(),
+    val showSaveViewDialog: Boolean = false,
+    val saveViewName: String = "",
 )
 
 data class LibraryMangaItem(
@@ -156,6 +161,13 @@ sealed class LibraryEvent {
     // Single-manga selection actions (#995, #996)
     data object ShareSelectedManga : LibraryEvent()
     data object ViewSelectedManga : LibraryEvent()
+    // Saved views (#1039)
+    data object ShowSaveViewDialog : LibraryEvent()
+    data object HideSaveViewDialog : LibraryEvent()
+    data class UpdateSaveViewName(val name: String) : LibraryEvent()
+    data object ConfirmSaveView : LibraryEvent()
+    data class ApplySavedView(val view: SavedLibraryView) : LibraryEvent()
+    data class DeleteSavedView(val id: String) : LibraryEvent()
 }
 
 sealed class LibraryEffect {

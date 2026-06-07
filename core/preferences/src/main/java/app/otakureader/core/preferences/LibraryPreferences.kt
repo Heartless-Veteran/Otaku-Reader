@@ -8,8 +8,11 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import app.otakureader.domain.model.SavedLibraryView
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Preference store for library-related settings including grid size and badges.
@@ -152,6 +155,21 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // --- Saved Views (#1039) ---
+
+    /**
+     * Reactive list of user-saved named filter+sort combinations.
+     * Stored as a JSON array; empty list when no views have been saved yet.
+     */
+    val savedViews: Flow<List<SavedLibraryView>> = dataStore.data.map { prefs ->
+        val json = prefs[Keys.SAVED_VIEWS] ?: return@map emptyList()
+        runCatching { Json.decodeFromString<List<SavedLibraryView>>(json) }.getOrDefault(emptyList())
+    }
+
+    suspend fun setSavedViews(views: List<SavedLibraryView>) {
+        dataStore.edit { it[Keys.SAVED_VIEWS] = Json.encodeToString(views) }
+    }
+
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
@@ -177,5 +195,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val SHOW_RECOMMENDATIONS = booleanPreferencesKey("library_show_recommendations")
         val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
         val GROUP_BY_CATEGORY = booleanPreferencesKey("library_group_by_category")
+        val SAVED_VIEWS = stringPreferencesKey("library_saved_views")
     }
 }

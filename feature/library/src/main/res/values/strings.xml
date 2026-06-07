@@ -228,4 +228,10 @@
     <string name="merge_duplicates_primary_badge">Primary</string>
     <string name="merge_duplicates_chapters">%1$d ch.</string>
     <string name="merge_duplicates_unread">%1$d unread</string>
+
+    <!-- Saved library views (#1039) -->
+    <string name="library_save_view">Save current view</string>
+    <string name="library_saved_views">Saved views</string>
+    <string name="library_save_view_hint">View name</string>
+    <string name="library_save_view_confirm">Save</string>
 </resources>

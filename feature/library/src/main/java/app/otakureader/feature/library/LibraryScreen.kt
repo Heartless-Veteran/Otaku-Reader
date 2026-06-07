@@ -67,8 +67,16 @@ import app.otakureader.core.ui.adaptive.isExpanded
 import app.otakureader.core.ui.adaptive.rememberWindowWidthSizeClass
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import app.otakureader.domain.model.SavedLibraryView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -320,6 +328,13 @@ fun LibraryScreen(
                                 text = { Text(stringResource(R.string.library_scan_qr)) },
                                 onClick = { showMenu = false; onNavigateToScanLibrary() }
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_save_view)) },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.onEvent(LibraryEvent.ShowSaveViewDialog)
+                                }
+                            )
                         }
                     }
                 )
@@ -339,6 +354,15 @@ fun LibraryScreen(
             state = state,
             onEvent = viewModel::onEvent,
             onDismiss = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) },
+        )
+    }
+
+    if (state.showSaveViewDialog) {
+        SaveViewDialog(
+            name = state.saveViewName,
+            onNameChange = { viewModel.onEvent(LibraryEvent.UpdateSaveViewName(it)) },
+            onConfirm = { viewModel.onEvent(LibraryEvent.ConfirmSaveView) },
+            onDismiss = { viewModel.onEvent(LibraryEvent.HideSaveViewDialog) },
         )
     }
 }
@@ -417,6 +441,15 @@ private fun LibraryContent(
                     )
                 }
             }
+        }
+
+        // Saved views row: shown when there are saved views and search bar is closed.
+        if (state.savedViews.isNotEmpty() && !state.showSearchBar) {
+            SavedViewsRow(
+                savedViews = state.savedViews,
+                onApply = { onEvent(LibraryEvent.ApplySavedView(it)) },
+                onDelete = { onEvent(LibraryEvent.DeleteSavedView(it)) },
+            )
         }
 
         PullToRefreshBox(
@@ -536,4 +569,95 @@ private fun LibrarySearchFiltersRow(
             )
         }
     }
+}
+
+// ─── Saved views UI ────────────────────────────────────────────────────────────
+
+/**
+ * A horizontally scrollable row of [FilterChip]s, one per saved view.
+ *
+ * - Tap to apply a view (restores filter+sort).
+ * - Long-press to delete a saved view.
+ *
+ * The row is only shown when [savedViews] is non-empty (caller's responsibility).
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SavedViewsRow(
+    savedViews: List<SavedLibraryView>,
+    onApply: (SavedLibraryView) -> Unit,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.library_saved_views),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+        )
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(savedViews, key = { it.id }) { view ->
+                FilterChip(
+                    selected = false,
+                    onClick = { onApply(view) },
+                    label = { Text(view.name) },
+                    modifier = Modifier.combinedClickable(
+                        onClick = { onApply(view) },
+                        onLongClick = { onDelete(view.id) },
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * AlertDialog that lets the user type a name for the current filter+sort combination
+ * before saving it.
+ *
+ * @param name Current value of the name text field (from MVI state).
+ * @param onNameChange Called on every keystroke.
+ * @param onConfirm Called when the user taps Save; the ViewModel snapshots the current state.
+ * @param onDismiss Called when the user taps Cancel or dismisses the dialog.
+ */
+@Composable
+private fun SaveViewDialog(
+    name: String,
+    onNameChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.library_save_view)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = { Text(stringResource(R.string.library_save_view_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = name.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.library_save_view_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }
