@@ -496,6 +496,21 @@
     <string name="settings_widget_now_reading_description">Shows your most recent active chapter as a compact home or lock-screen widget.</string>
     <string name="settings_widgets_how_to_add">How to add widgets</string>
     <string name="settings_widgets_how_to_add_description">Long-press your launcher home screen, choose Widgets, then select an Otaku Reader widget. Widget refresh cadence is controlled by Android and the widget provider metadata.</string>
+    <string name="settings_widget_library">Library</string>
+    <string name="settings_widget_library_description">Shows your most-recently-read manga with cover art and reading progress.</string>
+    <!-- Widget configuration studio strings -->
+    <string name="widget_config_count_limit">Items to show: %1$d</string>
+    <string name="widget_config_tap_action">Tap action</string>
+    <string name="widget_config_tap_open_manga">Open manga details</string>
+    <string name="widget_config_tap_open_reader">Open reader</string>
+    <string name="widget_config_tap_open_app">Open app</string>
+    <string name="widget_config_category_filter">Filter by category</string>
+    <string name="widget_config_all_categories">All categories</string>
+    <string name="widget_config_show_thumbnails">Show thumbnails</string>
+    <string name="widget_config_preview_label">Preview</string>
+    <string name="widget_config_preview_item_placeholder">Manga title</string>
+    <string name="widget_config_preview_subtitle_placeholder">Chapter info</string>
+    <string name="widget_config_settings_saved">Widget settings saved</string>
     <string name="settings_local_source_supported_formats">Supported local library formats</string>
     <string name="settings_local_source_archives">Archives</string>
     <string name="settings_local_source_archives_description">CBZ, ZIP, and EPUB files can be scanned directly from the configured local-source directory.</string>
