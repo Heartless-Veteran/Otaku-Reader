@@ -8,6 +8,7 @@ import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
+import app.otakureader.domain.usecase.GetLastUpdateRunSummaryUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecentUpdatesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +32,7 @@ class UpdatesViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val getRecentUpdatesUseCase: GetRecentUpdatesUseCase,
     private val getLibraryMangaUseCase: GetLibraryMangaUseCase,
+    private val getLastUpdateRunSummaryUseCase: GetLastUpdateRunSummaryUseCase,
     private val generalPreferences: GeneralPreferences,
     private val downloadRepository: DownloadRepository,
     private val chapterRepository: ChapterRepository,
@@ -45,6 +47,7 @@ class UpdatesViewModel @Inject constructor(
 
     init {
         loadUpdates()
+        loadLastRunSummary()
         markUpdatesViewed()
     }
 
@@ -208,6 +211,16 @@ class UpdatesViewModel @Inject constructor(
             .catch { error ->
                 _state.update { it.copy(isLoading = false, error = error.message) }
             }
+            .launchIn(viewModelScope)
+    }
+
+    /** Observe the last library update run summary for the diagnostics card. */
+    private fun loadLastRunSummary() {
+        getLastUpdateRunSummaryUseCase()
+            .onEach { summary ->
+                _state.update { it.copy(lastRunSummary = summary) }
+            }
+            .catch { /* diagnostics failure should not affect the main updates list */ }
             .launchIn(viewModelScope)
     }
 

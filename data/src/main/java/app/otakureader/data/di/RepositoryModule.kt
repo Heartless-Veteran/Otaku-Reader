@@ -47,6 +47,7 @@ import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
 import app.otakureader.data.repository.DynamicCategoryRepositoryImpl
 import app.otakureader.data.repository.RecommendationRepositoryImpl
+import app.otakureader.data.repository.UpdateRunSummaryRepositoryImpl
 import app.otakureader.data.sync.SyncRepositoryImpl
 import app.otakureader.data.worker.ExtensionUpdateSchedulerImpl
 import app.otakureader.data.worker.SyncSchedulerImpl
@@ -55,6 +56,7 @@ import app.otakureader.domain.scheduler.CoverRefreshScheduler
 import app.otakureader.domain.scheduler.ExtensionUpdateScheduler
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.otakureader.domain.scheduler.ReminderScheduler
+import app.otakureader.domain.repository.UpdateRunSummaryRepository
 import app.otakureader.domain.scheduler.SyncScheduler
 import app.otakureader.domain.scheduler.TrackerSyncScheduler
 import app.otakureader.domain.tracking.TrackManager
@@ -163,6 +165,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindSyncScheduler(impl: SyncSchedulerImpl): SyncScheduler
+
+    @Binds
+    abstract fun bindUpdateRunSummaryRepository(impl: UpdateRunSummaryRepositoryImpl): UpdateRunSummaryRepository
 
     companion object {
         @Provides

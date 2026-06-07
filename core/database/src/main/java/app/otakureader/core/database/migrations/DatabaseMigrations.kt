@@ -411,6 +411,23 @@ internal val MIGRATION_33_34 = object : Migration(33, 34) {
     }
 }
 
+/** v34 → v35: Library update run history diagnostics (#1041). */
+internal val MIGRATION_34_35 = object : Migration(34, 35) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS update_run_summary (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                checkedCount INTEGER NOT NULL,
+                newChaptersCount INTEGER NOT NULL,
+                skippedCount INTEGER NOT NULL,
+                failedCount INTEGER NOT NULL,
+                durationMs INTEGER NOT NULL
+            )
+        """.trimIndent())
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -420,5 +437,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
-    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34
+    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35
 )

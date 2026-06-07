@@ -12,6 +12,8 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkerParameters
+import app.otakureader.core.database.dao.UpdateRunSummaryDao
+import app.otakureader.core.database.entity.UpdateRunSummaryEntity
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
@@ -47,11 +49,13 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val downloadManager: DownloadManager,
     private val chapterRepository: ChapterRepository,
     private val categoryRepository: CategoryRepository,
-    private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences
+    private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences,
+    private val updateRunSummaryDao: UpdateRunSummaryDao,
 ) : CoroutineWorker(context, workerParams) {
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     override suspend fun doWork(): Result {
+        val startTime = System.currentTimeMillis()
         return try {
             // Check if update should only run on Wi-Fi
             val updateOnlyOnWifi = libraryPreferences.updateOnlyOnWifi.first()
@@ -142,6 +146,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val successfullyUpdatedCategoryIds = mutableSetOf<Long>()
             var failedUpdates = 0
             var processedCount = 0
+            var newChapterTotal = 0
             val totalCount = libraryManga.size
 
             // Show progress notification if enabled
@@ -163,6 +168,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 val result = updateLibraryManga(manga)
 
                 result.onSuccess { newChapterCount ->
+                    newChapterTotal += newChapterCount
                     successfullyUpdatedCategoryIds.addAll(manga.categoryIds.filter { it in updatedCategoryIds })
                     if (newChapterCount > 0) {
                         // Only add to notification list if notifications enabled for this manga
@@ -229,6 +235,26 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     // Notification failures should not fail the entire library update.
                     Log.w(TAG, "Failed to send library update notification", e)
                 }
+            }
+
+            // Persist a diagnostics summary for the Updates screen (#1041).
+            try {
+                updateRunSummaryDao.insert(
+                    app.otakureader.core.database.entity.UpdateRunSummaryEntity(
+                        timestamp = System.currentTimeMillis(),
+                        checkedCount = totalCount,
+                        newChaptersCount = newChapterTotal,
+                        skippedCount = skippedManga.size,
+                        failedCount = failedUpdates,
+                        durationMs = System.currentTimeMillis() - startTime,
+                    )
+                )
+                // Keep only 90 days of history to prevent unbounded growth.
+                updateRunSummaryDao.deleteOlderThan(
+                    System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(90)
+                )
+            } catch (_: Exception) {
+                // Diagnostics failure must never fail the worker itself.
             }
 
             // Consider it a success if at least some manga were updated successfully

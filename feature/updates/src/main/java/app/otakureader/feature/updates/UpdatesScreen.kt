@@ -27,6 +27,8 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -194,6 +197,7 @@ fun UpdatesScreen(
             else -> UpdatesList(
                 updates = state.updates,
                 selectedItems = state.selectedItems,
+                lastRunSummary = state.lastRunSummary,
                 onChapterClick = { update ->
                     viewModel.onEvent(
                         UpdatesEvent.OnChapterClick(
@@ -277,6 +281,7 @@ private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
 private fun UpdatesList(
     updates: List<MangaUpdate>,
     selectedItems: Set<Long>,
+    lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
     onDownloadClick: (MangaUpdate) -> Unit,
@@ -298,6 +303,16 @@ private fun UpdatesList(
     }
 
     LazyColumn(modifier = modifier.fillMaxSize()) {
+        if (lastRunSummary != null) {
+            item(key = "last_run_summary") {
+                LastRunSummaryCard(
+                    summary = lastRunSummary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        }
         items(listItems, key = { item ->
             when (item) {
                 is UpdateListItem.Header -> "header_${item.bucket}"
@@ -598,6 +613,99 @@ private fun PendingUpdatesDialog(
             }
         }
     )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Last run summary diagnostics card (#1041)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun LastRunSummaryCard(
+    summary: app.otakureader.domain.model.UpdateRunSummary,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(
+                text = stringResource(R.string.updates_last_run_title),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                LastRunStat(
+                    label = stringResource(R.string.updates_last_run_checked),
+                    value = summary.checkedCount.toString(),
+                )
+                LastRunStat(
+                    label = stringResource(R.string.updates_last_run_new),
+                    value = summary.newChaptersCount.toString(),
+                    highlight = summary.newChaptersCount > 0,
+                )
+                LastRunStat(
+                    label = stringResource(R.string.updates_last_run_skipped),
+                    value = summary.skippedCount.toString(),
+                )
+                LastRunStat(
+                    label = stringResource(R.string.updates_last_run_failed),
+                    value = summary.failedCount.toString(),
+                    highlight = summary.failedCount > 0,
+                    highlightError = true,
+                )
+            }
+            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(
+                    R.string.updates_last_run_meta,
+                    formatFetchDate(summary.timestamp),
+                    formatDurationMs(summary.durationMs),
+                ),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LastRunStat(
+    label: String,
+    value: String,
+    highlight: Boolean = false,
+    highlightError: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = when {
+                highlight && highlightError -> MaterialTheme.colorScheme.error
+                highlight -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurface
+            },
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun formatDurationMs(durationMs: Long): String {
+    val seconds = durationMs / 1_000
+    return if (seconds < 60) "${seconds}s" else "${seconds / 60}m ${seconds % 60}s"
 }
 
 @Composable

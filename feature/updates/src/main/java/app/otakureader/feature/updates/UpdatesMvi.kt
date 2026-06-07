@@ -4,6 +4,7 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.domain.model.MangaUpdate
+import app.otakureader.domain.model.UpdateRunSummary
 
 /**
  * Represents a failed update entry for the error screen.
@@ -40,7 +41,9 @@ data class UpdatesState(
     /** List of manga that will be checked in the next update. */
     val pendingUpdates: List<PendingUpdateManga> = emptyList(),
     /** Whether the To-Be-Updated screen is visible. */
-    val showPendingUpdates: Boolean = false
+    val showPendingUpdates: Boolean = false,
+    /** Diagnostics card: summary of the last completed library update run (#1041). */
+    val lastRunSummary: UpdateRunSummary? = null,
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {
