@@ -1,5 +1,6 @@
 package app.otakureader.feature.browse
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.common.mvi.UiEffect
@@ -17,6 +18,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -40,6 +42,12 @@ data class ExtensionsState(
     val showUnverifiedInstallDialog: Boolean = false,
     val pendingUnverifiedExtension: Extension? = null,
     val hasUnverifiedExtensions: Boolean = false,
+    /**
+     * Package names of installed extensions whose current signer hash differs from the
+     * first-seen hash recorded at install time. A non-empty set means the signing certificate
+     * changed after the extension was first installed, which the UI should flag.
+     */
+    val signerMismatchedPackages: Set<String> = emptySet(),
 ) : UiState
 
 enum class SortMode {
@@ -177,13 +185,15 @@ class ExtensionsViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
-                // Collect installed extensions
+                // Collect installed extensions and maintain signer-hash continuity tracking.
                 extensionRepository.getInstalledExtensions()
                     .collect { extensions ->
+                        val mismatches = checkSignerHashContinuity(extensions)
                         _state.update {
                             it.copy(
                                 installedExtensions = extensions,
-                                isLoading = false
+                                isLoading = false,
+                                signerMismatchedPackages = mismatches,
                             )
                         }
                     }
@@ -453,5 +463,50 @@ class ExtensionsViewModel @Inject constructor(
                 else -> _effect.send(ExtensionsEffect.ShowSnackbar("$successCount updated, $failCount failed"))
             }
         }
+    }
+
+    /**
+     * For every installed extension that has a non-empty [Extension.signatureHash]:
+     * - If no first-seen hash is stored yet, records the current hash (first install).
+     * - If a hash was already stored and it differs from the current hash, logs a warning
+     *   and adds the package name to the returned mismatch set so the UI can flag it.
+     *
+     * This implements the "signer hash continuity" check described in #1049:
+     * a changed signing certificate after first install is a security-sensitive event.
+     *
+     * @return the set of package names whose current signer hash differs from first-seen.
+     */
+    private suspend fun checkSignerHashContinuity(extensions: List<Extension>): Set<String> {
+        val firstSeenHashes = generalPreferences.extensionFirstSeenHashes.first()
+        val mismatches = mutableSetOf<String>()
+
+        extensions.forEach { extension ->
+            val currentHash = extension.signatureHash
+            if (currentHash.isNullOrEmpty()) return@forEach // unsigned extension — skip
+
+            val knownHash = firstSeenHashes[extension.pkgName]
+            when {
+                knownHash == null -> {
+                    // First time we see this extension — record its hash for future comparisons.
+                    generalPreferences.recordExtensionFirstSeenHash(extension.pkgName, currentHash)
+                }
+                knownHash != currentHash -> {
+                    // Hash changed since first install — this is worth flagging.
+                    Log.w(
+                        TAG,
+                        "Signer hash changed for ${extension.pkgName}: " +
+                            "first-seen=$knownHash current=$currentHash"
+                    )
+                    mismatches.add(extension.pkgName)
+                }
+                // else: hash matches first-seen — all good
+            }
+        }
+
+        return mismatches
+    }
+
+    companion object {
+        private const val TAG = "ExtensionsViewModel"
     }
 }

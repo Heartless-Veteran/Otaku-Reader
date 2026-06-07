@@ -158,6 +158,7 @@
     <string name="source_unpin">Unpin source</string>
     <string name="source_set_category">Set category</string>
     <string name="source_category_hint">Category name</string>
+    <string name="extension_signer_mismatch_warning">Signer hash changed since first install</string>
 
     <string name="browse_scope_sources">Sources</string>
     <string name="browse_scope_library">Library</string>
