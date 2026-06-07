@@ -63,7 +63,7 @@ fun WebViewScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         WebViewTopBar(
-            onBack = { onClose(webViewRef?.let { WebViewCookieBridge.cookiesForUrl(url) }) },
+            onBack = { onClose(webViewRef?.let { viewModel.cookiesForUrl(url) }) },
             onNavigateBack = { webViewRef?.goBack() },
             onNavigateForward = { webViewRef?.goForward() },
             onReload = { webViewRef?.reload() },
