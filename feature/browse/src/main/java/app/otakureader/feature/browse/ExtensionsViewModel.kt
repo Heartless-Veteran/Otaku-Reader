@@ -180,12 +180,16 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
-    @Suppress("ThrowsCount")
     private fun loadExtensions() {
         _state.update { it.copy(isLoading = true, error = null) }
+        observeInstalledExtensions()
+        observeAvailableExtensions()
+        observeExtensionUpdates()
+    }
+
+    private fun observeInstalledExtensions() {
         viewModelScope.launch {
             try {
-                // Collect installed extensions and maintain signer-hash continuity tracking.
                 extensionRepository.getInstalledExtensions()
                     .collect { extensions ->
                         val mismatches = checkSignerHashContinuity(extensions)
@@ -201,49 +205,42 @@ class ExtensionsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load extensions"
-                    )
+                    it.copy(isLoading = false, error = e.message ?: "Failed to load extensions")
                 }
             }
         }
+    }
 
+    private fun observeAvailableExtensions() {
         viewModelScope.launch {
             try {
                 extensionRepository.getAvailableExtensions()
                     .collect { extensions ->
-                        val hasUnverified = extensions.any { it.signatureHash == null }
                         _state.update {
                             it.copy(
                                 availableExtensions = extensions,
-                                hasUnverifiedExtensions = hasUnverified
+                                hasUnverifiedExtensions = extensions.any { it.signatureHash == null },
                             )
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                // Don't show error for available extensions
-            }
+            } catch (_: Exception) { }
         }
+    }
 
+    private fun observeExtensionUpdates() {
         viewModelScope.launch {
             try {
                 extensionRepository.getExtensionsWithUpdates()
                     .collect { extensions ->
                         _state.update {
-                            it.copy(
-                                extensionsWithUpdates = extensions,
-                                updateCount = extensions.size
-                            )
+                            it.copy(extensionsWithUpdates = extensions, updateCount = extensions.size)
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                // Don't show error for updates
-            }
+            } catch (_: Exception) { }
         }
     }
 
