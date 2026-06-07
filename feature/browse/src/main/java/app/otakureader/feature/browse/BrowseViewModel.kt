@@ -213,10 +213,7 @@ class BrowseViewModel @Inject constructor(
                 it.copy(saveSearchName = event.name)
             }
             is BrowseEvent.ConfirmSaveSearch -> confirmSaveNamedSearch()
-            is BrowseEvent.ApplyNamedSavedSearch -> {
-                _state.update { it.copy(searchQuery = event.search.query) }
-                performSearch()
-            }
+            is BrowseEvent.ApplyNamedSavedSearch -> applyNamedSavedSearch(event.search)
             is BrowseEvent.DeleteNamedSavedSearch -> deleteNamedSavedSearch(event.id)
         }
     }
@@ -500,18 +497,22 @@ class BrowseViewModel @Inject constructor(
     // --- Named Saved Source Searches (#1051) ---
 
     /**
-     * Decodes the raw JSON from preferences into a list of [SavedSourceSearch] objects and keeps
-     * [BrowseState.namedSavedSearches] up-to-date.
+     * Decodes the raw JSON from preferences into a list of [SavedSourceSearch] objects, filters by
+     * the currently selected source, and keeps [BrowseState.namedSavedSearches] up-to-date.
      *
-     * We decode here (in the feature/ViewModel layer) rather than in [GeneralPreferences] so that
-     * `core:preferences` does not take a dependency on `domain` models.
+     * Combining with [currentSourceId] ensures chips only show for the active source — searches
+     * saved for other sources are hidden rather than mixed in.
      */
     private fun observeNamedSavedSearches() {
-        generalPreferences.savedSourceSearchesJson
-            .map { json ->
+        combine(
+            generalPreferences.savedSourceSearchesJson.map { json ->
                 runCatching { Json.decodeFromString<List<SavedSourceSearch>>(json) }.getOrDefault(emptyList())
-            }
-            .onEach { list -> _state.update { it.copy(namedSavedSearches = list) } }
+            },
+            _state.map { it.currentSourceId }.distinctUntilChanged()
+        ) { list, sourceId ->
+            if (sourceId != null) list.filter { it.sourceName == sourceId } else emptyList()
+        }
+            .onEach { filtered -> _state.update { it.copy(namedSavedSearches = filtered) } }
             .launchIn(viewModelScope)
     }
 
@@ -545,6 +546,28 @@ class BrowseViewModel @Inject constructor(
             }
         }
         _state.update { it.copy(showSaveSearchDialog = false, saveSearchName = "") }
+    }
+
+    private fun applyNamedSavedSearch(search: SavedSourceSearch) {
+        val savedSourceId = search.sourceName
+        val currentSourceId = _state.value.currentSourceId
+        if (savedSourceId.isNotEmpty() && savedSourceId != currentSourceId) {
+            _state.update {
+                it.copy(
+                    currentSourceId = savedSourceId,
+                    searchQuery = search.query,
+                    availableFilters = FilterList(),
+                    activeFilters = FilterList(),
+                    hasSearchResults = false,
+                    searchResults = emptyList()
+                )
+            }
+            loadPopularManga(savedSourceId)
+            loadSourceFilters(savedSourceId)
+        } else {
+            _state.update { it.copy(searchQuery = search.query) }
+        }
+        performSearch()
     }
 
     private fun deleteNamedSavedSearch(id: String) {
