@@ -14,10 +14,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -38,11 +42,39 @@ import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.navigation.Route
 import app.otakureader.domain.model.DataUsageRecord
 
+// ---------------------------------------------------------------------------
+// Navigation registration
+// ---------------------------------------------------------------------------
+
+fun NavGraphBuilder.dataUsageScreen(onNavigateBack: () -> Unit) {
+    composable<Route.DataUsage> {
+        DataUsageScreen(onNavigateBack = onNavigateBack)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+private const val BYTES_PER_GB = 1_073_741_824L
+private const val BYTES_PER_MB = 1_048_576L
+private const val BYTES_PER_KB = 1_024L
+
+/** Maximum MB value the budget slider can represent. */
+private const val BUDGET_MAX_MB = 10_000
+
+/** Number of discrete steps in the slider (100 positions → each step ≈ 100 MB). */
+private const val BUDGET_SLIDER_STEPS = 99
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataUsageScreen(
     onNavigateBack: () -> Unit,
-    viewModel: DataUsageViewModel = hiltViewModel()
+    viewModel: DataUsageViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -52,27 +84,35 @@ fun DataUsageScreen(
                 title = { Text(stringResource(R.string.settings_data_usage)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_data_usage_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_data_usage_back),
+                        )
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         if (state.isLoading) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
                 CircularProgressIndicator()
             }
             return@Scaffold
         }
 
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+
+            // --- Period tabs ---
             val tabs = DataUsageTab.entries
             TabRow(selectedTabIndex = state.selectedTab.ordinal) {
                 tabs.forEach { tab ->
                     Tab(
                         selected = state.selectedTab == tab,
                         onClick = { viewModel.onEvent(DataUsageEvent.SelectTab(tab)) },
-                        text = { Text(tab.label()) }
+                        text = { Text(tab.label()) },
                     )
                 }
             }
@@ -86,17 +126,114 @@ fun DataUsageScreen(
             NetworkSummaryChips(entries = entries)
 
             LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(0.dp),
             ) {
+
+                // --- Per-period category breakdown ---
                 val grouped = entries.groupBy { it.category }
                 items(grouped.entries.toList()) { (category, rows) ->
                     DataUsageRow(category = category, bytes = rows.sumOf { it.bytes })
+                }
+
+                // --- Monthly budget section ---
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    MonthlyBudgetSection(
+                        budgetMb = state.monthlyDataBudgetMb,
+                        monthBytesUsed = state.monthEntries.sumOf { it.bytes },
+                        onBudgetChanged = { mb ->
+                            viewModel.onEvent(DataUsageEvent.SetMonthlyDataBudgetMb(mb))
+                        },
+                    )
+                }
+
+                // --- Per-source breakdown ---
+                item {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = stringResource(R.string.data_usage_by_source),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+
+                if (state.sourceBreakdown.isEmpty()) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.data_usage_no_source_data),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
+                } else {
+                    items(state.sourceBreakdown) { entry ->
+                        DataUsageRow(
+                            category = entry.sourceName,
+                            bytes = entry.bytesThisMonth,
+                        )
+                    }
                 }
             }
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// Monthly budget section
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun MonthlyBudgetSection(
+    budgetMb: Int,
+    monthBytesUsed: Long,
+    onBudgetChanged: (Int) -> Unit,
+) {
+    val budgetLabel = if (budgetMb == 0) {
+        stringResource(R.string.data_usage_budget_unlimited)
+    } else {
+        formatBytes(budgetMb.toLong() * BYTES_PER_MB)
+    }
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.data_usage_monthly_budget)) },
+        supportingContent = {
+            Column {
+                Text(
+                    text = budgetLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Slider(
+                    value = budgetMb.toFloat(),
+                    onValueChange = { onBudgetChanged(it.toInt()) },
+                    valueRange = 0f..BUDGET_MAX_MB.toFloat(),
+                    steps = BUDGET_SLIDER_STEPS,
+                )
+                // Only show the progress bar when a budget has been set.
+                if (budgetMb > 0) {
+                    val used = monthBytesUsed / BYTES_PER_MB.toFloat()
+                    val progress = (used / budgetMb).coerceIn(0f, 1f)
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    )
+                    Text(
+                        text = "${formatBytes(monthBytesUsed)} / $budgetLabel",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+        },
+    )
+}
+
+// ---------------------------------------------------------------------------
+// Shared composables
+// ---------------------------------------------------------------------------
 
 @Composable
 private fun NetworkSummaryChips(entries: List<DataUsageRecord>) {
@@ -104,47 +241,49 @@ private fun NetworkSummaryChips(entries: List<DataUsageRecord>) {
     val mobileBytes = entries.filter { it.network == NetworkType.MOBILE.name }.sumOf { it.bytes }
     Row(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.settings_data_usage_wifi, formatBytes(wifiBytes))) })
-        SuggestionChip(onClick = {}, label = { Text(stringResource(R.string.settings_data_usage_mobile, formatBytes(mobileBytes))) })
+        SuggestionChip(
+            onClick = {},
+            label = { Text(stringResource(R.string.settings_data_usage_wifi, formatBytes(wifiBytes))) },
+        )
+        SuggestionChip(
+            onClick = {},
+            label = { Text(stringResource(R.string.settings_data_usage_mobile, formatBytes(mobileBytes))) },
+        )
     }
 }
 
 @Composable
 private fun DataUsageRow(category: String, bytes: Long) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = category.lowercase().replace('_', ' ').replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
         )
         Text(
             text = formatBytes(bytes),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
 
-private const val BYTES_PER_GB = 1_073_741_824L
-private const val BYTES_PER_MB = 1_048_576L
-private const val BYTES_PER_KB = 1_024L
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 private fun formatBytes(bytes: Long): String = when {
     bytes >= BYTES_PER_GB -> "%.1f GB".format(bytes / BYTES_PER_GB.toDouble())
     bytes >= BYTES_PER_MB -> "%.1f MB".format(bytes / BYTES_PER_MB.toDouble())
     bytes >= BYTES_PER_KB -> "%.1f KB".format(bytes / BYTES_PER_KB.toDouble())
-    else                  -> "$bytes B"
-}
-
-fun NavGraphBuilder.dataUsageScreen(onNavigateBack: () -> Unit) {
-    composable<Route.DataUsage> {
-        DataUsageScreen(onNavigateBack = onNavigateBack)
-    }
+    else -> "$bytes B"
 }
 
 @Composable
