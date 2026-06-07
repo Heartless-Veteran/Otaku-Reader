@@ -284,6 +284,54 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setDarkModeEndMinuteOfDay(value: Int) =
         dataStore.edit { it[Keys.DARK_MODE_END_MINUTE] = value.coerceIn(0, 1439) }
 
+    // --- Source Pinning & Categories ---
+
+    /**
+     * Set of source IDs that the user has pinned in Browse.
+     * Stored as a comma-separated string in DataStore.
+     */
+    val pinnedSourceIds: Flow<Set<Long>> = dataStore.data.map { prefs ->
+        val raw = prefs[Keys.PINNED_SOURCE_IDS] ?: return@map emptySet()
+        raw.split(",").filter { it.isNotBlank() }.mapNotNull { it.trim().toLongOrNull() }.toSet()
+    }
+
+    suspend fun setPinnedSourceIds(ids: Set<Long>) = dataStore.edit { prefs ->
+        if (ids.isEmpty()) prefs.remove(Keys.PINNED_SOURCE_IDS)
+        else prefs[Keys.PINNED_SOURCE_IDS] = ids.joinToString(",")
+    }
+
+    suspend fun togglePinnedSource(sourceId: Long) = dataStore.edit { prefs ->
+        val current = prefs[Keys.PINNED_SOURCE_IDS]
+            ?.split(",")?.filter { it.isNotBlank() }?.mapNotNull { it.trim().toLongOrNull() }?.toMutableSet()
+            ?: mutableSetOf()
+        if (sourceId in current) current.remove(sourceId) else current.add(sourceId)
+        if (current.isEmpty()) prefs.remove(Keys.PINNED_SOURCE_IDS)
+        else prefs[Keys.PINNED_SOURCE_IDS] = current.joinToString(",")
+    }
+
+    /**
+     * Map of source ID → user-defined category label.
+     * Stored as a JSON object (Map<String, String>) in DataStore.
+     */
+    val sourceCategoryMap: Flow<Map<Long, String>> = dataStore.data.map { prefs ->
+        val raw = prefs[Keys.SOURCE_CATEGORY_MAP] ?: return@map emptyMap()
+        runCatching {
+            Json.decodeFromString<Map<String, String>>(raw)
+                .entries.mapNotNull { (k, v) -> k.toLongOrNull()?.let { it to v } }
+                .toMap()
+        }.getOrDefault(emptyMap())
+    }
+
+    suspend fun setSourceCategory(sourceId: Long, category: String) = dataStore.edit { prefs ->
+        val raw = prefs[Keys.SOURCE_CATEGORY_MAP]
+        val current: MutableMap<String, String> = raw
+            ?.let { runCatching { Json.decodeFromString<Map<String, String>>(it) }.getOrDefault(emptyMap()) }
+            ?.toMutableMap() ?: mutableMapOf()
+        if (category.isBlank()) current.remove(sourceId.toString()) else current[sourceId.toString()] = category.trim()
+        if (current.isEmpty()) prefs.remove(Keys.SOURCE_CATEGORY_MAP)
+        else prefs[Keys.SOURCE_CATEGORY_MAP] = Json.encodeToString(current)
+    }
+
     // --- Image Cache ---
 
     /**
@@ -334,6 +382,8 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DARK_MODE_SCHEDULE_ENABLED = booleanPreferencesKey("dark_mode_schedule_enabled")
         val DARK_MODE_START_MINUTE = intPreferencesKey("dark_mode_start_minute")
         val DARK_MODE_END_MINUTE = intPreferencesKey("dark_mode_end_minute")
+        val PINNED_SOURCE_IDS = stringPreferencesKey("pinned_source_ids")
+        val SOURCE_CATEGORY_MAP = stringPreferencesKey("source_category_map")
     }
 
     companion object {

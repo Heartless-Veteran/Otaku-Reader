@@ -90,6 +90,7 @@ class BrowseViewModel @Inject constructor(
             _state.update { it.copy(selectedManga = ids, isBulkSelectionMode = active) }
         }.launchIn(viewModelScope)
         observeSearchHistory()
+        observeSourcePinning()
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -172,6 +173,31 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ClearSearchHistory -> viewModelScope.launch { generalPreferences.clearBrowseSearchHistory() }
             is BrowseEvent.DeleteSearchHistoryItem ->
                 viewModelScope.launch { generalPreferences.removeBrowseSearchHistory(event.query) }
+
+            // Source pinning & categories
+            is BrowseEvent.TogglePinSource ->
+                viewModelScope.launch { generalPreferences.togglePinnedSource(event.sourceId) }
+            is BrowseEvent.OpenSetCategoryDialog -> _state.update {
+                it.copy(
+                    showSetCategoryDialog = true,
+                    categoryDialogSourceId = event.sourceId,
+                    categoryDialogText = event.currentCategory,
+                )
+            }
+            is BrowseEvent.UpdateCategoryDialogText -> _state.update {
+                it.copy(categoryDialogText = event.text)
+            }
+            is BrowseEvent.ConfirmSetCategory -> {
+                val state = _state.value
+                val sid = state.categoryDialogSourceId ?: return
+                viewModelScope.launch {
+                    generalPreferences.setSourceCategory(sid, state.categoryDialogText)
+                }
+                _state.update { it.copy(showSetCategoryDialog = false, categoryDialogSourceId = null, categoryDialogText = "") }
+            }
+            is BrowseEvent.DismissSetCategoryDialog -> _state.update {
+                it.copy(showSetCategoryDialog = false, categoryDialogSourceId = null, categoryDialogText = "")
+            }
         }
     }
 
@@ -438,6 +464,16 @@ class BrowseViewModel @Inject constructor(
     private fun observeSearchHistory() {
         generalPreferences.browseSearchHistory
             .onEach { history -> _state.update { it.copy(searchHistory = history) } }
+            .launchIn(viewModelScope)
+    }
+
+    /** Keeps [BrowseState.pinnedSourceIds] and [BrowseState.sourceCategoryMap] in sync with preferences. */
+    private fun observeSourcePinning() {
+        generalPreferences.pinnedSourceIds
+            .onEach { ids -> _state.update { it.copy(pinnedSourceIds = ids) } }
+            .launchIn(viewModelScope)
+        generalPreferences.sourceCategoryMap
+            .onEach { map -> _state.update { it.copy(sourceCategoryMap = map) } }
             .launchIn(viewModelScope)
     }
 
