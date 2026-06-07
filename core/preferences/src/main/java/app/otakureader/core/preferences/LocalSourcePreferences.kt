@@ -30,20 +30,20 @@ open class LocalSourcePreferences(private val dataStore: DataStore<Preferences>)
     }
 
     /**
-     * Whether the local source scanner should include dot-prefixed (hidden) directories.
-     * Defaults to `false` so that directories like `.thumbnails` or `.nomedia` are skipped
-     * unless the user explicitly opts in.
+     * When true, the local source scanner includes dot-prefixed (hidden) directories and
+     * files within [localSourceDirectory]. Defaults to false so hidden system folders are
+     * not inadvertently surfaced as manga entries.
      */
     open val allowLocalSourceHiddenFolders: Flow<Boolean> =
-        dataStore.data.map { it[Keys.ALLOW_LOCAL_SOURCE_HIDDEN_FOLDERS] ?: false }
+        dataStore.data.map { it[Keys.ALLOW_HIDDEN_FOLDERS] ?: false }
 
-    open suspend fun setAllowLocalSourceHiddenFolders(enabled: Boolean) {
-        dataStore.edit { it[Keys.ALLOW_LOCAL_SOURCE_HIDDEN_FOLDERS] = enabled }
+    open suspend fun setAllowLocalSourceHiddenFolders(allowed: Boolean) {
+        dataStore.edit { it[Keys.ALLOW_HIDDEN_FOLDERS] = allowed }
     }
 
     private object Keys {
         val LOCAL_SOURCE_DIRECTORY = stringPreferencesKey("local_source_directory")
-        val ALLOW_LOCAL_SOURCE_HIDDEN_FOLDERS = booleanPreferencesKey("allow_local_source_hidden_folders")
+        val ALLOW_HIDDEN_FOLDERS = booleanPreferencesKey("local_source_allow_hidden_folders")
     }
 
     companion object {
@@ -60,10 +60,12 @@ open class LocalSourcePreferences(private val dataStore: DataStore<Preferences>)
          * [localSourceDirectory].  Intended for tests and standalone utilities that
          * do not have a proper DataStore instance available.
          */
-        fun ofDirectory(directory: String): LocalSourcePreferences =
+        fun ofDirectory(directory: String, allowHidden: Boolean = false): LocalSourcePreferences =
             object : LocalSourcePreferences(NoOpDataStore) {
                 override val localSourceDirectory: Flow<String> = flowOf(directory)
                 override suspend fun setLocalSourceDirectory(path: String) = Unit
+                override val allowLocalSourceHiddenFolders: Flow<Boolean> = flowOf(allowHidden)
+                override suspend fun setAllowLocalSourceHiddenFolders(allowed: Boolean) = Unit
             }
 
         /** No-op DataStore used by [ofDirectory] — its data is never actually read. */
@@ -75,3 +77,4 @@ open class LocalSourcePreferences(private val dataStore: DataStore<Preferences>)
         }
     }
 }
+

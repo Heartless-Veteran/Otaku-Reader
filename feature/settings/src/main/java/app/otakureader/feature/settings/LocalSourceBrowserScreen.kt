@@ -107,16 +107,15 @@ fun LocalSourceBrowserScreen(
                     },
                 )
             }
-            item(key = "hidden_folders_toggle") {
+            item(key = "hidden_folders_divider") { HorizontalDivider() }
+            item(key = "hidden_folders") {
                 ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_local_source_hidden_folders)) },
-                    supportingContent = { Text(stringResource(R.string.settings_local_source_hidden_folders_description)) },
+                    headlineContent = { Text(stringResource(R.string.settings_local_source_allow_hidden_folders)) },
+                    supportingContent = { Text(stringResource(R.string.settings_local_source_allow_hidden_folders_description)) },
                     trailingContent = {
                         Switch(
                             checked = state.allowLocalSourceHiddenFolders,
-                            onCheckedChange = {
-                                viewModel.onEvent(SettingsEvent.SetAllowLocalSourceHiddenFolders(it))
-                            },
+                            onCheckedChange = { viewModel.onEvent(SettingsEvent.SetAllowLocalSourceHiddenFolders(it)) },
                         )
                     },
                 )
