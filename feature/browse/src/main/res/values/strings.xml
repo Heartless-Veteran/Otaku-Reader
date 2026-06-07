@@ -10,6 +10,9 @@
     <string name="browse_title">Browse</string>
     <string name="browse_search">Search</string>
     <string name="browse_save_search">Save search</string>
+    <string name="browse_saved_searches">Saved searches</string>
+    <string name="browse_save_search_hint">Search name</string>
+    <string name="browse_save_search_confirm">Save</string>
     <string name="browse_delete_saved_search">Delete saved search</string>
     <string name="browse_install_extension">Install Extension</string>
     <string name="browse_search_placeholder">Search manga&#8230;</string>

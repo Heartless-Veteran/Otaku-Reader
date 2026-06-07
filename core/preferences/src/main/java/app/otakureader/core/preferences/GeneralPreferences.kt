@@ -157,6 +157,19 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.SAVED_SEARCHES] = current.joinToString("\n")
     }
 
+    // --- Saved Source Searches (#1051) ---
+    // Stored as a raw JSON array string; deserialization to SavedSourceSearch is done by the
+    // ViewModel (feature layer) to avoid a domain dependency from this core module.
+
+    /** Raw JSON string of the saved source searches list. */
+    val savedSourceSearchesJson: Flow<String> = dataStore.data.map { prefs ->
+        prefs[Keys.SAVED_SOURCE_SEARCHES_JSON] ?: "[]"
+    }
+
+    suspend fun setSavedSourceSearchesJson(json: String) = dataStore.edit { prefs ->
+        prefs[Keys.SAVED_SOURCE_SEARCHES_JSON] = json
+    }
+
     // --- Browse Search History ---
 
     val browseSearchHistory: Flow<List<String>> = dataStore.data.map { prefs ->
@@ -413,6 +426,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DARK_MODE_END_MINUTE = intPreferencesKey("dark_mode_end_minute")
         val PINNED_SOURCE_IDS = stringPreferencesKey("pinned_source_ids")
         val SOURCE_CATEGORY_MAP = stringPreferencesKey("source_category_map")
+        val SAVED_SOURCE_SEARCHES_JSON = stringPreferencesKey("saved_source_searches_json")
     }
 
     companion object {

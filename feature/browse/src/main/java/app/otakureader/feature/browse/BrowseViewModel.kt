@@ -12,6 +12,7 @@ import app.otakureader.domain.usecase.source.GetLatestUpdatesUseCase
 import app.otakureader.domain.usecase.source.GetPopularMangaUseCase
 import app.otakureader.domain.usecase.source.GetSourceFiltersUseCase
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
+import app.otakureader.domain.model.SavedSourceSearch
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.source.SearchMangaUseCase
 import app.otakureader.sourceapi.FilterList
@@ -32,6 +33,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -91,6 +93,7 @@ class BrowseViewModel @Inject constructor(
         }.launchIn(viewModelScope)
         observeSearchHistory()
         observeSourcePinning()
+        observeNamedSavedSearches()
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
@@ -198,6 +201,23 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.DismissSetCategoryDialog -> _state.update {
                 it.copy(showSetCategoryDialog = false, categoryDialogSourceId = null, categoryDialogText = "")
             }
+
+            // Named saved source searches (#1051)
+            is BrowseEvent.ShowSaveSearchDialog -> _state.update {
+                it.copy(showSaveSearchDialog = true, saveSearchName = "")
+            }
+            is BrowseEvent.HideSaveSearchDialog -> _state.update {
+                it.copy(showSaveSearchDialog = false, saveSearchName = "")
+            }
+            is BrowseEvent.UpdateSaveSearchName -> _state.update {
+                it.copy(saveSearchName = event.name)
+            }
+            is BrowseEvent.ConfirmSaveSearch -> confirmSaveNamedSearch()
+            is BrowseEvent.ApplyNamedSavedSearch -> {
+                _state.update { it.copy(searchQuery = event.search.query) }
+                performSearch()
+            }
+            is BrowseEvent.DeleteNamedSavedSearch -> deleteNamedSavedSearch(event.id)
         }
     }
 
@@ -476,6 +496,71 @@ class BrowseViewModel @Inject constructor(
             .onEach { map -> _state.update { it.copy(sourceCategoryMap = map) } }
             .launchIn(viewModelScope)
     }
+
+    // --- Named Saved Source Searches (#1051) ---
+
+    /**
+     * Decodes the raw JSON from preferences into a list of [SavedSourceSearch] objects and keeps
+     * [BrowseState.namedSavedSearches] up-to-date.
+     *
+     * We decode here (in the feature/ViewModel layer) rather than in [GeneralPreferences] so that
+     * `core:preferences` does not take a dependency on `domain` models.
+     */
+    private fun observeNamedSavedSearches() {
+        generalPreferences.savedSourceSearchesJson
+            .map { json ->
+                runCatching { Json.decodeFromString<List<SavedSourceSearch>>(json) }.getOrDefault(emptyList())
+            }
+            .onEach { list -> _state.update { it.copy(namedSavedSearches = list) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun confirmSaveNamedSearch() {
+        val state = _state.value
+        val name = state.saveSearchName.trim()
+        if (name.isBlank()) {
+            viewModelScope.launch { _effect.send(BrowseEffect.ShowSnackbar("Enter a name for the search")) }
+            return
+        }
+        val query = state.searchQuery.trim()
+        if (query.isBlank()) {
+            viewModelScope.launch { _effect.send(BrowseEffect.ShowSnackbar("Enter a search query first")) }
+            return
+        }
+        val sourceId = state.currentSourceId
+        val newSearch = SavedSourceSearch(
+            name = name,
+            query = query,
+            sourceId = sourceId?.toLongOrNull() ?: 0L,
+            sourceName = sourceId ?: "",
+        )
+        val updated = state.namedSavedSearches + newSearch
+        viewModelScope.launch {
+            runCatching {
+                generalPreferences.setSavedSourceSearchesJson(Json.encodeToString(updated))
+            }.onSuccess {
+                _effect.send(BrowseEffect.ShowSnackbar("Search \"$name\" saved"))
+            }.onFailure {
+                _effect.send(BrowseEffect.ShowSnackbar("Failed to save search"))
+            }
+        }
+        _state.update { it.copy(showSaveSearchDialog = false, saveSearchName = "") }
+    }
+
+    private fun deleteNamedSavedSearch(id: String) {
+        val updated = _state.value.namedSavedSearches.filterNot { it.id == id }
+        viewModelScope.launch {
+            try {
+                generalPreferences.setSavedSourceSearchesJson(Json.encodeToString(updated))
+                _effect.send(BrowseEffect.ShowSnackbar("Saved search removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BrowseEffect.ShowSnackbar("Failed to remove saved search"))
+            }
+        }
+    }
+
 
     private var librarySearchJob: kotlinx.coroutines.Job? = null
 

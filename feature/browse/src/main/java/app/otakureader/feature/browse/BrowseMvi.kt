@@ -4,6 +4,7 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.domain.model.FeedSavedSearch
+import app.otakureader.domain.model.SavedSourceSearch
 import app.otakureader.domain.model.SourceHealthEntry
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.SourceManga
@@ -51,6 +52,12 @@ data class BrowseState(
     val sourceHealth: Map<Long, SourceHealthEntry> = emptyMap(),
     /** Source ID whose diagnostic sheet is currently open; null means sheet is hidden. */
     val selectedDiagnosticSourceId: Long? = null,
+    /** Named source search queries bookmarked by the user (#1051). */
+    val namedSavedSearches: List<SavedSourceSearch> = emptyList(),
+    /** Whether the "Save search" dialog is visible. */
+    val showSaveSearchDialog: Boolean = false,
+    /** Current text in the "Save search" name field. */
+    val saveSearchName: String = "",
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -101,6 +108,20 @@ sealed interface BrowseEvent : UiEvent {
     data object ConfirmSetCategory : BrowseEvent
     /** User dismissed the category dialog without saving. */
     data object DismissSetCategoryDialog : BrowseEvent
+
+    // --- Named saved source searches (#1051) ---
+    /** Opens the "Save search" dialog for the current query + source. */
+    data object ShowSaveSearchDialog : BrowseEvent
+    /** Dismisses the "Save search" dialog without saving. */
+    data object HideSaveSearchDialog : BrowseEvent
+    /** Updates the name field in the "Save search" dialog. */
+    data class UpdateSaveSearchName(val name: String) : BrowseEvent
+    /** Saves the current search query under the given name. */
+    data object ConfirmSaveSearch : BrowseEvent
+    /** Re-applies a previously saved named search (sets query + runs search). */
+    data class ApplyNamedSavedSearch(val search: SavedSourceSearch) : BrowseEvent
+    /** Removes a saved named search by its UUID id. */
+    data class DeleteNamedSavedSearch(val id: String) : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {
