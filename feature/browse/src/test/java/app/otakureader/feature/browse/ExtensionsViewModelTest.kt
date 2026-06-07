@@ -385,7 +385,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `add repository calls repo repository`() = runTest {
-        coEvery { extensionRepoRepository.addRepository("https://newrepo.com") } just runs
+        coEvery { extensionRepoRepository.addRepository("https://newrepo.com") } just Awaits
 
         viewModel.onEvent(ExtensionsEvent.AddRepository("https://newrepo.com"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -403,7 +403,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `remove repository calls repo repository`() = runTest {
-        coEvery { extensionRepoRepository.removeRepository("https://repo1.com") } just runs
+        coEvery { extensionRepoRepository.removeRepository("https://repo1.com") } just Awaits
 
         viewModel.onEvent(ExtensionsEvent.RemoveRepository("https://repo1.com"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -635,7 +635,7 @@ class ExtensionsViewModelTest {
     fun `toggle extension enabled calls repository and refreshes sources`() = runTest {
         val ext = createExtension(id = 1L, pkgName = "app.ext1", name = "Toggle Me")
 
-        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } just runs
+        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } just Awaits
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, false))
