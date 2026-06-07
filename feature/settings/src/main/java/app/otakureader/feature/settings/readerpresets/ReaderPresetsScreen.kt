@@ -51,21 +51,23 @@ fun NavGraphBuilder.readerPresetsScreen(onNavigateBack: () -> Unit) {
     }
 }
 
+@Composable
 private fun readerModeName(mode: Int): String = when (mode) {
-    0 -> "Single Page"
-    1 -> "Dual Page"
-    2 -> "Webtoon"
-    3 -> "Smart Panels"
-    else -> "Mode $mode"
+    0 -> stringResource(R.string.reader_mode_single_page)
+    1 -> stringResource(R.string.reader_mode_dual_page)
+    2 -> stringResource(R.string.reader_mode_webtoon)
+    3 -> stringResource(R.string.reader_mode_smart_panels)
+    else -> stringResource(R.string.reader_presets_mode_label, mode)
 }
 
+@Composable
 private fun readerScaleName(scale: Int): String = when (scale) {
-    0 -> "Fit Screen"
-    1 -> "Fit Width"
-    2 -> "Fit Height"
-    3 -> "Original"
-    4 -> "Smart Fit"
-    else -> "Scale $scale"
+    0 -> stringResource(R.string.reader_scale_fit_screen)
+    1 -> stringResource(R.string.reader_scale_fit_width)
+    2 -> stringResource(R.string.reader_scale_fit_height)
+    3 -> stringResource(R.string.reader_scale_original)
+    4 -> stringResource(R.string.reader_scale_smart_fit)
+    else -> stringResource(R.string.reader_presets_mode_label, scale)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -179,15 +181,15 @@ private fun PresetCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val extras = buildList {
-                    if (preset.volumeKeysEnabled) add("Vol keys")
-                    if (preset.showPageNumber) add("Page #")
-                    if (preset.invertTapZones) add("Inverted taps")
+                val details = buildList {
+                    if (preset.volumeKeysEnabled) add(stringResource(R.string.reader_presets_detail_volume_keys))
+                    if (preset.skipReadChapters) add(stringResource(R.string.reader_presets_detail_skip_read))
+                    if (preset.invertTapZones) add(stringResource(R.string.reader_presets_detail_inverted_taps))
                 }
-                if (extras.isNotEmpty()) {
+                if (details.isNotEmpty()) {
                     Text(
-                        text = extras.joinToString(" · "),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = details.joinToString(" · "),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
