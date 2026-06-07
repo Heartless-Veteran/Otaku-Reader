@@ -33,10 +33,23 @@ class WebViewCookieBridge @Inject constructor() {
     fun syncCookiesToOkHttp(url: String, cookieJar: CookieJar) {
         val httpUrl = url.toHttpUrlOrNull() ?: return
         val raw = CookieManager.getInstance().getCookie(url) ?: return
-        val cookies = raw.split(";")
-            .mapNotNull { part ->
-                Cookie.parse(httpUrl, part.trim())
-            }
+        // CookieManager returns "name=value; name2=value2" — no domain/path metadata.
+        // Cookie.parse() would default the path to the challenge URL's path and mark cookies
+        // as host-only, preventing them from being sent to other paths or subdomains.
+        // Use Cookie.Builder with domain(host) and path("/") so cookies apply site-wide.
+        val cookies = raw.split(";").mapNotNull { part ->
+            val kv = part.trim().split("=", limit = 2)
+            if (kv.size != 2) return@mapNotNull null
+            runCatching {
+                Cookie.Builder()
+                    .name(kv[0].trim())
+                    .value(kv[1].trim())
+                    .domain(httpUrl.host)
+                    .path("/")
+                    .apply { if (httpUrl.isHttps) secure() }
+                    .build()
+            }.getOrNull()
+        }
         if (cookies.isNotEmpty()) {
             cookieJar.saveFromResponse(httpUrl, cookies)
         }
