@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,6 +40,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
@@ -89,7 +91,8 @@ fun LibraryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
-    
+    var pendingBulkAction: LibraryEvent? by remember { mutableStateOf(null) }
+
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
@@ -128,7 +131,42 @@ fun LibraryScreen(
             }
         }
     }
-    
+
+    pendingBulkAction?.let { action ->
+        val actionLabel = when (action) {
+            is LibraryEvent.RemoveSelectedFromLibrary -> stringResource(R.string.library_remove_selected)
+            is LibraryEvent.MarkSelectedAsCompleted -> stringResource(R.string.library_mark_selected_completed)
+            is LibraryEvent.MarkSelectedAsDropped -> stringResource(R.string.library_mark_selected_dropped)
+            else -> ""
+        }
+        AlertDialog(
+            onDismissRequest = { pendingBulkAction = null },
+            title = { Text(stringResource(R.string.library_bulk_action_confirm_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.library_bulk_action_confirm_message,
+                        state.selectedManga.size,
+                        actionLabel,
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.onEvent(action)
+                    pendingBulkAction = null
+                }) {
+                    Text(stringResource(R.string.library_bulk_action_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingBulkAction = null }) {
+                    Text(stringResource(R.string.library_bulk_action_cancel))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             when {
@@ -154,7 +192,7 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.DownloadSelected) }) {
                             Icon(Icons.Default.Download, contentDescription = stringResource(R.string.library_download_selected))
                         }
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.RemoveSelectedFromLibrary) }) {
+                        IconButton(onClick = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary }) {
                             Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.library_remove_selected))
                         }
                         var selectionOverflowExpanded by remember { mutableStateOf(false) }
@@ -171,14 +209,14 @@ fun LibraryScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_mark_selected_completed)) },
                                 onClick = {
-                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsCompleted)
+                                    pendingBulkAction = LibraryEvent.MarkSelectedAsCompleted
                                     selectionOverflowExpanded = false
                                 },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_mark_selected_dropped)) },
                                 onClick = {
-                                    viewModel.onEvent(LibraryEvent.MarkSelectedAsDropped)
+                                    pendingBulkAction = LibraryEvent.MarkSelectedAsDropped
                                     selectionOverflowExpanded = false
                                 },
                             )
