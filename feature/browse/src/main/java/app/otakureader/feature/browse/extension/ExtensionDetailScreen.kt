@@ -216,12 +216,11 @@ private fun ExtensionDetailContent(
         HorizontalDivider()
 
         // ── Signer hash ───────────────────────────────────────────────────────
-        val sigHash = extension.signatureHash
-        if (sigHash != null) {
+        extension.signatureHash?.let { hash ->
             LabeledSection(label = stringResource(R.string.extension_detail_signer)) {
                 Text(
-                    text = sigHash.take(SIGNER_DISPLAY_LENGTH) +
-                        if (sigHash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
+                    text = hash.take(SIGNER_DISPLAY_LENGTH) +
+                        if (hash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -229,12 +228,11 @@ private fun ExtensionDetailContent(
         }
 
         // ── Repository URL ────────────────────────────────────────────────────
-        val repoUrl = extension.repoUrl
-        if (!repoUrl.isNullOrBlank()) {
+        extension.repoUrl?.takeIf { it.isNotBlank() }?.let { url ->
             LabeledSection(label = stringResource(R.string.extension_detail_repo)) {
                 TextButton(
                     onClick = {
-                        val uri = Uri.parse(repoUrl)
+                        val uri = Uri.parse(url)
                         if (uri.scheme == "https" || uri.scheme == "http") {
                             runCatching {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, uri))
@@ -244,7 +242,7 @@ private fun ExtensionDetailContent(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                 ) {
                     Text(
-                        text = repoUrl,
+                        text = url,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
