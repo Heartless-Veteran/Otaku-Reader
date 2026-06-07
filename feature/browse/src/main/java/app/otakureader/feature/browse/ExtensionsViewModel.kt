@@ -479,6 +479,7 @@ class ExtensionsViewModel @Inject constructor(
     private suspend fun checkSignerHashContinuity(extensions: List<Extension>): Set<String> {
         val firstSeenHashes = generalPreferences.extensionFirstSeenHashes.first()
         val mismatches = mutableSetOf<String>()
+        val newHashes = mutableMapOf<String, String>()
 
         extensions.forEach { extension ->
             val currentHash = extension.signatureHash
@@ -487,8 +488,8 @@ class ExtensionsViewModel @Inject constructor(
             val knownHash = firstSeenHashes[extension.pkgName]
             when {
                 knownHash == null -> {
-                    // First time we see this extension — record its hash for future comparisons.
-                    generalPreferences.recordExtensionFirstSeenHash(extension.pkgName, currentHash)
+                    // First time we see this extension — stage its hash for the batch write below.
+                    newHashes[extension.pkgName] = currentHash
                 }
                 knownHash != currentHash -> {
                     // Hash changed since first install — this is worth flagging.
@@ -501,6 +502,13 @@ class ExtensionsViewModel @Inject constructor(
                 }
                 // else: hash matches first-seen — all good
             }
+        }
+
+        // Write all newly-seen hashes in a single DataStore transaction instead of one per
+        // extension. On first run with many extensions installed this avoids N sequential disk
+        // flushes and brings the cost down to a single write regardless of collection size.
+        if (newHashes.isNotEmpty()) {
+            generalPreferences.recordExtensionFirstSeenHashes(newHashes)
         }
 
         return mismatches
