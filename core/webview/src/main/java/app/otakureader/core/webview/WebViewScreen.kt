@@ -81,6 +81,10 @@ fun WebViewScreen(
                             adBlockEnabled = adBlockEnabled,
                             onPageFinished = { /* no-op — callers get cookies via onClose */ },
                         ).configure(wv)
+                        // configure() already sets allowContentAccess = false; repeat here
+                        // so static analysis tools (CodeQL) can verify it without tracing
+                        // through the opaque configure() call.
+                        wv.settings.allowContentAccess = false
                         wv.loadUrl(url)
                     }
                 },
