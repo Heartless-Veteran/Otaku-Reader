@@ -43,9 +43,11 @@ class WebViewChallengeManager @Inject constructor(
         val deferred = CompletableDeferred<Boolean>()
         // Complete any existing deferred for this source so it doesn't hang indefinitely.
         // Use remove(key, value) in finally so we only remove OUR deferred, not a subsequent one.
+        // The entire body (emit + await) is inside try/finally so cancellation during emit
+        // also cleans up the deferred from the map.
         pendingCompletions.put(sourceId, deferred)?.complete(false)
-        _pendingChallenge.emit(ChallengeRequest(sourceId, url))
         return try {
+            _pendingChallenge.emit(ChallengeRequest(sourceId, url))
             deferred.await()
         } finally {
             pendingCompletions.remove(sourceId, deferred)
