@@ -35,9 +35,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
@@ -184,6 +186,18 @@ fun SettingsNavOrderScreen(
                 .dragContainer(dragDropState),
         ) {
             itemsIndexed(state.tabs, key = { _, entry -> entry.tab.name }) { index, entry ->
+                val isDragging = index == dragDropState.draggingItemIndex
+                val itemModifier = if (isDragging) {
+                    // Lift the dragging item above its siblings and translate it by the
+                    // accumulated drag offset so it follows the user's finger.
+                    Modifier
+                        .zIndex(1f)
+                        .graphicsLayer { translationY = dragDropState.draggingItemOffset }
+                } else {
+                    // Non-dragging items animate smoothly into their new positions as the
+                    // list reorders around the dragged item.
+                    Modifier.animateItem()
+                }
                 NavTabRow(
                     entry = entry,
                     index = index,
@@ -193,6 +207,7 @@ fun SettingsNavOrderScreen(
                     onToggleVisibility = {
                         viewModel.onEvent(NavOrderEvent.ToggleTabVisibility(index))
                     },
+                    modifier = itemModifier,
                 )
             }
         }
@@ -211,12 +226,13 @@ private fun NavTabRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onToggleVisibility: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

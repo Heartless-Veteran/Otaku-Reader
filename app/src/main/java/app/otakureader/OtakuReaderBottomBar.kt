@@ -53,7 +53,8 @@ fun OtakuReaderBottomBar(
 
     if (!isTopLevelDestination) return
 
-    val tabOrder by navOrderPreferences.tabOrder.collectAsStateWithLifecycle(emptyList())
+    val tabOrderEntries by navOrderPreferences.tabOrder.collectAsStateWithLifecycle(emptyList())
+    val tabOrder = tabOrderEntries.filter { it.isVisible }.map { it.tab }
     if (tabOrder.isEmpty()) return
 
     NavigationBar(modifier = modifier) {

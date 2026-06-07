@@ -34,18 +34,29 @@ class NavOrderPreferences(private val dataStore: DataStore<Preferences>) {
     val tabOrder: Flow<List<NavTabPreferenceEntry>> = dataStore.data.map { prefs ->
         prefs[Keys.TAB_ORDER]?.let { raw ->
             runCatching {
-                val parsed = raw.split(",").map { token ->
+                // Parse stored tokens, silently dropping any unknown tab names so that a
+                // downgrade (or a stored value from a future release with more tabs) never
+                // crashes or produces an empty list.
+                val parsed = raw.split(",").mapNotNull { token ->
                     val parts = token.trim().split(":")
+                    val tab = runCatching { NavTab.valueOf(parts[0]) }.getOrNull() ?: return@mapNotNull null
                     NavTabPreferenceEntry(
-                        tab = NavTab.valueOf(parts[0]),
+                        tab = tab,
                         isVisible = parts.getOrNull(1)?.toBooleanStrictOrNull() ?: true,
                     )
                 }
-                // Only accept if every tab is represented exactly once.
-                parsed.takeIf {
-                    it.size == NavTab.entries.size &&
-                        it.map { e -> e.tab }.toSet().size == NavTab.entries.size
-                }
+                // De-duplicate: keep only the first occurrence of each tab (guards against
+                // corrupted prefs that somehow repeated a tab name).
+                val seen = mutableSetOf<NavTab>()
+                val deduped = parsed.filter { seen.add(it.tab) }
+                // Append any tabs that are present in the current build but absent from the
+                // stored value (e.g. a new tab added in a later release). New tabs are visible
+                // by default and placed at the end of the list.
+                val knownTabs = deduped.map { it.tab }.toSet()
+                val appended = deduped + NavTab.entries
+                    .filter { it !in knownTabs }
+                    .map { NavTabPreferenceEntry(it, isVisible = true) }
+                appended.takeIf { it.isNotEmpty() }
             }.getOrNull()
         } ?: DEFAULT_ORDER.map { NavTabPreferenceEntry(it, isVisible = true) }
     }

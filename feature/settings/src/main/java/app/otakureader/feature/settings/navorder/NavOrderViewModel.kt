@@ -49,13 +49,18 @@ class NavOrderViewModel @Inject constructor(
     }
 
     /**
-     * Swaps [from] and [to] in the list. Called by the drag-and-drop gesture handler once
-     * the dragged item crosses the midpoint of a neighbour.
+     * Moves the item at [from] to position [to], shifting everything in between. Called by the
+     * drag-and-drop gesture handler once the dragged item crosses the midpoint of a neighbour.
+     *
+     * Unlike a simple swap, removeAt/add correctly handles non-adjacent moves and produces the
+     * intuitive result: the dragged item ends up exactly at the target position and all
+     * intervening items shift by one slot.
      */
     private fun moveTab(from: Int, to: Int) {
         val current = _state.value.tabs.toMutableList()
         if (from < 0 || from >= current.size || to < 0 || to >= current.size) return
-        val tmp = current[from]; current[from] = current[to]; current[to] = tmp
+        val item = current.removeAt(from)
+        current.add(to, item)
         persist(current)
     }
 
