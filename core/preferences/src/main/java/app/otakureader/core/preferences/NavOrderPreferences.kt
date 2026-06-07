@@ -14,21 +14,47 @@ private val DEFAULT_ORDER = listOf(
     NavTab.LIBRARY, NavTab.UPDATES, NavTab.BROWSE, NavTab.HISTORY, NavTab.MORE
 )
 
-/** Persists the user-defined bottom-nav tab order. */
+/**
+ * Lightweight projection of a tab's persisted state: its position in the list and whether
+ * the user has toggled it on or off. Kept in core so the ViewModel can convert to and from
+ * the UI-layer [NavTabEntry] without the preferences module depending on the feature layer.
+ */
+data class NavTabPreferenceEntry(val tab: NavTab, val isVisible: Boolean)
+
+/** Persists the user-defined bottom-nav tab order and per-tab visibility. */
 class NavOrderPreferences(private val dataStore: DataStore<Preferences>) {
 
-    /** Emits the current tab order. Falls back to the default on any parse error. */
-    val tabOrder: Flow<List<NavTab>> = dataStore.data.map { prefs ->
+    /**
+     * Emits the current ordered list of tabs with their visibility flags.
+     *
+     * Storage format (TAB_ORDER key): "LIBRARY:true,UPDATES:false,BROWSE:true,…"
+     * Falls back gracefully to the default order (all visible) on any parse error or if the
+     * stored list is incomplete (e.g. after a new tab is added in a future release).
+     */
+    val tabOrder: Flow<List<NavTabPreferenceEntry>> = dataStore.data.map { prefs ->
         prefs[Keys.TAB_ORDER]?.let { raw ->
             runCatching {
-                raw.split(",").map { NavTab.valueOf(it.trim()) }
-                    .takeIf { it.size == NavTab.entries.size && it.toSet().size == NavTab.entries.size }
+                val parsed = raw.split(",").map { token ->
+                    val parts = token.trim().split(":")
+                    NavTabPreferenceEntry(
+                        tab = NavTab.valueOf(parts[0]),
+                        isVisible = parts.getOrNull(1)?.toBooleanStrictOrNull() ?: true,
+                    )
+                }
+                // Only accept if every tab is represented exactly once.
+                parsed.takeIf {
+                    it.size == NavTab.entries.size &&
+                        it.map { e -> e.tab }.toSet().size == NavTab.entries.size
+                }
             }.getOrNull()
-        } ?: DEFAULT_ORDER
+        } ?: DEFAULT_ORDER.map { NavTabPreferenceEntry(it, isVisible = true) }
     }
 
-    suspend fun setTabOrder(order: List<NavTab>) {
-        dataStore.edit { it[Keys.TAB_ORDER] = order.joinToString(",") { tab -> tab.name } }
+    /** Persists the full ordered list including visibility flags. */
+    suspend fun setTabOrder(order: List<NavTabPreferenceEntry>) {
+        dataStore.edit { prefs ->
+            prefs[Keys.TAB_ORDER] = order.joinToString(",") { "${it.tab.name}:${it.isVisible}" }
+        }
     }
 
     private object Keys {
