@@ -144,7 +144,7 @@ fun ExtensionDetailScreen(
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(padding))
             state.error != null -> ErrorScreen(
                 message = state.error!!,
-                onRetry = { /* no-op; the ViewModel already loaded once */ },
+                onRetry = { viewModel.onEvent(ExtensionDetailEvent.Retry) },
                 modifier = Modifier.padding(padding),
             )
             state.extension != null -> ExtensionDetailContent(
@@ -234,10 +234,11 @@ private fun ExtensionDetailContent(
             LabeledSection(label = stringResource(R.string.extension_detail_repo)) {
                 TextButton(
                     onClick = {
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl))
-                            )
+                        val uri = Uri.parse(repoUrl)
+                        if (uri.scheme == "https" || uri.scheme == "http") {
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            }
                         }
                     },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
