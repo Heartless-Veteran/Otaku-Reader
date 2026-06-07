@@ -11,9 +11,9 @@ import app.otakureader.domain.repository.ExtensionManagementRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.Awaits
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -135,7 +135,7 @@ class ExtensionsViewModelTest {
         // Without explicit stubs the relaxed mock returns an empty Flow and .first() throws,
         // causing the catch block to set error state instead of populating installedExtensions.
         every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
-        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just runs
+        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just Awaits
 
         viewModel = ExtensionsViewModel(
             extensionRepository = extensionRepository,

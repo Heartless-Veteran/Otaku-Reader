@@ -386,7 +386,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
      * No-op if [packageName] is already present — the first-seen value is intentionally
      * immutable once written.
      */
-    suspend fun recordExtensionFirstSeenHash(packageName: String, hash: String) =
+    suspend fun recordExtensionFirstSeenHash(packageName: String, hash: String) {
         dataStore.edit { prefs ->
             val current = prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
                 runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
@@ -396,6 +396,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
                 prefs[Keys.EXTENSION_FIRST_SEEN_HASHES] = Json.encodeToString(current + (packageName to hash))
             }
         }
+    }
 
     // --- Image Cache ---
 
