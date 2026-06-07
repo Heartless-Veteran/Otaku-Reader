@@ -1,10 +1,14 @@
 package app.otakureader.feature.settings.delegate
 
 import android.content.Context
+import android.net.Uri
 import app.otakureader.core.preferences.BackupPreferences
 import app.otakureader.domain.backup.BackupRepository
 import app.otakureader.domain.backup.BackupScheduler
 import app.otakureader.domain.backup.TachiyomiBackupImporter
+import app.otakureader.domain.repository.CategoryRepository
+import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
 import app.otakureader.feature.settings.SettingsState
@@ -24,6 +28,9 @@ class BackupSettingsDelegate @Inject constructor(
     private val backupRepository: BackupRepository,
     private val backupScheduler: BackupScheduler,
     private val tachiyomiImporter: TachiyomiBackupImporter,
+    private val mangaRepository: MangaRepository,
+    private val categoryRepository: CategoryRepository,
+    private val trackerSyncRepository: TrackerSyncRepository,
 ) {
 
     private var updateState: ((SettingsState) -> SettingsState) -> Unit = {}
@@ -31,7 +38,7 @@ class BackupSettingsDelegate @Inject constructor(
     /** URI of the backup the user is previewing, awaiting import confirmation. */
     private var pendingImportUri: String? = null
 
-    private fun readBytes(uri: android.net.Uri): ByteArray =
+    private fun readBytes(uri: Uri): ByteArray =
         context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
             ?: error("Failed to read backup file")
 
@@ -75,6 +82,74 @@ class BackupSettingsDelegate @Inject constructor(
         event: SettingsEvent,
         sendEffect: suspend (SettingsEffect) -> Unit,
     ): Boolean = when (event) {
+        // ── Pre-backup checklist ──────────────────────────────────────────────────
+        // ShowBackupChecklist loads library counts and shows the checklist dialog.
+        // The actual file-save picker is opened in ConfirmCreateBackup so the user
+        // can review what will be included before committing to the file.
+        SettingsEvent.ShowBackupChecklist -> {
+            val mangaCount = mangaRepository.getLibraryManga().first().size
+            val categoryCount = categoryRepository.getCategories().first().size
+            // Count distinct tracker sync configurations (one per tracked manga/tracker pair).
+            val trackingCount = trackerSyncRepository.getSyncConfigurations().first().size
+            updateState {
+                it.copy(backup = it.backup.copy(
+                    showBackupChecklist = true,
+                    backupChecklistMangaCount = mangaCount,
+                    backupChecklistCategoryCount = categoryCount,
+                    backupChecklistTrackingCount = trackingCount,
+                ))
+            }
+            true
+        }
+        SettingsEvent.ConfirmCreateBackup -> {
+            // Dismiss checklist, then open the file-save picker.
+            updateState { it.copy(backup = it.backup.copy(showBackupChecklist = false)) }
+            sendEffect(SettingsEffect.ShowBackupPicker)
+            true
+        }
+        SettingsEvent.DismissBackupChecklist -> {
+            updateState { it.copy(backup = it.backup.copy(showBackupChecklist = false)) }
+            true
+        }
+
+        // ── Pre-restore confirmation ──────────────────────────────────────────────
+        // The file picker result routes through ShowRestoreConfirm; ConfirmRestore
+        // carries the URI directly so no state-stored side-effect is needed.
+        is SettingsEvent.ShowRestoreConfirm -> {
+            val fileName = event.uri.lastPathSegment ?: event.uri.toString()
+            updateState {
+                it.copy(backup = it.backup.copy(
+                    showRestoreConfirm = true,
+                    pendingRestoreUri = event.uri.toString(),
+                    pendingRestoreFileName = fileName,
+                ))
+            }
+            true
+        }
+        is SettingsEvent.ConfirmRestore -> {
+            // Clear the dialog state and restore using the URI carried in the event.
+            // No mutable field needed — the URI is delivered directly by the caller.
+            updateState {
+                it.copy(backup = it.backup.copy(
+                    showRestoreConfirm = false,
+                    pendingRestoreUri = null,
+                    pendingRestoreFileName = "",
+                ))
+            }
+            handleEvent(SettingsEvent.RestoreBackupFromUri(event.uri), sendEffect)
+            true
+        }
+        SettingsEvent.DismissRestoreConfirm -> {
+            updateState {
+                it.copy(backup = it.backup.copy(
+                    showRestoreConfirm = false,
+                    pendingRestoreUri = null,
+                    pendingRestoreFileName = "",
+                ))
+            }
+            true
+        }
+
         SettingsEvent.OnCreateBackup -> { sendEffect(SettingsEffect.ShowBackupPicker); true }
         SettingsEvent.OnRestoreBackup -> { sendEffect(SettingsEffect.ShowRestorePicker); true }
         SettingsEvent.OnImportTachiyomiBackup -> { sendEffect(SettingsEffect.ShowTachiyomiImportPicker); true }
@@ -123,7 +198,7 @@ class BackupSettingsDelegate @Inject constructor(
                     ))
                 }
                 try {
-                    val data = readBytes(android.net.Uri.parse(uriString))
+                    val data = readBytes(Uri.parse(uriString))
                     val result = tachiyomiImporter.importBackup(
                         data = data,
                         overwriteExisting = event.overwriteExisting,

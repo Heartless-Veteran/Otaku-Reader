@@ -138,6 +138,17 @@
     <string name="settings_restore_backup">Restore Backup</string>
     <string name="settings_restore_backup_description">Import library and settings from a backup file</string>
     <string name="settings_restore_button">Restore</string>
+    <!-- Pre-backup checklist dialog -->
+    <string name="backup_checklist_title">Backup contents</string>
+    <string name="backup_checklist_summary">%1$d manga · %2$d categories · %3$d tracking entries</string>
+    <string name="backup_checklist_history_included">History: included</string>
+    <string name="backup_checklist_settings_included">Settings: included</string>
+    <string name="backup_checklist_create">Create backup</string>
+    <!-- Pre-restore preflight dialog -->
+    <string name="restore_preflight_title">Restore backup?</string>
+    <string name="restore_preflight_filename">Restore from: %1$s</string>
+    <string name="restore_preflight_message">This will replace your current library with the selected backup. This cannot be undone.</string>
+    <string name="restore_preflight_proceed">Restore</string>
     <string name="settings_import_tachiyomi">Import from Tachiyomi/Mihon</string>
     <string name="settings_import_tachiyomi_description">Bring your library from another manga reader app</string>
     <string name="settings_import_button">Import</string>
