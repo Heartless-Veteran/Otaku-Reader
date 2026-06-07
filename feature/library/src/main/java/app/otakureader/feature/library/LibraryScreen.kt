@@ -82,6 +82,7 @@ fun LibraryScreen(
     onNavigateToMergeDuplicates: () -> Unit = {},
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
+    onNavigateToMaintenance: () -> Unit = {},
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -279,6 +280,10 @@ fun LibraryScreen(
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_reindex_downloads)) },
                                 onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.ReindexDownloads) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_menu_maintenance)) },
+                                onClick = { showMenu = false; onNavigateToMaintenance() }
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_downloads)) },
