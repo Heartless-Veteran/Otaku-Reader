@@ -183,14 +183,9 @@ class ExtensionsViewModel @Inject constructor(
     @Suppress("ThrowsCount")
     private fun loadExtensions() {
         _state.update { it.copy(isLoading = true, error = null) }
-        observeInstalledExtensions()
-        observeAvailableExtensions()
-        observeExtensionUpdates()
-    }
-
-    private fun observeInstalledExtensions() {
         viewModelScope.launch {
             try {
+                // Collect installed extensions and maintain signer-hash continuity tracking.
                 extensionRepository.getInstalledExtensions()
                     .collect { extensions ->
                         val mismatches = checkSignerHashContinuity(extensions)
@@ -206,42 +201,49 @@ class ExtensionsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(isLoading = false, error = e.message ?: "Failed to load extensions")
+                    it.copy(
+                        isLoading = false,
+                        error = e.message ?: "Failed to load extensions"
+                    )
                 }
             }
         }
-    }
 
-    private fun observeAvailableExtensions() {
         viewModelScope.launch {
             try {
                 extensionRepository.getAvailableExtensions()
                     .collect { extensions ->
+                        val hasUnverified = extensions.any { it.signatureHash == null }
                         _state.update {
                             it.copy(
                                 availableExtensions = extensions,
-                                hasUnverifiedExtensions = extensions.any { it.signatureHash == null },
+                                hasUnverifiedExtensions = hasUnverified
                             )
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                // Don't show error for available extensions
+            }
         }
-    }
 
-    private fun observeExtensionUpdates() {
         viewModelScope.launch {
             try {
                 extensionRepository.getExtensionsWithUpdates()
                     .collect { extensions ->
                         _state.update {
-                            it.copy(extensionsWithUpdates = extensions, updateCount = extensions.size)
+                            it.copy(
+                                extensionsWithUpdates = extensions,
+                                updateCount = extensions.size
+                            )
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                // Don't show error for updates
+            }
         }
     }
 
@@ -477,7 +479,6 @@ class ExtensionsViewModel @Inject constructor(
     private suspend fun checkSignerHashContinuity(extensions: List<Extension>): Set<String> {
         val firstSeenHashes = generalPreferences.extensionFirstSeenHashes.first()
         val mismatches = mutableSetOf<String>()
-        val newHashes = mutableMapOf<String, String>()
 
         extensions.forEach { extension ->
             val currentHash = extension.signatureHash
@@ -486,8 +487,8 @@ class ExtensionsViewModel @Inject constructor(
             val knownHash = firstSeenHashes[extension.pkgName]
             when {
                 knownHash == null -> {
-                    // First time we see this extension — stage its hash for the batch write below.
-                    newHashes[extension.pkgName] = currentHash
+                    // First time we see this extension — record its hash for future comparisons.
+                    generalPreferences.recordExtensionFirstSeenHash(extension.pkgName, currentHash)
                 }
                 knownHash != currentHash -> {
                     // Hash changed since first install — this is worth flagging.
@@ -500,13 +501,6 @@ class ExtensionsViewModel @Inject constructor(
                 }
                 // else: hash matches first-seen — all good
             }
-        }
-
-        // Write all newly-seen hashes in a single DataStore transaction instead of one per
-        // extension. On first run with many extensions installed this avoids N sequential disk
-        // flushes and brings the cost down to a single write regardless of collection size.
-        if (newHashes.isNotEmpty()) {
-            generalPreferences.recordExtensionFirstSeenHashes(newHashes)
         }
 
         return mismatches

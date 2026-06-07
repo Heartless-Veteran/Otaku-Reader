@@ -397,28 +397,6 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
             }
         }
 
-    /**
-     * Batch variant of [recordExtensionFirstSeenHash]: records all entries in [hashes] that are
-     * not already stored, in a single DataStore transaction.
-     *
-     * Prefer this over calling [recordExtensionFirstSeenHash] in a loop — each [dataStore.edit]
-     * call flushes to disk, so N individual calls incur N sequential disk writes. This function
-     * performs at most one write regardless of how many new packages are in [hashes].
-     *
-     * Entries whose package name is already present in the store are silently skipped (first-seen
-     * values are intentionally immutable once written).
-     */
-    suspend fun recordExtensionFirstSeenHashes(hashes: Map<String, String>) =
-        dataStore.edit { prefs ->
-            val current = prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
-                runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
-            } ?: emptyMap()
-            val newHashes = hashes.filterKeys { it !in current }
-            if (newHashes.isNotEmpty()) {
-                prefs[Keys.EXTENSION_FIRST_SEEN_HASHES] = Json.encodeToString(current + newHashes)
-            }
-        }
-
     // --- Image Cache ---
 
     /**

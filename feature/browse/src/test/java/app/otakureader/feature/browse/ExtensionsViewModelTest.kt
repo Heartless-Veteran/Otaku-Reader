@@ -131,6 +131,11 @@ class ExtensionsViewModelTest {
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
+        // checkSignerHashContinuity calls these on every installed-extensions emission.
+        // Without explicit stubs the relaxed mock returns an empty Flow and .first() throws,
+        // causing the catch block to set error state instead of populating installedExtensions.
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just runs
 
         viewModel = ExtensionsViewModel(
             extensionRepository = extensionRepository,
