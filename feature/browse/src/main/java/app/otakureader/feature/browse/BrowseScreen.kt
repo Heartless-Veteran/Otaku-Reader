@@ -75,6 +75,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.toSourceId
 import coil3.compose.AsyncImage
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
@@ -476,11 +477,11 @@ private fun SourcesContent(
 
     // Partition sources into pinned and unpinned, then group unpinned by category
     val (pinnedIds, unpinnedIds) = sources.partition { sourceId ->
-        sourceId.toLongOrNull()?.let { it in pinnedSourceIds } == true
+        sourceId.toSourceId() in pinnedSourceIds
     }
     // Group unpinned sources by their user-defined category; sources without a category go under ""
     val grouped: Map<String, List<String>> = unpinnedIds.groupBy { sourceId ->
-        sourceId.toLongOrNull()?.let { sourceCategoryMap[it] } ?: ""
+        sourceCategoryMap[sourceId.toSourceId()] ?: ""
     }
 
     Column {
@@ -618,13 +619,15 @@ private fun SourceChipWithMenu(
     categoryMap: Map<Long, String>,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
-    val sourceIdLong = sourceId.toLongOrNull()
-    val currentCategory = sourceIdLong?.let { categoryMap[it] } ?: ""
+    val sourceIdLong = sourceId.toSourceId()
+    val currentCategory = categoryMap[sourceIdLong] ?: ""
 
     Box {
         FilterChip(
             selected = isSelected,
-            onClick = onSelect,
+            // Pass empty lambda so combinedClickable is the sole click handler.
+            // Without this, both FilterChip.onClick and combinedClickable.onClick fire on tap.
+            onClick = {},
             label = { Text(sourceId.substringAfterLast(".").take(20)) },
             leadingIcon = if (isPinned) {
                 { Icon(Icons.Default.PushPin, contentDescription = null, modifier = Modifier.size(14.dp)) }
@@ -634,32 +637,30 @@ private fun SourceChipWithMenu(
                 onLongClick = { menuExpanded = true },
             ),
         )
-        if (sourceIdLong != null) {
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            if (isPinned) stringResource(R.string.source_unpin)
-                            else stringResource(R.string.source_pin)
-                        )
-                    },
-                    leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
-                    onClick = {
-                        menuExpanded = false
-                        onTogglePin(sourceIdLong)
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.source_set_category)) },
-                    onClick = {
-                        menuExpanded = false
-                        onOpenSetCategory(sourceIdLong, currentCategory)
-                    },
-                )
-            }
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (isPinned) stringResource(R.string.source_unpin)
+                        else stringResource(R.string.source_pin)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                onClick = {
+                    menuExpanded = false
+                    onTogglePin(sourceIdLong)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.source_set_category)) },
+                onClick = {
+                    menuExpanded = false
+                    onOpenSetCategory(sourceIdLong, currentCategory)
+                },
+            )
         }
     }
 }
