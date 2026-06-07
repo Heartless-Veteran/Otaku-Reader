@@ -14,6 +14,7 @@ import app.otakureader.feature.browse.GlobalSearchScreen
 import app.otakureader.feature.browse.SourceMangaDetailScreen
 import app.otakureader.feature.browse.SourceMangaScreen
 import app.otakureader.feature.browse.extension.ExtensionInstallScreen
+import app.otakureader.feature.browse.extension.extensionDetailScreen
 
 @Suppress("UnusedParameter")
 fun NavGraphBuilder.browseScreen(
@@ -68,6 +69,7 @@ fun NavGraphBuilder.extensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
     composable<Route.ExtensionCatalog>(
         enterTransition = { fadeIn(animationSpec = tween(200)) },
@@ -79,6 +81,7 @@ fun NavGraphBuilder.extensionsBottomSheet(
             onDismiss = onDismiss,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToRepositories = onNavigateToRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
         )
     }
 }
@@ -106,4 +109,16 @@ fun NavGraphBuilder.globalSearchScreen(
             viewModel = hiltViewModel()
         )
     }
+}
+
+/**
+ * Registers the extension detail full-screen destination in the calling nav graph.
+ *
+ * Wire this inside the app-level NavHost alongside the other browse destinations,
+ * passing a lambda that navigates back (typically `navController::popBackStack`).
+ */
+fun NavGraphBuilder.browseExtensionDetailScreen(
+    onNavigateBack: () -> Unit,
+) {
+    extensionDetailScreen(onNavigateBack = onNavigateBack)
 }

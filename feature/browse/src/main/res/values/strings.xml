@@ -154,4 +154,14 @@
     <string name="browse_search_history">Recent searches</string>
     <string name="browse_search_history_remove">Remove from recent searches</string>
     <string name="filter_sheet_clear_all">Clear all</string>
+
+    <!-- ExtensionDetailScreen (#1047) -->
+    <string name="extension_detail_title">Extension Details</string>
+    <string name="extension_detail_version">Version %1$s</string>
+    <string name="extension_detail_trust">Trust</string>
+    <string name="extension_detail_untrust">Untrust</string>
+    <string name="extension_detail_view_details">Details</string>
+    <string name="extension_detail_sources">Sources</string>
+    <string name="extension_detail_signer">Signer hash</string>
+    <string name="extension_detail_repo">Repository</string>
 </resources>
