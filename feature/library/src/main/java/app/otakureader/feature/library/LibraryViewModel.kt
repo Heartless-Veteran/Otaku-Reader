@@ -234,37 +234,39 @@ class LibraryViewModel @Inject constructor(
                     )
                 )
             }
-            is LibraryEvent.SyncLibrary -> {
-                if (syncJob?.isActive == true) return
-                syncJob = viewModelScope.launch {
-                    if (_state.value.incognitoMode) {
-                        _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_incognito_blocked))
-                        return@launch
-                    }
-                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_started))
-                    try {
-                        val summary = syncLibrary()
-                        val hasPending = summary.attempted > 0
-                        val hasIssues = hasPending && (summary.conflicts > 0 || summary.failed > 0)
-                        val msgRes = when {
-                            !hasPending -> R.string.library_sync_nothing_pending
-                            hasIssues -> R.string.library_sync_complete_with_issues
-                            else -> R.string.library_sync_complete
-                        }
-                        val args = when {
-                            hasIssues -> listOf(summary.successful, summary.attempted, summary.conflicts, summary.failed)
-                            hasPending -> listOf(summary.successful, summary.attempted)
-                            else -> emptyList()
-                        }
-                        _effect.send(LibraryEffect.ShowSnackbar(msgRes, formatArgs = args))
-                    } catch (e: kotlinx.coroutines.CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_failed))
-                    }
-                }
-            }
+            is LibraryEvent.SyncLibrary -> handleSyncLibrary()
             else -> Unit
+        }
+    }
+
+    private fun handleSyncLibrary() {
+        if (syncJob?.isActive == true) return
+        syncJob = viewModelScope.launch {
+            if (_state.value.incognitoMode) {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_incognito_blocked))
+                return@launch
+            }
+            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_started))
+            try {
+                val summary = syncLibrary()
+                val hasPending = summary.attempted > 0
+                val hasIssues = hasPending && (summary.conflicts > 0 || summary.failed > 0)
+                val msgRes = when {
+                    !hasPending -> R.string.library_sync_nothing_pending
+                    hasIssues -> R.string.library_sync_complete_with_issues
+                    else -> R.string.library_sync_complete
+                }
+                val args = when {
+                    hasIssues -> listOf(summary.successful, summary.attempted, summary.conflicts, summary.failed)
+                    hasPending -> listOf(summary.successful, summary.attempted)
+                    else -> emptyList()
+                }
+                _effect.send(LibraryEffect.ShowSnackbar(msgRes, formatArgs = args))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_failed))
+            }
         }
     }
 
