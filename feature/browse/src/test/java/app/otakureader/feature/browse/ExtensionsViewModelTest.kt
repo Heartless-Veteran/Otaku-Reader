@@ -12,6 +12,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.Awaits
+import io.mockk.Runs
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
@@ -135,7 +136,8 @@ class ExtensionsViewModelTest {
         // Without explicit stubs the relaxed mock returns an empty Flow and .first() throws,
         // causing the catch block to set error state instead of populating installedExtensions.
         every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
-        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just Awaits
+        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just Runs
+        coEvery { generalPreferences.recordExtensionFirstSeenHashes(any()) } just Runs
 
         viewModel = ExtensionsViewModel(
             extensionRepository = extensionRepository,
@@ -994,5 +996,51 @@ class ExtensionsViewModelTest {
         // Installed extensions should still be loaded despite repo error
         assertEquals(1, vm.state.value.installedExtensions.size)
         assertEquals("Still Works", vm.state.value.installedExtensions[0].name)
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 19. Signer Hash Continuity
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun `checkSignerHashContinuity marks package in signerMismatchedPackages when hash changes`() = runTest {
+        val pkg = "app.ext.changed"
+        val oldHash = "oldhash_aabbcc"
+        val newHash = "newhash_ddeeff"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(mapOf(pkg to oldHash))
+
+        val ext = createExtension(pkgName = pkg, signatureHash = newHash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity calls recordExtensionFirstSeenHashes for new extension`() = runTest {
+        val pkg = "app.ext.firstseen"
+        val hash = "firsthash_112233"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+
+        val ext = createExtension(pkgName = pkg, signatureHash = hash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { generalPreferences.recordExtensionFirstSeenHashes(mapOf(pkg to hash)) }
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity skips extension with null signature hash`() = runTest {
+        val pkg = "app.ext.unsigned"
+
+        val ext = createExtension(pkgName = pkg, signatureHash = null)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
     }
 }

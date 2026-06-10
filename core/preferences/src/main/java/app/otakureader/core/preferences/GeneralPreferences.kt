@@ -388,14 +388,23 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
      * avoid overwriting the existing trust baseline with a single-entry map.
      */
     suspend fun recordExtensionFirstSeenHash(packageName: String, hash: String) {
+        recordExtensionFirstSeenHashes(mapOf(packageName to hash))
+    }
+
+    /**
+     * Batch variant of [recordExtensionFirstSeenHash] — persists all new entries in a
+     * single DataStore edit to avoid N sequential writes on first-open with many extensions.
+     */
+    suspend fun recordExtensionFirstSeenHashes(hashes: Map<String, String>) {
+        if (hashes.isEmpty()) return
         dataStore.edit { prefs ->
             val current = prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
                 runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrNull()
                     ?: return@edit
             } ?: emptyMap()
-            // Only write if this package has never been seen before.
-            if (packageName !in current) {
-                prefs[Keys.EXTENSION_FIRST_SEEN_HASHES] = Json.encodeToString(current + (packageName to hash))
+            val newEntries = hashes.filterKeys { it !in current }
+            if (newEntries.isNotEmpty()) {
+                prefs[Keys.EXTENSION_FIRST_SEEN_HASHES] = Json.encodeToString(current + newEntries)
             }
         }
     }
