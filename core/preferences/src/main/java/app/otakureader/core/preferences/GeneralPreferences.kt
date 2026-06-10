@@ -365,6 +365,50 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         else prefs[Keys.SOURCE_CATEGORY_MAP] = Json.encodeToString(current)
     }
 
+    // --- Extension Signer Hash Continuity ---
+
+    /**
+     * Stores the first-seen APK signer hash for each installed extension, keyed by package name.
+     * Serialized as a JSON object (Map<String, String>).
+     *
+     * When a new extension is installed or first seen, its [signatureHash] is recorded here.
+     * On subsequent loads the current hash is compared to this value: a change indicates the
+     * signing certificate rotated, which is a security-sensitive event worth surfacing to the user.
+     */
+    val extensionFirstSeenHashes: Flow<Map<String, String>> = dataStore.data.map { prefs ->
+        prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
+            runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrNull() ?: emptyMap()
+        } ?: emptyMap()
+    }
+
+    /**
+     * Records [hash] as the first-seen signer hash for [packageName].
+     * No-op if [packageName] is already present — the first-seen value is intentionally
+     * immutable once written. If the stored JSON is unreadable the edit is skipped to
+     * avoid overwriting the existing trust baseline with a single-entry map.
+     */
+    suspend fun recordExtensionFirstSeenHash(packageName: String, hash: String) {
+        recordExtensionFirstSeenHashes(mapOf(packageName to hash))
+    }
+
+    /**
+     * Batch variant of [recordExtensionFirstSeenHash] — persists all new entries in a
+     * single DataStore edit to avoid N sequential writes on first-open with many extensions.
+     */
+    suspend fun recordExtensionFirstSeenHashes(hashes: Map<String, String>) {
+        if (hashes.isEmpty()) return
+        dataStore.edit { prefs ->
+            val current = prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
+                runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrNull()
+                    ?: return@edit
+            } ?: emptyMap()
+            val newEntries = hashes.filterKeys { it !in current }
+            if (newEntries.isNotEmpty()) {
+                prefs[Keys.EXTENSION_FIRST_SEEN_HASHES] = Json.encodeToString(current + newEntries)
+            }
+        }
+    }
+
     // --- Image Cache ---
 
     /**
@@ -427,6 +471,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val PINNED_SOURCE_IDS = stringPreferencesKey("pinned_source_ids")
         val SOURCE_CATEGORY_MAP = stringPreferencesKey("source_category_map")
         val SAVED_SOURCE_SEARCHES_JSON = stringPreferencesKey("saved_source_searches_json")
+        val EXTENSION_FIRST_SEEN_HASHES = stringPreferencesKey("extension_first_seen_hashes")
     }
 
     companion object {
