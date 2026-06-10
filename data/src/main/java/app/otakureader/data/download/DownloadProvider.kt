@@ -141,7 +141,10 @@ object DownloadProvider {
      * Provided so that pure-JVM unit tests can exercise the logic without an Android Context.
      */
     fun deleteMangaDownloads(root: File, sourceName: String, mangaTitle: String): Boolean {
-        val dir = File(root, "$ROOT_DIR/${sanitize(sourceName)}/${sanitize(mangaTitle)}")
+        val sanitizedSource = sanitize(sourceName)
+        val sanitizedManga = sanitize(mangaTitle)
+        if (sanitizedSource.isBlank() || sanitizedManga.isBlank()) return false
+        val dir = File(root, "$ROOT_DIR/$sanitizedSource/$sanitizedManga")
         return if (dir.exists()) dir.deleteRecursively() else false
     }
 

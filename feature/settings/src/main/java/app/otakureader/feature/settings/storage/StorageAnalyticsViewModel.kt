@@ -38,9 +38,12 @@ class StorageAnalyticsViewModel @Inject constructor(
                 it.copy(expandedSources = next)
             }
             is StorageAnalyticsEvent.DeleteMangaDownloads -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    val root = context.getExternalFilesDir(null) ?: context.filesDir
-                    val deleted = File(root, "OtakuReader/${event.sourceName}/${event.mangaTitle}").deleteRecursively()
+                viewModelScope.launch {
+                    _state.update { it.copy(isLoading = true) }
+                    val deleted = withContext(Dispatchers.IO) {
+                        val root = context.getExternalFilesDir(null) ?: context.filesDir
+                        File(root, "OtakuReader/${event.sourceName}/${event.mangaTitle}").deleteRecursively()
+                    }
                     _effects.send(
                         if (deleted) StorageAnalyticsEffect.DeleteSuccess(event.mangaTitle)
                         else StorageAnalyticsEffect.DeleteFailure(event.mangaTitle)
