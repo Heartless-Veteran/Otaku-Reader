@@ -20,6 +20,7 @@ import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -71,6 +72,7 @@ class LibraryViewModel @Inject constructor(
     private val getRecommendations: GetRecommendationsUseCase,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
     private val reindexDownloads: ReindexDownloadsUseCase,
+    private val syncLibrary: SyncLibraryUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -138,7 +140,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
             is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
-            is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads -> handleNewEvent(event)
+            is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
+            is LibraryEvent.SyncLibrary -> handleNewEvent(event)
             is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
             is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
             is LibraryEvent.ApplySavedView, is LibraryEvent.DeleteSavedView -> handleSavedViewEvent(event)
@@ -229,6 +232,31 @@ class LibraryViewModel @Inject constructor(
                         formatArgs = listOf(result.verifiedDownloads)
                     )
                 )
+            }
+            is LibraryEvent.SyncLibrary -> viewModelScope.launch {
+                if (_state.value.incognitoMode) {
+                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_incognito_blocked))
+                    return@launch
+                }
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_started))
+                try {
+                    val summary = syncLibrary()
+                    val msgRes = if (summary.successful == 0 && summary.failed == 0) {
+                        R.string.library_sync_nothing_pending
+                    } else {
+                        R.string.library_sync_complete
+                    }
+                    _effect.send(
+                        LibraryEffect.ShowSnackbar(
+                            msgRes,
+                            formatArgs = listOf(summary.successful, summary.attempted),
+                        )
+                    )
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_failed))
+                }
             }
             else -> Unit
         }

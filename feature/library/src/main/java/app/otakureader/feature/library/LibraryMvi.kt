@@ -132,6 +132,8 @@ sealed class LibraryEvent {
     data object UpdateCategory : LibraryEvent()
     data object OpenRandomEntry : LibraryEvent()
     data object ReindexDownloads : LibraryEvent()
+    /** Push all pending tracker states to remote trackers. No-op in incognito mode. */
+    data object SyncLibrary : LibraryEvent()
     // Bulk selection actions
     data object MarkSelectedAsRead : LibraryEvent()
     data object MarkSelectedAsUnread : LibraryEvent()
