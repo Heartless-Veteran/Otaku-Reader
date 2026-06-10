@@ -43,6 +43,10 @@ data class SettingsState(
     // --- Security ---
     val biometricLockEnabled: Boolean = false,
     val biometricLockTimeoutMinutes: Int = 0,
+    val biometricLockScheduleEnabled: Boolean = false,
+    val biometricLockStartHour: Int = 22,
+    val biometricLockEndHour: Int = 8,
+    val biometricLockActiveDays: Set<Int> = emptySet(),
 
     // --- Discord ---
     val discordRpcEnabled: Boolean = false,
@@ -323,6 +327,10 @@ sealed interface SettingsEvent : UiEvent {
     // Security
     data class SetBiometricLockEnabled(val enabled: Boolean) : SettingsEvent
     data class SetBiometricLockTimeout(val minutes: Int) : SettingsEvent
+    data class SetBiometricLockScheduleEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetBiometricLockStartHour(val hour: Int) : SettingsEvent
+    data class SetBiometricLockEndHour(val hour: Int) : SettingsEvent
+    data class SetBiometricLockActiveDays(val days: Set<Int>) : SettingsEvent
 
     // Discord
     data class SetDiscordRpcEnabled(val enabled: Boolean) : SettingsEvent
