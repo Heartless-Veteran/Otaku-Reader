@@ -80,6 +80,18 @@ interface ExtensionRepository {
     suspend fun refreshAvailableExtensions(): Result<Unit>
     
     /**
+     * Permanently trust an extension by package name, using its installed signature hash.
+     * After this call the extension is treated as trusted for future classloader loads.
+     */
+    suspend fun trustExtension(pkgName: String): Result<Unit>
+
+    /**
+     * Revoke trust for an extension by package name.
+     * Future classloader loads will return Untrusted until the user re-trusts.
+     */
+    suspend fun revokeExtensionTrust(pkgName: String): Result<Unit>
+
+    /**
      * Search through installed and available extensions.
      */
     fun searchExtensions(query: String): Flow<List<Extension>>

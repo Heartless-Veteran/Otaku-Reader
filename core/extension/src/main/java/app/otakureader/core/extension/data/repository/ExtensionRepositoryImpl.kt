@@ -6,6 +6,7 @@ import app.otakureader.core.extension.data.remote.ExtensionRemoteDataSource
 import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
+import app.otakureader.core.extension.loader.ExtensionLoader
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.CancellationException
 class ExtensionRepositoryImpl(
     private val localDataSource: ExtensionDao,
     private val remoteDataSource: ExtensionRemoteDataSource,
+    private val extensionLoader: ExtensionLoader,
     private val mapper: ExtensionMapper = ExtensionMapper()
 ) : ExtensionRepository {
     
@@ -147,7 +149,23 @@ class ExtensionRepositoryImpl(
     override suspend fun setExtensionEnabled(pkgName: String, enabled: Boolean) {
         localDataSource.updateEnabled(pkgName, enabled)
     }
-    
+
+    override suspend fun trustExtension(pkgName: String): Result<Unit> = runCatching {
+        val ext = localDataSource.getExtensionByPkgName(pkgName)
+            ?: error("Extension $pkgName not found")
+        val hash = ext.signatureHash
+            ?: error("Extension $pkgName has no signature hash — cannot trust")
+        extensionLoader.trustExtension(hash)
+    }
+
+    override suspend fun revokeExtensionTrust(pkgName: String): Result<Unit> = runCatching {
+        val ext = localDataSource.getExtensionByPkgName(pkgName)
+            ?: error("Extension $pkgName not found")
+        val hash = ext.signatureHash
+            ?: error("Extension $pkgName has no signature hash — cannot revoke")
+        extensionLoader.revokeExtensionTrust(hash)
+    }
+
     override suspend fun refreshAvailableExtensions(): Result<Unit> {
         return try {
             val remoteResult = remoteDataSource.fetchAvailableExtensions()

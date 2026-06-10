@@ -71,9 +71,10 @@ object ExtensionModule {
     @Singleton
     fun provideExtensionRepository(
         dao: ExtensionDao,
-        remoteDataSource: ExtensionRemoteDataSource
+        remoteDataSource: ExtensionRemoteDataSource,
+        loader: ExtensionLoader
     ): ExtensionRepository {
-        return ExtensionRepositoryImpl(dao, remoteDataSource)
+        return ExtensionRepositoryImpl(dao, remoteDataSource, loader)
     }
 
     @Provides
