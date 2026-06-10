@@ -33,7 +33,8 @@ class ExtensionMapper {
             isNsfw = entity.isNsfw,
             installDate = entity.installDate,
             signatureHash = entity.signatureHash,
-            isEnabled = entity.isEnabled
+            isEnabled = entity.isEnabled,
+            repoUrl = entity.sourceRepoUrl
         )
     }
     
@@ -54,7 +55,8 @@ class ExtensionMapper {
             installDate = domain.installDate,
             signatureHash = domain.signatureHash,
             remoteVersionCode = if (domain.hasUpdate) domain.versionCode else null,
-            isEnabled = domain.isEnabled
+            isEnabled = domain.isEnabled,
+            sourceRepoUrl = domain.repoUrl
         )
     }
     
