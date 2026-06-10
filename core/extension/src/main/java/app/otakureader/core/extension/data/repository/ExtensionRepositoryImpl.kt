@@ -143,8 +143,30 @@ class ExtensionRepositoryImpl(
             var updateCount = 0
             
             installed.forEach { localExt ->
-                val remoteExt = remoteExtensions.find { it.pkgName == localExt.pkgName }
-                if (remoteExt != null && remoteExt.versionCode > localExt.versionCode) {
+                val candidates = remoteExtensions.filter { it.pkgName == localExt.pkgName }
+                // Provenance guard (#1019): prefer the listing from the repository this
+                // extension was originally installed from. A different repository offering
+                // the same package name must not silently become the update source — that
+                // is the cross-repo replacement attack this guard exists to stop.
+                val sameRepo = candidates.firstOrNull {
+                    localExt.sourceRepoUrl != null && it.repoUrl == localExt.sourceRepoUrl
+                }
+                val remoteExt = sameRepo
+                    ?: candidates.firstOrNull().takeIf { localExt.sourceRepoUrl == null }
+                if (remoteExt == null) {
+                    if (candidates.isNotEmpty()) {
+                        android.util.Log.w(
+                            "ExtensionRepository",
+                            "Skipping update for ${localExt.pkgName}: offered only by " +
+                                "${candidates.mapNotNull { it.repoUrl }} but installed from " +
+                                "${localExt.sourceRepoUrl}"
+                        )
+                    }
+                    return@forEach
+                }
+                // First sighting of a pre-provenance install: adopt this repo as baseline.
+                remoteExt.repoUrl?.let { localDataSource.backfillSourceRepoUrl(localExt.pkgName, it) }
+                if (remoteExt.versionCode > localExt.versionCode) {
                     localDataSource.updateRemoteVersion(localExt.pkgName, remoteExt.versionCode)
                     localDataSource.updateStatus(localExt.pkgName, InstallStatus.HAS_UPDATE.name)
                     updateCount++

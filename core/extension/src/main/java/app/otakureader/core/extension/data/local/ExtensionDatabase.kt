@@ -64,7 +64,17 @@ data class ExtensionEntity(
     val remoteVersionCode: Int?, // For tracking available updates
 
     @ColumnInfo(name = "is_enabled")
-    val isEnabled: Boolean = true
+    val isEnabled: Boolean = true,
+
+    /**
+     * The repository URL this extension was first installed from (#1019).
+     * Recorded at install time and kept sticky across updates so a different
+     * repository offering the same package name cannot silently replace the
+     * extension via the update path. Null for rows created before this column
+     * existed; backfilled on the next update check.
+     */
+    @ColumnInfo(name = "source_repo_url")
+    val sourceRepoUrl: String? = null
 )
 
 @Dao
@@ -103,6 +113,10 @@ interface ExtensionDao {
     @Query("UPDATE extensions SET remote_version_code = :remoteVersion WHERE pkg_name = :pkgName")
     suspend fun updateRemoteVersion(pkgName: String, remoteVersion: Int)
 
+    /** Backfills first-seen repo provenance for rows created before the column existed (#1019). */
+    @Query("UPDATE extensions SET source_repo_url = :repoUrl WHERE pkg_name = :pkgName AND source_repo_url IS NULL")
+    suspend fun backfillSourceRepoUrl(pkgName: String, repoUrl: String)
+
     @Query("UPDATE extensions SET is_enabled = :enabled WHERE pkg_name = :pkgName")
     suspend fun updateEnabled(pkgName: String, enabled: Boolean)
     
@@ -115,7 +129,7 @@ interface ExtensionDao {
 
 @Database(
     entities = [ExtensionEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class ExtensionDatabase : RoomDatabase() {
