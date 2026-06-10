@@ -263,6 +263,11 @@ sealed interface Route {
     @Serializable
     data object MergeDuplicates : Route
 
+    // ─── Library Maintenance (#1040) ───
+
+    @Serializable
+    data object LibraryMaintenance : Route
+
     // ─── Deep-link only ───
 
     /**

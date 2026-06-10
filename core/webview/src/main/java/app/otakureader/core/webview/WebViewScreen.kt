@@ -63,7 +63,7 @@ fun WebViewScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
         WebViewTopBar(
-            onBack = { onClose(webViewRef?.let { WebViewCookieBridge.cookiesForUrl(url) }) },
+            onBack = { onClose(webViewRef?.let { viewModel.cookiesForUrl(url) }) },
             onNavigateBack = { webViewRef?.goBack() },
             onNavigateForward = { webViewRef?.goForward() },
             onReload = { webViewRef?.reload() },
@@ -81,6 +81,10 @@ fun WebViewScreen(
                             adBlockEnabled = adBlockEnabled,
                             onPageFinished = { /* no-op — callers get cookies via onClose */ },
                         ).configure(wv)
+                        // configure() already sets allowContentAccess = false; repeat here
+                        // so static analysis tools (CodeQL) can verify it without tracing
+                        // through the opaque configure() call.
+                        wv.settings.allowContentAccess = false
                         wv.loadUrl(url)
                     }
                 },

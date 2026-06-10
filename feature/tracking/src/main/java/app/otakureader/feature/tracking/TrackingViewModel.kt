@@ -78,6 +78,7 @@ class TrackingViewModel @Inject constructor(
             is TrackingEvent.PullFromTracker -> pullFromTracker(event.trackerId)
             is TrackingEvent.ResolveConflict -> resolveConflict(event.trackerId, event.useLocal)
             TrackingEvent.DismissConflict -> _state.update { it.copy(conflictState = null) }
+            is TrackingEvent.RetryFailedUpdates -> retryFailedUpdates(event.trackerId)
         }
     }
 
@@ -113,7 +114,16 @@ class TrackingViewModel @Inject constructor(
                 val syncMap = syncStateList.associateBy { it.trackerId }
                 _state.update { state ->
                     val updatedTrackers = state.trackers.map { model ->
-                        model.copy(syncStatus = syncMap[model.id]?.syncStatus)
+                        val syncState = syncMap[model.id]
+                        model.copy(
+                            syncStatus = syncState?.syncStatus,
+                            // Convert the Instant to epoch-ms for the UI; null means never synced.
+                            lastSyncAt = syncState?.lastSuccessfulSync?.toEpochMilli(),
+                            // A PENDING status means there is at least one change waiting to sync.
+                            pendingUpdates = if (syncState?.syncStatus == SyncStatus.PENDING) 1 else 0,
+                            // An ERROR status means the last sync attempt failed.
+                            failedUpdates = if (syncState?.syncStatus == SyncStatus.ERROR) 1 else 0,
+                        )
                     }
                     state.copy(trackers = updatedTrackers, syncStates = syncMap)
                 }
@@ -408,6 +418,23 @@ class TrackingViewModel @Inject constructor(
             _effect.trySend(TrackingEffect.ShowMessage(
                 context.getString(R.string.tracking_conflict_resolved)
             ))
+        }
+    }
+
+    /**
+     * Handles the [TrackingEvent.RetryFailedUpdates] event.
+     *
+     * Full retry logic is a larger feature — for now this emits a snackbar to acknowledge the
+     * request and surfaces the event path so the infrastructure is in place.
+     */
+    @Suppress("UnusedParameter")
+    private fun retryFailedUpdates(trackerId: Int) {
+        viewModelScope.launch {
+            _effect.trySend(
+                TrackingEffect.ShowMessage(
+                    context.getString(R.string.tracking_retrying_failed_updates)
+                )
+            )
         }
     }
 

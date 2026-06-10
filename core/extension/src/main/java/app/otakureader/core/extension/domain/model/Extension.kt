@@ -61,7 +61,27 @@ data class Extension(
     val isEnabled: Boolean = true,
 
     /** URL of the repository this extension belongs to */
-    val repoUrl: String? = null
+    val repoUrl: String? = null,
+
+    /**
+     * Whether the extension has a README in its repository.
+     * Populated from the repo index JSON (Keiyoushi/Komikku minified format: "hasReadme").
+     */
+    val hasReadme: Boolean = false,
+
+    /**
+     * Whether the extension has a CHANGELOG in its repository.
+     * Populated from the repo index JSON (Keiyoushi/Komikku minified format: "hasChangelog").
+     */
+    val hasChangelog: Boolean = false,
+
+    /**
+     * Whether the extension requires Cloudflare bypass to function.
+     * Populated from the repo index JSON (Keiyoushi/Komikku minified format: "hasCloudflare"
+     * on the source level — aggregated to the extension level here as true if any source
+     * has hasCloudflare == 1).
+     */
+    val hasCloudflare: Boolean = false
 ) : Parcelable {
     
     val isInstalled: Boolean

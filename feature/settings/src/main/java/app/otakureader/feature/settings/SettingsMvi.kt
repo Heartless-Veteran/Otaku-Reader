@@ -44,6 +44,10 @@ data class SettingsState(
     // --- Security ---
     val biometricLockEnabled: Boolean = false,
     val biometricLockTimeoutMinutes: Int = 0,
+    val biometricLockScheduleEnabled: Boolean = false,
+    val biometricLockStartHour: Int = 22,
+    val biometricLockEndHour: Int = 8,
+    val biometricLockActiveDays: Set<Int> = emptySet(),
 
     // --- Discord ---
     val discordRpcEnabled: Boolean = false,
@@ -145,6 +149,9 @@ data class SettingsState(
     val smartDownloadFavoritesOnly get() = downloads.smartDownloadFavoritesOnly
     val smartDownloadMinStorageMb get() = downloads.smartDownloadMinStorageMb
     val downloadDataSaverEnabled get() = downloads.downloadDataSaverEnabled
+    val autoDownloadCategoryInclude get() = downloads.autoDownloadCategoryInclude
+    val autoDownloadCategoryExclude get() = downloads.autoDownloadCategoryExclude
+    val availableCategories get() = downloads.availableCategories
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -162,6 +169,13 @@ data class SettingsState(
     val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
     val backupEncryptionEnabled get() = backup.backupEncryptionEnabled
     val backupEncryptionPasswordSet get() = backup.backupEncryptionPasswordSet
+    val showBackupChecklist get() = backup.showBackupChecklist
+    val backupChecklistMangaCount get() = backup.backupChecklistMangaCount
+    val backupChecklistCategoryCount get() = backup.backupChecklistCategoryCount
+    val backupChecklistTrackingCount get() = backup.backupChecklistTrackingCount
+    val showRestoreConfirm get() = backup.showRestoreConfirm
+    val pendingRestoreUri get() = backup.pendingRestoreUri
+    val pendingRestoreFileName get() = backup.pendingRestoreFileName
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
@@ -284,6 +298,18 @@ sealed interface SettingsEvent : UiEvent {
     data object OnCreateBackup : SettingsEvent
     data object OnRestoreBackup : SettingsEvent
     data object OnImportTachiyomiBackup : SettingsEvent
+    /** User tapped the Backup button — shows the checklist dialog before the file picker. */
+    data object ShowBackupChecklist : SettingsEvent
+    /** User confirmed the checklist dialog — opens the file-save picker. */
+    data object ConfirmCreateBackup : SettingsEvent
+    /** User cancelled the checklist dialog. */
+    data object DismissBackupChecklist : SettingsEvent
+    /** File picker returned a restore URI — show the preflight confirmation before restoring. */
+    data class ShowRestoreConfirm(val uri: Uri) : SettingsEvent
+    /** User confirmed the restore preflight dialog — proceed with the restore. */
+    data class ConfirmRestore(val uri: Uri) : SettingsEvent
+    /** User cancelled the restore preflight dialog. */
+    data object DismissRestoreConfirm : SettingsEvent
     data class CreateBackupWithUri(val uri: Uri) : SettingsEvent
     data class RestoreBackupFromUri(val uri: Uri) : SettingsEvent
     data class ImportTachiyomiBackupFromUri(val uri: Uri) : SettingsEvent
@@ -322,6 +348,10 @@ sealed interface SettingsEvent : UiEvent {
     // Security
     data class SetBiometricLockEnabled(val enabled: Boolean) : SettingsEvent
     data class SetBiometricLockTimeout(val minutes: Int) : SettingsEvent
+    data class SetBiometricLockScheduleEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetBiometricLockStartHour(val hour: Int) : SettingsEvent
+    data class SetBiometricLockEndHour(val hour: Int) : SettingsEvent
+    data class SetBiometricLockActiveDays(val days: Set<Int>) : SettingsEvent
 
     // Discord
     data class SetDiscordRpcEnabled(val enabled: Boolean) : SettingsEvent
@@ -355,6 +385,12 @@ sealed interface SettingsEvent : UiEvent {
 
     // Downloads — Data Saver
     data class SetDownloadDataSaverEnabled(val enabled: Boolean) : SettingsEvent
+
+    // Downloads — Per-category auto-download filter
+    data object OpenAutoDownloadCategoryIncludePicker : SettingsEvent
+    data object OpenAutoDownloadCategoryExcludePicker : SettingsEvent
+    data class SetAutoDownloadCategoryInclude(val categoryIds: Set<Long>) : SettingsEvent
+    data class SetAutoDownloadCategoryExclude(val categoryIds: Set<Long>) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {

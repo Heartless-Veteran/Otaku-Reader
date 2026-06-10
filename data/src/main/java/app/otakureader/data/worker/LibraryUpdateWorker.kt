@@ -133,6 +133,8 @@ class LibraryUpdateWorker @AssistedInject constructor(
             val autoDownloadEnabled = downloadPreferences.autoDownloadEnabled.first()
             val downloadOnlyOnWifi = downloadPreferences.downloadOnlyOnWifi.first()
             val autoDownloadLimit = downloadPreferences.autoDownloadLimit.first()
+            val autoDownloadCategoryInclude = downloadPreferences.autoDownloadCategoryInclude.first()
+            val autoDownloadCategoryExclude = downloadPreferences.autoDownloadCategoryExclude.first()
             val showUpdateProgress = libraryPreferences.showUpdateProgress.first()
 
             // Check if Wi-Fi is available for downloads requiring Wi-Fi
@@ -185,7 +187,23 @@ class LibraryUpdateWorker @AssistedInject constructor(
                         val shouldDownloadForManga = manga.autoDownload || autoDownloadEnabled
 
                         if (shouldDownloadForManga) {
-                            enqueueAutoDownloads(manga.id, manga.sourceId, manga.title, autoDownloadLimit)
+                            // Category-level auto-download filter.
+                            // manga.categoryIds comes from the domain model that is already
+                            // populated by GetLibraryMangaUseCase (it includes category joins).
+                            val mangaCategoryIds = manga.categoryIds
+
+                            // Include list: if non-empty, manga must belong to at least one
+                            // listed category. An empty include list means "all categories".
+                            val passesInclude = autoDownloadCategoryInclude.isEmpty() ||
+                                mangaCategoryIds.any { it in autoDownloadCategoryInclude }
+
+                            // Exclude list: if the manga belongs to ANY excluded category,
+                            // skip it regardless of the include list.
+                            val passesExclude = mangaCategoryIds.none { it in autoDownloadCategoryExclude }
+
+                            if (passesInclude && passesExclude) {
+                                enqueueAutoDownloads(manga.id, manga.sourceId, manga.title, autoDownloadLimit)
+                            }
                         }
                     }
                 }.onFailure {
