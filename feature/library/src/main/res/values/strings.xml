@@ -254,4 +254,12 @@
     <string name="library_bulk_action_confirm_message">%2$s for %1$d manga?</string>
     <string name="library_bulk_action_confirm">Confirm</string>
     <string name="library_bulk_action_cancel">Cancel</string>
+
+    <!-- EH favorites sync (#1024) -->
+    <string name="library_sync_eh_favorites">Sync EH Favorites</string>
+    <string name="library_eh_sync_started">Syncing E-Hentai favorites…</string>
+    <string name="library_eh_sync_complete">Added %1$d new favorites to library</string>
+    <string name="library_eh_sync_nothing_new">Library is already up to date</string>
+    <string name="library_eh_sync_not_configured">No E-Hentai session found. Sign in via Browse first.</string>
+    <string name="library_eh_sync_failed">EH sync failed. Check your session and try again.</string>
 </resources>

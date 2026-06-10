@@ -168,6 +168,8 @@ sealed class LibraryEvent {
     data object ConfirmSaveView : LibraryEvent()
     data class ApplySavedView(val view: SavedLibraryView) : LibraryEvent()
     data class DeleteSavedView(val id: String) : LibraryEvent()
+    // EH favorites sync (#1024)
+    data object SyncEhFavorites : LibraryEvent()
 }
 
 sealed class LibraryEffect {
