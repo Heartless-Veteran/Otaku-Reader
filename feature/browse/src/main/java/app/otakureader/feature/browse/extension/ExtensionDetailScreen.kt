@@ -301,7 +301,7 @@ private fun TrustStatusBadge(isTrusted: Boolean, modifier: Modifier = Modifier) 
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = "Trusted",
+                text = stringResource(R.string.extension_trust_status_trusted),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -313,7 +313,7 @@ private fun TrustStatusBadge(isTrusted: Boolean, modifier: Modifier = Modifier) 
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = "Unverified",
+                text = stringResource(R.string.extension_trust_status_unverified),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -381,7 +381,7 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
             IconButton(onClick = { expanded = !expanded }) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse sources" else "Expand sources",
+                    contentDescription = if (expanded) stringResource(R.string.extension_detail_sources_collapse) else stringResource(R.string.extension_detail_sources_expand),
                 )
             }
         }
@@ -389,7 +389,7 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
         if (expanded) {
             if (extension.sources.isEmpty()) {
                 Text(
-                    text = "No sources",
+                    text = stringResource(R.string.extension_detail_no_sources),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
