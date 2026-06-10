@@ -487,6 +487,7 @@ private fun ExtensionItem(
                     }
                 }
             }
+            }
 
             // Details link — always visible at the bottom of the card
             TextButton(

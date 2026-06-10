@@ -15,6 +15,8 @@ import io.mockk.Awaits
 import io.mockk.Runs
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -122,6 +124,11 @@ class ExtensionsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         collectScope = CoroutineScope(testDispatcher)
 
+        // checkSignerHashContinuity logs at WARN on mismatch; android.util.Log is not
+        // available in plain JVM unit tests, so stub it to avoid "not mocked" errors.
+        mockkStatic(android.util.Log::class)
+        every { android.util.Log.w(any<String>(), any<String>()) } returns 0
+
         // Default flow stubs — must be set BEFORE ViewModel creation because init block triggers them
         every { extensionRepository.getInstalledExtensions() } returns installedExtensionsFlow
         every { extensionRepository.getAvailableExtensions() } returns availableExtensionsFlow
@@ -154,6 +161,7 @@ class ExtensionsViewModelTest {
     fun teardown() {
         collectScope.cancel()
         Dispatchers.resetMain()
+        unmockkStatic(android.util.Log::class)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -1037,6 +1045,34 @@ class ExtensionsViewModelTest {
         val pkg = "app.ext.unsigned"
 
         val ext = createExtension(pkgName = pkg, signatureHash = null)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
+    }
+
+    @Test
+    fun `checkSignerHashContinuity does not overwrite existing first-seen hash`() = runTest {
+        val pkg = "app.ext.existing"
+        val originalHash = "originalhash_aabbcc"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(mapOf(pkg to originalHash))
+
+        val ext = createExtension(pkgName = pkg, signatureHash = originalHash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Hash already recorded and unchanged — write-once means no new write and no mismatch.
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity skips extension with empty signature hash`() = runTest {
+        val pkg = "app.ext.emptyhash"
+
+        val ext = createExtension(pkgName = pkg, signatureHash = "")
         installedExtensionsFlow.value = listOf(ext)
         testDispatcher.scheduler.advanceUntilIdle()
 
