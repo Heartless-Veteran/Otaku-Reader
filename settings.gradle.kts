@@ -63,3 +63,6 @@ include(":feature:about")
 include(":feature:opds")
 include(":feature:feed")
 include(":feature:more")
+
+// Performance: baseline profile generation + macrobenchmarks (#1022)
+include(":baselineprofile")
