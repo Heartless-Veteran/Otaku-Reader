@@ -1,8 +1,10 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
+import app.otakureader.core.database.entity.MangaAlternativeSourceEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
@@ -21,6 +23,7 @@ class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
     private val mangaCategoryDao: MangaCategoryDao,
+    private val altSourceDao: MangaAlternativeSourceDao,
     private val downloadRepository: dagger.Lazy<app.otakureader.domain.repository.DownloadRepository>
 ) : MangaRepository {
 
@@ -243,6 +246,17 @@ class MangaRepositoryImpl @Inject constructor(
 
     override suspend fun getCategoryIdsForManga(mangaId: Long): List<Long> =
         mangaCategoryDao.getCategoryIdsForManga(mangaId)
+
+    override suspend fun linkAlternativeSource(mangaId: Long, altMangaId: Long) {
+        altSourceDao.insert(MangaAlternativeSourceEntity(mangaId = mangaId, altMangaId = altMangaId))
+    }
+
+    override suspend fun unlinkAlternativeSource(mangaId: Long, altMangaId: Long) {
+        altSourceDao.unlink(mangaId, altMangaId)
+    }
+
+    override suspend fun getAlternativeSourceIds(mangaId: Long): List<Long> =
+        altSourceDao.getAlternativeIdsForMangaSync(mangaId)
 
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,

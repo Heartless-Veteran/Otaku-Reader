@@ -103,4 +103,7 @@ object DatabaseModule {
 
     @Provides
     fun provideUpdateRunSummaryDao(database: OtakuReaderDatabase): UpdateRunSummaryDao = database.updateRunSummaryDao()
+
+    @Provides
+    fun provideMangaAlternativeSourceDao(database: OtakuReaderDatabase): app.otakureader.core.database.dao.MangaAlternativeSourceDao = database.mangaAlternativeSourceDao()
 }

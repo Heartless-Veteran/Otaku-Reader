@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.usecase.FillMissingChaptersUseCase
+import app.otakureader.domain.usecase.LinkAlternativeSourceUseCase
 import app.otakureader.domain.usecase.MergeDuplicateMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -23,6 +25,8 @@ class MergeDuplicatesViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val sourceRepository: SourceRepository,
     private val mergeDuplicateManga: MergeDuplicateMangaUseCase,
+    private val linkAlternativeSource: LinkAlternativeSourceUseCase,
+    private val fillMissingChapters: FillMissingChaptersUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MergeDuplicatesState())
@@ -42,6 +46,9 @@ class MergeDuplicatesViewModel @Inject constructor(
             is MergeDuplicatesEvent.SelectPrimary -> selectPrimary(event.groupIndex, event.primaryId)
             is MergeDuplicatesEvent.MergeGroup -> mergeGroup(event.group)
             is MergeDuplicatesEvent.MergeAll -> mergeAll()
+            is MergeDuplicatesEvent.LinkAsAlternative -> linkAsAlternative(event.primaryId, event.altId)
+            is MergeDuplicatesEvent.FillMissingChapters -> fillMissing(event.primaryId, event.altId)
+            is MergeDuplicatesEvent.UnlinkAlternative -> unlinkAlternative(event.primaryId, event.altId)
         }
     }
 
@@ -131,5 +138,57 @@ class MergeDuplicatesViewModel @Inject constructor(
                 _effect.send(MergeDuplicatesEffect.NavigateBack)
             }
         }
+    }
+
+    private fun linkAsAlternative(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                linkAlternativeSource(primaryId, altId)
+                val linked = loadLinkedForPair(primaryId, altId)
+                _state.update { it.copy(linkedAlternatives = linked) }
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Linked as alternative sources"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Link failed: ${e.message}"))
+            }
+        }
+    }
+
+    private fun fillMissing(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                val added = fillMissingChapters(primaryId, altId)
+                val msg = if (added == 0) "No missing chapters found" else "Added $added missing chapter(s)"
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar(msg))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Fill failed: ${e.message}"))
+            }
+        }
+    }
+
+    private fun unlinkAlternative(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                mangaRepository.unlinkAlternativeSource(primaryId, altId)
+                val linked = loadLinkedForPair(primaryId, altId)
+                _state.update { it.copy(linkedAlternatives = linked) }
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Alternative link removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Unlink failed: ${e.message}"))
+            }
+        }
+    }
+
+    /** Refreshes the linkedAlternatives map for the two given IDs. */
+    private suspend fun loadLinkedForPair(primaryId: Long, altId: Long): Map<Long, Set<Long>> {
+        val current = _state.value.linkedAlternatives.toMutableMap()
+        current[primaryId] = mangaRepository.getAlternativeSourceIds(primaryId).toSet()
+        current[altId] = mangaRepository.getAlternativeSourceIds(altId).toSet()
+        return current
     }
 }
