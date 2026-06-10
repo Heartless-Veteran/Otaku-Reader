@@ -90,7 +90,7 @@
     <string name="settings_keep_screen_on">Keep Screen On</string>
     <string name="settings_keep_screen_on_description">Prevent the screen from sleeping while reading</string>
     <string name="settings_incognito_mode">Incognito Mode</string>
-    <string name="settings_incognito_mode_description">Reading history and progress are not saved while enabled</string>
+    <string name="settings_incognito_mode_description">Reading history, statistics, tracker progress updates, and automatic backups are paused while incognito mode is active</string>
     <string name="settings_secure_screen">Secure Screen</string>
     <string name="settings_secure_screen_description">Prevent screenshots and screen recording while reading</string>
     <string name="settings_preload_before">Preload Pages Before: %1$d</string>

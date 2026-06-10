@@ -228,4 +228,10 @@
     <string name="merge_duplicates_primary_badge">Primary</string>
     <string name="merge_duplicates_chapters">%1$d ch.</string>
     <string name="merge_duplicates_unread">%1$d unread</string>
+
+    <!-- Bulk action confirmation dialog -->
+    <string name="library_bulk_action_confirm_title">Confirm action</string>
+    <string name="library_bulk_action_confirm_message">%2$s for %1$d manga?</string>
+    <string name="library_bulk_action_confirm">Confirm</string>
+    <string name="library_bulk_action_cancel">Cancel</string>
 </resources>
