@@ -22,4 +22,11 @@ data class ReaderPreset(
     val showPageNumber: Boolean = true,
     val skipReadChapters: Boolean = false,
     val skipFilteredChapters: Boolean = true,
+    // Round 2 (#1027): device/performance settings. Defaults match the individual
+    // preference defaults so presets saved before these fields existed apply unchanged.
+    val keepScreenOn: Boolean = true,
+    val einkFlashOnPageChange: Boolean = false,
+    val einkBlackAndWhite: Boolean = false,
+    val preloadPagesBefore: Int = 2,
+    val preloadPagesAfter: Int = 3,
 )

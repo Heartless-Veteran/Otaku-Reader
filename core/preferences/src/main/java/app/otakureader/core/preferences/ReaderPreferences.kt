@@ -197,6 +197,11 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             prefs[Keys.SHOW_PAGE_NUMBER] = preset.showPageNumber
             prefs[Keys.SKIP_READ_CHAPTERS] = preset.skipReadChapters
             prefs[Keys.SKIP_FILTERED_CHAPTERS] = preset.skipFilteredChapters
+            prefs[Keys.KEEP_SCREEN_ON] = preset.keepScreenOn
+            prefs[Keys.EINK_FLASH_ON_PAGE_CHANGE] = preset.einkFlashOnPageChange
+            prefs[Keys.EINK_BLACK_AND_WHITE] = preset.einkBlackAndWhite
+            prefs[Keys.PRELOAD_PAGES_BEFORE] = preset.preloadPagesBefore
+            prefs[Keys.PRELOAD_PAGES_AFTER] = preset.preloadPagesAfter
         }
     }
 
@@ -218,6 +223,11 @@ class ReaderPreferences(private val dataStore: DataStore<Preferences>) {
             showPageNumber = prefs[Keys.SHOW_PAGE_NUMBER] ?: true,
             skipReadChapters = prefs[Keys.SKIP_READ_CHAPTERS] ?: false,
             skipFilteredChapters = prefs[Keys.SKIP_FILTERED_CHAPTERS] ?: true,
+            keepScreenOn = prefs[Keys.KEEP_SCREEN_ON] ?: true,
+            einkFlashOnPageChange = prefs[Keys.EINK_FLASH_ON_PAGE_CHANGE] ?: false,
+            einkBlackAndWhite = prefs[Keys.EINK_BLACK_AND_WHITE] ?: false,
+            preloadPagesBefore = prefs[Keys.PRELOAD_PAGES_BEFORE] ?: 2,
+            preloadPagesAfter = prefs[Keys.PRELOAD_PAGES_AFTER] ?: 3,
         )
     }
 
