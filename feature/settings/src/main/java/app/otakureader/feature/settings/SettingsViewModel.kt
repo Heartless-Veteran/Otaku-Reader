@@ -99,6 +99,8 @@ class SettingsViewModel @Inject constructor(
             else -> when (event) {
                 is SettingsEvent.SetLocalSourceDirectory ->
                     localSourcePreferences.setLocalSourceDirectory(event.path)
+                is SettingsEvent.SetAllowLocalSourceHiddenFolders ->
+                    localSourcePreferences.setAllowLocalSourceHiddenFolders(event.allowed)
                 SettingsEvent.NavigateToAbout ->
                     _effect.send(SettingsEffect.NavigateToAbout)
                 else -> Unit
@@ -188,6 +190,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             localSourcePreferences.localSourceDirectory.collect { dir ->
                 _state.update { it.copy(localSourceDirectory = dir) }
+            }
+        }
+        viewModelScope.launch {
+            localSourcePreferences.allowLocalSourceHiddenFolders.collect { allowed ->
+                _state.update { it.copy(allowLocalSourceHiddenFolders = allowed) }
             }
         }
     }
