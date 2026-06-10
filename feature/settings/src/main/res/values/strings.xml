@@ -137,7 +137,7 @@
     <string name="settings_reminder_afternoon">Afternoon (2 PM)</string>
     <string name="settings_reminder_evening">Evening (8 PM)</string>
 
-    <!-- Backup, Restore & Migration -->
+    <!-- Backup, Restore &amp; Migration -->
     <string name="settings_backup">Backup &amp; Restore</string>
     <string name="settings_backup_restore_migration">Backup, Restore &amp; Migration</string>
     <string name="settings_create_backup">Create Backup</string>
@@ -351,7 +351,7 @@
     <string name="settings_ai_remove_key_dialog_text">This will clear your saved Gemini API key. AI features will be disabled until a new key is added.</string>
     <string name="settings_ai_remove_key_confirm">Remove</string>
     <string name="settings_ai_remove_key_cancel">Cancel</string>
-    <string name="settings_ai_api_key_invalid_format">Invalid key format. Gemini API keys should start with "AIza" and be at least 20 characters.</string>
+    <string name="settings_ai_api_key_invalid_format">Invalid key format. Gemini API keys should start with &quot;AIza&quot; and be at least 20 characters.</string>
     <string name="settings_ai_load_failed">Failed to load AI settings. You may need to re-enter your API key.</string>
 
     <!-- Reader Display -->
@@ -564,6 +564,12 @@
     <string name="storage_analytics_total">Total: %1$s</string>
     <string name="storage_analytics_empty">No downloaded chapters found.</string>
     <string name="storage_analytics_refresh">Refresh</string>
+    <string name="storage_delete_title">Delete downloads</string>
+    <string name="storage_delete_message">Delete all downloaded chapters for %1$s? This frees %2$s and cannot be undone.</string>
+    <string name="storage_delete_confirm">Delete</string>
+    <string name="storage_delete_cancel">Cancel</string>
+    <string name="storage_delete_success">Deleted downloads for %s</string>
+    <string name="storage_delete_failure">Failed to delete downloads for %s</string>
 
     <!-- Reader presets -->
     <string name="reader_presets_title">Reader Presets</string>
