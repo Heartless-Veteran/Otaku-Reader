@@ -24,3 +24,8 @@ sealed interface StorageAnalyticsEvent {
     data class DeleteMangaDownloads(val sourceName: String, val mangaTitle: String) : StorageAnalyticsEvent
     data object Refresh : StorageAnalyticsEvent
 }
+
+sealed interface StorageAnalyticsEffect {
+    data class DeleteSuccess(val mangaTitle: String) : StorageAnalyticsEffect
+    data class DeleteFailure(val mangaTitle: String) : StorageAnalyticsEffect
+}

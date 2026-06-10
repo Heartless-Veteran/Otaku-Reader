@@ -547,6 +547,8 @@
     <string name="storage_delete_message">Delete all downloaded chapters for %1$s? This frees %2$s and cannot be undone.</string>
     <string name="storage_delete_confirm">Delete</string>
     <string name="storage_delete_cancel">Cancel</string>
+    <string name="storage_delete_success">Deleted downloads for %s</string>
+    <string name="storage_delete_failure">Failed to delete downloads for %s</string>
 
     <!-- Reader presets -->
     <string name="reader_presets_title">Reader Presets</string>
