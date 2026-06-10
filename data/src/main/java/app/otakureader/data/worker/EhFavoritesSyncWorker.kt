@@ -47,8 +47,10 @@ class EhFavoritesSyncWorker @AssistedInject constructor(
             Result.success()
         } catch (e: CancellationException) {
             throw e
-        } catch (e: Exception) {
+        } catch (e: java.io.IOException) {
             Result.retry()
+        } catch (e: Exception) {
+            Result.failure()
         }
     }
 

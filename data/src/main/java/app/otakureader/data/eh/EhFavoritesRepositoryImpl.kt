@@ -22,5 +22,5 @@ class EhFavoritesRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun isConfigured(): Boolean = ehSessionStore.isConfigured()
+    override fun isConfigured(): Boolean = ehSessionStore.getSession() != null
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,7 +17,7 @@ import javax.inject.Singleton
  * to fetch the favorites page without re-prompting for credentials.
  */
 @Singleton
-class EhSessionStore @Inject constructor(private val context: Context) {
+class EhSessionStore @Inject constructor(@ApplicationContext private val context: Context) {
 
     private val masterKey: MasterKey by lazy {
         MasterKey.Builder(context)
