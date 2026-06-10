@@ -6,6 +6,7 @@ import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.ExtensionManagementRepository
 import io.mockk.coEvery
@@ -52,6 +53,7 @@ class ExtensionsViewModelTest {
     private val extensionRepoRepository: ExtensionRepoRepository = mockk(relaxed = true)
     private val extensionManagementRepository: ExtensionManagementRepository = mockk(relaxed = true)
     private val generalPreferences: GeneralPreferences = mockk(relaxed = true)
+    private val blocklistStore: ExtensionBlocklistStore = mockk(relaxed = true)
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -143,6 +145,7 @@ class ExtensionsViewModelTest {
         // Without explicit stubs the relaxed mock returns an empty Flow and .first() throws,
         // causing the catch block to set error state instead of populating installedExtensions.
         every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+        every { blocklistStore.blockedPackages } returns flowOf(emptyMap())
         coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just Runs
         coEvery { generalPreferences.recordExtensionFirstSeenHashes(any()) } just Runs
 
@@ -151,7 +154,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Subscribe to activate stateIn(WhileSubscribed); will start collecting on first advanceUntilIdle.
         collectScope.launch { viewModel.state.collect { } }
@@ -239,7 +243,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Subscribe so stateIn(WhileSubscribed) starts collecting from the combine.
         backgroundScope.launch { vm.state.collect { } }
@@ -752,7 +757,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -772,7 +778,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -995,7 +1002,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Use backgroundScope so the infinite collect doesn't block runTest from completing.
         backgroundScope.launch { vm.state.collect { } }
@@ -1031,6 +1039,7 @@ class ExtensionsViewModelTest {
         val hash = "firsthash_112233"
 
         every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+        every { blocklistStore.blockedPackages } returns flowOf(emptyMap())
 
         val ext = createExtension(pkgName = pkg, signatureHash = hash)
         installedExtensionsFlow.value = listOf(ext)

@@ -129,6 +129,9 @@ class MainActivity : FragmentActivity() {
                     app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
                 }
 
+                // Security mechanism, not a preference — always scheduled (#1018).
+                app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
+
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {
                     libraryUpdateScheduler.enqueueNow()

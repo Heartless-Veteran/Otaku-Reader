@@ -187,4 +187,6 @@
     <string name="extension_has_readme_cd">Has README documentation</string>
     <string name="extension_has_changelog">CHANGELOG</string>
     <string name="extension_has_changelog_cd">Has changelog</string>
+    <!-- Extension blocklist (#1018) -->
+    <string name="extension_blocked_warning">Blocked: %1$s</string>
 </resources>

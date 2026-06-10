@@ -9,6 +9,7 @@ import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
 import app.otakureader.core.preferences.GeneralPreferences
@@ -48,6 +49,12 @@ data class ExtensionsState(
      * changed after the extension was first installed, which the UI should flag.
      */
     val signerMismatchedPackages: Set<String> = emptySet(),
+    /**
+     * Installed extensions present on the remote blocklist (#1018), mapped to the
+     * block reason. New installs of these packages are refused outright; already
+     * installed copies are flagged in the list so the user can uninstall.
+     */
+    val blockedPackages: Map<String, String> = emptyMap(),
 ) : UiState
 
 enum class SortMode {
@@ -84,7 +91,8 @@ class ExtensionsViewModel @Inject constructor(
     private val extensionInstaller: ExtensionInstaller,
     private val extensionRepoRepository: ExtensionRepoRepository,
     private val extensionManagementRepository: ExtensionManagementRepository,
-    private val generalPreferences: GeneralPreferences
+    private val generalPreferences: GeneralPreferences,
+    private val blocklistStore: ExtensionBlocklistStore
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -155,6 +163,7 @@ class ExtensionsViewModel @Inject constructor(
             extensionRepoRepository.ensureDefaultRepository()
             loadExtensions()
             observeRepositories()
+            observeBlocklist()
             refreshExtensions()
         }
     }
@@ -323,7 +332,24 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
+    private fun observeBlocklist() {
+        viewModelScope.launch {
+            blocklistStore.blockedPackages.collect { blocked ->
+                _state.update { it.copy(blockedPackages = blocked) }
+            }
+        }
+    }
+
     private fun installExtension(extension: Extension) {
+        val blockedReason = _state.value.blockedPackages[extension.pkgName]
+        if (blockedReason != null) {
+            viewModelScope.launch {
+                _effect.send(
+                    ExtensionsEffect.ShowError("Extension is blocklisted: $blockedReason")
+                )
+            }
+            return
+        }
         if (extension.signatureHash == null) {
             _state.update {
                 it.copy(
