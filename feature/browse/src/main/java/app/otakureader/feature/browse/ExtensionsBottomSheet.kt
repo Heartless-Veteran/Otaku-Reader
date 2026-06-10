@@ -459,6 +459,7 @@ private fun ExtensionItem(
                         Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
                     }
                 }
+            }
 
             // Details link — always visible at the bottom of the card
             TextButton(
