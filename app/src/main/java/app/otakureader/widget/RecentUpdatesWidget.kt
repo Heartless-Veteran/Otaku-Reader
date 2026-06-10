@@ -1,6 +1,7 @@
 package app.otakureader.widget
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -62,7 +63,8 @@ class RecentUpdatesWidget : GlanceAppWidget() {
                         subtitle = update.chapter.name
                     )
                 }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("RecentUpdatesWidget", "Failed to load recent updates for widget", e)
             emptyList()
         }
 

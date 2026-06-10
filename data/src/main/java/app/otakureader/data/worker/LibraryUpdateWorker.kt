@@ -317,7 +317,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // Log error but don't fail the entire worker
+            // Don't fail the whole library update over a download enqueue problem,
+            // but leave a trace — a silent catch here hides broken auto-download.
+            Log.e(TAG, "Failed to enqueue auto-downloads for manga $mangaId", e)
         }
     }
 

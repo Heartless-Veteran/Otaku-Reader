@@ -125,12 +125,18 @@ class BackupRestorer @Inject constructor(
      * the chapter operation and the history restore.
      */
     private suspend fun restoreChapters(mangaId: Long, backupManga: app.otakureader.data.backup.model.BackupManga) {
+        // Fetch the manga's existing chapters ONCE and index them by URL. The previous
+        // version re-queried the full chapter list inside the per-chapter loop, making the
+        // restore O(chapters²) — noticeably slow for long series. The whole restore already
+        // runs inside restoreBackup's withTransaction, so no inserts can sneak in between.
+        val existingByUrl = chapterDao.getChaptersByMangaId(mangaId).first()
+            .associateBy { it.url }
+            .toMutableMap()
+
         backupManga.chapters.forEach { backupChapter ->
             // Wrap chapter and history restore in a single transaction to maintain atomicity
             database.withTransaction {
-                // Check if chapter already exists by URL
-                val existingChapters = chapterDao.getChaptersByMangaId(mangaId).first()
-                val existingChapter = existingChapters.find { it.url == backupChapter.url }
+                val existingChapter = existingByUrl[backupChapter.url]
 
                 val chapterId = if (existingChapter != null) {
                     // Update existing chapter
@@ -138,8 +144,11 @@ class BackupRestorer @Inject constructor(
                     chapterDao.update(updatedChapter)
                     existingChapter.id
                 } else {
-                    // Insert new chapter
-                    chapterDao.insert(backupChapter.toChapterEntity(mangaId))
+                    // Insert new chapter and remember it, so a duplicate URL later in the
+                    // same backup updates this row instead of inserting a second copy.
+                    val newId = chapterDao.insert(backupChapter.toChapterEntity(mangaId))
+                    existingByUrl[backupChapter.url] = backupChapter.toChapterEntity(mangaId).copy(id = newId)
+                    newId
                 }
 
                 // Restore reading history if present.

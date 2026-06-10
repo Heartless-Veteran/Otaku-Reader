@@ -49,6 +49,13 @@ interface SyncQueueDao {
     @Query("DELETE FROM sync_queue WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    /**
+     * Removes items whose attempt count reached [maxAttempts]. [getPending] already skips
+     * them, so without this they would accumulate in the table forever.
+     */
+    @Query("DELETE FROM sync_queue WHERE attempts >= :maxAttempts")
+    suspend fun pruneExhausted(maxAttempts: Int = DEFAULT_MAX_ATTEMPTS)
+
     /** Observe the total number of items waiting to be synced (drives UI badge). */
     @Query("SELECT COUNT(*) FROM sync_queue")
     fun observeQueueSize(): Flow<Int>

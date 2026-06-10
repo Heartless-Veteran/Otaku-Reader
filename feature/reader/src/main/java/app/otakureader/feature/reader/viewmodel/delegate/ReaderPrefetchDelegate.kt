@@ -1,6 +1,7 @@
 package app.otakureader.feature.reader.viewmodel.delegate
 
 import android.content.Context
+import android.util.Log
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PrefetchStrategy
 import app.otakureader.feature.reader.model.ReaderPage
@@ -79,7 +80,10 @@ class ReaderPrefetchDelegate @Inject constructor(
                                 imageLoader.enqueue(ImageRequest.Builder(context).data(imageUrl).build())
                             } catch (e: CancellationException) {
                                 throw e
-                            } catch (_: Exception) {
+                            } catch (e: Exception) {
+                                // Prefetch is best-effort, but a silent catch hides real
+                                // problems (broken ImageLoader, malformed URLs) — log them.
+                                Log.w("ReaderPrefetchDelegate", "Failed to prefetch page $index", e)
                             }
                         }
                     }

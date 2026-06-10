@@ -1,6 +1,7 @@
 package app.otakureader.widget
 
 import android.content.Context
+import android.util.Log
 import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
@@ -73,7 +74,8 @@ class ContinueReadingWidget : GlanceAppWidget() {
                         }
                     )
                 }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("ContinueReadingWidget", "Failed to load continue-reading entries for widget", e)
             emptyList()
         }
 

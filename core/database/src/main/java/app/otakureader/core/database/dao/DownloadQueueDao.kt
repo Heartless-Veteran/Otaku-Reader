@@ -25,6 +25,9 @@ interface DownloadQueueDao {
     @Query("UPDATE download_queue SET priority = :priority WHERE chapter_id = :chapterId")
     suspend fun updatePriority(chapterId: Long, priority: Int)
 
+    @Query("UPDATE download_queue SET page_urls_json = :pageUrlsJson WHERE chapter_id = :chapterId")
+    suspend fun updatePageUrls(chapterId: Long, pageUrlsJson: String)
+
     @Query("DELETE FROM download_queue WHERE chapter_id = :chapterId")
     suspend fun delete(chapterId: Long)
 
