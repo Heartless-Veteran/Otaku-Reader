@@ -91,57 +91,68 @@ class SettingsViewModel @Inject constructor(
     fun restoreBackup(uri: android.net.Uri) { onEvent(SettingsEvent.RestoreBackupFromUri(uri)) }
 
     private suspend fun handleRemainingEvent(event: SettingsEvent) {
-        when (event) {
-            // Local source
-            is SettingsEvent.SetLocalSourceDirectory ->
-                localSourcePreferences.setLocalSourceDirectory(event.path)
-
-            // Migration
-            is SettingsEvent.SetMigrationSimilarityThreshold ->
-                appPreferences.setMigrationSimilarityThreshold(event.threshold)
-            is SettingsEvent.SetMigrationAlwaysConfirm ->
-                appPreferences.setMigrationAlwaysConfirm(event.enabled)
-            is SettingsEvent.SetMigrationMinChapterCount ->
-                appPreferences.setMigrationMinChapterCount(event.count)
-            SettingsEvent.OnNavigateToMigration ->
-                _effect.send(SettingsEffect.NavigateToMigrationEntry)
-
-            // Reading goals
-            is SettingsEvent.SetDailyChapterGoal ->
-                readingGoalPreferences.setDailyChapterGoal(event.goal)
-            is SettingsEvent.SetWeeklyChapterGoal ->
-                readingGoalPreferences.setWeeklyChapterGoal(event.goal)
-            is SettingsEvent.SetReadingRemindersEnabled ->
-                handleSetReadingRemindersEnabled(event.enabled)
-            is SettingsEvent.SetReadingReminderHour ->
-                handleSetReadingReminderHour(event.hour)
-
-            // Data management
-            SettingsEvent.ClearImageCache -> clearImageCache()
-            SettingsEvent.RefreshLibraryCovers -> refreshLibraryCovers()
-            SettingsEvent.ClearHistory -> clearHistory()
-            is SettingsEvent.SetCoilDiskCacheSizeMb ->
-                generalPreferences.setCoilDiskCacheSizeMb(event.sizeMb)
-
-            // Security
-            is SettingsEvent.SetBiometricLockEnabled ->
-                generalPreferences.setBiometricLockEnabled(event.enabled)
-            is SettingsEvent.SetBiometricLockTimeout ->
-                generalPreferences.setBiometricLockTimeoutMinutes(event.minutes)
-            is SettingsEvent.SetBiometricLockScheduleEnabled ->
-                generalPreferences.setBiometricLockScheduleEnabled(event.enabled)
-            is SettingsEvent.SetBiometricLockStartHour ->
-                generalPreferences.setBiometricLockStartHour(event.hour)
-            is SettingsEvent.SetBiometricLockEndHour ->
-                generalPreferences.setBiometricLockEndHour(event.hour)
-            is SettingsEvent.SetBiometricLockActiveDays ->
-                generalPreferences.setBiometricLockActiveDays(event.days)
-
-            // Navigation
-            SettingsEvent.NavigateToAbout -> _effect.send(SettingsEffect.NavigateToAbout)
-
-            else -> Unit
+        when {
+            handleMigrationEvent(event) -> Unit
+            handleReadingGoalEvent(event) -> Unit
+            handleDataManagementEvent(event) -> Unit
+            handleSecurityEvent(event) -> Unit
+            else -> when (event) {
+                is SettingsEvent.SetLocalSourceDirectory ->
+                    localSourcePreferences.setLocalSourceDirectory(event.path)
+                SettingsEvent.NavigateToAbout ->
+                    _effect.send(SettingsEffect.NavigateToAbout)
+                else -> Unit
+            }
         }
+    }
+
+    private suspend fun handleMigrationEvent(event: SettingsEvent): Boolean = when (event) {
+        is SettingsEvent.SetMigrationSimilarityThreshold ->
+            { appPreferences.setMigrationSimilarityThreshold(event.threshold); true }
+        is SettingsEvent.SetMigrationAlwaysConfirm ->
+            { appPreferences.setMigrationAlwaysConfirm(event.enabled); true }
+        is SettingsEvent.SetMigrationMinChapterCount ->
+            { appPreferences.setMigrationMinChapterCount(event.count); true }
+        SettingsEvent.OnNavigateToMigration ->
+            { _effect.send(SettingsEffect.NavigateToMigrationEntry); true }
+        else -> false
+    }
+
+    private suspend fun handleReadingGoalEvent(event: SettingsEvent): Boolean = when (event) {
+        is SettingsEvent.SetDailyChapterGoal ->
+            { readingGoalPreferences.setDailyChapterGoal(event.goal); true }
+        is SettingsEvent.SetWeeklyChapterGoal ->
+            { readingGoalPreferences.setWeeklyChapterGoal(event.goal); true }
+        is SettingsEvent.SetReadingRemindersEnabled ->
+            { handleSetReadingRemindersEnabled(event.enabled); true }
+        is SettingsEvent.SetReadingReminderHour ->
+            { handleSetReadingReminderHour(event.hour); true }
+        else -> false
+    }
+
+    private suspend fun handleDataManagementEvent(event: SettingsEvent): Boolean = when (event) {
+        SettingsEvent.ClearImageCache -> { clearImageCache(); true }
+        SettingsEvent.RefreshLibraryCovers -> { refreshLibraryCovers(); true }
+        SettingsEvent.ClearHistory -> { clearHistory(); true }
+        is SettingsEvent.SetCoilDiskCacheSizeMb ->
+            { generalPreferences.setCoilDiskCacheSizeMb(event.sizeMb); true }
+        else -> false
+    }
+
+    private suspend fun handleSecurityEvent(event: SettingsEvent): Boolean = when (event) {
+        is SettingsEvent.SetBiometricLockEnabled ->
+            { generalPreferences.setBiometricLockEnabled(event.enabled); true }
+        is SettingsEvent.SetBiometricLockTimeout ->
+            { generalPreferences.setBiometricLockTimeoutMinutes(event.minutes); true }
+        is SettingsEvent.SetBiometricLockScheduleEnabled ->
+            { generalPreferences.setBiometricLockScheduleEnabled(event.enabled); true }
+        is SettingsEvent.SetBiometricLockStartHour ->
+            { generalPreferences.setBiometricLockStartHour(event.hour); true }
+        is SettingsEvent.SetBiometricLockEndHour ->
+            { generalPreferences.setBiometricLockEndHour(event.hour); true }
+        is SettingsEvent.SetBiometricLockActiveDays ->
+            { generalPreferences.setBiometricLockActiveDays(event.days); true }
+        else -> false
     }
 
     private fun observeSecurityPreferences() {
