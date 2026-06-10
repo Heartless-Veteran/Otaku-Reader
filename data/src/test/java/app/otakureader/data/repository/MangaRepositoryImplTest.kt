@@ -1,6 +1,7 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.entity.MangaEntity
@@ -27,6 +28,7 @@ class MangaRepositoryImplTest {
     private lateinit var mangaDao: MangaDao
     private lateinit var chapterDao: ChapterDao
     private lateinit var mangaCategoryDao: MangaCategoryDao
+    private lateinit var altSourceDao: MangaAlternativeSourceDao
     private lateinit var downloadRepository: Lazy<DownloadRepository>
     private lateinit var repository: MangaRepositoryImpl
 
@@ -51,8 +53,9 @@ class MangaRepositoryImplTest {
         mangaDao = mockk()
         chapterDao = mockk()
         mangaCategoryDao = mockk()
+        altSourceDao = mockk()
         downloadRepository = mockk()
-        repository = MangaRepositoryImpl(mangaDao, chapterDao, mangaCategoryDao, downloadRepository)
+        repository = MangaRepositoryImpl(mangaDao, chapterDao, mangaCategoryDao, altSourceDao, downloadRepository)
     }
 
     // ---- getLibraryManga ----
