@@ -133,10 +133,7 @@ class LibraryViewModelTest {
         }
         readingListRepository = mockk {
             every { getAllLists() } returns flowOf(emptyList())
-            every { getListWithManga(any()) } returns flowOf(Pair(
-                ReadingList(id = 0L, name = ""),
-                emptyList()
-            ))
+            every { getListWithManga(any()) } returns flowOf(Pair(ReadingList(id = 0L, name = ""), emptyList()))
         }
         getRecommendations = mockk {
             every { this@mockk.invoke() } returns flowOf(emptyList())

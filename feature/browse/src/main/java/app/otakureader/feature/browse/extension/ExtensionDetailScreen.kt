@@ -216,11 +216,12 @@ private fun ExtensionDetailContent(
         HorizontalDivider()
 
         // ── Signer hash ───────────────────────────────────────────────────────
-        if (extension.signatureHash != null) {
+        val sigHash = extension.signatureHash
+        if (sigHash != null) {
             LabeledSection(label = stringResource(R.string.extension_detail_signer)) {
                 Text(
-                    text = extension.signatureHash.take(SIGNER_DISPLAY_LENGTH) +
-                        if (extension.signatureHash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
+                    text = sigHash.take(SIGNER_DISPLAY_LENGTH) +
+                        if (sigHash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -228,20 +229,21 @@ private fun ExtensionDetailContent(
         }
 
         // ── Repository URL ────────────────────────────────────────────────────
-        if (!extension.repoUrl.isNullOrBlank()) {
+        val repoUrl = extension.repoUrl
+        if (!repoUrl.isNullOrBlank()) {
             LabeledSection(label = stringResource(R.string.extension_detail_repo)) {
                 TextButton(
                     onClick = {
                         runCatching {
                             context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(extension.repoUrl))
+                                Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl))
                             )
                         }
                     },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                 ) {
                     Text(
-                        text = extension.repoUrl,
+                        text = repoUrl,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
