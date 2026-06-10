@@ -85,7 +85,12 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 - 📚 **Smart library** — Grid/list views, categories, sorting, filtering, unread badges
 - 📂 **Categories** — Manual category creation and manga assignment
+- 🔖 **Saved library views** — Save named filter+sort combinations, re-apply with one tap
+- 🔍 **Library search** — FTS4 full-text search across title, author, artist
 - 🔍 **Global search** — Search across all installed sources simultaneously
+- 🧹 **Library maintenance center** — Cover refresh, metadata refresh, download reindex, orphaned-file cleanup
+- 🔀 **Duplicate merge** — Detect and merge duplicate entries, with cross-source detection
+- ✅ **Bulk action confirmations** — Destructive selection actions confirm before running
 - 📱 **Widget navigation** — Home screen widgets for continue reading, now reading, and recent updates with deep-link navigation
 - 📂 **QR library sharing** — Share library via text/URL (local, no server)
 
@@ -105,7 +110,10 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 
 - ⬇️ **Download manager** — Queue, progress, offline reading
 - 📦 **CBZ export** — Archive downloaded chapters for backup or transfer
-- 📁 **Local source import** — CBZ/CBR/folder browsing without extensions
+- 🔒 **CBZ encryption** — Optional AES-256-GCM password protection for downloaded archives
+- 🗂️ **Auto-download by category** — Per-category include/exclude control over auto-download
+- 🧮 **Storage analytics** — Per-source/per-manga usage with in-place delete actions
+- 📁 **Local source import** — CBZ/CBR/folder browsing without extensions, optional hidden-folder scanning
 - 🔔 **Smart notification batching** — Grouped chapter update alerts (backend worker active)
 
 </details>
@@ -114,6 +122,12 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <summary>🔌 Discovery & Sources</summary>
 
 - 🔌 **Extension system** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
+- 🛡️ **Extension trust & provenance** — Signer-hash continuity checks warn if an extension's signing certificate changes after install
+- 📄 **Extension detail screen** — Version, signer hash, repo link, capabilities, source list, trust/untrust action
+- 🩺 **Source health diagnostics** — Per-source failure tracking with warning badges in Browse
+- 📌 **Source categories & pinning** — Pin favorite sources, group the rest under custom labels
+- 🔎 **Saved source searches** — Save named queries as chips, re-run with one tap
+- ☁️ **WebView session bridge** — Cloudflare challenge handling with cookie sharing to extension requests
 - 🌐 **OPDS client** — Browse Komga, Kavita, Calibre-Web libraries
 - 📰 **Feed** — New chapter updates from your sources in one place
 - 🔗 **Deep links** — Open manga and chapters directly from external links
@@ -201,11 +215,13 @@ The following features have data/backend support and are being wired up for the 
 | Home screen widgets | ✅ Continue reading + recent updates | ❌ Not available |
 | Deep link support | ✅ Open manga from external URLs | ❌ Not available |
 | Tracker sync | ✅ 5 trackers, auto-sync | ✅ Usually 3-5 |
-| Library search | 🚧 In beta (#926) | ✅ Yes |
-| Biometric lock | 🚧 In beta (#928) | ✅ Yes |
-| Smart download rules | 🚧 In beta (#933) | ⚠️ Basic only |
-| Backup import | 🚧 In beta (#929) | ✅ Yes |
-| Advanced search | 🚧 In beta (#927) | ✅ Yes |
+| Library search | ✅ FTS4 full-text | ✅ Yes |
+| Biometric lock | ✅ With time/day scheduling | ✅ Basic only |
+| Smart download rules | ✅ Threshold + category rules | ⚠️ Basic only |
+| Backup import | ✅ Tachiyomi/Mihon/Komikku | ✅ Yes |
+| Extension trust provenance | ✅ Signer-hash continuity warnings | ❌ Not available |
+| CBZ encryption | ✅ AES-256-GCM at rest | ❌ Not available |
+| Source health diagnostics | ✅ Per-source failure tracking | ❌ Not available |
 
 **Reading Modes:** Paged · Webtoon · Continuous Scroll · Dual-Page · Smart Panels
 
@@ -301,25 +317,20 @@ The following features have data/backend support and are being wired up for the 
 - [x] Gradle convention plugins modernized + SDK levels centralized in version catalog
 - [x] All alpha readiness gates green
 
-### 🚧 Phase 5: Beta Feature Parity (Current)
-- [ ] Library Search (#926)
-- [ ] Advanced Search & Filtering (#927)
-- [ ] Biometric App Lock (#928)
-- [ ] Tachiyomi Backup Import (#929)
-- [ ] Auto-Backup Scheduling UI (#930)
-- [ ] Dynamic Categories (#931)
-- [ ] Hidden Categories (#932)
-- [ ] Smart Download Rules (#933)
-- [ ] Per-Manga Reader Settings (#934)
-- [ ] Page Bookmark Management (#935)
-- [ ] Chapter Notes UI (#936)
-- [ ] Search History & Suggestions (#937)
-- [ ] Download Queue Manager (#938)
-- [ ] Extension Auto-Update (#939)
-- [ ] Smart Notification Batching UI (#940)
-- [ ] Statistics Sharing (#941)
-- [ ] Tracker Batch Sync (#942)
-- [ ] + 11 P2 features (#943–#953)
+### ✅ Phase 5: Beta Feature Parity
+The 35-issue beta parity backlog (#926–#958) plus the QoL and extension-system audits have been delivered. Highlights:
+- [x] Library search (FTS4), saved library views, library maintenance center
+- [x] Reader overlays, presets (13 captured settings), per-mode volume keys
+- [x] Biometric lock with time/day scheduling
+- [x] Backup checklist + restore preflight, backup encryption
+- [x] Smart download rules, auto-download by category, CBZ encryption
+- [x] Widget configuration studio, nav tab drag-reorder
+- [x] Tracking health page, data usage budget + per-source drill-down
+- [x] Extension Detail Screen 2.0, signer-hash provenance, source health diagnostics
+- [x] Source categories & pinning, saved source searches, WebView session bridge
+- [x] Cross-source duplicate detection, update history & diagnostics
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete list. Remaining follow-up work is tracked in open issues (extension blocklist #1018, repo provenance tracking #1019, full cross-source merge workflow #1053, and others).
 
 ### Future Differentiators
 - [ ] Curated default extension index (opt-out)
