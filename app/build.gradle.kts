@@ -50,6 +50,15 @@ android {
         debug {
             applicationIdSuffix = ".debug"
         }
+        // Release-like target for macrobenchmarks (#1022): minified and shrunk like
+        // release but signed with the debug key so it installs without the release
+        // keystore (CI and local). Never shipped.
+        create("benchmark") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
+        }
     }
 
     // F-Droid reproducible builds: the dependency-info block is encrypted with a
