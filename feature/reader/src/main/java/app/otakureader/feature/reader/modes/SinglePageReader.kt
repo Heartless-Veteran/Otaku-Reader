@@ -65,13 +65,15 @@ fun SinglePageReader(
         beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { pageIndex ->
+        // The pager can briefly compose a stale index while the page list is being
+        // replaced (e.g. on chapter switch); bail out instead of crashing.
+        val page = pages.getOrNull(pageIndex) ?: return@HorizontalPager
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            val page = pages[pageIndex]
             
             ZoomableImage(
                 imageUrl = page.imageUrl,

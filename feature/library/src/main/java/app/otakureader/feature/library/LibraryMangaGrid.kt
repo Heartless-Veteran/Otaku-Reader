@@ -137,7 +137,9 @@ internal fun MangaGrid(
             containerColor = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             indicator = { tabPositions ->
-                if (selectedContentFilter < tabPositions.size) {
+                // getOrNull: the indicator lambda runs during layout, after which
+                // selectedContentFilter may have changed — never index unchecked.
+                tabPositions.getOrNull(selectedContentFilter)?.let { position ->
                     val otakuColors = LocalOtakuColors.current
                     val indicatorColor = when (selectedContentFilter) {
                         1 -> otakuColors.contentFilterManga
@@ -146,8 +148,8 @@ internal fun MangaGrid(
                     }
                     Box(
                         modifier = Modifier
-                            .offset(x = tabPositions[selectedContentFilter].left)
-                            .width(tabPositions[selectedContentFilter].width)
+                            .offset(x = position.left)
+                            .width(position.width)
                             .height(3.dp)
                             .background(indicatorColor, RoundedCornerShape(2.dp))
                     )

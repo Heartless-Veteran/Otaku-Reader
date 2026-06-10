@@ -117,6 +117,13 @@ class ReaderViewModel @Inject constructor(
 
     private var autoSaveJob: Job? = null
 
+    /**
+     * The in-flight chapter load. Tracked so that switching chapters cancels the previous
+     * load — otherwise two concurrent loads race and the slower (stale) one can overwrite
+     * the newer chapter's pages in state.
+     */
+    private var loadChapterJob: Job? = null
+
     /** Timestamp when last page change occurred, for tracking page duration. */
     private var lastPageChangeMs: Long = SystemClock.elapsedRealtime()
 
@@ -234,7 +241,8 @@ class ReaderViewModel @Inject constructor(
      */
     @Suppress("LongMethod")
     private fun loadChapter() {
-        viewModelScope.launch {
+        loadChapterJob?.cancel()
+        loadChapterJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             when (val result = chapterLoaderDelegate.load(mangaId, chapterId)) {
                 is ReaderChapterLoaderDelegate.Result.NotFound -> {
@@ -704,7 +712,11 @@ class ReaderViewModel @Inject constructor(
                                         status = manga.status
                                     )
                                 }
-                        } catch (_: Exception) { }
+                        } catch (e: Exception) {
+                            // Reading still works without tracker sync, but losing the
+                            // progress push silently would be confusing — leave a trace.
+                            android.util.Log.w("ReaderViewModel", "Tracker sync on exit failed", e)
+                        }
                     }
                 }
             }
