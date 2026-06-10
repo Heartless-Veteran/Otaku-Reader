@@ -18,6 +18,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MergeType
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -132,6 +135,7 @@ fun MergeDuplicatesScreen(
                 itemsIndexed(state.duplicateGroups, key = { _, g -> g.entries.first().id }) { index, group ->
                     DuplicateGroupCard(
                         group = group,
+                        sourceNames = state.sourceNames,
                         onSelectPrimary = { primaryId ->
                             viewModel.onEvent(MergeDuplicatesEvent.SelectPrimary(index, primaryId))
                         },
@@ -147,6 +151,7 @@ fun MergeDuplicatesScreen(
 @Composable
 private fun DuplicateGroupCard(
     group: DuplicateGroup,
+    sourceNames: Map<Long, String>,
     onSelectPrimary: (Long) -> Unit,
     onMerge: () -> Unit,
     enabled: Boolean,
@@ -154,17 +159,37 @@ private fun DuplicateGroupCard(
 ) {
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = stringResource(R.string.merge_duplicates_group_header, group.entries.size),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.merge_duplicates_group_header, group.entries.size),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                if (group.isCrossSource) {
+                    AssistChip(
+                        onClick = {},
+                        label = { Text(stringResource(R.string.merge_duplicates_cross_source)) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.SwapHoriz,
+                                contentDescription = null,
+                                modifier = Modifier.size(AssistChipDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+            }
             Spacer(Modifier.height(8.dp))
 
             group.entries.forEach { manga ->
                 val isPrimary = manga.id == group.primaryId
                 MangaEntryRow(
                     manga = manga,
+                    sourceName = sourceNames[manga.sourceId],
                     isPrimary = isPrimary,
                     onSelect = { onSelectPrimary(manga.id) },
                     enabled = enabled,
@@ -189,6 +214,7 @@ private fun DuplicateGroupCard(
 @Composable
 private fun MangaEntryRow(
     manga: app.otakureader.domain.model.Manga,
+    sourceName: String?,
     isPrimary: Boolean,
     onSelect: () -> Unit,
     enabled: Boolean,
@@ -233,7 +259,7 @@ private fun MangaEntryRow(
                     maxLines = 2,
                 )
                 Text(
-                    text = "Source ID: ${manga.sourceId}",
+                    text = sourceName ?: stringResource(R.string.merge_duplicates_source_id, manga.sourceId),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

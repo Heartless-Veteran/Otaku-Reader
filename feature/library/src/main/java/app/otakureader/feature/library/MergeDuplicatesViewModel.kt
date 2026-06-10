@@ -3,6 +3,7 @@ package app.otakureader.feature.library
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.MangaRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.MergeDuplicateMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -20,6 +21,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MergeDuplicatesViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
+    private val sourceRepository: SourceRepository,
     private val mergeDuplicateManga: MergeDuplicateMangaUseCase,
 ) : ViewModel() {
 
@@ -31,6 +33,7 @@ class MergeDuplicatesViewModel @Inject constructor(
 
     init {
         observeDuplicates()
+        observeSourceNames()
     }
 
     fun onEvent(event: MergeDuplicatesEvent) {
@@ -55,6 +58,19 @@ class MergeDuplicatesViewModel @Inject constructor(
                     }
                     current.copy(isLoading = false, duplicateGroups = newGroups, error = null)
                 }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeSourceNames() {
+        sourceRepository.getSources()
+            .onEach { sources ->
+                val names = sources.associate { source ->
+                    // MangaSource.id is the Long source ID serialized to String
+                    val id = source.id.toLongOrNull() ?: return@associate source.id.hashCode().toLong() to source.name
+                    id to source.name
+                }
+                _state.update { it.copy(sourceNames = names) }
             }
             .launchIn(viewModelScope)
     }

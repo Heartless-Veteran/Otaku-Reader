@@ -241,6 +241,8 @@
     <string name="merge_duplicates_primary_badge">Primary</string>
     <string name="merge_duplicates_chapters">%1$d ch.</string>
     <string name="merge_duplicates_unread">%1$d unread</string>
+    <string name="merge_duplicates_cross_source">Cross-source</string>
+    <string name="merge_duplicates_source_id">Source %1$d</string>
 
     <!-- Bulk action confirmation dialog -->
     <string name="library_bulk_action_confirm_title">Confirm action</string>
