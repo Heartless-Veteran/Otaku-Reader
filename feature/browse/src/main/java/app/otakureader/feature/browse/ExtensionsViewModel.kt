@@ -1,5 +1,6 @@
 package app.otakureader.feature.browse
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.common.mvi.UiEffect
@@ -8,6 +9,7 @@ import app.otakureader.core.common.mvi.UiState
 import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
 import app.otakureader.core.preferences.GeneralPreferences
@@ -17,6 +19,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -40,6 +43,18 @@ data class ExtensionsState(
     val showUnverifiedInstallDialog: Boolean = false,
     val pendingUnverifiedExtension: Extension? = null,
     val hasUnverifiedExtensions: Boolean = false,
+    /**
+     * Package names of installed extensions whose current signer hash differs from the
+     * first-seen hash recorded at install time. A non-empty set means the signing certificate
+     * changed after the extension was first installed, which the UI should flag.
+     */
+    val signerMismatchedPackages: Set<String> = emptySet(),
+    /**
+     * Installed extensions present on the remote blocklist (#1018), mapped to the
+     * block reason. New installs of these packages are refused outright; already
+     * installed copies are flagged in the list so the user can uninstall.
+     */
+    val blockedPackages: Map<String, String> = emptyMap(),
 ) : UiState
 
 enum class SortMode {
@@ -76,7 +91,8 @@ class ExtensionsViewModel @Inject constructor(
     private val extensionInstaller: ExtensionInstaller,
     private val extensionRepoRepository: ExtensionRepoRepository,
     private val extensionManagementRepository: ExtensionManagementRepository,
-    private val generalPreferences: GeneralPreferences
+    private val generalPreferences: GeneralPreferences,
+    private val blocklistStore: ExtensionBlocklistStore
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -147,6 +163,7 @@ class ExtensionsViewModel @Inject constructor(
             extensionRepoRepository.ensureDefaultRepository()
             loadExtensions()
             observeRepositories()
+            observeBlocklist()
             refreshExtensions()
         }
     }
@@ -172,18 +189,24 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
-    @Suppress("ThrowsCount")
     private fun loadExtensions() {
         _state.update { it.copy(isLoading = true, error = null) }
+        observeInstalledExtensions()
+        observeAvailableExtensions()
+        observeExtensionUpdates()
+    }
+
+    private fun observeInstalledExtensions() {
         viewModelScope.launch {
             try {
-                // Collect installed extensions
                 extensionRepository.getInstalledExtensions()
                     .collect { extensions ->
+                        val mismatches = checkSignerHashContinuity(extensions)
                         _state.update {
                             it.copy(
                                 installedExtensions = extensions,
-                                isLoading = false
+                                isLoading = false,
+                                signerMismatchedPackages = mismatches,
                             )
                         }
                     }
@@ -191,49 +214,42 @@ class ExtensionsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(
-                        isLoading = false,
-                        error = e.message ?: "Failed to load extensions"
-                    )
+                    it.copy(isLoading = false, error = e.message ?: "Failed to load extensions")
                 }
             }
         }
+    }
 
+    private fun observeAvailableExtensions() {
         viewModelScope.launch {
             try {
                 extensionRepository.getAvailableExtensions()
                     .collect { extensions ->
-                        val hasUnverified = extensions.any { it.signatureHash == null }
                         _state.update {
                             it.copy(
                                 availableExtensions = extensions,
-                                hasUnverifiedExtensions = hasUnverified
+                                hasUnverifiedExtensions = extensions.any { it.signatureHash == null },
                             )
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                // Don't show error for available extensions
-            }
+            } catch (_: Exception) { }
         }
+    }
 
+    private fun observeExtensionUpdates() {
         viewModelScope.launch {
             try {
                 extensionRepository.getExtensionsWithUpdates()
                     .collect { extensions ->
                         _state.update {
-                            it.copy(
-                                extensionsWithUpdates = extensions,
-                                updateCount = extensions.size
-                            )
+                            it.copy(extensionsWithUpdates = extensions, updateCount = extensions.size)
                         }
                     }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
-                // Don't show error for updates
-            }
+            } catch (_: Exception) { }
         }
     }
 
@@ -316,7 +332,24 @@ class ExtensionsViewModel @Inject constructor(
         }
     }
 
+    private fun observeBlocklist() {
+        viewModelScope.launch {
+            blocklistStore.blockedPackages.collect { blocked ->
+                _state.update { it.copy(blockedPackages = blocked) }
+            }
+        }
+    }
+
     private fun installExtension(extension: Extension) {
+        val blockedReason = _state.value.blockedPackages[extension.pkgName]
+        if (blockedReason != null) {
+            viewModelScope.launch {
+                _effect.send(
+                    ExtensionsEffect.ShowError("Extension is blocklisted: $blockedReason")
+                )
+            }
+            return
+        }
         if (extension.signatureHash == null) {
             _state.update {
                 it.copy(
@@ -453,5 +486,56 @@ class ExtensionsViewModel @Inject constructor(
                 else -> _effect.send(ExtensionsEffect.ShowSnackbar("$successCount updated, $failCount failed"))
             }
         }
+    }
+
+    /**
+     * For every installed extension that has a non-empty [Extension.signatureHash]:
+     * - If no first-seen hash is stored yet, records the current hash (first install).
+     * - If a hash was already stored and it differs from the current hash, logs a warning
+     *   and adds the package name to the returned mismatch set so the UI can flag it.
+     *
+     * This implements the "signer hash continuity" check described in #1049:
+     * a changed signing certificate after first install is a security-sensitive event.
+     *
+     * @return the set of package names whose current signer hash differs from first-seen.
+     */
+    private suspend fun checkSignerHashContinuity(extensions: List<Extension>): Set<String> {
+        val firstSeenHashes = generalPreferences.extensionFirstSeenHashes.first()
+        val mismatches = mutableSetOf<String>()
+        val newHashes = mutableMapOf<String, String>()
+
+        extensions.forEach { extension ->
+            val currentHash = extension.signatureHash
+            if (currentHash.isNullOrEmpty()) return@forEach // unsigned extension — skip
+
+            val knownHash = firstSeenHashes[extension.pkgName]
+            when {
+                knownHash == null -> {
+                    // First time we see this extension — stage for batch write.
+                    newHashes[extension.pkgName] = currentHash
+                }
+                knownHash != currentHash -> {
+                    // Hash changed since first install — this is worth flagging.
+                    Log.w(
+                        TAG,
+                        "Signer hash changed for ${extension.pkgName}: " +
+                            "first-seen=$knownHash current=$currentHash"
+                    )
+                    mismatches.add(extension.pkgName)
+                }
+                // else: hash matches first-seen — all good
+            }
+        }
+
+        // Single DataStore edit instead of N sequential writes.
+        if (newHashes.isNotEmpty()) {
+            generalPreferences.recordExtensionFirstSeenHashes(newHashes)
+        }
+
+        return mismatches
+    }
+
+    companion object {
+        private const val TAG = "ExtensionsViewModel"
     }
 }

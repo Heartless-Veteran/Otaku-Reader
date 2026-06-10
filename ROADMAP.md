@@ -171,17 +171,17 @@ Mihon/Komikku parity improvements and reader enhancements shipped alongside the 
 
 ---
 
-## 🏗️ Architecture Maintenance (Ongoing)
+## 🏗️ Architecture Maintenance
 
-These are not feature issues but ongoing maintenance tasks:
+Status as of 2026-06-10:
 
-- [ ] F-Droid metadata + reproducible builds
-- [ ] Macrobenchmark module to prevent regressions
-- [ ] Baseline profile re-generation after P0 fixes
-- [ ] `<queries>` element in manifest for Android 11+ package visibility
-- [ ] WorkManager `PendingIntent` mutability flags for API 31+
-- [ ] 8 remaining import-level layer violations (see legacy `AUDIT_ARCHITECTURE.md` in archive)
-- [ ] Kover coverage gates for `:feature:reader`, `:feature:tracking`, `:feature:settings`
+- [x] F-Droid metadata (fastlane) + reproducible-build flags (`dependenciesInfo` disabled in app/build.gradle.kts)
+- [x] Macrobenchmark harness — `StartupBenchmarks`/`PerformanceBenchmarks` in `baselineprofile/`, runnable via benchmark.yml manual dispatch
+- [x] Baseline profile — curated `app/src/main/baseline-prof.txt` shipped (PR #1080); regenerate on-device when startup code changes significantly
+- [x] `<queries>` element in manifest for Android 11+ package visibility
+- [x] WorkManager `PendingIntent` mutability flags for API 31+ (all 5 usages use FLAG_IMMUTABLE)
+- [x] Import-level layer violations — actually 0; enforced by Detekt ForbiddenImport rules (the "8 remaining" note was stale)
+- [x] Kover coverage gates for all of `:domain`, `:data`, `:core:database`, `:feature:reader`, `:feature:tracking`, `:feature:settings` — **note:** Kover 0.8.x could not instrument AGP 9 modules, so the old 60% gates passed vacuously. Kover 0.9.8 now measures for real; gates are honest per-module ratchet floors (domain 60 · data 35 · database 25 · reader 15 · tracking 15 · settings 5). Raise floors as coverage improves; never lower them.
 
 ---
 

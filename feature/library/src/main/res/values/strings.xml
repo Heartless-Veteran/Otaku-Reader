@@ -178,6 +178,13 @@
     <string name="library_open_random">Open random entry</string>
     <string name="library_reindex_downloads">Reindex downloads</string>
     <string name="library_update_started">Library update started</string>
+    <string name="library_sync_library">Sync library</string>
+    <string name="library_sync_started">Syncing library with trackers…</string>
+    <string name="library_sync_complete">Synced %1$d/%2$d entries</string>
+    <string name="library_sync_complete_with_issues">Synced %1$d/%2$d entries (%3$d conflicts, %4$d failed)</string>
+    <string name="library_sync_nothing_pending">Library is already up to date</string>
+    <string name="library_sync_failed">Library sync failed</string>
+    <string name="library_sync_incognito_blocked">Sync disabled in incognito mode</string>
     <string name="library_update_full_started">Full library update started</string>
     <string name="library_reindex_not_available">Download reindex not yet available</string>
     <string name="library_reindex_complete">Reindex complete: %1$d chapters verified</string>
@@ -243,6 +250,9 @@
     <string name="merge_duplicates_unread">%1$d unread</string>
     <string name="merge_duplicates_cross_source">Cross-source</string>
     <string name="merge_duplicates_source_id">Source %1$d</string>
+    <string name="merge_duplicates_link_alt">Link as alternative (%1$s)</string>
+    <string name="merge_duplicates_unlink_alt">Remove link</string>
+    <string name="merge_duplicates_fill_chapters">Fill missing chapters</string>
 
     <!-- Saved library views (#1039) -->
     <string name="library_save_view">Save current view</string>

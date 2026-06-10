@@ -57,10 +57,15 @@ jobs:
           path: benchmark.md
           retention-days: 30
 
-  baseline-profile:
-    name: Generate Baseline Profile
+  # Runtime macrobenchmarks (#1022): StartupBenchmarks + PerformanceBenchmarks on a
+  # Gradle Managed Device (Pixel 6, API 34). Manual dispatch only — emulator jobs are
+  # too slow/flaky to gate every PR. The same run also exercises
+  # BaselineProfileGenerator; its collected profile is uploaded as an artifact for
+  # manual refresh of app/src/main/baseline-prof.txt (the androidx.baselineprofile
+  # Gradle plugin does not support AGP 9, so the copy step is manual by design).
+  macrobenchmark:
+    name: Macrobenchmarks (managed device)
     runs-on: ubuntu-latest
-    # Runs on a schedule or manual dispatch; not on every push (emulator needed)
     if: github.event_name == 'workflow_dispatch'
 
     steps:
@@ -82,7 +87,7 @@ jobs:
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;35.0.0" \
-            "system-images;android-34;google_apis;x86_64" \
+            "system-images;android-34;aosp_atd;x86_64" \
             "emulator"
 
       - name: Grant execute permission for gradlew
@@ -95,30 +100,20 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Generate Baseline Profile
+      - name: Run macrobenchmarks on managed device
         run: |
-          ./gradlew :baselineprofile:generateBaselineProfile \
+          ./gradlew :baselineprofile:pixel6Api34BenchmarkAndroidTest \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
-            -Pandroid.experimental.testOptions.managedDevices.emulator.showKernelLogging=true \
             --no-daemon
         env:
           CI: true
 
-      - name: Upload Generated Profile
+      - name: Upload benchmark results and collected profiles
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
         with:
-          name: baseline-profile-${{ github.run_number }}
-          path: app/src/main/baseline-prof.txt
+          name: macrobenchmark-results-${{ github.run_number }}
+          path: |
+            baselineprofile/build/outputs/androidTest-results/
+            baselineprofile/build/outputs/managed_device_android_test_additional_output/
           retention-days: 90
-
-      - name: Commit updated baseline profile
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet app/src/main/baseline-prof.txt; then
-            echo "Baseline profile unchanged — skipping commit."
-          else
-            git add app/src/main/baseline-prof.txt
-            git commit -m "chore: update baseline profile [skip ci]"
-            git push
-          fi

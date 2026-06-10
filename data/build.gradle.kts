@@ -85,7 +85,8 @@ kover {
     reports {
         verify {
             rule {
-                minBound(60)
+                // Ratchet floor from measured coverage (Kover 0.9.8, 2026-06-10). The previous 60% gate passed vacuously because Kover 0.8.x could not instrument AGP 9 modules. Raise this as coverage improves; never lower it.
+                minBound(35)
             }
         }
     }

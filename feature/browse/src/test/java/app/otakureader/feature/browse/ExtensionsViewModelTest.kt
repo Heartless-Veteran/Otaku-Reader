@@ -6,14 +6,18 @@ import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepoRepository
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.installer.ExtensionInstaller
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.domain.repository.ExtensionManagementRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.Awaits
+import io.mockk.Runs
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,6 +53,7 @@ class ExtensionsViewModelTest {
     private val extensionRepoRepository: ExtensionRepoRepository = mockk(relaxed = true)
     private val extensionManagementRepository: ExtensionManagementRepository = mockk(relaxed = true)
     private val generalPreferences: GeneralPreferences = mockk(relaxed = true)
+    private val blocklistStore: ExtensionBlocklistStore = mockk(relaxed = true)
 
     private val testDispatcher = StandardTestDispatcher()
 
@@ -121,6 +126,11 @@ class ExtensionsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         collectScope = CoroutineScope(testDispatcher)
 
+        // checkSignerHashContinuity logs at WARN on mismatch; android.util.Log is not
+        // available in plain JVM unit tests, so stub it to avoid "not mocked" errors.
+        mockkStatic(android.util.Log::class)
+        every { android.util.Log.w(any<String>(), any<String>()) } returns 0
+
         // Default flow stubs — must be set BEFORE ViewModel creation because init block triggers them
         every { extensionRepository.getInstalledExtensions() } returns installedExtensionsFlow
         every { extensionRepository.getAvailableExtensions() } returns availableExtensionsFlow
@@ -131,13 +141,21 @@ class ExtensionsViewModelTest {
         coEvery { extensionRepository.refreshAvailableExtensions() } returns Result.success(Unit)
         coEvery { extensionRepository.checkForUpdates() } returns 0
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
+        // checkSignerHashContinuity calls these on every installed-extensions emission.
+        // Without explicit stubs the relaxed mock returns an empty Flow and .first() throws,
+        // causing the catch block to set error state instead of populating installedExtensions.
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+        every { blocklistStore.blockedPackages } returns flowOf(emptyMap())
+        coEvery { generalPreferences.recordExtensionFirstSeenHash(any(), any()) } just Runs
+        coEvery { generalPreferences.recordExtensionFirstSeenHashes(any()) } just Runs
 
         viewModel = ExtensionsViewModel(
             extensionRepository = extensionRepository,
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Subscribe to activate stateIn(WhileSubscribed); will start collecting on first advanceUntilIdle.
         collectScope.launch { viewModel.state.collect { } }
@@ -147,6 +165,7 @@ class ExtensionsViewModelTest {
     fun teardown() {
         collectScope.cancel()
         Dispatchers.resetMain()
+        unmockkStatic(android.util.Log::class)
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -224,7 +243,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Subscribe so stateIn(WhileSubscribed) starts collecting from the combine.
         backgroundScope.launch { vm.state.collect { } }
@@ -380,7 +400,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `add repository calls repo repository`() = runTest {
-        coEvery { extensionRepoRepository.addRepository("https://newrepo.com") } just runs
+        coEvery { extensionRepoRepository.addRepository("https://newrepo.com") } just Awaits
 
         viewModel.onEvent(ExtensionsEvent.AddRepository("https://newrepo.com"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -398,7 +418,7 @@ class ExtensionsViewModelTest {
 
     @Test
     fun `remove repository calls repo repository`() = runTest {
-        coEvery { extensionRepoRepository.removeRepository("https://repo1.com") } just runs
+        coEvery { extensionRepoRepository.removeRepository("https://repo1.com") } just Awaits
 
         viewModel.onEvent(ExtensionsEvent.RemoveRepository("https://repo1.com"))
         testDispatcher.scheduler.advanceUntilIdle()
@@ -630,7 +650,7 @@ class ExtensionsViewModelTest {
     fun `toggle extension enabled calls repository and refreshes sources`() = runTest {
         val ext = createExtension(id = 1L, pkgName = "app.ext1", name = "Toggle Me")
 
-        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } just runs
+        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } returns Unit
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, false))
@@ -737,7 +757,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -757,7 +778,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -980,7 +1002,8 @@ class ExtensionsViewModelTest {
             extensionInstaller = extensionInstaller,
             extensionRepoRepository = extensionRepoRepository,
             extensionManagementRepository = extensionManagementRepository,
-            generalPreferences = generalPreferences
+            generalPreferences = generalPreferences,
+            blocklistStore = blocklistStore
         )
         // Use backgroundScope so the infinite collect doesn't block runTest from completing.
         backgroundScope.launch { vm.state.collect { } }
@@ -989,5 +1012,80 @@ class ExtensionsViewModelTest {
         // Installed extensions should still be loaded despite repo error
         assertEquals(1, vm.state.value.installedExtensions.size)
         assertEquals("Still Works", vm.state.value.installedExtensions[0].name)
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // 19. Signer Hash Continuity
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun `checkSignerHashContinuity marks package in signerMismatchedPackages when hash changes`() = runTest {
+        val pkg = "app.ext.changed"
+        val oldHash = "oldhash_aabbcc"
+        val newHash = "newhash_ddeeff"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(mapOf(pkg to oldHash))
+
+        val ext = createExtension(pkgName = pkg, signatureHash = newHash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity calls recordExtensionFirstSeenHashes for new extension`() = runTest {
+        val pkg = "app.ext.firstseen"
+        val hash = "firsthash_112233"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(emptyMap())
+        every { blocklistStore.blockedPackages } returns flowOf(emptyMap())
+
+        val ext = createExtension(pkgName = pkg, signatureHash = hash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 1) { generalPreferences.recordExtensionFirstSeenHashes(mapOf(pkg to hash)) }
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity skips extension with null signature hash`() = runTest {
+        val pkg = "app.ext.unsigned"
+
+        val ext = createExtension(pkgName = pkg, signatureHash = null)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
+    }
+
+    @Test
+    fun `checkSignerHashContinuity does not overwrite existing first-seen hash`() = runTest {
+        val pkg = "app.ext.existing"
+        val originalHash = "originalhash_aabbcc"
+
+        every { generalPreferences.extensionFirstSeenHashes } returns flowOf(mapOf(pkg to originalHash))
+
+        val ext = createExtension(pkgName = pkg, signatureHash = originalHash)
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Hash already recorded and unchanged — write-once means no new write and no mismatch.
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+    }
+
+    @Test
+    fun `checkSignerHashContinuity skips extension with empty signature hash`() = runTest {
+        val pkg = "app.ext.emptyhash"
+
+        val ext = createExtension(pkgName = pkg, signatureHash = "")
+        installedExtensionsFlow.value = listOf(ext)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.signerMismatchedPackages.contains(pkg))
+        coVerify(exactly = 0) { generalPreferences.recordExtensionFirstSeenHashes(any()) }
     }
 }

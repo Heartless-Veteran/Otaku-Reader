@@ -13,6 +13,8 @@ data class MergeDuplicatesState(
      * "MangaDex" instead of a raw source ID.
      */
     val sourceNames: Map<Long, String> = emptyMap(),
+    /** Maps each manga ID to the set of IDs it is currently linked with as alternatives. */
+    val linkedAlternatives: Map<Long, Set<Long>> = emptyMap(),
 )
 
 /** A set of library manga entries sharing the same normalised title. */
@@ -35,6 +37,12 @@ sealed class MergeDuplicatesEvent {
     data class MergeGroup(val group: DuplicateGroup) : MergeDuplicatesEvent()
     /** Merge every group with its current primary selection. */
     data object MergeAll : MergeDuplicatesEvent()
+    /** Persist a bidirectional alternative-source link between two manga. */
+    data class LinkAsAlternative(val primaryId: Long, val altId: Long) : MergeDuplicatesEvent()
+    /** Copy missing chapter numbers from [altId] into [primaryId]. */
+    data class FillMissingChapters(val primaryId: Long, val altId: Long) : MergeDuplicatesEvent()
+    /** Remove the alternative-source link between two manga. */
+    data class UnlinkAlternative(val primaryId: Long, val altId: Long) : MergeDuplicatesEvent()
 }
 
 sealed class MergeDuplicatesEffect {

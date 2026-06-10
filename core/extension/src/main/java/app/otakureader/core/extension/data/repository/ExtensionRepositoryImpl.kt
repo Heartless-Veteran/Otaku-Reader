@@ -7,7 +7,9 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.loader.ExtensionLoader
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -21,6 +23,7 @@ class ExtensionRepositoryImpl(
     private val localDataSource: ExtensionDao,
     private val remoteDataSource: ExtensionRemoteDataSource,
     private val extensionLoader: ExtensionLoader,
+    private val blocklistStore: ExtensionBlocklistStore? = null,
     private val mapper: ExtensionMapper = ExtensionMapper()
 ) : ExtensionRepository {
     
@@ -32,10 +35,15 @@ class ExtensionRepositoryImpl(
     }
     
     override fun getAvailableExtensions(): Flow<List<Extension>> {
-        return localDataSource.getAvailableExtensions()
+        val available = localDataSource.getAvailableExtensions()
             .map { entities ->
                 entities.map { mapper.toDomain(it) }
             }
+        // Blocklist enforcement (#1018): blocked packages never appear as installable.
+        val store = blocklistStore ?: return available
+        return combine(available, store.blockedPackages) { extensions, blocked ->
+            extensions.filter { it.pkgName !in blocked }
+        }
     }
     
     override fun getExtensionsWithUpdates(): Flow<List<Extension>> {
@@ -59,6 +67,15 @@ class ExtensionRepositoryImpl(
     
     override suspend fun installExtension(pkgName: String, apkPath: String): Result<Extension> {
         return try {
+            // Blocklist enforcement (#1018): refuse install even if the caller bypassed
+            // the filtered available list (e.g. a stale UI snapshot).
+            val blockedReason = blocklistStore?.blockedPackages?.first()?.get(pkgName)
+            if (blockedReason != null) {
+                localDataSource.updateStatus(pkgName, InstallStatus.AVAILABLE.name)
+                return Result.failure(
+                    SecurityException("Extension $pkgName is blocklisted: $blockedReason")
+                )
+            }
             // Update status to installing
             localDataSource.updateStatus(pkgName, InstallStatus.INSTALLING.name)
             
@@ -126,8 +143,30 @@ class ExtensionRepositoryImpl(
             var updateCount = 0
             
             installed.forEach { localExt ->
-                val remoteExt = remoteExtensions.find { it.pkgName == localExt.pkgName }
-                if (remoteExt != null && remoteExt.versionCode > localExt.versionCode) {
+                val candidates = remoteExtensions.filter { it.pkgName == localExt.pkgName }
+                // Provenance guard (#1019): prefer the listing from the repository this
+                // extension was originally installed from. A different repository offering
+                // the same package name must not silently become the update source — that
+                // is the cross-repo replacement attack this guard exists to stop.
+                val sameRepo = candidates.firstOrNull {
+                    localExt.sourceRepoUrl != null && it.repoUrl == localExt.sourceRepoUrl
+                }
+                val remoteExt = sameRepo
+                    ?: candidates.firstOrNull().takeIf { localExt.sourceRepoUrl == null }
+                if (remoteExt == null) {
+                    if (candidates.isNotEmpty()) {
+                        android.util.Log.w(
+                            "ExtensionRepository",
+                            "Skipping update for ${localExt.pkgName}: offered only by " +
+                                "${candidates.mapNotNull { it.repoUrl }} but installed from " +
+                                "${localExt.sourceRepoUrl}"
+                        )
+                    }
+                    return@forEach
+                }
+                // First sighting of a pre-provenance install: adopt this repo as baseline.
+                remoteExt.repoUrl?.let { localDataSource.backfillSourceRepoUrl(localExt.pkgName, it) }
+                if (remoteExt.versionCode > localExt.versionCode) {
                     localDataSource.updateRemoteVersion(localExt.pkgName, remoteExt.versionCode)
                     localDataSource.updateStatus(localExt.pkgName, InstallStatus.HAS_UPDATE.name)
                     updateCount++

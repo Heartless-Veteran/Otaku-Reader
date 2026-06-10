@@ -15,7 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,12 +25,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/**
- * UI tests for Library screen states (screenshot capture disabled).
- *
- * To enable screenshot regression testing, move this file to the app module
- * and apply the Roborazzi plugin there.
- */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -44,7 +40,7 @@ class LibraryScreenshotTest {
                 Surface { LibraryEmptyContent() }
             }
         }
-        // Roborazzi capture disabled — plugin not applied to library modules
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -54,6 +50,7 @@ class LibraryScreenshotTest {
                 Surface { LibraryLoadingContent() }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -63,6 +60,7 @@ class LibraryScreenshotTest {
                 Surface { LibraryGridContent(itemCount = 9) }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 }
 

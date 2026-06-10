@@ -30,7 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,15 +42,7 @@ import org.robolectric.annotation.GraphicsMode
 
 /**
  * Snapshot tests for Reader screen states and theme variants.
- *
- * These tests run on the JVM via Robolectric — no emulator required.
- * Roborazzi screenshot capture is disabled here because the Roborazzi
- * plugin is not applied to feature modules. To enable screenshot regression,
- * move this file to the app module and apply the Roborazzi plugin there.
- *
- * Current tests verify that:
- * - Composables render without crashing in both light and dark themes
- * - Key UI elements are present in each state
+ * Runs on the JVM via Robolectric — no emulator required.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -69,7 +63,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
-        // Roborazzi capture disabled — plugin not applied to reader module
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -81,6 +75,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     // ── Empty/error state ────────────────────────────────────────────────────
@@ -94,6 +89,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -105,6 +101,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     // ── Reader menu overlay state ────────────────────────────────────────────
@@ -123,6 +120,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -139,6 +137,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     // ── Zoom indicator ───────────────────────────────────────────────────────
@@ -152,6 +151,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -163,6 +163,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     // ── Page slider ──────────────────────────────────────────────────────────
@@ -176,6 +177,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 
     @Test
@@ -187,6 +189,7 @@ class ReaderScreenshotTest {
                 }
             }
         }
+        composeTestRule.onRoot().captureRoboImage()
     }
 }
 

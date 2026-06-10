@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.MergeType
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AssistChip
@@ -136,10 +138,20 @@ fun MergeDuplicatesScreen(
                     DuplicateGroupCard(
                         group = group,
                         sourceNames = state.sourceNames,
+                        linkedAlternatives = state.linkedAlternatives,
                         onSelectPrimary = { primaryId ->
                             viewModel.onEvent(MergeDuplicatesEvent.SelectPrimary(index, primaryId))
                         },
                         onMerge = { viewModel.onEvent(MergeDuplicatesEvent.MergeGroup(group)) },
+                        onLinkAsAlternative = { altId ->
+                            viewModel.onEvent(MergeDuplicatesEvent.LinkAsAlternative(group.primaryId, altId))
+                        },
+                        onUnlinkAlternative = { altId ->
+                            viewModel.onEvent(MergeDuplicatesEvent.UnlinkAlternative(group.primaryId, altId))
+                        },
+                        onFillMissingChapters = { altId ->
+                            viewModel.onEvent(MergeDuplicatesEvent.FillMissingChapters(group.primaryId, altId))
+                        },
                         enabled = !state.isMerging,
                     )
                 }
@@ -152,8 +164,12 @@ fun MergeDuplicatesScreen(
 private fun DuplicateGroupCard(
     group: DuplicateGroup,
     sourceNames: Map<Long, String>,
+    linkedAlternatives: Map<Long, Set<Long>>,
     onSelectPrimary: (Long) -> Unit,
     onMerge: () -> Unit,
+    onLinkAsAlternative: (altId: Long) -> Unit,
+    onUnlinkAlternative: (altId: Long) -> Unit,
+    onFillMissingChapters: (altId: Long) -> Unit,
     enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -206,6 +222,58 @@ private fun DuplicateGroupCard(
                 Icon(Icons.Default.MergeType, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
                 Text(stringResource(R.string.merge_duplicates_merge_group))
+            }
+
+            // Cross-source alternative linking actions (non-destructive)
+            if (group.isCrossSource) {
+                val altEntries = group.entries.filter { it.id != group.primaryId }
+                altEntries.forEach { alt ->
+                    val isLinked = linkedAlternatives[group.primaryId]?.contains(alt.id) == true
+                    Spacer(Modifier.height(4.dp))
+                    if (isLinked) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { onUnlinkAlternative(alt.id) },
+                                enabled = enabled,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Icon(
+                                    Icons.Default.LinkOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(R.string.merge_duplicates_unlink_alt))
+                            }
+                            OutlinedButton(
+                                onClick = { onFillMissingChapters(alt.id) },
+                                enabled = enabled,
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.merge_duplicates_fill_chapters))
+                            }
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onLinkAsAlternative(alt.id) },
+                            enabled = enabled,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Icon(
+                                Icons.Default.Link,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                stringResource(
+                                    R.string.merge_duplicates_link_alt,
+                                    sourceNames[alt.sourceId] ?: alt.sourceId.toString(),
+                                )
+                            )
+                        }
+                    }
+                }
             }
         }
     }

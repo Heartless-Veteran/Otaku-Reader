@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistFetcher
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.extension.BuildConfig
 import app.otakureader.core.extension.data.local.ExtensionDao
 import app.otakureader.core.extension.data.local.ExtensionDatabase
@@ -23,6 +27,13 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/** v3 -> v4: repository provenance column (#1019). */
+private val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE extensions ADD COLUMN source_repo_url TEXT DEFAULT NULL")
+    }
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object ExtensionModule {
@@ -37,6 +48,7 @@ object ExtensionModule {
             ExtensionDatabase::class.java,
             "extension_database"
         )
+        builder.addMigrations(MIGRATION_3_4)
         // Only allow destructive migration in debug builds to avoid silently wiping
         // extension metadata in production if a migration is missing.
         if (BuildConfig.DEBUG) {
@@ -72,9 +84,24 @@ object ExtensionModule {
     fun provideExtensionRepository(
         dao: ExtensionDao,
         remoteDataSource: ExtensionRemoteDataSource,
-        loader: ExtensionLoader
+        loader: ExtensionLoader,
+        blocklistStore: ExtensionBlocklistStore
     ): ExtensionRepository {
-        return ExtensionRepositoryImpl(dao, remoteDataSource, loader)
+        return ExtensionRepositoryImpl(dao, remoteDataSource, loader, blocklistStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExtensionBlocklistStore(
+        dataStore: DataStore<Preferences>
+    ): ExtensionBlocklistStore {
+        return ExtensionBlocklistStore(dataStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExtensionBlocklistFetcher(): ExtensionBlocklistFetcher {
+        return ExtensionBlocklistFetcher()
     }
 
     @Provides

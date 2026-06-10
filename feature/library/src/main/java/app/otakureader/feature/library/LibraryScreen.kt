@@ -315,6 +315,10 @@ fun LibraryScreen(
                                 onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.UpdateLibrary) }
                             )
                             DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_sync_library)) },
+                                onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.SyncLibrary) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_update_category)) },
                                 onClick = { showMenu = false; viewModel.onEvent(LibraryEvent.UpdateCategory) },
                                 enabled = state.selectedCategory != null

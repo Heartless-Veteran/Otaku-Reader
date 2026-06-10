@@ -117,6 +117,7 @@ class MainActivity : FragmentActivity() {
                 }.first()
                 libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
                 trackerSyncScheduler.schedule()
+                app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
 
                 // Reconcile the periodic extension-update check with the user's preference.
                 if (generalPreferences.extensionAutoUpdateEnabled.first()) {
@@ -128,6 +129,9 @@ class MainActivity : FragmentActivity() {
                 } else {
                     app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
                 }
+
+                // Security mechanism, not a preference — always scheduled (#1018).
+                app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
 
                 val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
                 if (autoRefresh) {

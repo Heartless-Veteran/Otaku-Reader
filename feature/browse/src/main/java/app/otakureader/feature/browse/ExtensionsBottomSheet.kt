@@ -238,6 +238,8 @@ private fun ExtensionsContent(
                     extensions = state.installedExtensions,
                     isLoading = state.isLoading,
                     error = state.error,
+                    signerMismatchedPackages = state.signerMismatchedPackages,
+                    blockedPackages = state.blockedPackages,
                     onInstall = { /* Already installed */ },
                     onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
                     onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
@@ -255,6 +257,8 @@ private fun ExtensionsContent(
                         extensions = state.availableExtensions,
                         isLoading = state.isLoading,
                         error = state.error,
+                        signerMismatchedPackages = emptySet(),
+                        blockedPackages = state.blockedPackages,
                         onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
                         onUninstall = { /* Not installed */ },
                         onUpdate = { /* No update */ },
@@ -267,6 +271,8 @@ private fun ExtensionsContent(
                     extensions = state.extensionsWithUpdates,
                     isLoading = state.isLoading,
                     error = state.error,
+                    signerMismatchedPackages = state.signerMismatchedPackages,
+                    blockedPackages = state.blockedPackages,
                     onInstall = { /* Already installed */ },
                     onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
                     onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
@@ -295,6 +301,8 @@ private fun ExtensionsList(
     extensions: List<Extension>,
     isLoading: Boolean,
     error: String?,
+    signerMismatchedPackages: Set<String>,
+    blockedPackages: Map<String, String> = emptyMap(),
     onInstall: (Extension) -> Unit,
     onUninstall: (Extension) -> Unit,
     onUpdate: (Extension) -> Unit,
@@ -319,6 +327,8 @@ private fun ExtensionsList(
             items(extensions, key = { it.id }) { extension ->
                 ExtensionItem(
                     extension = extension,
+                    signerMismatch = extension.pkgName in signerMismatchedPackages,
+                    blockedReason = blockedPackages[extension.pkgName],
                     onInstall = { onInstall(extension) },
                     onUninstall = { onUninstall(extension) },
                     onUpdate = { onUpdate(extension) },
@@ -347,6 +357,8 @@ private fun EmptyExtensionsView(modifier: Modifier = Modifier) {
 @Composable
 private fun ExtensionItem(
     extension: Extension,
+    signerMismatch: Boolean,
+    blockedReason: String? = null,
     onInstall: () -> Unit,
     onUninstall: () -> Unit,
     onUpdate: () -> Unit,
@@ -377,12 +389,27 @@ private fun ExtensionItem(
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = extension.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = extension.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        // Signer mismatch warning: shown when the signing cert changed since
+                        // first install. Surfaced here so the user can decide whether to keep
+                        // the extension. Full details are logged at WARN level.
+                        if (signerMismatch) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = stringResource(R.string.extension_signer_mismatch_warning),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    }
                     Text(
                         text = "v${extension.versionName} • ${extension.lang.uppercase()}",
                         style = MaterialTheme.typography.bodyMedium,
@@ -395,8 +422,21 @@ private fun ExtensionItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
-                Text(
+                    if (signerMismatch) {
+                        Text(
+                            text = stringResource(R.string.extension_signer_mismatch_warning),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    if (blockedReason != null) {
+                        Text(
+                            text = stringResource(R.string.extension_blocked_warning, blockedReason),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    Text(
                     text = if (extension.signatureHash != null) "Trusted" else "Unverified",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (extension.signatureHash != null) {
@@ -459,6 +499,7 @@ private fun ExtensionItem(
                         Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
                     }
                 }
+            }
             }
 
             // Details link — always visible at the bottom of the card
