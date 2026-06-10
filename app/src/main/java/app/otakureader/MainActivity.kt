@@ -162,6 +162,14 @@ class MainActivity : FragmentActivity() {
                 .collectAsStateWithLifecycle(initialValue = false)
             val biometricLockTimeoutMinutes by generalPreferences.biometricLockTimeoutMinutes
                 .collectAsStateWithLifecycle(initialValue = 0)
+            val biometricLockScheduleEnabled by generalPreferences.biometricLockScheduleEnabled
+                .collectAsStateWithLifecycle(initialValue = false)
+            val biometricLockStartHour by generalPreferences.biometricLockStartHour
+                .collectAsStateWithLifecycle(initialValue = 22)
+            val biometricLockEndHour by generalPreferences.biometricLockEndHour
+                .collectAsStateWithLifecycle(initialValue = 8)
+            val biometricLockActiveDays by generalPreferences.biometricLockActiveDays
+                .collectAsStateWithLifecycle(initialValue = emptySet())
             val darkModeScheduleEnabled by generalPreferences.darkModeScheduleEnabled
                 .collectAsStateWithLifecycle(initialValue = false)
             val darkModeStartMinute by generalPreferences.darkModeStartMinuteOfDay
@@ -218,6 +226,10 @@ class MainActivity : FragmentActivity() {
                     BiometricLockGate(
                         enabled = biometricLockEnabled,
                         timeoutMillis = biometricLockTimeoutMinutes * 60_000L,
+                        scheduleEnabled = biometricLockScheduleEnabled,
+                        startHour = biometricLockStartHour,
+                        endHour = biometricLockEndHour,
+                        activeDays = biometricLockActiveDays,
                     ) {
                         OtakuReaderApp(
                             generalPreferences = generalPreferences,

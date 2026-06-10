@@ -51,6 +51,25 @@ fun NavGraphBuilder.readerPresetsScreen(onNavigateBack: () -> Unit) {
     }
 }
 
+@Composable
+private fun readerModeName(mode: Int): String = when (mode) {
+    0 -> stringResource(R.string.reader_mode_single_page)
+    1 -> stringResource(R.string.reader_mode_dual_page)
+    2 -> stringResource(R.string.reader_mode_webtoon)
+    3 -> stringResource(R.string.reader_mode_smart_panels)
+    else -> stringResource(R.string.reader_presets_mode_label, mode)
+}
+
+@Composable
+private fun readerScaleName(scale: Int): String = when (scale) {
+    0 -> stringResource(R.string.reader_scale_fit_screen)
+    1 -> stringResource(R.string.reader_scale_fit_width)
+    2 -> stringResource(R.string.reader_scale_fit_height)
+    3 -> stringResource(R.string.reader_scale_original)
+    4 -> stringResource(R.string.reader_scale_smart_fit)
+    else -> stringResource(R.string.reader_presets_mode_label, scale)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReaderPresetsScreen(
@@ -158,10 +177,22 @@ private fun PresetCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = preset.name, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    text = "Mode ${preset.readerMode} · Scale ${preset.readerScale}",
+                    text = "${readerModeName(preset.readerMode)} · ${readerScaleName(preset.readerScale)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val details = buildList {
+                    if (preset.volumeKeysEnabled) add(stringResource(R.string.reader_presets_detail_volume_keys))
+                    if (preset.skipReadChapters) add(stringResource(R.string.reader_presets_detail_skip_read))
+                    if (preset.invertTapZones) add(stringResource(R.string.reader_presets_detail_inverted_taps))
+                }
+                if (details.isNotEmpty()) {
+                    Text(
+                        text = details.joinToString(" · "),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             TextButton(onClick = onApply) {
                 Text(stringResource(R.string.reader_presets_apply))

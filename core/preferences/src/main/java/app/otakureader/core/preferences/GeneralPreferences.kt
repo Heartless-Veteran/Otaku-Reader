@@ -209,6 +209,26 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setBiometricLockTimeoutMinutes(value: Int) =
         dataStore.edit { it[Keys.BIOMETRIC_LOCK_TIMEOUT_MINUTES] = value }
 
+    val biometricLockScheduleEnabled: Flow<Boolean> =
+        dataStore.data.map { it[Keys.BIOMETRIC_LOCK_SCHEDULE_ENABLED] ?: false }
+    suspend fun setBiometricLockScheduleEnabled(value: Boolean) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_SCHEDULE_ENABLED] = value }
+
+    val biometricLockStartHour: Flow<Int> =
+        dataStore.data.map { it[Keys.BIOMETRIC_LOCK_START_HOUR] ?: 22 }
+    suspend fun setBiometricLockStartHour(value: Int) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_START_HOUR] = value.coerceIn(0, 23) }
+
+    val biometricLockEndHour: Flow<Int> =
+        dataStore.data.map { it[Keys.BIOMETRIC_LOCK_END_HOUR] ?: 8 }
+    suspend fun setBiometricLockEndHour(value: Int) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_END_HOUR] = value.coerceIn(0, 23) }
+
+    val biometricLockActiveDays: Flow<Set<Int>> =
+        dataStore.data.map { parseDaySet(it[Keys.BIOMETRIC_LOCK_ACTIVE_DAYS] ?: "") }
+    suspend fun setBiometricLockActiveDays(days: Set<Int>) =
+        dataStore.edit { it[Keys.BIOMETRIC_LOCK_ACTIVE_DAYS] = encodeDaySet(days) }
+
     // --- App Update Checker ---
 
     /** Whether automatic app update checking is enabled. */
@@ -343,6 +363,11 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setCoilDiskCacheSizeMb(value: Int) =
         dataStore.edit { it[Keys.COIL_DISK_CACHE_SIZE_MB] = value.coerceIn(MIN_COIL_DISK_CACHE_MB, MAX_COIL_DISK_CACHE_MB) }
 
+    private fun parseDaySet(raw: String): Set<Int> =
+        raw.split(",").mapNotNull { it.trim().toIntOrNull() }.toSet()
+
+    private fun encodeDaySet(days: Set<Int>): String = days.joinToString(",")
+
     private object Keys {
         val THEME_MODE = intPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
@@ -379,6 +404,10 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val BROWSE_FILTER_STATES = stringPreferencesKey("browse_filter_states")
         val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
         val BIOMETRIC_LOCK_TIMEOUT_MINUTES = intPreferencesKey("biometric_lock_timeout_minutes")
+        val BIOMETRIC_LOCK_SCHEDULE_ENABLED = booleanPreferencesKey("biometric_lock_schedule_enabled")
+        val BIOMETRIC_LOCK_START_HOUR = intPreferencesKey("biometric_lock_start_hour")
+        val BIOMETRIC_LOCK_END_HOUR = intPreferencesKey("biometric_lock_end_hour")
+        val BIOMETRIC_LOCK_ACTIVE_DAYS = stringPreferencesKey("biometric_lock_active_days")
         val DARK_MODE_SCHEDULE_ENABLED = booleanPreferencesKey("dark_mode_schedule_enabled")
         val DARK_MODE_START_MINUTE = intPreferencesKey("dark_mode_start_minute")
         val DARK_MODE_END_MINUTE = intPreferencesKey("dark_mode_end_minute")

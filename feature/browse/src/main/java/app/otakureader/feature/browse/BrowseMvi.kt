@@ -4,6 +4,7 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.domain.model.FeedSavedSearch
+import app.otakureader.domain.model.SourceHealthEntry
 import app.otakureader.sourceapi.FilterList
 import app.otakureader.sourceapi.SourceManga
 
@@ -46,6 +47,10 @@ data class BrowseState(
     val categoryDialogSourceId: Long? = null,
     /** Current text in the "Set category" dialog input field. */
     val categoryDialogText: String = "",
+    /** Per-source health tracking: consecutive failures, last error, disabled flag. */
+    val sourceHealth: Map<Long, SourceHealthEntry> = emptyMap(),
+    /** Source ID whose diagnostic sheet is currently open; null means sheet is hidden. */
+    val selectedDiagnosticSourceId: Long? = null,
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {

@@ -21,6 +21,7 @@ import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.core.preferences.SearchHistoryPreferences
+import app.otakureader.core.preferences.WidgetPreferences
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -146,6 +147,11 @@ object PreferencesModule {
     fun provideTrackerTokenStore(
         @ApplicationContext context: Context
     ): TrackerTokenStore = TrackerTokenStore(context)
+
+    @Provides
+    @Singleton
+    fun provideWidgetPreferences(dataStore: DataStore<Preferences>): WidgetPreferences =
+        WidgetPreferences(dataStore)
 
     @Provides
     @Singleton
