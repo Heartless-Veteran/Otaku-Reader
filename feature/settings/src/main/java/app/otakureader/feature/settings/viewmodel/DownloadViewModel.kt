@@ -3,6 +3,8 @@ package app.otakureader.feature.settings.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.core.preferences.CbzEncryptionStore
+import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.feature.settings.SettingsEffect
 import app.otakureader.feature.settings.SettingsEvent
@@ -32,6 +34,8 @@ import javax.inject.Inject
 class DownloadViewModel @Inject constructor(
     private val downloadDelegate: DownloadSettingsDelegate,
     private val categoryRepository: CategoryRepository,
+    private val cbzEncryptionStore: CbzEncryptionStore,
+    private val downloadPreferences: DownloadPreferences,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsState())
@@ -51,6 +55,11 @@ class DownloadViewModel @Inject constructor(
 
     fun onEvent(event: SettingsEvent) {
         viewModelScope.launch {
+            if (event is SettingsEvent.SetCbzEncryptionPassword) {
+                cbzEncryptionStore.setPassphrase(event.password)
+                downloadPreferences.setCbzEncryptionEnabled(true)
+                return@launch
+            }
             val handled = downloadDelegate.handleEvent(event) { _effect.send(it) }
             if (!handled) {
                 Log.w(TAG, "Unhandled event in DownloadViewModel: $event")

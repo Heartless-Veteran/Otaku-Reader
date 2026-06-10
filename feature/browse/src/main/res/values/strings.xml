@@ -175,6 +175,11 @@
     <string name="extension_detail_sources">Sources</string>
     <string name="extension_detail_signer">Signer hash</string>
     <string name="extension_detail_repo">Repository</string>
+    <string name="extension_trust_status_trusted">Trusted</string>
+    <string name="extension_trust_status_unverified">Unverified</string>
+    <string name="extension_detail_sources_collapse">Collapse sources</string>
+    <string name="extension_detail_sources_expand">Expand sources</string>
+    <string name="extension_detail_no_sources">No sources</string>
     <!-- Extension capability badges (#1046) -->
     <string name="extension_has_cloudflare">CF</string>
     <string name="extension_has_cloudflare_cd">Requires Cloudflare bypass</string>

@@ -445,46 +445,45 @@ private fun ExtensionItem(
                             checked = extension.isEnabled,
                             onCheckedChange = onToggleEnabled
                         )
-                            IconButton(onClick = onUninstall) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_uninstall))
-                            }
+                        IconButton(onClick = onUninstall) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_uninstall))
                         }
                     }
-                    InstallStatus.HAS_UPDATE -> {
-                        Column(horizontalAlignment = Alignment.End) {
-                            Switch(
-                                checked = extension.isEnabled,
-                                onCheckedChange = onToggleEnabled
-                            )
-                            IconButton(onClick = onUpdate) {
-                                Icon(
-                                    Icons.Default.Update,
-                                    contentDescription = stringResource(R.string.extensions_update),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                    InstallStatus.AVAILABLE -> {
-                        IconButton(onClick = onInstall) {
+                }
+                InstallStatus.HAS_UPDATE -> {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = extension.isEnabled,
+                            onCheckedChange = onToggleEnabled
+                        )
+                        IconButton(onClick = onUpdate) {
                             Icon(
-                                Icons.Default.Download,
-                                contentDescription = stringResource(R.string.extensions_install),
+                                Icons.Default.Update,
+                                contentDescription = stringResource(R.string.extensions_update),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                    InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.dp
+                }
+                InstallStatus.AVAILABLE -> {
+                    IconButton(onClick = onInstall) {
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = stringResource(R.string.extensions_install),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                    else -> {
-                        // Error or other states - show install button
-                        IconButton(onClick = onInstall) {
-                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
-                        }
+                }
+                InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+                else -> {
+                    // Error or other states - show install button
+                    IconButton(onClick = onInstall) {
+                        Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
                     }
                 }
             }

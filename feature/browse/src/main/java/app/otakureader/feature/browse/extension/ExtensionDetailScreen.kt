@@ -144,7 +144,7 @@ fun ExtensionDetailScreen(
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(padding))
             state.error != null -> ErrorScreen(
                 message = state.error!!,
-                onRetry = { /* no-op; the ViewModel already loaded once */ },
+                onRetry = { viewModel.onEvent(ExtensionDetailEvent.Retry) },
                 modifier = Modifier.padding(padding),
             )
             state.extension != null -> ExtensionDetailContent(
@@ -216,12 +216,11 @@ private fun ExtensionDetailContent(
         HorizontalDivider()
 
         // ── Signer hash ───────────────────────────────────────────────────────
-        val sigHash = extension.signatureHash
-        if (sigHash != null) {
+        extension.signatureHash?.let { hash ->
             LabeledSection(label = stringResource(R.string.extension_detail_signer)) {
                 Text(
-                    text = sigHash.take(SIGNER_DISPLAY_LENGTH) +
-                        if (sigHash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
+                    text = hash.take(SIGNER_DISPLAY_LENGTH) +
+                        if (hash.length > SIGNER_DISPLAY_LENGTH) "…" else "",
                     style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -229,21 +228,21 @@ private fun ExtensionDetailContent(
         }
 
         // ── Repository URL ────────────────────────────────────────────────────
-        val repoUrl = extension.repoUrl
-        if (!repoUrl.isNullOrBlank()) {
+        extension.repoUrl?.takeIf { it.isNotBlank() }?.let { url ->
             LabeledSection(label = stringResource(R.string.extension_detail_repo)) {
                 TextButton(
                     onClick = {
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl))
-                            )
+                        val uri = Uri.parse(url)
+                        if (uri.scheme == "https" || uri.scheme == "http") {
+                            runCatching {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            }
                         }
                     },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                 ) {
                     Text(
-                        text = repoUrl,
+                        text = url,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -302,7 +301,7 @@ private fun TrustStatusBadge(isTrusted: Boolean, modifier: Modifier = Modifier) 
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = "Trusted",
+                text = stringResource(R.string.extension_trust_status_trusted),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -314,7 +313,7 @@ private fun TrustStatusBadge(isTrusted: Boolean, modifier: Modifier = Modifier) 
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                text = "Unverified",
+                text = stringResource(R.string.extension_trust_status_unverified),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -382,7 +381,10 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
             IconButton(onClick = { expanded = !expanded }) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "Collapse sources" else "Expand sources",
+                    contentDescription = stringResource(
+                        if (expanded) R.string.extension_detail_sources_collapse
+                        else R.string.extension_detail_sources_expand
+                    ),
                 )
             }
         }
@@ -390,7 +392,7 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
         if (expanded) {
             if (extension.sources.isEmpty()) {
                 Text(
-                    text = "No sources",
+                    text = stringResource(R.string.extension_detail_no_sources),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp),
