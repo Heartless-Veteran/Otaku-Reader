@@ -1,0 +1,57 @@
+name: Extension Smoke Tests
+
+# Manual dispatch only — these tests make real network calls to GitHub Raw and
+# third-party extension repositories and are too slow/flaky for PR gating.
+on:
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: 'Extension repository base URL (default: Keiyoushi)'
+        required: false
+        default: 'https://raw.githubusercontent.com/keiyoushi/extensions/repo'
+      pinned_pkg:
+        description: 'Package name of the extension to pin-test'
+        required: false
+        default: 'eu.kanade.tachiyomi.extension.all.mangadex'
+
+permissions:
+  contents: read
+
+jobs:
+  extension-smoke-test:
+    name: Extension Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: ☕ Set up JDK 21
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: 🐘 Set up Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+
+      - name: 🔑 Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: 🔌 Run extension smoke tests
+        run: >-
+          ./gradlew :tools:extension-smoke-test:test
+          -Pextension.smoke.repo=${{ github.event.inputs.repo_url }}
+          -Pextension.smoke.pinnedPkg=${{ github.event.inputs.pinned_pkg }}
+          --no-daemon
+        env:
+          CI: true
+
+      - name: 📤 Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: smoke-test-results-${{ github.run_number }}
+          path: tools/extension-smoke-test/build/reports/tests/
+          retention-days: 14

@@ -66,3 +66,6 @@ include(":feature:more")
 
 // Performance: baseline profile generation + macrobenchmarks (#1022)
 include(":baselineprofile")
+
+// Developer tools — network smoke tests, not included in regular CI (#1054)
+include(":tools:extension-smoke-test")
