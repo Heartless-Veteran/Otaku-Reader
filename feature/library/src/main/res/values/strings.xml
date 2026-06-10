@@ -250,6 +250,9 @@
     <string name="merge_duplicates_unread">%1$d unread</string>
     <string name="merge_duplicates_cross_source">Cross-source</string>
     <string name="merge_duplicates_source_id">Source %1$d</string>
+    <string name="merge_duplicates_link_alt">Link as alternative (%1$s)</string>
+    <string name="merge_duplicates_unlink_alt">Remove link</string>
+    <string name="merge_duplicates_fill_chapters">Fill missing chapters</string>
 
     <!-- Saved library views (#1039) -->
     <string name="library_save_view">Save current view</string>

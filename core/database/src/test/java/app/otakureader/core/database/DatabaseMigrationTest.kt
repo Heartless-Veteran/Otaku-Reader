@@ -26,6 +26,7 @@ import app.otakureader.core.database.migrations.MIGRATION_28_29
 import app.otakureader.core.database.migrations.MIGRATION_29_30
 import app.otakureader.core.database.migrations.MIGRATION_30_31
 import app.otakureader.core.database.migrations.MIGRATION_31_32
+import app.otakureader.core.database.migrations.MIGRATION_35_36
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -51,7 +52,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 35", 35, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 36", 36, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -78,7 +79,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 33 migrations (v2→v35)", 33, ALL_MIGRATIONS.size)
+        assertEquals("Expected 34 migrations (v2→v36)", 34, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -641,6 +642,52 @@ class DatabaseMigrationTest {
         assertTrue(cursor.moveToFirst())
         assertEquals("data_usage must have one row after insert", 1, cursor.getInt(0))
         cursor.close()
+        db.close()
+    }
+
+    // ── Migration 35 → 36 ───────────────────────────────────────────────────
+    // Adds: manga_alternative_source table with indices for cross-source merge (#1053)
+
+    @Test
+    fun migration35To36_createsMangaAlternativeSourceTable() {
+        helper.createDatabase(TEST_DB, 35).close()
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 36, true, MIGRATION_35_36)
+        assertTrue(
+            "manga_alternative_source must exist after 35→36",
+            "manga_alternative_source" in db.tableNames(),
+        )
+        val cols = db.columnNames("manga_alternative_source")
+        assertTrue("manga_id must exist", "manga_id" in cols)
+        assertTrue("alt_manga_id must exist", "alt_manga_id" in cols)
+        val indexes = db.indexNames("manga_alternative_source")
+        assertTrue(
+            "index_manga_alternative_source_manga_id must exist",
+            "index_manga_alternative_source_manga_id" in indexes,
+        )
+        assertTrue(
+            "index_manga_alternative_source_alt_manga_id must exist",
+            "index_manga_alternative_source_alt_manga_id" in indexes,
+        )
+        assertTrue(
+            "index_manga_alternative_source_manga_id_alt_manga_id (unique) must exist",
+            "index_manga_alternative_source_manga_id_alt_manga_id" in indexes,
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration35To36_uniqueConstraintOnMangaIdAltMangaId() {
+        helper.createDatabase(TEST_DB, 35).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, 36, true, MIGRATION_35_36)
+        db.execSQL("INSERT INTO manga_alternative_source (manga_id, alt_manga_id) VALUES (1, 2)")
+        var threw = false
+        try {
+            db.execSQL("INSERT INTO manga_alternative_source (manga_id, alt_manga_id) VALUES (1, 2)")
+        } catch (_: Exception) {
+            threw = true
+        }
+        assertTrue("Duplicate (manga_id, alt_manga_id) pair must throw", threw)
         db.close()
     }
 
