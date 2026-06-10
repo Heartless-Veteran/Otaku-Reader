@@ -419,7 +419,12 @@ private fun MinifiedExtensionDto.toDomain(baseUrl: String): Extension {
         isNsfw = nsfw == 1,
         installDate = null,
         signatureHash = null, // Signature not provided in minified format
-        isEnabled = true
+        isEnabled = true,
+        hasReadme = hasReadme,
+        hasChangelog = hasChangelog,
+        // hasCloudflare is a per-source flag in the minified format (0/1 int on each source).
+        // We aggregate it to the extension level: true if any source requires Cloudflare bypass.
+        hasCloudflare = sources.any { it.hasCloudflare == 1 }
     )
 }
 

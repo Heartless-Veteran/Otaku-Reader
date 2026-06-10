@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.os.SystemClock
 import android.provider.Settings
+import java.util.Calendar
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -53,8 +54,13 @@ import app.otakureader.R
 fun BiometricLockGate(
     enabled: Boolean,
     timeoutMillis: Long,
+    scheduleEnabled: Boolean = false,
+    startHour: Int = 0,
+    endHour: Int = 0,
+    activeDays: Set<Int> = emptySet(),
     content: @Composable () -> Unit,
 ) {
+    val effectivelyEnabled = enabled && (!scheduleEnabled || isWithinLockSchedule(startHour, endHour, activeDays))
     val context = LocalContext.current
     // LocalContext may be a ContextWrapper (theme wrapper, Hilt/navigation wrapper); walk the
     // chain to find the hosting FragmentActivity rather than casting directly.
@@ -66,24 +72,24 @@ fun BiometricLockGate(
 
     // Lock once when the feature is first known to be on (cold start). Disabling resets the
     // one-shot guard so re-enabling within the same process locks again immediately.
-    LaunchedEffect(enabled) {
-        if (enabled && !initialized) {
+    LaunchedEffect(effectivelyEnabled) {
+        if (effectivelyEnabled && !initialized) {
             locked = true
             initialized = true
-        } else if (!enabled) {
+        } else if (!effectivelyEnabled) {
             locked = false
             initialized = false
         }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, enabled, timeoutMillis) {
+    DisposableEffect(lifecycleOwner, effectivelyEnabled, timeoutMillis) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 // elapsedRealtime() is monotonic — unaffected by clock changes / NTP sync.
                 Lifecycle.Event.ON_STOP -> backgroundedAt = SystemClock.elapsedRealtime()
                 Lifecycle.Event.ON_START -> {
-                    if (enabled && backgroundedAt > 0L &&
+                    if (effectivelyEnabled && backgroundedAt > 0L &&
                         SystemClock.elapsedRealtime() - backgroundedAt >= timeoutMillis
                     ) {
                         locked = true
@@ -98,7 +104,7 @@ fun BiometricLockGate(
 
     content()
 
-    if (enabled && locked) {
+    if (effectivelyEnabled && locked) {
         val title = stringResource(R.string.biometric_lock_title)
         val subtitle = stringResource(R.string.biometric_lock_subtitle)
         val authAvailable = activity != null && canAuthenticate(activity)
@@ -169,6 +175,27 @@ private fun Context.findFragmentActivity(): FragmentActivity? {
         ctx = ctx.baseContext
     }
     return null
+}
+
+/**
+ * Returns true if the current wall-clock time falls within the lock enforcement window.
+ *
+ * [startHour] and [endHour] are 0-23. When [startHour] > [endHour] the window wraps midnight
+ * (e.g., start=22, end=8 enforces lock from 22:00 to 07:59).
+ * [activeDays] uses [Calendar] day constants (Calendar.MONDAY = 2 … Calendar.SUNDAY = 1).
+ * An empty [activeDays] set means all days are active.
+ */
+private fun isWithinLockSchedule(startHour: Int, endHour: Int, activeDays: Set<Int>): Boolean {
+    val now = Calendar.getInstance()
+    val dayOfWeek = now.get(Calendar.DAY_OF_WEEK)
+    val hour = now.get(Calendar.HOUR_OF_DAY)
+    val dayAllowed = activeDays.isEmpty() || dayOfWeek in activeDays
+    val hourAllowed = if (startHour <= endHour) {
+        hour in startHour until endHour
+    } else {
+        hour >= startHour || hour < endHour
+    }
+    return dayAllowed && hourAllowed
 }
 
 private const val ALLOWED_AUTHENTICATORS = BIOMETRIC_STRONG or DEVICE_CREDENTIAL

@@ -22,4 +22,13 @@ data class BackupSettingsState(
     val tachiyomiImportTotal: Int = 0,
     val backupEncryptionEnabled: Boolean = false,
     val backupEncryptionPasswordSet: Boolean = false,
+    // Pre-backup checklist dialog
+    val showBackupChecklist: Boolean = false,
+    val backupChecklistMangaCount: Int = 0,
+    val backupChecklistCategoryCount: Int = 0,
+    val backupChecklistTrackingCount: Int = 0,
+    // Pre-restore preflight dialog
+    val showRestoreConfirm: Boolean = false,
+    val pendingRestoreUri: String? = null,
+    val pendingRestoreFileName: String = "",
 )

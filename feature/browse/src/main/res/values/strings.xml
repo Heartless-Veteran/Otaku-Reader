@@ -164,4 +164,11 @@
     <string name="extension_detail_sources">Sources</string>
     <string name="extension_detail_signer">Signer hash</string>
     <string name="extension_detail_repo">Repository</string>
+    <!-- Extension capability badges (#1046) -->
+    <string name="extension_has_cloudflare">CF</string>
+    <string name="extension_has_cloudflare_cd">Requires Cloudflare bypass</string>
+    <string name="extension_has_readme">README</string>
+    <string name="extension_has_readme_cd">Has README documentation</string>
+    <string name="extension_has_changelog">CHANGELOG</string>
+    <string name="extension_has_changelog_cd">Has changelog</string>
 </resources>

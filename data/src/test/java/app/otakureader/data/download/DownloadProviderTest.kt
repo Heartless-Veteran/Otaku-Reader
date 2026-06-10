@@ -509,6 +509,83 @@ class DownloadProviderTest {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // deleteMangaDownloads()
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun deleteMangaDownloads_existingDirectory_deletesAndReturnsTrue() {
+        val root = tempDir()
+        try {
+            val pageFile = DownloadProvider.getPageFile(root, "MangaDex", "One Piece", "Ch 1", 0)
+            pageFile.parentFile?.mkdirs()
+            pageFile.writeText("fake page")
+
+            val result = DownloadProvider.deleteMangaDownloads(root, "MangaDex", "One Piece")
+
+            assertTrue(result)
+            val mangaDir = File(root, "OtakuReader/MangaDex/One Piece")
+            assertFalse(mangaDir.exists())
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun deleteMangaDownloads_nonExistentDirectory_returnsFalse() {
+        val root = tempDir()
+        try {
+            val result = DownloadProvider.deleteMangaDownloads(root, "MangaDex", "One Piece")
+            assertFalse(result)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun deleteMangaDownloads_blankSourceName_returnsFalseWithoutDeleting() {
+        val root = tempDir()
+        try {
+            val result = DownloadProvider.deleteMangaDownloads(root, "   ", "One Piece")
+            assertFalse(result)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun deleteMangaDownloads_blankMangaTitle_returnsFalseWithoutDeleting() {
+        val root = tempDir()
+        try {
+            val result = DownloadProvider.deleteMangaDownloads(root, "MangaDex", "")
+            assertFalse(result)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun deleteMangaDownloads_siblingSiblingDirectoriesUnaffected() {
+        val root = tempDir()
+        try {
+            // Create two manga under same source
+            val keepFile = DownloadProvider.getPageFile(root, "MangaDex", "Naruto", "Ch 1", 0)
+            keepFile.parentFile?.mkdirs()
+            keepFile.writeText("keep this")
+
+            val deleteFile = DownloadProvider.getPageFile(root, "MangaDex", "One Piece", "Ch 1", 0)
+            deleteFile.parentFile?.mkdirs()
+            deleteFile.writeText("delete this")
+
+            DownloadProvider.deleteMangaDownloads(root, "MangaDex", "One Piece")
+
+            assertTrue(keepFile.exists())
+            assertFalse(deleteFile.parentFile?.parentFile?.exists() ?: false)
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     @Test
     fun migrateChapterDownload_verifyDirectoryContents_afterRecursiveCopy() {
         val root = tempDir()
