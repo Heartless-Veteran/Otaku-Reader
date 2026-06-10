@@ -8,6 +8,7 @@ import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.AchievementDao
 import app.otakureader.core.database.dao.DataUsageDao
 import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.dao.SyncQueueDao
 import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.dao.UpdateRunSummaryDao
@@ -103,4 +104,9 @@ object DatabaseModule {
 
     @Provides
     fun provideUpdateRunSummaryDao(database: OtakuReaderDatabase): UpdateRunSummaryDao = database.updateRunSummaryDao()
+
+    @Provides
+    fun provideMangaAlternativeSourceDao(
+        database: OtakuReaderDatabase,
+    ): MangaAlternativeSourceDao = database.mangaAlternativeSourceDao()
 }
