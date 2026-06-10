@@ -25,6 +25,8 @@ import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import app.otakureader.domain.model.ReindexResult
+import app.otakureader.domain.repository.EhFavoritesRepository
+import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.repository.TrackerSyncRepository
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
@@ -74,6 +76,10 @@ class LibraryViewModelTest {
     private val libraryUpdateScheduler: LibraryUpdateScheduler = mockk(relaxed = true)
     private val reindexDownloads: ReindexDownloadsUseCase = mockk {
         coEvery { this@mockk.invoke() } returns ReindexResult(verifiedDownloads = 5, emptyDirs = 0)
+    }
+    private val syncEhFavorites: SyncEhFavoritesUseCase = mockk(relaxed = true)
+    private val ehFavoritesRepository: EhFavoritesRepository = mockk {
+        every { isConfigured() } returns false
     }
     private val syncLibrary: SyncLibraryUseCase = mockk(relaxed = true)
 
@@ -168,6 +174,8 @@ class LibraryViewModelTest {
             getRecommendations,
             libraryUpdateScheduler,
             reindexDownloads,
+            syncEhFavorites,
+            ehFavoritesRepository,
             syncLibrary,
         )
     }

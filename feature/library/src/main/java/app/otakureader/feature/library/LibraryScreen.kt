@@ -382,6 +382,13 @@ fun LibraryScreen(
                                     viewModel.onEvent(LibraryEvent.ShowSaveViewDialog)
                                 }
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_sync_eh_favorites)) },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.onEvent(LibraryEvent.SyncEhFavorites)
+                                }
+                            )
                         }
                     }
                 )

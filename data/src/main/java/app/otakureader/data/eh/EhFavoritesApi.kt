@@ -1,0 +1,100 @@
+package app.otakureader.data.eh
+
+import app.otakureader.core.preferences.EhSession
+import app.otakureader.domain.model.EhFavorite
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import javax.inject.Inject
+
+/**
+ * Fetches and parses the E-Hentai favorites page using stored session cookies.
+ *
+ * This class performs synchronous OkHttp calls — callers must dispatch on an IO dispatcher.
+ * Only the first page of favorites (up to 25 entries) is fetched per call; full pagination
+ * can be added in a future iteration when the requirement arises.
+ *
+ * The igneous cookie determines which host to use:
+ *   - Non-empty igneous → ExHentai (exhentai.org) for ExHentai-only content.
+ *   - Empty/absent igneous → E-Hentai (e-hentai.org) public content.
+ */
+class EhFavoritesApi @Inject constructor(private val okHttpClient: OkHttpClient) {
+
+    fun fetchFavorites(session: EhSession): List<EhFavorite> {
+        val host = resolveHost(session)
+        val request = Request.Builder()
+            .url("$host/favorites.php?favcat=all&page=0")
+            .header("Cookie", buildCookieHeader(session))
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            .get()
+            .build()
+
+        val body = okHttpClient.newCall(request).execute().use { response ->
+            check(response.isSuccessful) { "EH returned HTTP ${response.code}" }
+            response.body?.string() ?: return emptyList()
+        }
+
+        return parseGalleries(body)
+    }
+
+    private fun resolveHost(session: EhSession): String =
+        if (session.igneous.isNotEmpty() && session.igneous != "mystery") {
+            "https://exhentai.org"
+        } else {
+            "https://e-hentai.org"
+        }
+
+    private fun buildCookieHeader(session: EhSession): String {
+        val parts = mutableListOf(
+            "ipb_member_id=${session.memberId}",
+            "ipb_pass_hash=${session.passHash}",
+            "sl=dm_2",
+        )
+        if (session.igneous.isNotEmpty()) parts.add("igneous=${session.igneous}")
+        return parts.joinToString("; ")
+    }
+
+    /** Visible for testing. */
+    internal fun parseGalleries(html: String): List<EhFavorite> {
+        // Gallery URLs appear twice per entry (thumbnail link + title link); distinct() keeps
+        // only the first occurrence, preserving table order.
+        val urls = GALLERY_URL_REGEX.findAll(html)
+            .map { it.groupValues[1] }
+            .toList()
+            .distinct()
+
+        val titles = GALLERY_TITLE_REGEX.findAll(html)
+            .map { it.groupValues[1].trim() }
+            .toList()
+
+        val thumbs = GALLERY_THUMB_REGEX.findAll(html)
+            .map { it.groupValues[1] }
+            .toList()
+
+        return urls.mapIndexed { i, url ->
+            EhFavorite(
+                galleryUrl = url,
+                title = titles.getOrElse(i) { "Unknown" },
+                thumbnailUrl = thumbs.getOrNull(i),
+            )
+        }
+    }
+
+    private companion object {
+        // Matches the gallery path from either e-hentai.org or exhentai.org URLs.
+        val GALLERY_URL_REGEX = Regex(
+            """href="(?:https?://(?:e-hentai|exhentai)\.org)?(/g/\d+/[a-f0-9]+/)""""
+        )
+
+        // The gallery title is always inside <div class="glink">…</div>.
+        val GALLERY_TITLE_REGEX = Regex("""<div class="glink">([^<]+)</div>""")
+
+        // EH/ExH thumbnails are served from CDN hosts (t1..t5.e-hentai.org or ehgt.org).
+        val GALLERY_THUMB_REGEX = Regex(
+            """<img[^>]+src="(https://(?:t\d\.e-hentai\.org|ehgt\.org)/[^"]+)"[^>]*>"""
+        )
+
+        const val USER_AGENT =
+            "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
+    }
+}
