@@ -7,7 +7,9 @@ import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.extension.loader.ExtensionLoader
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -21,6 +23,7 @@ class ExtensionRepositoryImpl(
     private val localDataSource: ExtensionDao,
     private val remoteDataSource: ExtensionRemoteDataSource,
     private val extensionLoader: ExtensionLoader,
+    private val blocklistStore: ExtensionBlocklistStore? = null,
     private val mapper: ExtensionMapper = ExtensionMapper()
 ) : ExtensionRepository {
     
@@ -32,10 +35,15 @@ class ExtensionRepositoryImpl(
     }
     
     override fun getAvailableExtensions(): Flow<List<Extension>> {
-        return localDataSource.getAvailableExtensions()
+        val available = localDataSource.getAvailableExtensions()
             .map { entities ->
                 entities.map { mapper.toDomain(it) }
             }
+        // Blocklist enforcement (#1018): blocked packages never appear as installable.
+        val store = blocklistStore ?: return available
+        return combine(available, store.blockedPackages) { extensions, blocked ->
+            extensions.filter { it.pkgName !in blocked }
+        }
     }
     
     override fun getExtensionsWithUpdates(): Flow<List<Extension>> {
@@ -59,6 +67,15 @@ class ExtensionRepositoryImpl(
     
     override suspend fun installExtension(pkgName: String, apkPath: String): Result<Extension> {
         return try {
+            // Blocklist enforcement (#1018): refuse install even if the caller bypassed
+            // the filtered available list (e.g. a stale UI snapshot).
+            val blockedReason = blocklistStore?.blockedPackages?.first()?.get(pkgName)
+            if (blockedReason != null) {
+                localDataSource.updateStatus(pkgName, InstallStatus.AVAILABLE.name)
+                return Result.failure(
+                    SecurityException("Extension $pkgName is blocklisted: $blockedReason")
+                )
+            }
             // Update status to installing
             localDataSource.updateStatus(pkgName, InstallStatus.INSTALLING.name)
             

@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistFetcher
+import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import app.otakureader.core.extension.BuildConfig
 import app.otakureader.core.extension.data.local.ExtensionDao
 import app.otakureader.core.extension.data.local.ExtensionDatabase
@@ -82,9 +84,24 @@ object ExtensionModule {
     fun provideExtensionRepository(
         dao: ExtensionDao,
         remoteDataSource: ExtensionRemoteDataSource,
-        loader: ExtensionLoader
+        loader: ExtensionLoader,
+        blocklistStore: ExtensionBlocklistStore
     ): ExtensionRepository {
-        return ExtensionRepositoryImpl(dao, remoteDataSource, loader)
+        return ExtensionRepositoryImpl(dao, remoteDataSource, loader, blocklistStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExtensionBlocklistStore(
+        dataStore: DataStore<Preferences>
+    ): ExtensionBlocklistStore {
+        return ExtensionBlocklistStore(dataStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExtensionBlocklistFetcher(): ExtensionBlocklistFetcher {
+        return ExtensionBlocklistFetcher()
     }
 
     @Provides
