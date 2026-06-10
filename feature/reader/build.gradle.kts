@@ -8,7 +8,21 @@ android {
     namespace = "app.otakureader.feature.reader"
 
     testOptions {
-        unitTests.isIncludeAndroidResources = true
+        unitTests {
+            isIncludeAndroidResources = true
+            all { testTask ->
+                testTask.systemProperty(
+                    "roborazzi.output.dir",
+                    "${project.projectDir}/src/test/screenshots",
+                )
+                // Forward -Proborazzi.test.record=true / -Proborazzi.test.verify=true from CLI
+                listOf("roborazzi.test.record", "roborazzi.test.verify").forEach { prop ->
+                    if (project.hasProperty(prop)) {
+                        testTask.systemProperty(prop, project.property(prop)!!)
+                    }
+                }
+            }
+        }
     }
 }
 
