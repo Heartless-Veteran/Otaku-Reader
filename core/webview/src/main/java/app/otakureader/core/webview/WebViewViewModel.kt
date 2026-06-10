@@ -10,16 +10,18 @@ import javax.inject.Inject
 @HiltViewModel
 class WebViewViewModel @Inject constructor(
     private val webViewPreferences: WebViewPreferences,
+    private val cookieBridge: WebViewCookieBridge,
 ) : ViewModel() {
 
-    /** Reactive stream of the ad-block enabled flag. Collect with [collectAsStateWithLifecycle]. */
     val adBlockEnabled = webViewPreferences.adBlockEnabled
 
-    /** Toggles the ad-block setting based on its current persisted value. */
     fun toggleAdBlock() {
         viewModelScope.launch {
             val current = webViewPreferences.adBlockEnabled.first()
             webViewPreferences.setAdBlockEnabled(!current)
         }
     }
+
+    /** Returns cookies held by the WebView's [android.webkit.CookieManager] for [url]. */
+    fun cookiesForUrl(url: String): String = cookieBridge.cookiesForUrl(url)
 }

@@ -71,6 +71,14 @@
     <string name="settings_download_only_wifi">Download Only on Wi-Fi</string>
     <string name="settings_download_only_wifi_description">Restrict downloads to Wi-Fi connections only</string>
     <string name="settings_auto_download_limit">Auto-Download Limit: %1$d chapter(s)</string>
+    <string name="settings_auto_download_category_include">Include categories</string>
+    <string name="settings_auto_download_category_include_description">Auto-download only for these categories (empty = all)</string>
+    <string name="settings_auto_download_category_exclude">Exclude categories</string>
+    <string name="settings_auto_download_category_exclude_description">Skip auto-download for these categories</string>
+    <string name="settings_auto_download_category_all">All categories</string>
+    <string name="settings_auto_download_category_count">%1$d selected</string>
+    <string name="settings_auto_download_category_none_excluded">None excluded</string>
+    <string name="settings_configure">Configure</string>
 
     <!-- Reader -->
     <string name="settings_reader">Reader</string>
@@ -82,7 +90,7 @@
     <string name="settings_keep_screen_on">Keep Screen On</string>
     <string name="settings_keep_screen_on_description">Prevent the screen from sleeping while reading</string>
     <string name="settings_incognito_mode">Incognito Mode</string>
-    <string name="settings_incognito_mode_description">Reading history and progress are not saved while enabled</string>
+    <string name="settings_incognito_mode_description">Reading history, statistics, tracker progress updates, and automatic backups are paused while incognito mode is active</string>
     <string name="settings_secure_screen">Secure Screen</string>
     <string name="settings_secure_screen_description">Prevent screenshots and screen recording while reading</string>
     <string name="settings_preload_before">Preload Pages Before: %1$d</string>
@@ -129,7 +137,7 @@
     <string name="settings_reminder_afternoon">Afternoon (2 PM)</string>
     <string name="settings_reminder_evening">Evening (8 PM)</string>
 
-    <!-- Backup, Restore & Migration -->
+    <!-- Backup, Restore &amp; Migration -->
     <string name="settings_backup">Backup &amp; Restore</string>
     <string name="settings_backup_restore_migration">Backup, Restore &amp; Migration</string>
     <string name="settings_create_backup">Create Backup</string>
@@ -138,6 +146,17 @@
     <string name="settings_restore_backup">Restore Backup</string>
     <string name="settings_restore_backup_description">Import library and settings from a backup file</string>
     <string name="settings_restore_button">Restore</string>
+    <!-- Pre-backup checklist dialog -->
+    <string name="backup_checklist_title">Backup contents</string>
+    <string name="backup_checklist_summary">%1$d manga · %2$d categories · %3$d tracking entries</string>
+    <string name="backup_checklist_history_included">History: included</string>
+    <string name="backup_checklist_settings_included">Settings: included</string>
+    <string name="backup_checklist_create">Create backup</string>
+    <!-- Pre-restore preflight dialog -->
+    <string name="restore_preflight_title">Restore backup?</string>
+    <string name="restore_preflight_filename">Restore from: %1$s</string>
+    <string name="restore_preflight_message">This will replace your current library with the selected backup. This cannot be undone.</string>
+    <string name="restore_preflight_proceed">Restore</string>
     <string name="settings_import_tachiyomi">Import from Tachiyomi/Mihon</string>
     <string name="settings_import_tachiyomi_description">Bring your library from another manga reader app</string>
     <string name="settings_import_button">Import</string>
@@ -278,6 +297,19 @@
     <string name="settings_lock_timeout_1min">After 1 minute</string>
     <string name="settings_lock_timeout_5min">After 5 minutes</string>
     <string name="settings_lock_timeout_15min">After 15 minutes</string>
+    <string name="settings_lock_schedule">Lock Schedule</string>
+    <string name="settings_lock_schedule_enabled">Enable lock schedule</string>
+    <string name="settings_lock_schedule_enabled_description">Enforce the lock only during specific hours and days</string>
+    <string name="settings_lock_schedule_start">Lock from %1$d:00</string>
+    <string name="settings_lock_schedule_end">Lock until %1$d:00</string>
+    <string name="settings_lock_schedule_days">Active days</string>
+    <string name="day_sun">Sun</string>
+    <string name="day_mon">Mon</string>
+    <string name="day_tue">Tue</string>
+    <string name="day_wed">Wed</string>
+    <string name="day_thu">Thu</string>
+    <string name="day_fri">Fri</string>
+    <string name="day_sat">Sat</string>
     <string name="settings_discord_rich_presence">Rich Presence</string>
     <string name="settings_discord_rich_presence_description">Show current reading activity as your Discord status</string>
 
@@ -330,7 +362,7 @@
     <string name="settings_ai_remove_key_dialog_text">This will clear your saved Gemini API key. AI features will be disabled until a new key is added.</string>
     <string name="settings_ai_remove_key_confirm">Remove</string>
     <string name="settings_ai_remove_key_cancel">Cancel</string>
-    <string name="settings_ai_api_key_invalid_format">Invalid key format. Gemini API keys should start with "AIza" and be at least 20 characters.</string>
+    <string name="settings_ai_api_key_invalid_format">Invalid key format. Gemini API keys should start with &quot;AIza&quot; and be at least 20 characters.</string>
     <string name="settings_ai_load_failed">Failed to load AI settings. You may need to re-enter your API key.</string>
 
     <!-- Reader Display -->
@@ -496,6 +528,21 @@
     <string name="settings_widget_now_reading_description">Shows your most recent active chapter as a compact home or lock-screen widget.</string>
     <string name="settings_widgets_how_to_add">How to add widgets</string>
     <string name="settings_widgets_how_to_add_description">Long-press your launcher home screen, choose Widgets, then select an Otaku Reader widget. Widget refresh cadence is controlled by Android and the widget provider metadata.</string>
+    <string name="settings_widget_library">Library</string>
+    <string name="settings_widget_library_description">Shows your most-recently-read manga with cover art and reading progress.</string>
+    <!-- Widget configuration studio strings -->
+    <string name="widget_config_count_limit">Items to show: %1$d</string>
+    <string name="widget_config_tap_action">Tap action</string>
+    <string name="widget_config_tap_open_manga">Open manga details</string>
+    <string name="widget_config_tap_open_reader">Open reader</string>
+    <string name="widget_config_tap_open_app">Open app</string>
+    <string name="widget_config_category_filter">Filter by category</string>
+    <string name="widget_config_all_categories">All categories</string>
+    <string name="widget_config_show_thumbnails">Show thumbnails</string>
+    <string name="widget_config_preview_label">Preview</string>
+    <string name="widget_config_preview_item_placeholder">Manga title</string>
+    <string name="widget_config_preview_subtitle_placeholder">Chapter info</string>
+    <string name="widget_config_settings_saved">Widget settings saved</string>
     <string name="settings_local_source_supported_formats">Supported local library formats</string>
     <string name="settings_local_source_archives">Archives</string>
     <string name="settings_local_source_archives_description">CBZ, ZIP, and EPUB files can be scanned directly from the configured local-source directory.</string>
@@ -548,6 +595,12 @@
     <string name="storage_analytics_total">Total: %1$s</string>
     <string name="storage_analytics_empty">No downloaded chapters found.</string>
     <string name="storage_analytics_refresh">Refresh</string>
+    <string name="storage_delete_title">Delete downloads</string>
+    <string name="storage_delete_message">Delete all downloaded chapters for %1$s? This frees %2$s and cannot be undone.</string>
+    <string name="storage_delete_confirm">Delete</string>
+    <string name="storage_delete_cancel">Cancel</string>
+    <string name="storage_delete_success">Deleted downloads for %s</string>
+    <string name="storage_delete_failure">Failed to delete downloads for %s</string>
 
     <!-- Reader presets -->
     <string name="reader_presets_title">Reader Presets</string>
@@ -561,6 +614,18 @@
     <string name="reader_presets_delete">Delete</string>
     <string name="reader_presets_empty">No presets saved yet.\nSave your current settings to get started.</string>
     <string name="reader_presets_mode_label">Mode %1$d</string>
+    <string name="reader_mode_single_page">Single Page</string>
+    <string name="reader_mode_dual_page">Dual Page</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart_panels">Smart Panels</string>
+    <string name="reader_scale_fit_screen">Fit Screen</string>
+    <string name="reader_scale_fit_width">Fit Width</string>
+    <string name="reader_scale_fit_height">Fit Height</string>
+    <string name="reader_scale_original">Original</string>
+    <string name="reader_scale_smart_fit">Smart Fit</string>
+    <string name="reader_presets_detail_volume_keys">Volume keys</string>
+    <string name="reader_presets_detail_skip_read">Skip read</string>
+    <string name="reader_presets_detail_inverted_taps">Inverted taps</string>
 
     <!-- Dark mode schedule -->
     <string name="settings_dark_mode_schedule">Schedule dark mode</string>
@@ -576,6 +641,7 @@
     <string name="nav_order_reset">Reset to default</string>
     <string name="nav_order_move_up">Move up</string>
     <string name="nav_order_move_down">Move down</string>
+    <string name="nav_order_drag_hint">Hold to drag and reorder</string>
     <string name="nav_tab_library">Library</string>
     <string name="nav_tab_updates">Updates</string>
     <string name="nav_tab_browse">Browse</string>
