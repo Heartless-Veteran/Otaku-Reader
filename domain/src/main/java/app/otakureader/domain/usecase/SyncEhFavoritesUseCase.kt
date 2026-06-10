@@ -1,6 +1,7 @@
 package app.otakureader.domain.usecase
 
 import app.otakureader.domain.model.ContentRating
+import app.otakureader.domain.model.EhSyncResult
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.repository.EhFavoritesRepository
 import app.otakureader.domain.repository.MangaRepository
@@ -53,5 +54,3 @@ class SyncEhFavoritesUseCase @Inject constructor(
         const val EH_SOURCE_ID = 1875628763L
     }
 }
-
-data class EhSyncResult(val added: Int, val skipped: Int)
