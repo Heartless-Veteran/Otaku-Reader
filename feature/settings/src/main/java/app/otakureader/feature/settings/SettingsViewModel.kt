@@ -91,50 +91,6 @@ class SettingsViewModel @Inject constructor(
     fun restoreBackup(uri: android.net.Uri) { onEvent(SettingsEvent.RestoreBackupFromUri(uri)) }
 
     private suspend fun handleRemainingEvent(event: SettingsEvent) {
-        when (event) {
-            // Local source
-            is SettingsEvent.SetLocalSourceDirectory ->
-                localSourcePreferences.setLocalSourceDirectory(event.path)
-            is SettingsEvent.SetAllowLocalSourceHiddenFolders ->
-                localSourcePreferences.setAllowLocalSourceHiddenFolders(event.allowed)
-
-            // Migration
-            is SettingsEvent.SetMigrationSimilarityThreshold ->
-                appPreferences.setMigrationSimilarityThreshold(event.threshold)
-            is SettingsEvent.SetMigrationAlwaysConfirm ->
-                appPreferences.setMigrationAlwaysConfirm(event.enabled)
-            is SettingsEvent.SetMigrationMinChapterCount ->
-                appPreferences.setMigrationMinChapterCount(event.count)
-            SettingsEvent.OnNavigateToMigration ->
-                _effect.send(SettingsEffect.NavigateToMigrationEntry)
-
-            // Reading goals
-            is SettingsEvent.SetDailyChapterGoal ->
-                readingGoalPreferences.setDailyChapterGoal(event.goal)
-            is SettingsEvent.SetWeeklyChapterGoal ->
-                readingGoalPreferences.setWeeklyChapterGoal(event.goal)
-            is SettingsEvent.SetReadingRemindersEnabled ->
-                handleSetReadingRemindersEnabled(event.enabled)
-            is SettingsEvent.SetReadingReminderHour ->
-                handleSetReadingReminderHour(event.hour)
-
-            // Data management
-            SettingsEvent.ClearImageCache -> clearImageCache()
-            SettingsEvent.RefreshLibraryCovers -> refreshLibraryCovers()
-            SettingsEvent.ClearHistory -> clearHistory()
-            is SettingsEvent.SetCoilDiskCacheSizeMb ->
-                generalPreferences.setCoilDiskCacheSizeMb(event.sizeMb)
-
-            // Security
-            is SettingsEvent.SetBiometricLockEnabled ->
-                generalPreferences.setBiometricLockEnabled(event.enabled)
-            is SettingsEvent.SetBiometricLockTimeout ->
-                generalPreferences.setBiometricLockTimeoutMinutes(event.minutes)
-
-            // Navigation
-            SettingsEvent.NavigateToAbout -> _effect.send(SettingsEffect.NavigateToAbout)
-
-            else -> Unit
         when {
             handleMigrationEvent(event) -> Unit
             handleReadingGoalEvent(event) -> Unit
@@ -143,6 +99,8 @@ class SettingsViewModel @Inject constructor(
             else -> when (event) {
                 is SettingsEvent.SetLocalSourceDirectory ->
                     localSourcePreferences.setLocalSourceDirectory(event.path)
+                is SettingsEvent.SetAllowLocalSourceHiddenFolders ->
+                    localSourcePreferences.setAllowLocalSourceHiddenFolders(event.allowed)
                 SettingsEvent.NavigateToAbout ->
                     _effect.send(SettingsEffect.NavigateToAbout)
                 else -> Unit
