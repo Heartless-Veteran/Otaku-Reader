@@ -218,21 +218,21 @@ fun DetailsScreen(
                     }
                     var overflowExpanded by remember { mutableStateOf(false) }
                     IconButton(onClick = { overflowExpanded = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.details_more_options))
                     }
                     DropdownMenu(
                         expanded = overflowExpanded,
                         onDismissRequest = { overflowExpanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Download all chapters") },
+                            text = { Text(stringResource(R.string.details_download_all_chapters)) },
                             onClick = {
                                 viewModel.onEvent(DetailsContract.Event.DownloadAllChapters)
                                 overflowExpanded = false
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Download unread chapters") },
+                            text = { Text(stringResource(R.string.details_download_unread_chapters)) },
                             onClick = {
                                 viewModel.onEvent(DetailsContract.Event.DownloadUnreadChapters)
                                 overflowExpanded = false

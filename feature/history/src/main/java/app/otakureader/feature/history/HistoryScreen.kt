@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.feature.history.R
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -353,10 +356,16 @@ private fun HistoryItem(
         } else {
             Surface(
                 shape = MaterialTheme.shapes.small,
+                // Tonal backdrop so a failed/missing thumbnail shows a neutral block
+                // instead of an empty hole in the row.
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.size(width = 40.dp, height = 56.dp)
             ) {
                 AsyncImage(
-                    model = entry.mangaThumbnailUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(entry.mangaThumbnailUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = entry.mangaTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -394,7 +403,7 @@ private fun HistoryItem(
         // Action icons (hidden while selecting)
         if (!isSelected) {
             // Resume reading button (matches Mihon's "play" icon)
-            IconButton(onClick = onItemClick, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = onItemClick) {
                 Icon(
                     Icons.Default.PlayArrow,
                     contentDescription = stringResource(R.string.history_resume),
@@ -402,7 +411,7 @@ private fun HistoryItem(
                 )
             }
             Spacer(modifier = Modifier.width(4.dp))
-            IconButton(onClick = onRemoveClick, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = onRemoveClick) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = stringResource(R.string.history_remove),

@@ -196,4 +196,7 @@
     <string name="details_edit_reset_confirm_title">Reset manga info?</string>
     <string name="details_edit_reset_confirm_body">This will clear all your custom edits and restore the original source data.</string>
     <string name="details_edit_reset_confirm_ok">Reset</string>
+    <string name="details_more_options">More options</string>
+    <string name="details_download_all_chapters">Download all chapters</string>
+    <string name="details_download_unread_chapters">Download unread chapters</string>
 </resources>

@@ -165,4 +165,7 @@
 
     <!-- Reader presets quick-switch -->
     <string name="reader_presets_quick">Presets</string>
+    <string name="reader_page_load_failed">Page failed to load</string>
+    <string name="reader_chapter_bookmarked">Bookmarked</string>
+    <string name="reader_chapter_read">Read</string>
 </resources>
