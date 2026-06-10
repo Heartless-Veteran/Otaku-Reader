@@ -144,6 +144,9 @@ data class SettingsState(
     val smartDownloadFavoritesOnly get() = downloads.smartDownloadFavoritesOnly
     val smartDownloadMinStorageMb get() = downloads.smartDownloadMinStorageMb
     val downloadDataSaverEnabled get() = downloads.downloadDataSaverEnabled
+    val autoDownloadCategoryInclude get() = downloads.autoDownloadCategoryInclude
+    val autoDownloadCategoryExclude get() = downloads.autoDownloadCategoryExclude
+    val availableCategories get() = downloads.availableCategories
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -353,6 +356,12 @@ sealed interface SettingsEvent : UiEvent {
 
     // Downloads — Data Saver
     data class SetDownloadDataSaverEnabled(val enabled: Boolean) : SettingsEvent
+
+    // Downloads — Per-category auto-download filter
+    data object OpenAutoDownloadCategoryIncludePicker : SettingsEvent
+    data object OpenAutoDownloadCategoryExcludePicker : SettingsEvent
+    data class SetAutoDownloadCategoryInclude(val categoryIds: Set<Long>) : SettingsEvent
+    data class SetAutoDownloadCategoryExclude(val categoryIds: Set<Long>) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {

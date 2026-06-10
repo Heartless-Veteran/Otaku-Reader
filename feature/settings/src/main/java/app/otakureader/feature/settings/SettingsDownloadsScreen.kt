@@ -5,12 +5,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -23,13 +30,16 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -38,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import app.otakureader.core.navigation.Route
+import app.otakureader.domain.model.Category
 import app.otakureader.feature.settings.viewmodel.DownloadViewModel
 import kotlin.math.roundToInt
 
@@ -164,6 +175,63 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
             )
         },
     )
+
+    // Category include/exclude dialogs
+    var showIncludeDialog by remember { mutableStateOf(false) }
+    var showExcludeDialog by remember { mutableStateOf(false) }
+
+    val includeSummary = when {
+        state.autoDownloadCategoryInclude.isEmpty() -> stringResource(R.string.settings_auto_download_category_all)
+        else -> stringResource(R.string.settings_auto_download_category_count, state.autoDownloadCategoryInclude.size)
+    }
+    val excludeSummary = when {
+        state.autoDownloadCategoryExclude.isEmpty() -> stringResource(R.string.settings_auto_download_category_none_excluded)
+        else -> stringResource(R.string.settings_auto_download_category_count, state.autoDownloadCategoryExclude.size)
+    }
+
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_auto_download_category_include)) },
+        supportingContent = { Text(includeSummary) },
+        trailingContent = {
+            OutlinedButton(onClick = { showIncludeDialog = true }) {
+                Text(stringResource(R.string.settings_configure))
+            }
+        },
+    )
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_auto_download_category_exclude)) },
+        supportingContent = { Text(excludeSummary) },
+        trailingContent = {
+            OutlinedButton(onClick = { showExcludeDialog = true }) {
+                Text(stringResource(R.string.settings_configure))
+            }
+        },
+    )
+
+    if (showIncludeDialog) {
+        CategoryPickerDialog(
+            title = stringResource(R.string.settings_auto_download_category_include),
+            categories = state.availableCategories,
+            selected = state.autoDownloadCategoryInclude,
+            onDismiss = { showIncludeDialog = false },
+            onConfirm = { ids ->
+                onEvent(SettingsEvent.SetAutoDownloadCategoryInclude(ids))
+                showIncludeDialog = false
+            },
+        )
+    }
+    if (showExcludeDialog) {
+        CategoryPickerDialog(
+            title = stringResource(R.string.settings_auto_download_category_exclude),
+            categories = state.availableCategories,
+            selected = state.autoDownloadCategoryExclude,
+            onDismiss = { showExcludeDialog = false },
+            onConfirm = { ids ->
+                onEvent(SettingsEvent.SetAutoDownloadCategoryExclude(ids))
+                showExcludeDialog = false
+            },
+        )
+    }
 
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
     SectionHeader(title = stringResource(R.string.settings_download_location))
@@ -390,4 +458,67 @@ private fun SmartDownloadSection(state: SettingsState, onEvent: (SettingsEvent) 
             },
         )
     }
+}
+
+@Composable
+private fun CategoryPickerDialog(
+    title: String,
+    categories: List<Category>,
+    selected: Set<Long>,
+    onDismiss: () -> Unit,
+    onConfirm: (Set<Long>) -> Unit,
+) {
+    var currentSelection by remember(selected) { mutableStateOf(selected) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            if (categories.isEmpty()) {
+                Text(stringResource(R.string.settings_auto_download_category_all))
+            } else {
+                LazyColumn {
+                    items(categories) { category ->
+                        val checked = category.id in currentSelection
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    currentSelection = if (checked) {
+                                        currentSelection - category.id
+                                    } else {
+                                        currentSelection + category.id
+                                    }
+                                }
+                                .padding(vertical = 4.dp),
+                        ) {
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = { isChecked ->
+                                    currentSelection = if (isChecked) {
+                                        currentSelection + category.id
+                                    } else {
+                                        currentSelection - category.id
+                                    }
+                                },
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(category.name)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(currentSelection) }) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }
