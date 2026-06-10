@@ -39,4 +39,27 @@
     <!-- Accessibility -->
     <string name="about_opens_in_browser">Opens in browser</string>
     <string name="about_app_icon">App icon</string>
+
+    <!-- Privacy policy screen (#1021) -->
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="privacy_back">Back</string>
+    <string name="privacy_summary">Otaku Reader collects no data about you. There are no accounts, no analytics, no ads, and no servers of our own. Everything stays on your device unless you turn on a feature that needs the internet.</string>
+    <string name="privacy_collect_title">What we collect</string>
+    <string name="privacy_collect_body">Nothing. The app has no analytics, telemetry, or advertising identifiers. The developers cannot see your library, reading history, or anything else.</string>
+    <string name="privacy_local_title">What stays on your device</string>
+    <string name="privacy_local_body">Your library, categories, reading history, statistics, downloaded chapters, preferences, extension settings, page bookmarks, and backups. Uninstalling the app deletes all of it, except backup files you saved elsewhere.</string>
+    <string name="privacy_sources_title">Manga sources</string>
+    <string name="privacy_sources_body">Browsing an online source sends requests to that source\'s website, exactly like visiting it in a browser. The website sees your IP address and standard request headers. Otaku Reader adds no identifiers of its own.</string>
+    <string name="privacy_trackers_title">Tracker sync (opt-in)</string>
+    <string name="privacy_trackers_body">When you link a manga to AniList, MyAnimeList, Kitsu, MangaUpdates, or Shikimori, the app sends that tracker your reading progress for linked entries only — never your full history timestamps. Login tokens are stored encrypted on-device. MangaUpdates does not yet offer OAuth, so its login sends your password directly over HTTPS; only the session token is stored, never the password. Incognito mode suppresses all sync.</string>
+    <string name="privacy_extensions_title">Extension safety</string>
+    <string name="privacy_extensions_body">Extensions are third-party add-ons from repositories you choose. They run in an isolated classloader with no Android permissions of their own, install only over HTTPS, and their signing certificate is checked on every load — if it changes after install you get a warning, because that can indicate the extension was replaced in the repository. Treat adding a repository like installing software from it.</string>
+    <string name="privacy_backups_title">Backups</string>
+    <string name="privacy_backups_body">Backups are saved where you choose and never include tracker passwords. Optional backup encryption uses AES-256-GCM with a password you set; unencrypted backups can be read by anyone with the file.</string>
+    <string name="privacy_crash_title">Crash reporting (off by default)</string>
+    <string name="privacy_crash_body">Nothing is ever uploaded unless you supply your own Sentry DSN and explicitly opt in. Crash logs are otherwise kept locally in encrypted storage.</string>
+    <string name="privacy_biometric_title">Biometric lock</string>
+    <string name="privacy_biometric_body">The app lock uses Android\'s biometric prompt. Your biometric data never reaches the app — Android only reports success or failure.</string>
+    <string name="privacy_contact_title">Questions</string>
+    <string name="privacy_contact_body">The full policy lives in PRIVACY.md in the GitHub repository. Open an issue there if anything is unclear.</string>
 </resources>
