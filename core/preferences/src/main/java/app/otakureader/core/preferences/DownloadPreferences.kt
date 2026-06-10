@@ -133,6 +133,15 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
     val dataSaverEnabled: Flow<Boolean> = dataStore.data.map { it[Keys.DATA_SAVER_ENABLED] ?: false }
     suspend fun setDataSaverEnabled(value: Boolean) = dataStore.edit { it[Keys.DATA_SAVER_ENABLED] = value }
 
+    // --- Monthly Data Budget ---
+
+    /**
+     * User-defined monthly mobile-data budget in megabytes.
+     * A value of 0 means "unlimited" (no cap enforced).
+     * Exposed as a [Flow] so the data-usage screen can react to changes reactively.
+     */
+    val monthlyDataBudgetMb: Flow<Int> = dataStore.data.map { it[Keys.MONTHLY_DATA_BUDGET_MB] ?: 0 }
+    suspend fun setMonthlyDataBudgetMb(mb: Int) = dataStore.edit { it[Keys.MONTHLY_DATA_BUDGET_MB] = mb }
     // --- Per-Category Auto-Download Filter ---
 
     /**
@@ -179,6 +188,7 @@ class DownloadPreferences(private val dataStore: DataStore<Preferences>) {
         val DELETE_AFTER_READING = booleanPreferencesKey("delete_after_reading")
         val PER_MANGA_OVERRIDES = stringPreferencesKey("delete_after_reading_overrides")
         val DATA_SAVER_ENABLED = booleanPreferencesKey("data_saver_enabled")
+        val MONTHLY_DATA_BUDGET_MB = intPreferencesKey("monthly_data_budget_mb")
         val AUTO_DOWNLOAD_CATEGORY_INCLUDE = stringSetPreferencesKey("auto_download_category_include")
         val AUTO_DOWNLOAD_CATEGORY_EXCLUDE = stringSetPreferencesKey("auto_download_category_exclude")
     }

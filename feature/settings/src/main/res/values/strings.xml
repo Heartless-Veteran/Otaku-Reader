@@ -568,6 +568,11 @@
     <string name="settings_data_usage_tab_month">This Month</string>
     <string name="settings_download_data_saver">Data Saver</string>
     <string name="settings_download_data_saver_desc">Block downloads on mobile data</string>
+    <!-- Data Usage drill-down (#1045) -->
+    <string name="data_usage_monthly_budget">Monthly data budget</string>
+    <string name="data_usage_budget_unlimited">Unlimited</string>
+    <string name="data_usage_by_source">Usage by source</string>
+    <string name="data_usage_no_source_data">Per-source tracking will appear here as you browse</string>
 
     <!-- Reader Sync (#958) -->
     <string name="settings_sync">Reader Sync</string>
