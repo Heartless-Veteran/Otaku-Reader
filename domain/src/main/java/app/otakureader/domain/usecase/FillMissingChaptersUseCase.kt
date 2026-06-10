@@ -2,7 +2,6 @@ package app.otakureader.domain.usecase
 
 import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.repository.ChapterRepository
-import app.otakureader.domain.repository.MangaRepository
 import javax.inject.Inject
 
 /**
@@ -15,10 +14,10 @@ import javax.inject.Inject
  *
  * Matching is by chapter number (float equality). Chapters present in [primaryMangaId]
  * are never duplicated; only chapter numbers that appear exclusively in [altMangaId]
- * (and have a valid number ≥ 0) are inserted into the primary.
+ * (and have a valid number ≥ 0) are inserted into the primary. If the alt source itself
+ * has duplicate chapter numbers, only the first occurrence is copied.
  */
 class FillMissingChaptersUseCase @Inject constructor(
-    private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
 ) {
     /**
@@ -34,20 +33,17 @@ class FillMissingChaptersUseCase @Inject constructor(
             .toSet()
 
         val altChapters = chapterRepository.getChaptersByMangaIdSync(altMangaId)
-        val missing = altChapters.filter { alt ->
-            alt.chapterNumber >= 0f && alt.chapterNumber !in primaryNumbers
-        }
+        val missing = altChapters
+            .filter { alt -> alt.chapterNumber >= 0f && alt.chapterNumber !in primaryNumbers }
+            .distinctBy { it.chapterNumber }
 
         if (missing.isEmpty()) return 0
 
         val toInsert = missing.map { alt ->
-            Chapter(
+            alt.copy(
                 id = 0,
                 mangaId = primaryMangaId,
-                url = alt.url,
-                name = alt.name,
                 read = false,
-                chapterNumber = alt.chapterNumber,
             )
         }
         chapterRepository.insertChapters(toInsert)

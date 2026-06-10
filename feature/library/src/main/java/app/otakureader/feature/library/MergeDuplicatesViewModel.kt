@@ -55,15 +55,24 @@ class MergeDuplicatesViewModel @Inject constructor(
     private fun observeDuplicates() {
         mangaRepository.findDuplicates()
             .onEach { duplicateLists ->
-                _state.update { current ->
-                    val newGroups = duplicateLists.map { entries ->
-                        // Preserve user's primary selection for groups already shown
-                        val existing = current.duplicateGroups.firstOrNull { g ->
-                            g.entries.map { it.id }.toSet() == entries.map { it.id }.toSet()
-                        }
-                        existing?.copy(entries = entries) ?: DuplicateGroup(entries)
+                val newGroups = duplicateLists.map { entries ->
+                    val existing = _state.value.duplicateGroups.firstOrNull { g ->
+                        g.entries.map { it.id }.toSet() == entries.map { it.id }.toSet()
                     }
-                    current.copy(isLoading = false, duplicateGroups = newGroups, error = null)
+                    existing?.copy(entries = entries) ?: DuplicateGroup(entries)
+                }
+                // Hydrate linkedAlternatives for every manga ID currently on screen
+                val allIds = newGroups.flatMap { g -> g.entries.map { it.id } }.distinct()
+                val linked = allIds.associate { id ->
+                    id to mangaRepository.getAlternativeSourceIds(id).toSet()
+                }
+                _state.update { current ->
+                    current.copy(
+                        isLoading = false,
+                        duplicateGroups = newGroups,
+                        linkedAlternatives = linked,
+                        error = null,
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -144,8 +153,7 @@ class MergeDuplicatesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 linkAlternativeSource(primaryId, altId)
-                val linked = loadLinkedForPair(primaryId, altId)
-                _state.update { it.copy(linkedAlternatives = linked) }
+                updateLinkedAlternatives(primaryId, altId)
                 _effect.send(MergeDuplicatesEffect.ShowSnackbar("Linked as alternative sources"))
             } catch (e: CancellationException) {
                 throw e
@@ -173,8 +181,7 @@ class MergeDuplicatesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 mangaRepository.unlinkAlternativeSource(primaryId, altId)
-                val linked = loadLinkedForPair(primaryId, altId)
-                _state.update { it.copy(linkedAlternatives = linked) }
+                updateLinkedAlternatives(primaryId, altId)
                 _effect.send(MergeDuplicatesEffect.ShowSnackbar("Alternative link removed"))
             } catch (e: CancellationException) {
                 throw e
@@ -184,11 +191,15 @@ class MergeDuplicatesViewModel @Inject constructor(
         }
     }
 
-    /** Refreshes the linkedAlternatives map for the two given IDs. */
-    private suspend fun loadLinkedForPair(primaryId: Long, altId: Long): Map<Long, Set<Long>> {
-        val current = _state.value.linkedAlternatives.toMutableMap()
-        current[primaryId] = mangaRepository.getAlternativeSourceIds(primaryId).toSet()
-        current[altId] = mangaRepository.getAlternativeSourceIds(altId).toSet()
-        return current
+    /** Fetches fresh link state from the DB then applies it atomically to avoid race conditions. */
+    private suspend fun updateLinkedAlternatives(primaryId: Long, altId: Long) {
+        val primaryAlts = mangaRepository.getAlternativeSourceIds(primaryId).toSet()
+        val altAlts = mangaRepository.getAlternativeSourceIds(altId).toSet()
+        _state.update { current ->
+            val updated = current.linkedAlternatives.toMutableMap()
+            updated[primaryId] = primaryAlts
+            updated[altId] = altAlts
+            current.copy(linkedAlternatives = updated)
+        }
     }
 }

@@ -248,11 +248,15 @@ class MangaRepositoryImpl @Inject constructor(
         mangaCategoryDao.getCategoryIdsForManga(mangaId)
 
     override suspend fun linkAlternativeSource(mangaId: Long, altMangaId: Long) {
-        altSourceDao.insert(MangaAlternativeSourceEntity(mangaId = mangaId, altMangaId = altMangaId))
+        // Always store as (min, max) so (A,B) and (B,A) map to the same row and the
+        // unique index correctly prevents duplicate symmetric entries.
+        val (minId, maxId) = if (mangaId < altMangaId) mangaId to altMangaId else altMangaId to mangaId
+        altSourceDao.insert(MangaAlternativeSourceEntity(mangaId = minId, altMangaId = maxId))
     }
 
     override suspend fun unlinkAlternativeSource(mangaId: Long, altMangaId: Long) {
-        altSourceDao.unlink(mangaId, altMangaId)
+        val (minId, maxId) = if (mangaId < altMangaId) mangaId to altMangaId else altMangaId to mangaId
+        altSourceDao.unlink(minId, maxId)
     }
 
     override suspend fun getAlternativeSourceIds(mangaId: Long): List<Long> =

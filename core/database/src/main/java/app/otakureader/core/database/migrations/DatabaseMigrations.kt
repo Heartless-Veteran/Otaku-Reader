@@ -442,9 +442,9 @@ internal val MIGRATION_35_36 = object : Migration(35, 36) {
             )
             """.trimIndent(),
         )
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_mas_manga_id ON manga_alternative_source(manga_id)")
-        db.execSQL("CREATE INDEX IF NOT EXISTS idx_mas_alt_manga_id ON manga_alternative_source(alt_manga_id)")
-        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS idx_mas_pair ON manga_alternative_source(manga_id, alt_manga_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_manga_alternative_source_manga_id ON manga_alternative_source(manga_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_manga_alternative_source_alt_manga_id ON manga_alternative_source(alt_manga_id)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_manga_alternative_source_manga_id_alt_manga_id ON manga_alternative_source(manga_id, alt_manga_id)")
     }
 }
 
