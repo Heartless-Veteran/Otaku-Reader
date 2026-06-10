@@ -427,6 +427,7 @@ class TrackingViewModel @Inject constructor(
      * Full retry logic is a larger feature — for now this emits a snackbar to acknowledge the
      * request and surfaces the event path so the infrastructure is in place.
      */
+    @Suppress("UnusedParameter")
     private fun retryFailedUpdates(trackerId: Int) {
         viewModelScope.launch {
             _effect.trySend(
