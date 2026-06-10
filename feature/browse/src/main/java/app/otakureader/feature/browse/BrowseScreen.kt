@@ -208,6 +208,33 @@ fun BrowseScreen(
             },
         )
     }
+
+    // Save search dialog (#1051)
+    if (state.showSaveSearchDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(BrowseEvent.HideSaveSearchDialog) },
+            title = { Text(stringResource(R.string.browse_save_search)) },
+            text = {
+                OutlinedTextField(
+                    value = state.saveSearchName,
+                    onValueChange = { viewModel.onEvent(BrowseEvent.UpdateSaveSearchName(it)) },
+                    placeholder = { Text(stringResource(R.string.browse_save_search_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onEvent(BrowseEvent.ConfirmSaveSearch) }) {
+                    Text(stringResource(R.string.browse_save_search_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(BrowseEvent.HideSaveSearchDialog) }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -238,10 +265,10 @@ private fun BrowseContent(
                 singleLine = true
             )
 
-            // Save-search button (shown when there is a non-empty query)
+            // Bookmark icon: opens the "Save search" name dialog when query is non-empty
             if (state.searchQuery.isNotBlank()) {
                 Spacer(modifier = Modifier.width(4.dp))
-                IconButton(onClick = { onEvent(BrowseEvent.SaveCurrentSearch) }) {
+                IconButton(onClick = { onEvent(BrowseEvent.ShowSaveSearchDialog) }) {
                     Icon(
                         Icons.Default.BookmarkBorder,
                         contentDescription = stringResource(R.string.browse_save_search),
@@ -334,7 +361,7 @@ private fun BrowseContent(
             }
         }
 
-        // Saved search chips
+        // Saved search chips (DB-backed FeedSavedSearch)
         if (state.savedSearches.isNotEmpty()) {
             LazyRow(
                 modifier = Modifier
@@ -357,6 +384,49 @@ private fun BrowseContent(
                         trailingIcon = {
                             IconButton(
                                 onClick = { onEvent(BrowseEvent.DeleteSavedSearch(search.id)) },
+                                modifier = Modifier.size(18.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.browse_delete_saved_search),
+                                    modifier = Modifier.size(14.dp),
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
+        // Named saved source searches (#1051) — preferences-backed, long-press to delete
+        if (state.namedSavedSearches.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.browse_saved_searches),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
+            )
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.namedSavedSearches, key = { it.id }) { search ->
+                    FilterChip(
+                        selected = state.searchQuery == search.query,
+                        onClick = { onEvent(BrowseEvent.ApplyNamedSavedSearch(search)) },
+                        label = { Text(search.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Bookmark,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { onEvent(BrowseEvent.DeleteNamedSavedSearch(search.id)) },
                                 modifier = Modifier.size(18.dp),
                             ) {
                                 Icon(
