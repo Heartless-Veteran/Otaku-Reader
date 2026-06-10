@@ -9,10 +9,12 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.TrackerSyncRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
 /**
@@ -27,10 +29,13 @@ class LibrarySyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val trackerSyncRepository: TrackerSyncRepository,
+    private val readerSettingsRepository: ReaderSettingsRepository,
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
+        if (runAttemptCount >= MAX_RETRIES) return Result.failure()
         return try {
+            if (readerSettingsRepository.incognitoMode.first()) return Result.success()
             val summary = trackerSyncRepository.syncAllPending()
             if (summary.failed > 0) Result.retry() else Result.success()
         } catch (e: CancellationException) {
@@ -43,6 +48,7 @@ class LibrarySyncWorker @AssistedInject constructor(
     companion object {
         const val WORK_NAME = "library_tracker_sync"
         private const val DEFAULT_INTERVAL_HOURS = 12
+        private const val MAX_RETRIES = 3
 
         fun schedule(context: Context, intervalHours: Int = DEFAULT_INTERVAL_HOURS) {
             val constraints = Constraints.Builder()

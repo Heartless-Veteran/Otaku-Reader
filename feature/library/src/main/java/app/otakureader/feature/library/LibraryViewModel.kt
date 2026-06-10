@@ -90,6 +90,7 @@ class LibraryViewModel @Inject constructor(
     /** IDs of manga matching the current search query; null when no search is active. */
     private val _searchMatchingIds = MutableStateFlow<Set<Long>?>(null)
     private var searchJob: Job? = null
+    private var syncJob: Job? = null
 
     init {
         loadLibrary()
@@ -233,29 +234,33 @@ class LibraryViewModel @Inject constructor(
                     )
                 )
             }
-            is LibraryEvent.SyncLibrary -> viewModelScope.launch {
-                if (_state.value.incognitoMode) {
-                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_incognito_blocked))
-                    return@launch
-                }
-                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_started))
-                try {
-                    val summary = syncLibrary()
-                    val msgRes = if (summary.successful == 0 && summary.failed == 0) {
-                        R.string.library_sync_nothing_pending
-                    } else {
-                        R.string.library_sync_complete
+            is LibraryEvent.SyncLibrary -> {
+                if (syncJob?.isActive == true) return
+                syncJob = viewModelScope.launch {
+                    if (_state.value.incognitoMode) {
+                        _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_incognito_blocked))
+                        return@launch
                     }
-                    _effect.send(
-                        LibraryEffect.ShowSnackbar(
-                            msgRes,
-                            formatArgs = listOf(summary.successful, summary.attempted),
+                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_started))
+                    try {
+                        val summary = syncLibrary()
+                        val hasPending = summary.attempted > 0
+                        val msgRes = if (hasPending) {
+                            R.string.library_sync_complete
+                        } else {
+                            R.string.library_sync_nothing_pending
+                        }
+                        _effect.send(
+                            LibraryEffect.ShowSnackbar(
+                                msgRes,
+                                formatArgs = if (hasPending) listOf(summary.successful, summary.attempted) else emptyList(),
+                            )
                         )
-                    )
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_failed))
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        _effect.send(LibraryEffect.ShowSnackbar(R.string.library_sync_failed))
+                    }
                 }
             }
             else -> Unit
