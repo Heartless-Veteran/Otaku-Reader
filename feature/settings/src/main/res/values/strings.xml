@@ -556,6 +556,18 @@
     <string name="reader_presets_delete">Delete</string>
     <string name="reader_presets_empty">No presets saved yet.\nSave your current settings to get started.</string>
     <string name="reader_presets_mode_label">Mode %1$d</string>
+    <string name="reader_mode_single_page">Single Page</string>
+    <string name="reader_mode_dual_page">Dual Page</string>
+    <string name="reader_mode_webtoon">Webtoon</string>
+    <string name="reader_mode_smart_panels">Smart Panels</string>
+    <string name="reader_scale_fit_screen">Fit Screen</string>
+    <string name="reader_scale_fit_width">Fit Width</string>
+    <string name="reader_scale_fit_height">Fit Height</string>
+    <string name="reader_scale_original">Original</string>
+    <string name="reader_scale_smart_fit">Smart Fit</string>
+    <string name="reader_presets_detail_volume_keys">Volume keys</string>
+    <string name="reader_presets_detail_skip_read">Skip read</string>
+    <string name="reader_presets_detail_inverted_taps">Inverted taps</string>
 
     <!-- Dark mode schedule -->
     <string name="settings_dark_mode_schedule">Schedule dark mode</string>
