@@ -12,6 +12,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.about.navigation.aboutScreen
+import app.otakureader.feature.about.navigation.privacyPolicyScreen
 import app.otakureader.feature.browse.navigation.browseScreen
 import app.otakureader.feature.browse.navigation.browseExtensionDetailScreen
 import app.otakureader.feature.browse.navigation.extensionInstallScreen
@@ -445,6 +446,15 @@ fun OtakuReaderNavHost(
 
         // About
         aboutScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            },
+            onNavigateToPrivacyPolicy = {
+                navController.navigate(Route.PrivacyPolicy)
+            }
+        )
+
+        privacyPolicyScreen(
             onNavigateBack = {
                 navController.popBackStack()
             }
