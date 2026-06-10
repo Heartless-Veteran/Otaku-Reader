@@ -21,6 +21,7 @@ import app.otakureader.core.database.dao.RecommendationDao
 import app.otakureader.core.database.dao.SyncQueueDao
 import app.otakureader.core.database.dao.TrackEntryDao
 import app.otakureader.core.database.dao.TrackerSyncDao
+import app.otakureader.core.database.dao.UpdateRunSummaryDao
 import app.otakureader.core.database.entity.AchievementEntity
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
@@ -44,6 +45,7 @@ import app.otakureader.core.database.entity.SyncConfigurationEntity
 import app.otakureader.core.database.entity.SyncQueueEntity
 import app.otakureader.core.database.entity.TrackEntryEntity
 import app.otakureader.core.database.entity.TrackerSyncStateEntity
+import app.otakureader.core.database.entity.UpdateRunSummaryEntity
 
 @Database(
     entities = [
@@ -82,8 +84,10 @@ import app.otakureader.core.database.entity.TrackerSyncStateEntity
         SyncQueueEntity::class,
         // FTS index for library search (#997/Phase5)
         MangaFtsEntity::class,
+        // Library update run history diagnostics (#1041)
+        UpdateRunSummaryEntity::class,
     ],
-    version = 34,
+    version = 35,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -108,6 +112,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun achievementDao(): AchievementDao
     abstract fun dataUsageDao(): DataUsageDao
     abstract fun syncQueueDao(): SyncQueueDao
+    abstract fun updateRunSummaryDao(): UpdateRunSummaryDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

@@ -10,6 +10,7 @@ import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
+import app.otakureader.domain.usecase.GetLastUpdateRunSummaryUseCase
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecentUpdatesUseCase
 import app.cash.turbine.test
@@ -41,6 +42,7 @@ class UpdatesViewModelTest {
 
     private lateinit var getRecentUpdatesUseCase: GetRecentUpdatesUseCase
     private lateinit var getLibraryMangaUseCase: GetLibraryMangaUseCase
+    private lateinit var getLastUpdateRunSummaryUseCase: GetLastUpdateRunSummaryUseCase
     private lateinit var generalPreferences: GeneralPreferences
     private lateinit var downloadRepository: DownloadRepository
     private lateinit var chapterRepository: ChapterRepository
@@ -62,6 +64,9 @@ class UpdatesViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getRecentUpdatesUseCase = mockk()
         getLibraryMangaUseCase = mockk(relaxed = true)
+        getLastUpdateRunSummaryUseCase = mockk {
+            every { this@mockk.invoke() } returns flowOf(null)
+        }
         generalPreferences = mockk {
             coEvery { setLastUpdatesViewedAt(any()) } returns mockk<Preferences>(relaxed = true)
         }
@@ -81,6 +86,7 @@ class UpdatesViewModelTest {
             context,
             getRecentUpdatesUseCase,
             getLibraryMangaUseCase,
+            getLastUpdateRunSummaryUseCase,
             generalPreferences,
             downloadRepository,
             chapterRepository,

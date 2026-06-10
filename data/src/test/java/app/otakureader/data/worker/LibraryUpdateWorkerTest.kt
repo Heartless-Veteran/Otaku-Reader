@@ -9,6 +9,7 @@ import androidx.work.WorkerParameters
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
+import app.otakureader.core.database.dao.UpdateRunSummaryDao
 import app.otakureader.core.preferences.NotificationPreferences
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.domain.model.Chapter
@@ -55,6 +56,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var chapterRepository: ChapterRepository
     private lateinit var categoryRepository: CategoryRepository
     private lateinit var notificationPreferences: NotificationPreferences
+    private lateinit var updateRunSummaryDao: UpdateRunSummaryDao
     private lateinit var worker: LibraryUpdateWorker
 
     private lateinit var connectivityManager: ConnectivityManager
@@ -121,6 +123,7 @@ class LibraryUpdateWorkerTest {
         chapterRepository = mockk()
         categoryRepository = mockk()
         notificationPreferences = mockk(relaxed = true)
+        updateRunSummaryDao = mockk(relaxed = true)
 
         connectivityManager = mockk()
         network = mockk()
@@ -160,7 +163,8 @@ class LibraryUpdateWorkerTest {
             downloadManager,
             chapterRepository,
             categoryRepository,
-            notificationPreferences
+            notificationPreferences,
+            updateRunSummaryDao,
         )
     }
 

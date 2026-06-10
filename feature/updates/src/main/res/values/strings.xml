@@ -73,6 +73,13 @@
     </plurals>
     <string name="updates_mark_as_read_failed">Failed to mark as read</string>
     <string name="updates_library_update_started">Library update started</string>
+    <!-- Last run summary diagnostics card (#1041) -->
+    <string name="updates_last_run_title">Last Update Run</string>
+    <string name="updates_last_run_checked">Checked</string>
+    <string name="updates_last_run_new">New</string>
+    <string name="updates_last_run_skipped">Skipped</string>
+    <string name="updates_last_run_failed">Failed</string>
+    <string name="updates_last_run_meta">%1$s · took %2$s</string>
     <!-- Date group headers -->
     <string name="updates_date_today">Today</string>
     <string name="updates_date_yesterday">Yesterday</string>
