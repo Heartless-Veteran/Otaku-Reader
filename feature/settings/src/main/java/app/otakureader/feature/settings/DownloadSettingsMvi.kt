@@ -2,6 +2,8 @@
 
 package app.otakureader.feature.settings
 
+import app.otakureader.domain.model.Category
+
 data class DownloadSettingsState(
     val deleteAfterReading: Boolean = false,
     val saveAsCbz: Boolean = false,
@@ -24,4 +26,5 @@ data class DownloadSettingsState(
     // Per-category auto-download filter
     val autoDownloadCategoryInclude: Set<Long> = emptySet(),
     val autoDownloadCategoryExclude: Set<Long> = emptySet(),
+    val availableCategories: List<Category> = emptyList(),
 )

@@ -135,6 +135,14 @@ class DownloadSettingsDelegate @Inject constructor(
             sendEffect(SettingsEffect.ShowSnackbar("Category picker coming soon"))
             true
         }
+        is SettingsEvent.SetAutoDownloadCategoryInclude -> {
+            downloadPreferences.setAutoDownloadCategoryInclude(event.categoryIds)
+            true
+        }
+        is SettingsEvent.SetAutoDownloadCategoryExclude -> {
+            downloadPreferences.setAutoDownloadCategoryExclude(event.categoryIds)
+            true
+        }
         is SettingsEvent.NavigateToDataUsage -> {
             sendEffect(SettingsEffect.NavigateToDataUsage)
             true
