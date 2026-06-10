@@ -1,0 +1,34 @@
+# Baseline profile for Otaku Reader.
+#
+# AGP compiles this file into the APK automatically (assemble picks up
+# src/main/baseline-prof.txt); the bundled profileinstaller dependency installs
+# it on-device so ART AOT-compiles these paths at install time instead of
+# waiting for JIT warm-up. Targets the cold-start critical path: Application
+# init, DI graph, theme, navigation, and the library landing screen.
+#
+# Wildcard rules are expanded by profgen at build time. Regenerate with the
+# :baselineprofile module (BaselineProfileGenerator) on a connected device and
+# replace this file when startup code changes significantly:
+#   ./gradlew :baselineprofile:connectedBenchmarkAndroidTest
+#
+# Rule flags: H = hot, S = startup, P = post-startup, L = class preload.
+
+# Application entry + main activity + DI wiring (app module)
+HSPLapp/otakureader/**->**(**)**
+Lapp/otakureader/**
+
+# Shared Compose design system, theme, and dynamic color (first frame)
+HSPLapp/otakureader/core/ui/**->**(**)**
+Lapp/otakureader/core/ui/**
+
+# Type-safe navigation graph construction
+HSPLapp/otakureader/core/navigation/**->**(**)**
+Lapp/otakureader/core/navigation/**
+
+# DataStore preference reads on the startup path (theme, nav order, onboarding flag)
+HSPLapp/otakureader/core/preferences/**->**(**)**
+Lapp/otakureader/core/preferences/**
+
+# Library — the landing screen rendered on first frame
+HSPLapp/otakureader/feature/library/**->**(**)**
+Lapp/otakureader/feature/library/**
