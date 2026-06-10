@@ -47,7 +47,10 @@ import kotlinx.coroutines.launch
 import app.otakureader.domain.model.SavedLibraryView
 import javax.inject.Inject
 import app.otakureader.feature.library.R
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
+@Suppress("LargeClass")
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
@@ -238,7 +241,8 @@ class LibraryViewModel @Inject constructor(
      * Called from [init] so the list is always fresh when the screen opens.
      */
     private fun observeSavedViews() {
-        libraryPreferences.savedViews
+        libraryPreferences.savedViewsJson
+            .map { json -> runCatching { Json.decodeFromString<List<SavedLibraryView>>(json) }.getOrDefault(emptyList()) }
             .onEach { views -> _state.update { it.copy(savedViews = views) } }
             .launchIn(viewModelScope)
     }
@@ -283,7 +287,7 @@ class LibraryViewModel @Inject constructor(
         )
         viewModelScope.launch {
             val updated = _state.value.savedViews + newView
-            libraryPreferences.setSavedViews(updated)
+            libraryPreferences.setSavedViewsJson(Json.encodeToString(updated))
             _state.update { it.copy(showSaveViewDialog = false, saveViewName = "") }
         }
     }
@@ -305,7 +309,7 @@ class LibraryViewModel @Inject constructor(
     private fun deleteSavedView(id: String) {
         viewModelScope.launch {
             val updated = _state.value.savedViews.filter { it.id != id }
-            libraryPreferences.setSavedViews(updated)
+            libraryPreferences.setSavedViewsJson(Json.encodeToString(updated))
         }
     }
 

@@ -8,11 +8,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import app.otakureader.domain.model.SavedLibraryView
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /**
  * Preference store for library-related settings including grid size and badges.
@@ -161,13 +158,12 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
      * Reactive list of user-saved named filter+sort combinations.
      * Stored as a JSON array; empty list when no views have been saved yet.
      */
-    val savedViews: Flow<List<SavedLibraryView>> = dataStore.data.map { prefs ->
-        val json = prefs[Keys.SAVED_VIEWS] ?: return@map emptyList()
-        runCatching { Json.decodeFromString<List<SavedLibraryView>>(json) }.getOrDefault(emptyList())
+    val savedViewsJson: Flow<String> = dataStore.data.map { prefs ->
+        prefs[Keys.SAVED_VIEWS] ?: "[]"
     }
 
-    suspend fun setSavedViews(views: List<SavedLibraryView>) {
-        dataStore.edit { it[Keys.SAVED_VIEWS] = Json.encodeToString(views) }
+    suspend fun setSavedViewsJson(json: String) {
+        dataStore.edit { it[Keys.SAVED_VIEWS] = json }
     }
 
     private object Keys {
