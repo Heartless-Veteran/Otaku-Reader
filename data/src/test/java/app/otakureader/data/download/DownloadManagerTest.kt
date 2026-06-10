@@ -4,6 +4,7 @@ import android.content.Context
 import app.otakureader.core.common.network.NetworkMonitor
 import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
+import app.otakureader.core.preferences.CbzEncryptionStore
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.DownloadPriority
@@ -35,6 +36,7 @@ class DownloadManagerTest {
     private lateinit var context: Context
     private lateinit var downloader: Downloader
     private lateinit var downloadPreferences: DownloadPreferences
+    private lateinit var cbzEncryptionStore: CbzEncryptionStore
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var downloadQueueDao: DownloadQueueDao
     private lateinit var downloadManager: DownloadManager
@@ -53,6 +55,7 @@ class DownloadManagerTest {
         context = mockk(relaxed = true)
         downloader = mockk(relaxed = true)
         downloadPreferences = mockk()
+        cbzEncryptionStore = mockk(relaxed = true)
         networkMonitor = mockk(relaxed = true)
         downloadQueueDao = mockk(relaxed = true)
 
@@ -70,7 +73,7 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences, networkMonitor, downloadQueueDao, TestScope(testDispatcher))
+        downloadManager = DownloadManager(context, downloader, downloadPreferences, cbzEncryptionStore, networkMonitor, downloadQueueDao, TestScope(testDispatcher))
     }
 
     // -------------------------------------------------------------------------
