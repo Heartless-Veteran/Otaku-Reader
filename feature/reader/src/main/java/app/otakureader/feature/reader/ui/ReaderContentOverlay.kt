@@ -201,7 +201,7 @@ private fun MangaReaderOverlayContent(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(count = filmstripCount) { idx ->
+            items(count = filmstripCount, key = { it + 1 }) { idx ->
                 val page = idx + 1
                 val isSelected = page == currentPage
                 Box(
@@ -380,7 +380,7 @@ private fun ManhwaReaderOverlayContent(
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            items(count = filmstripCount) { idx ->
+            items(count = filmstripCount, key = { it + 1 }) { idx ->
                 val page = idx + 1
                 val isSelected = page == currentPage
                 Box(
