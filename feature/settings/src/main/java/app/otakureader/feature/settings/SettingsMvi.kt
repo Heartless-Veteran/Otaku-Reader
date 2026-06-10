@@ -168,6 +168,13 @@ data class SettingsState(
     val tachiyomiImportTotal get() = backup.tachiyomiImportTotal
     val backupEncryptionEnabled get() = backup.backupEncryptionEnabled
     val backupEncryptionPasswordSet get() = backup.backupEncryptionPasswordSet
+    val showBackupChecklist get() = backup.showBackupChecklist
+    val backupChecklistMangaCount get() = backup.backupChecklistMangaCount
+    val backupChecklistCategoryCount get() = backup.backupChecklistCategoryCount
+    val backupChecklistTrackingCount get() = backup.backupChecklistTrackingCount
+    val showRestoreConfirm get() = backup.showRestoreConfirm
+    val pendingRestoreUri get() = backup.pendingRestoreUri
+    val pendingRestoreFileName get() = backup.pendingRestoreFileName
 
     // --- Tracking ---
     val trackers get() = tracking.trackers
@@ -289,6 +296,18 @@ sealed interface SettingsEvent : UiEvent {
     data object OnCreateBackup : SettingsEvent
     data object OnRestoreBackup : SettingsEvent
     data object OnImportTachiyomiBackup : SettingsEvent
+    /** User tapped the Backup button — shows the checklist dialog before the file picker. */
+    data object ShowBackupChecklist : SettingsEvent
+    /** User confirmed the checklist dialog — opens the file-save picker. */
+    data object ConfirmCreateBackup : SettingsEvent
+    /** User cancelled the checklist dialog. */
+    data object DismissBackupChecklist : SettingsEvent
+    /** File picker returned a restore URI — show the preflight confirmation before restoring. */
+    data class ShowRestoreConfirm(val uri: Uri) : SettingsEvent
+    /** User confirmed the restore preflight dialog — proceed with the restore. */
+    data class ConfirmRestore(val uri: Uri) : SettingsEvent
+    /** User cancelled the restore preflight dialog. */
+    data object DismissRestoreConfirm : SettingsEvent
     data class CreateBackupWithUri(val uri: Uri) : SettingsEvent
     data class RestoreBackupFromUri(val uri: Uri) : SettingsEvent
     data class ImportTachiyomiBackupFromUri(val uri: Uri) : SettingsEvent

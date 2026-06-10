@@ -88,7 +88,8 @@ fun SettingsBackupScreen(
     val restoreFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri: Uri? ->
-        uri?.let { viewModel.restoreBackup(it) }
+        // Route through the pre-restore preflight dialog before restoring.
+        uri?.let { viewModel.onEvent(SettingsEvent.ShowRestoreConfirm(it)) }
     }
 
     val tachiyomiImportLauncher = rememberLauncherForActivityResult(
@@ -176,6 +177,31 @@ fun SettingsBackupScreen(
         }
     }
 
+    // Pre-backup checklist dialog — shown before the file-save picker opens.
+    if (state.showBackupChecklist) {
+        BackupChecklistDialog(
+            mangaCount = state.backupChecklistMangaCount,
+            categoryCount = state.backupChecklistCategoryCount,
+            trackingCount = state.backupChecklistTrackingCount,
+            onConfirm = { viewModel.onEvent(SettingsEvent.ConfirmCreateBackup) },
+            onDismiss = { viewModel.onEvent(SettingsEvent.DismissBackupChecklist) },
+        )
+    }
+
+    // Pre-restore preflight dialog — shown after the restore file is picked.
+    if (state.showRestoreConfirm) {
+        RestorePreflightDialog(
+            fileName = state.pendingRestoreFileName,
+            onConfirm = {
+                val uri = state.pendingRestoreUri
+                if (uri != null) {
+                    viewModel.onEvent(SettingsEvent.ConfirmRestore(Uri.parse(uri)))
+                }
+            },
+            onDismiss = { viewModel.onEvent(SettingsEvent.DismissRestoreConfirm) },
+        )
+    }
+
     state.tachiyomiImportPreview?.let { preview ->
         TachiyomiImportConfirmDialog(
             preview = preview,
@@ -228,6 +254,79 @@ fun SettingsBackupScreen(
             )
         }
     }
+}
+
+/**
+ * Pre-backup checklist dialog.
+ * Shows the user what will be included in the backup (manga count, categories, tracking
+ * entries, history, and settings) before the file-save picker opens.
+ */
+@Composable
+private fun BackupChecklistDialog(
+    mangaCount: Int,
+    categoryCount: Int,
+    trackingCount: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.backup_checklist_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.backup_checklist_summary, mangaCount, categoryCount, trackingCount))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(stringResource(R.string.backup_checklist_history_included))
+                Text(stringResource(R.string.backup_checklist_settings_included))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.backup_checklist_create))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_import_cancel))
+            }
+        },
+    )
+}
+
+/**
+ * Pre-restore preflight dialog.
+ * Shown after the user selects a backup file but before the restore begins, so they can
+ * confirm they understand the operation will replace their current library.
+ */
+@Composable
+private fun RestorePreflightDialog(
+    fileName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.restore_preflight_title)) },
+        text = {
+            Column {
+                if (fileName.isNotBlank()) {
+                    Text(stringResource(R.string.restore_preflight_filename, fileName))
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                Text(stringResource(R.string.restore_preflight_message))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.restore_preflight_proceed))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.settings_import_cancel))
+            }
+        },
+    )
 }
 
 @Composable
@@ -347,7 +446,7 @@ private fun BackupContent(
             if (state.isBackupInProgress) {
                 CircularProgressIndicator()
             } else {
-                Button(onClick = { onEvent(SettingsEvent.OnCreateBackup) }) {
+                Button(onClick = { onEvent(SettingsEvent.ShowBackupChecklist) }) {
                     Text(stringResource(R.string.settings_backup_button))
                 }
             }
