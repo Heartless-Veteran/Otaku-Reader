@@ -635,7 +635,7 @@ class ExtensionsViewModelTest {
     fun `toggle extension enabled calls repository and refreshes sources`() = runTest {
         val ext = createExtension(id = 1L, pkgName = "app.ext1", name = "Toggle Me")
 
-        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } just Awaits
+        coEvery { extensionRepository.setExtensionEnabled("app.ext1", false) } returns Unit
         coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         viewModel.onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, false))
