@@ -125,8 +125,11 @@ jobs:
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 📊 Verify coverage ≥60% on :domain and :data
-        run: ./gradlew :domain:koverVerify :data:koverVerify --no-daemon
+      - name: 📊 Verify coverage gates (per-module ratchet floors)
+        run: >-
+          ./gradlew :domain:koverVerify :data:koverVerify :core:database:koverVerify
+          :feature:reader:koverVerify :feature:tracking:koverVerify :feature:settings:koverVerify
+          --no-daemon
         env:
           CI: true
 
