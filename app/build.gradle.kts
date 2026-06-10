@@ -51,6 +51,14 @@ android {
             applicationIdSuffix = ".debug"
         }
     }
+
+    // F-Droid reproducible builds: the dependency-info block is encrypted with a
+    // Google Play key and makes APKs unreproducible byte-for-byte. F-Droid docs
+    // require it disabled; Play does not need it for non-Play distribution.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 // CycloneDX v3.x - simplified configuration
