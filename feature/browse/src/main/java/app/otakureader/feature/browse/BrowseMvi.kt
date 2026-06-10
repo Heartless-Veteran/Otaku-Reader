@@ -37,6 +37,16 @@ data class BrowseState(
     val searchScope: BrowseSearchScope = BrowseSearchScope.SOURCES,
     /** Recent search history (last 10 queries). */
     val searchHistory: List<String> = emptyList(),
+    /** Source IDs pinned to the top of the source list in Browse. */
+    val pinnedSourceIds: Set<Long> = emptySet(),
+    /** User-defined category label per source ID. */
+    val sourceCategoryMap: Map<Long, String> = emptyMap(),
+    /** Controls visibility of the "Set category" dialog. */
+    val showSetCategoryDialog: Boolean = false,
+    /** Source ID being configured via the category dialog (stored as Long for preferences). */
+    val categoryDialogSourceId: Long? = null,
+    /** Current text in the "Set category" dialog input field. */
+    val categoryDialogText: String = "",
     /** Per-source health tracking: consecutive failures, last error, disabled flag. */
     val sourceHealth: Map<Long, SourceHealthEntry> = emptyMap(),
     /** Source ID whose diagnostic sheet is currently open; null means sheet is hidden. */
@@ -79,6 +89,18 @@ sealed interface BrowseEvent : UiEvent {
     data object ClearSearchHistory : BrowseEvent
     /** Removes a single recent-search entry. */
     data class DeleteSearchHistoryItem(val query: String) : BrowseEvent
+
+    // --- Source pinning & categories ---
+    /** Toggles the pinned state for the source identified by its numeric ID string. */
+    data class TogglePinSource(val sourceId: Long) : BrowseEvent
+    /** Opens the "Set category" dialog pre-populated with the current label. */
+    data class OpenSetCategoryDialog(val sourceId: Long, val currentCategory: String) : BrowseEvent
+    /** User typed in the category dialog text field. */
+    data class UpdateCategoryDialogText(val text: String) : BrowseEvent
+    /** User confirmed the category dialog — persists the category. */
+    data object ConfirmSetCategory : BrowseEvent
+    /** User dismissed the category dialog without saving. */
+    data object DismissSetCategoryDialog : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

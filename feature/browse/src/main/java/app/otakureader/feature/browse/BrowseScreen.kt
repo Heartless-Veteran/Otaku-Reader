@@ -30,11 +30,15 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -54,7 +58,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -69,6 +75,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.toSourceId
 import coil3.compose.AsyncImage
 import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
@@ -172,6 +179,33 @@ fun BrowseScreen(
             onReset = { viewModel.onEvent(BrowseEvent.ResetFilters) },
             onApply = { viewModel.onEvent(BrowseEvent.ApplyFilters) },
             onDismiss = { viewModel.onEvent(BrowseEvent.ToggleFilterSheet) }
+        )
+    }
+
+    // Set category dialog
+    if (state.showSetCategoryDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(BrowseEvent.DismissSetCategoryDialog) },
+            title = { Text(stringResource(R.string.source_set_category)) },
+            text = {
+                OutlinedTextField(
+                    value = state.categoryDialogText,
+                    onValueChange = { viewModel.onEvent(BrowseEvent.UpdateCategoryDialogText(it)) },
+                    placeholder = { Text(stringResource(R.string.source_category_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onEvent(BrowseEvent.ConfirmSetCategory) }) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(BrowseEvent.DismissSetCategoryDialog) }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
         )
     }
 }
@@ -358,12 +392,18 @@ private fun BrowseContent(
                     sources = state.sources,
                     currentSourceId = state.currentSourceId,
                     popularManga = state.popularManga,
+                    pinnedSourceIds = state.pinnedSourceIds,
+                    sourceCategoryMap = state.sourceCategoryMap,
                     onSourceSelect = { onEvent(BrowseEvent.SelectSource(it)) },
                     onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
                     onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
                     hasNextPage = state.hasNextPage,
                     isLoading = state.isLoading,
                     onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
+                    onTogglePin = { sourceId -> onEvent(BrowseEvent.TogglePinSource(sourceId)) },
+                    onOpenSetCategory = { sourceId, current ->
+                        onEvent(BrowseEvent.OpenSetCategoryDialog(sourceId, current))
+                    },
                 )
             }
         }
@@ -421,15 +461,28 @@ private fun SourcesContent(
     sources: List<String>,
     currentSourceId: String?,
     popularManga: List<SourceManga>,
+    pinnedSourceIds: Set<Long>,
+    sourceCategoryMap: Map<Long, String>,
     onSourceSelect: (String) -> Unit,
     onMangaClick: (SourceManga) -> Unit,
     onLoadMore: () -> Unit,
     hasNextPage: Boolean,
     isLoading: Boolean,
     onMangaLongClick: ((SourceManga) -> Unit)? = null,
+    onTogglePin: (Long) -> Unit = {},
+    onOpenSetCategory: (Long, String) -> Unit = { _, _ -> },
 ) {
     // Determine if the currently selected source is manga or manhwa for the accent bar
     val isMangaSection = currentSourceId == null || !isManhwaSource(currentSourceId)
+
+    // Partition sources into pinned and unpinned, then group unpinned by category
+    val (pinnedIds, unpinnedIds) = sources.partition { sourceId ->
+        sourceId.toSourceId() in pinnedSourceIds
+    }
+    // Group unpinned sources by their user-defined category; sources without a category go under ""
+    val grouped: Map<String, List<String>> = unpinnedIds.groupBy { sourceId ->
+        sourceCategoryMap[sourceId.toSourceId()] ?: ""
+    }
 
     Column {
         // Section header with colored accent bar
@@ -453,17 +506,61 @@ private fun SourcesContent(
             )
         }
 
-        // Source filter chips
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(sources, key = { it }) { sourceId ->
-                FilterChip(
-                    selected = sourceId == currentSourceId,
-                    onClick = { onSourceSelect(sourceId) },
-                    label = { Text(sourceId.substringAfterLast(".").take(20)) }
+        // --- Pinned section ---
+        if (pinnedIds.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.source_pinned_section),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
+            )
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(pinnedIds, key = { it }) { sourceId ->
+                    SourceChipWithMenu(
+                        sourceId = sourceId,
+                        isSelected = sourceId == currentSourceId,
+                        isPinned = true,
+                        onSelect = { onSourceSelect(sourceId) },
+                        onTogglePin = onTogglePin,
+                        onOpenSetCategory = onOpenSetCategory,
+                        categoryMap = sourceCategoryMap,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        // --- Grouped unpinned sources ---
+        // Show sources without a category first (empty key), then named categories alphabetically
+        val categoryOrder = grouped.keys.sortedWith(compareBy { if (it.isBlank()) "" else it })
+        for (category in categoryOrder) {
+            val categorySourceIds = grouped[category] ?: continue
+            if (category.isNotBlank()) {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, bottom = 2.dp),
                 )
+            }
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(categorySourceIds, key = { it }) { sourceId ->
+                    SourceChipWithMenu(
+                        sourceId = sourceId,
+                        isSelected = sourceId == currentSourceId,
+                        isPinned = false,
+                        onSelect = { onSourceSelect(sourceId) },
+                        onTogglePin = onTogglePin,
+                        onOpenSetCategory = onOpenSetCategory,
+                        categoryMap = sourceCategoryMap,
+                    )
+                }
             }
         }
 
@@ -497,6 +594,72 @@ private fun SourcesContent(
                 isLoading = isLoading,
                 currentSourceId = currentSourceId,
                 onMangaLongClick = onMangaLongClick,
+            )
+        }
+    }
+}
+
+/**
+ * A source [FilterChip] that shows a [DropdownMenu] on long-press with "Pin/Unpin" and
+ * "Set category" options.
+ *
+ * Why long-press + DropdownMenu?  We want the normal tap to still select the source, so we
+ * intercept the long-press via [combinedClickable] and surface the contextual actions in a
+ * lightweight menu without navigating away from the screen.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SourceChipWithMenu(
+    sourceId: String,
+    isSelected: Boolean,
+    isPinned: Boolean,
+    onSelect: () -> Unit,
+    onTogglePin: (Long) -> Unit,
+    onOpenSetCategory: (Long, String) -> Unit,
+    categoryMap: Map<Long, String>,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val sourceIdLong = sourceId.toSourceId()
+    val currentCategory = categoryMap[sourceIdLong] ?: ""
+
+    Box {
+        FilterChip(
+            selected = isSelected,
+            // Pass empty lambda so combinedClickable is the sole click handler.
+            // Without this, both FilterChip.onClick and combinedClickable.onClick fire on tap.
+            onClick = {},
+            label = { Text(sourceId.substringAfterLast(".").take(20)) },
+            leadingIcon = if (isPinned) {
+                { Icon(Icons.Default.PushPin, contentDescription = null, modifier = Modifier.size(14.dp)) }
+            } else null,
+            modifier = Modifier.combinedClickable(
+                onClick = onSelect,
+                onLongClick = { menuExpanded = true },
+            ),
+        )
+        DropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        if (isPinned) stringResource(R.string.source_unpin)
+                        else stringResource(R.string.source_pin)
+                    )
+                },
+                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                onClick = {
+                    menuExpanded = false
+                    onTogglePin(sourceIdLong)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.source_set_category)) },
+                onClick = {
+                    menuExpanded = false
+                    onOpenSetCategory(sourceIdLong, currentCategory)
+                },
             )
         }
     }

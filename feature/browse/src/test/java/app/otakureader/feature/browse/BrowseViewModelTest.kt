@@ -83,6 +83,8 @@ class BrowseViewModelTest {
         coEvery { generalPreferences.getBrowseFilterState(any()) } returns null
         coEvery { generalPreferences.setBrowseFilterState(any(), any()) } just Awaits
         every { feedRepository.getSavedSearches() } returns flowOf(emptyList())
+        every { generalPreferences.pinnedSourceIds } returns flowOf(emptySet())
+        every { generalPreferences.sourceCategoryMap } returns flowOf(emptyMap())
 
         // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
         every { mangaRepository.getLibraryManga() } returns flowOf(emptyList())
