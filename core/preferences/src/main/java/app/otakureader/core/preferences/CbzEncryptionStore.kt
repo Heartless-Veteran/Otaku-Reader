@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -15,7 +16,7 @@ import javax.inject.Singleton
  * if a strict threading policy is required.
  */
 @Singleton
-class CbzEncryptionStore @Inject constructor(private val context: Context) {
+class CbzEncryptionStore @Inject constructor(@ApplicationContext private val context: Context) {
 
     private val masterKey: MasterKey by lazy {
         MasterKey.Builder(context)
