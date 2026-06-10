@@ -117,6 +117,7 @@ class MainActivity : FragmentActivity() {
                 }.first()
                 libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
                 trackerSyncScheduler.schedule()
+                app.otakureader.data.worker.EhFavoritesSyncWorker.schedule(applicationContext)
                 app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
 
                 // Reconcile the periodic extension-update check with the user's preference.

@@ -5,6 +5,7 @@ import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DynamicCategoryRepository
 import app.otakureader.domain.repository.DownloadRepository
+import app.otakureader.domain.repository.EhFavoritesRepository
 import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
@@ -16,6 +17,7 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.repository.StatisticsRepository
 import app.otakureader.domain.repository.SyncRepository
 import app.otakureader.data.opds.OpdsRepositoryImpl
+import app.otakureader.data.eh.EhFavoritesRepositoryImpl
 import app.otakureader.data.repository.AchievementRepositoryImpl
 import app.otakureader.data.repository.CategoryRepositoryImpl
 import app.otakureader.data.repository.ChapterRepositoryImpl
@@ -168,6 +170,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindUpdateRunSummaryRepository(impl: UpdateRunSummaryRepositoryImpl): UpdateRunSummaryRepository
+
+    @Binds
+    abstract fun bindEhFavoritesRepository(impl: EhFavoritesRepositoryImpl): EhFavoritesRepository
 
     companion object {
         @Provides

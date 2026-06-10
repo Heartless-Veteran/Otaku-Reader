@@ -20,6 +20,8 @@ import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.GetRecommendationsUseCase
 import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
+import app.otakureader.domain.repository.EhFavoritesRepository
+import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,6 +74,8 @@ class LibraryViewModel @Inject constructor(
     private val getRecommendations: GetRecommendationsUseCase,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
     private val reindexDownloads: ReindexDownloadsUseCase,
+    private val syncEhFavorites: SyncEhFavoritesUseCase,
+    private val ehFavoritesRepository: EhFavoritesRepository,
     private val syncLibrary: SyncLibraryUseCase,
 ) : ViewModel() {
 
@@ -90,6 +94,7 @@ class LibraryViewModel @Inject constructor(
     /** IDs of manga matching the current search query; null when no search is active. */
     private val _searchMatchingIds = MutableStateFlow<Set<Long>?>(null)
     private var searchJob: Job? = null
+    private var syncEhJob: Job? = null
     private var syncJob: Job? = null
 
     init {
@@ -142,6 +147,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
+            is LibraryEvent.SyncEhFavorites,
             is LibraryEvent.SyncLibrary -> handleNewEvent(event)
             is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
             is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
@@ -234,6 +240,7 @@ class LibraryViewModel @Inject constructor(
                     )
                 )
             }
+            is LibraryEvent.SyncEhFavorites -> handleSyncEhFavorites()
             is LibraryEvent.SyncLibrary -> handleSyncLibrary()
             else -> Unit
         }
@@ -346,6 +353,31 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val updated = _state.value.savedViews.filter { it.id != id }
             libraryPreferences.setSavedViewsJson(Json.encodeToString(updated))
+        }
+    }
+
+    private fun handleSyncEhFavorites() {
+        if (syncEhJob?.isActive == true) return
+        syncEhJob = viewModelScope.launch {
+            if (!ehFavoritesRepository.isConfigured()) {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_eh_sync_not_configured))
+                return@launch
+            }
+            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_eh_sync_started))
+            try {
+                val result = syncEhFavorites()
+                val msgRes = if (result.added > 0) {
+                    R.string.library_eh_sync_complete
+                } else {
+                    R.string.library_eh_sync_nothing_new
+                }
+                val args = if (result.added > 0) listOf(result.added) else emptyList<Any>()
+                _effect.send(LibraryEffect.ShowSnackbar(msgRes, formatArgs = args))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_eh_sync_failed))
+            }
         }
     }
 
