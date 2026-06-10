@@ -486,7 +486,8 @@ class SourceRepositoryImplTest {
         // However currentLocalSource() constructs a real LocalSource with
         // File I/O.  For pure unit tests we would ideally refactor
         // currentLocalSource() to be injectable / replaceable in tests.
-        // Here we mock the preference flow to return a temp directory.
+        // Here we mock the preference flows to return safe defaults.
         every { localSourcePreferences.localSourceDirectory } returns kotlinx.coroutines.flow.flowOf("/tmp/local")
+        every { localSourcePreferences.allowLocalSourceHiddenFolders } returns kotlinx.coroutines.flow.flowOf(false)
     }
 }
