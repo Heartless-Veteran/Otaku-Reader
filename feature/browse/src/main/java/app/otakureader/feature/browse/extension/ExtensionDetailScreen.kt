@@ -381,7 +381,10 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
             IconButton(onClick = { expanded = !expanded }) {
                 Icon(
                     imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) stringResource(R.string.extension_detail_sources_collapse) else stringResource(R.string.extension_detail_sources_expand),
+                    contentDescription = stringResource(
+                        if (expanded) R.string.extension_detail_sources_collapse
+                        else R.string.extension_detail_sources_expand
+                    ),
                 )
             }
         }
