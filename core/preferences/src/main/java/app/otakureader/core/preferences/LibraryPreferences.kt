@@ -152,6 +152,20 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // --- Saved Views (#1039) ---
+
+    /**
+     * Reactive list of user-saved named filter+sort combinations.
+     * Stored as a JSON array; empty list when no views have been saved yet.
+     */
+    val savedViewsJson: Flow<String> = dataStore.data.map { prefs ->
+        prefs[Keys.SAVED_VIEWS] ?: "[]"
+    }
+
+    suspend fun setSavedViewsJson(json: String) {
+        dataStore.edit { it[Keys.SAVED_VIEWS] = json }
+    }
+
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
@@ -177,5 +191,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val SHOW_RECOMMENDATIONS = booleanPreferencesKey("library_show_recommendations")
         val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
         val GROUP_BY_CATEGORY = booleanPreferencesKey("library_group_by_category")
+        val SAVED_VIEWS = stringPreferencesKey("library_saved_views")
     }
 }

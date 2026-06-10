@@ -44,9 +44,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.otakureader.domain.model.SavedLibraryView
 import javax.inject.Inject
 import app.otakureader.feature.library.R
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
+@Suppress("LargeClass")
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getLibraryManga: GetLibraryMangaUseCase,
@@ -101,6 +105,7 @@ class LibraryViewModel @Inject constructor(
             .onEach { ids -> _state.update { it.copy(selectedManga = ids) } }
             .launchIn(viewModelScope)
         observeRecommendations()
+        observeSavedViews()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -134,6 +139,9 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads -> handleNewEvent(event)
+            is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
+            is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
+            is LibraryEvent.ApplySavedView, is LibraryEvent.DeleteSavedView -> handleSavedViewEvent(event)
         }
     }
 
@@ -223,6 +231,85 @@ class LibraryViewModel @Inject constructor(
                 )
             }
             else -> Unit
+        }
+    }
+
+    // --- Saved views (#1039) ---
+
+    /**
+     * Keeps [LibraryState.savedViews] in sync with the DataStore list.
+     * Called from [init] so the list is always fresh when the screen opens.
+     */
+    private fun observeSavedViews() {
+        libraryPreferences.savedViewsJson
+            .map { json -> runCatching { Json.decodeFromString<List<SavedLibraryView>>(json) }.getOrDefault(emptyList()) }
+            .onEach { views -> _state.update { it.copy(savedViews = views) } }
+            .launchIn(viewModelScope)
+    }
+
+    /**
+     * Handles all events related to named saved views.
+     *
+     * - [LibraryEvent.ShowSaveViewDialog] / [LibraryEvent.HideSaveViewDialog]: toggle the
+     *   name-entry dialog and reset the draft name.
+     * - [LibraryEvent.UpdateSaveViewName]: typing in the name field updates the draft.
+     * - [LibraryEvent.ConfirmSaveView]: snapshots current filter+sort, appends it to the
+     *   persisted list, then hides the dialog.
+     * - [LibraryEvent.ApplySavedView]: restores filter+sort from a saved view.
+     * - [LibraryEvent.DeleteSavedView]: removes a view by ID and persists the updated list.
+     */
+    private fun handleSavedViewEvent(event: LibraryEvent) {
+        when (event) {
+            is LibraryEvent.ShowSaveViewDialog ->
+                _state.update { it.copy(showSaveViewDialog = true, saveViewName = "") }
+            is LibraryEvent.HideSaveViewDialog ->
+                _state.update { it.copy(showSaveViewDialog = false, saveViewName = "") }
+            is LibraryEvent.UpdateSaveViewName ->
+                _state.update { it.copy(saveViewName = event.name) }
+            is LibraryEvent.ConfirmSaveView -> confirmSaveView()
+            is LibraryEvent.ApplySavedView -> applySavedView(event.view)
+            is LibraryEvent.DeleteSavedView -> deleteSavedView(event.id)
+            else -> Unit
+        }
+    }
+
+    private fun confirmSaveView() {
+        val state = _state.value
+        val name = state.saveViewName.trim()
+        if (name.isBlank()) return
+        val newView = SavedLibraryView(
+            name = name,
+            sortField = state.sortMode.ordinal,
+            sortAscending = state.sortAscending,
+            filterMode = state.filterMode.ordinal,
+            filterGenres = state.filterGenres.toList(),
+            filterHasNotes = state.filterHasNotes,
+        )
+        viewModelScope.launch {
+            val updated = _state.value.savedViews + newView
+            libraryPreferences.setSavedViewsJson(Json.encodeToString(updated))
+            _state.update { it.copy(showSaveViewDialog = false, saveViewName = "") }
+        }
+    }
+
+    private fun applySavedView(view: SavedLibraryView) {
+        viewModelScope.launch {
+            libraryPreferences.setLibrarySortMode(view.sortField)
+            libraryPreferences.setLibraryFilterMode(view.filterMode)
+        }
+        _state.update {
+            it.copy(
+                sortAscending = view.sortAscending,
+                filterGenres = view.filterGenres.toSet(),
+                filterHasNotes = view.filterHasNotes,
+            )
+        }
+    }
+
+    private fun deleteSavedView(id: String) {
+        viewModelScope.launch {
+            val updated = _state.value.savedViews.filter { it.id != id }
+            libraryPreferences.setSavedViewsJson(Json.encodeToString(updated))
         }
     }
 

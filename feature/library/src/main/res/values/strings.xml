@@ -244,6 +244,11 @@
     <string name="merge_duplicates_cross_source">Cross-source</string>
     <string name="merge_duplicates_source_id">Source %1$d</string>
 
+    <!-- Saved library views (#1039) -->
+    <string name="library_save_view">Save current view</string>
+    <string name="library_saved_views">Saved views</string>
+    <string name="library_save_view_hint">View name</string>
+    <string name="library_save_view_confirm">Save</string>
     <!-- Bulk action confirmation dialog -->
     <string name="library_bulk_action_confirm_title">Confirm action</string>
     <string name="library_bulk_action_confirm_message">%2$s for %1$d manga?</string>

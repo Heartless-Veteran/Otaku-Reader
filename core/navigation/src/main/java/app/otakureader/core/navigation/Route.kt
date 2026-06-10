@@ -86,6 +86,14 @@ sealed interface Route {
     data object ExtensionInstall : Route
 
     /**
+     * Full-screen extension detail view (#1047).
+     * @param packageName Android package name of the extension
+     *   (e.g. "eu.kanade.tachiyomi.extension.en.mangadex").
+     */
+    @Serializable
+    data class ExtensionDetail(val packageName: String) : Route
+
+    /**
      * Manage custom extension repository URLs (#953).
      */
     @Serializable

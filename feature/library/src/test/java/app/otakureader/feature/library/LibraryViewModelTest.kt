@@ -27,8 +27,10 @@ import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
 import app.cash.turbine.test
+import io.mockk.Awaits
 import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -95,6 +97,8 @@ class LibraryViewModelTest {
             every { showRecommendations } returns flowOf(false)
             every { dismissedRecommendations } returns flowOf(emptySet())
             every { groupByCategory } returns flowOf(false)
+            every { savedViewsJson } returns flowOf("[]")
+            coEvery { setSavedViewsJson(any()) } just Awaits
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
@@ -129,10 +133,7 @@ class LibraryViewModelTest {
         }
         readingListRepository = mockk {
             every { getAllLists() } returns flowOf(emptyList())
-            every { getListWithManga(any()) } returns flowOf(Pair(
-                ReadingList(id = 0L, name = ""),
-                emptyList()
-            ))
+            every { getListWithManga(any()) } returns flowOf(Pair(ReadingList(id = 0L, name = ""), emptyList()))
         }
         getRecommendations = mockk {
             every { this@mockk.invoke() } returns flowOf(emptyList())

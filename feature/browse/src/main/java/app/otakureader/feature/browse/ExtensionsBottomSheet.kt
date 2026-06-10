@@ -85,6 +85,7 @@ fun ExtensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
     viewModel: ExtensionsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -120,6 +121,7 @@ fun ExtensionsBottomSheet(
             },
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToRepositories = onNavigateToRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
         )
     }
 }
@@ -133,6 +135,7 @@ private fun ExtensionsContent(
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
     val selectedTab = state.selectedTab
     val tabs = listOf("Installed", "Available", "Updates")
@@ -241,7 +244,8 @@ private fun ExtensionsContent(
                     onToggleEnabled = { ext, enabled ->
                         onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
                     },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) }
+                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
                 )
                 1 -> Column {
                     if (state.hasUnverifiedExtensions) {
@@ -255,7 +259,8 @@ private fun ExtensionsContent(
                         onUninstall = { /* Not installed */ },
                         onUpdate = { /* No update */ },
                         onToggleEnabled = { _, _ -> },
-                        onRefresh = { onEvent(ExtensionsEvent.Refresh) }
+                        onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                        onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
                     )
                 }
                 2 -> ExtensionsList(
@@ -268,7 +273,8 @@ private fun ExtensionsContent(
                     onToggleEnabled = { ext, enabled ->
                         onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
                     },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) }
+                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
                 )
             }
 
@@ -294,6 +300,7 @@ private fun ExtensionsList(
     onUpdate: (Extension) -> Unit,
     onToggleEnabled: (Extension, Boolean) -> Unit,
     onRefresh: () -> Unit,
+    onViewDetails: (Extension) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when {
@@ -315,7 +322,8 @@ private fun ExtensionsList(
                     onInstall = { onInstall(extension) },
                     onUninstall = { onUninstall(extension) },
                     onUpdate = { onUpdate(extension) },
-                    onToggleEnabled = { enabled -> onToggleEnabled(extension, enabled) }
+                    onToggleEnabled = { enabled -> onToggleEnabled(extension, enabled) },
+                    onViewDetails = { onViewDetails(extension) }
                 )
             }
         }
@@ -343,47 +351,50 @@ private fun ExtensionItem(
     onUninstall: () -> Unit,
     onUpdate: () -> Unit,
     onToggleEnabled: (Boolean) -> Unit,
+    onViewDetails: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Extension icon
-            AsyncImage(
-                model = extension.iconUrl,
-                contentDescription = extension.name,
-                contentScale = ContentScale.Crop,
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = extension.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Extension icon
+                AsyncImage(
+                    model = extension.iconUrl,
+                    contentDescription = extension.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
                 )
-                Text(
-                    text = "v${extension.versionName} • ${extension.lang.uppercase()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (extension.sources.isNotEmpty()) {
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${extension.sources.size} source(s)",
-                        style = MaterialTheme.typography.bodySmall,
+                        text = extension.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = "v${extension.versionName} • ${extension.lang.uppercase()}",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (extension.sources.isNotEmpty()) {
+                        Text(
+                            text = "${extension.sources.size} source(s)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 Text(
                     text = if (extension.signatureHash != null) "Trusted" else "Unverified",
@@ -407,47 +418,57 @@ private fun ExtensionItem(
                             checked = extension.isEnabled,
                             onCheckedChange = onToggleEnabled
                         )
-                        IconButton(onClick = onUninstall) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_uninstall))
+                            IconButton(onClick = onUninstall) {
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_uninstall))
+                            }
                         }
                     }
-                }
-                InstallStatus.HAS_UPDATE -> {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Switch(
-                            checked = extension.isEnabled,
-                            onCheckedChange = onToggleEnabled
-                        )
-                        IconButton(onClick = onUpdate) {
+                    InstallStatus.HAS_UPDATE -> {
+                        Column(horizontalAlignment = Alignment.End) {
+                            Switch(
+                                checked = extension.isEnabled,
+                                onCheckedChange = onToggleEnabled
+                            )
+                            IconButton(onClick = onUpdate) {
+                                Icon(
+                                    Icons.Default.Update,
+                                    contentDescription = stringResource(R.string.extensions_update),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    InstallStatus.AVAILABLE -> {
+                        IconButton(onClick = onInstall) {
                             Icon(
-                                Icons.Default.Update,
-                                contentDescription = stringResource(R.string.extensions_update),
+                                Icons.Default.Download,
+                                contentDescription = stringResource(R.string.extensions_install),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                }
-                InstallStatus.AVAILABLE -> {
-                    IconButton(onClick = onInstall) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = stringResource(R.string.extensions_install),
-                            tint = MaterialTheme.colorScheme.primary
+                    InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
                         )
                     }
-                }
-                InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-                else -> {
-                    // Error or other states - show install button
-                    IconButton(onClick = onInstall) {
-                        Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
+                    else -> {
+                        // Error or other states - show install button
+                        IconButton(onClick = onInstall) {
+                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
+                        }
                     }
                 }
+
+            // Details link — always visible at the bottom of the card
+            TextButton(
+                onClick = onViewDetails,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(end = 8.dp, bottom = 4.dp)
+            ) {
+                Text(stringResource(R.string.extension_detail_view_details))
             }
         }
     }

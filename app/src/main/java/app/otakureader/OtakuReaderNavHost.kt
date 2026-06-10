@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.about.navigation.aboutScreen
 import app.otakureader.feature.browse.navigation.browseScreen
+import app.otakureader.feature.browse.navigation.browseExtensionDetailScreen
 import app.otakureader.feature.browse.navigation.extensionInstallScreen
 import app.otakureader.feature.browse.navigation.extensionsBottomSheet
 import app.otakureader.feature.browse.repos.navigation.extensionRepositoriesScreen
@@ -260,6 +261,16 @@ fun OtakuReaderNavHost(
             onNavigateToRepositories = {
                 navController.navigate(Route.ExtensionRepositories)
             },
+            onNavigateToExtensionDetail = { packageName ->
+                navController.navigate(Route.ExtensionDetail(packageName))
+            },
+        )
+
+        // Extension detail screen (#1047)
+        browseExtensionDetailScreen(
+            onNavigateBack = {
+                navController.popBackStack()
+            }
         )
 
         // Extension repositories management screen (#953)
