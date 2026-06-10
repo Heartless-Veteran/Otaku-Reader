@@ -487,6 +487,7 @@ private fun ExtensionItem(
                         }
                     }
                 }
+            }
 
             // Details link — always visible at the bottom of the card
             TextButton(
@@ -496,7 +497,6 @@ private fun ExtensionItem(
                     .padding(end = 8.dp, bottom = 4.dp)
             ) {
                 Text(stringResource(R.string.extension_detail_view_details))
-            }
             }
         }
     }

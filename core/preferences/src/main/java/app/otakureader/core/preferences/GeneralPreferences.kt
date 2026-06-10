@@ -377,19 +377,21 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
      */
     val extensionFirstSeenHashes: Flow<Map<String, String>> = dataStore.data.map { prefs ->
         prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
-            runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+            runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrNull() ?: emptyMap()
         } ?: emptyMap()
     }
 
     /**
      * Records [hash] as the first-seen signer hash for [packageName].
      * No-op if [packageName] is already present — the first-seen value is intentionally
-     * immutable once written.
+     * immutable once written. If the stored JSON is unreadable the edit is skipped to
+     * avoid overwriting the existing trust baseline with a single-entry map.
      */
     suspend fun recordExtensionFirstSeenHash(packageName: String, hash: String) {
         dataStore.edit { prefs ->
             val current = prefs[Keys.EXTENSION_FIRST_SEEN_HASHES]?.let { raw ->
-                runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrDefault(emptyMap())
+                runCatching { Json.decodeFromString<Map<String, String>>(raw) }.getOrNull()
+                    ?: return@edit
             } ?: emptyMap()
             // Only write if this package has never been seen before.
             if (packageName !in current) {
