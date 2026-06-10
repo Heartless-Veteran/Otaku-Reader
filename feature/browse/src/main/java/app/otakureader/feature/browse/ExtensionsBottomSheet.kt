@@ -497,6 +497,7 @@ private fun ExtensionItem(
             ) {
                 Text(stringResource(R.string.extension_detail_view_details))
             }
+            }
         }
     }
 }
