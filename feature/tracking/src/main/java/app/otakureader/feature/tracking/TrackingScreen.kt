@@ -219,6 +219,25 @@ fun TrackingScreen(
                             onPull = { viewModel.onEvent(TrackingEvent.PullFromTracker(tracker.id)) }
                         )
                     }
+
+                    // Only show the Sync Health section for trackers that are logged in.
+                    val loggedInTrackers = state.trackers.filter { it.isLoggedIn }
+                    if (loggedInTrackers.isNotEmpty()) {
+                        item(key = "sync_health_header") {
+                            Text(
+                                text = stringResource(R.string.tracking_health_section),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                            )
+                        }
+                        items(loggedInTrackers, key = { "health_${it.id}" }) { tracker ->
+                            SyncHealthCard(
+                                tracker = tracker,
+                                onRetry = { viewModel.onEvent(TrackingEvent.RetryFailedUpdates(tracker.id)) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -696,5 +715,65 @@ private fun SearchResultItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+/**
+ * Displays per-tracker sync health: last sync timestamp and any failed update count.
+ *
+ * This card is shown only for trackers the user is logged in to.  Tapping "Retry failed"
+ * dispatches [TrackingEvent.RetryFailedUpdates] — the actual retry logic is handled in
+ * [TrackingViewModel.retryFailedUpdates].
+ */
+@Composable
+private fun SyncHealthCard(
+    tracker: TrackerUiModel,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val lastSyncText = if (tracker.lastSyncAt != null) {
+        formatRelativeTime(tracker.lastSyncAt)
+    } else {
+        stringResource(R.string.tracking_never_synced)
+    }
+
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = tracker.name,
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.tracking_last_sync, lastSyncText),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (tracker.failedUpdates > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.tracking_failed_updates, tracker.failedUpdates),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                TextButton(onClick = onRetry) {
+                    Text(stringResource(R.string.tracking_retry_failed))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Converts an epoch-millisecond timestamp to a human-readable relative time string,
+ * e.g. "Just now", "5m ago", "2h ago", "3d ago".
+ */
+private fun formatRelativeTime(epochMs: Long): String {
+    val diff = System.currentTimeMillis() - epochMs
+    return when {
+        diff < 60_000L -> "Just now"
+        diff < 3_600_000L -> "${diff / 60_000L}m ago"
+        diff < 86_400_000L -> "${diff / 3_600_000L}h ago"
+        else -> "${diff / 86_400_000L}d ago"
     }
 }

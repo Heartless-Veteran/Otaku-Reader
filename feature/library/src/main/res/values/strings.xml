@@ -215,6 +215,19 @@
     <!-- Sort mode indicator chip (Change F) -->
     <string name="library_sort_chip">Sort: %1$s</string>
 
+    <!-- Library Maintenance (#1040) -->
+    <string name="library_maintenance_title">Library Maintenance</string>
+    <string name="library_maintenance_refresh_covers">Refresh Covers</string>
+    <string name="library_maintenance_refresh_covers_desc">Re-download cover images for all manga</string>
+    <string name="library_maintenance_refresh_metadata">Refresh Metadata</string>
+    <string name="library_maintenance_refresh_metadata_desc">Update titles, descriptions, and tags from source</string>
+    <string name="library_maintenance_reindex">Reindex Downloads</string>
+    <string name="library_maintenance_reindex_desc">Sync downloaded chapter status with files on disk</string>
+    <string name="library_maintenance_scan_orphans">Scan for Orphaned Files</string>
+    <string name="library_maintenance_scan_orphans_desc">Find downloaded files with no matching manga entry</string>
+    <string name="library_maintenance_delete_orphans">Delete Orphaned Files</string>
+    <string name="library_menu_maintenance">Library Maintenance</string>
+
     <!-- Merge duplicates (#997) -->
     <string name="merge_duplicates_back">Back</string>
     <string name="merge_duplicates_title">Merge Duplicates</string>
@@ -230,4 +243,10 @@
     <string name="merge_duplicates_unread">%1$d unread</string>
     <string name="merge_duplicates_cross_source">Cross-source</string>
     <string name="merge_duplicates_source_id">Source %1$d</string>
+
+    <!-- Bulk action confirmation dialog -->
+    <string name="library_bulk_action_confirm_title">Confirm action</string>
+    <string name="library_bulk_action_confirm_message">%2$s for %1$d manga?</string>
+    <string name="library_bulk_action_confirm">Confirm</string>
+    <string name="library_bulk_action_cancel">Cancel</string>
 </resources>

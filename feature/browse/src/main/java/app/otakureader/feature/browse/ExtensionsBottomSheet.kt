@@ -43,6 +43,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
@@ -392,6 +394,9 @@ private fun ExtensionItem(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
+                // Capability badges: shown only when the flag is true so the row is invisible
+                // for most extensions and adds zero visual noise.
+                ExtensionCapabilityBadges(extension = extension)
             }
 
             // Action buttons based on status
@@ -444,6 +449,77 @@ private fun ExtensionItem(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Displays glanceable capability badges for an extension.
+ *
+ * - Amber "CF" chip: extension requires Cloudflare bypass (any of its sources has hasCloudflare).
+ * - Blue "README" chip: extension has README documentation in its repository.
+ * - Green "CHANGELOG" chip: extension has a changelog in its repository.
+ *
+ * The Row is only shown when at least one badge is visible; otherwise it collapses to nothing,
+ * so extensions without any of these flags incur zero layout cost.
+ */
+@Composable
+private fun ExtensionCapabilityBadges(
+    extension: Extension,
+    modifier: Modifier = Modifier
+) {
+    val hasAny = extension.hasCloudflare || extension.hasReadme || extension.hasChangelog
+    if (!hasAny) return
+
+    Row(
+        modifier = modifier.padding(top = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (extension.hasCloudflare) {
+            SuggestionChip(
+                onClick = {},
+                label = {
+                    Text(
+                        text = stringResource(R.string.extension_has_cloudflare),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    labelColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+            )
+        }
+        if (extension.hasReadme) {
+            SuggestionChip(
+                onClick = {},
+                label = {
+                    Text(
+                        text = stringResource(R.string.extension_has_readme),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            )
+        }
+        if (extension.hasChangelog) {
+            SuggestionChip(
+                onClick = {},
+                label = {
+                    Text(
+                        text = stringResource(R.string.extension_has_changelog),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            )
         }
     }
 }

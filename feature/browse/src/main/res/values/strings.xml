@@ -154,4 +154,12 @@
     <string name="browse_search_history">Recent searches</string>
     <string name="browse_search_history_remove">Remove from recent searches</string>
     <string name="filter_sheet_clear_all">Clear all</string>
+
+    <!-- Extension capability badges (#1046) -->
+    <string name="extension_has_cloudflare">CF</string>
+    <string name="extension_has_cloudflare_cd">Requires Cloudflare bypass</string>
+    <string name="extension_has_readme">README</string>
+    <string name="extension_has_readme_cd">Has README documentation</string>
+    <string name="extension_has_changelog">CHANGELOG</string>
+    <string name="extension_has_changelog_cd">Has changelog</string>
 </resources>

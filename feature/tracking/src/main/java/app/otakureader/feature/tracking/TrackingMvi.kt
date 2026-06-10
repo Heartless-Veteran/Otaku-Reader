@@ -46,7 +46,16 @@ data class TrackerUiModel(
     val isLoggedIn: Boolean,
     val entry: TrackEntry? = null,
     /** Current sync status for this tracker, or null if no sync state exists. */
-    val syncStatus: SyncStatus? = null
+    val syncStatus: SyncStatus? = null,
+    /**
+     * Epoch-millisecond timestamp of the last successful sync for this tracker,
+     * or null if no sync has ever completed successfully.
+     */
+    val lastSyncAt: Long? = null,
+    /** Number of local changes that are queued and waiting to be pushed to the tracker. */
+    val pendingUpdates: Int = 0,
+    /** Number of sync operations that ended in an error state for this tracker. */
+    val failedUpdates: Int = 0,
 )
 
 sealed interface TrackingEvent : UiEvent {
@@ -77,6 +86,8 @@ sealed interface TrackingEvent : UiEvent {
     data class ResolveConflict(val trackerId: Int, val useLocal: Boolean) : TrackingEvent
     /** Dismisses the conflict dialog without resolving. */
     data object DismissConflict : TrackingEvent
+    /** Retries all failed sync operations for a specific tracker. */
+    data class RetryFailedUpdates(val trackerId: Int) : TrackingEvent
 }
 
 sealed interface TrackingEffect : UiEffect {
