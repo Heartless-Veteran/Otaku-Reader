@@ -66,6 +66,10 @@
     <string name="settings_remove_after_reading_description">Automatically delete downloaded chapters once finished</string>
     <string name="settings_save_as_cbz">Save as CBZ</string>
     <string name="settings_save_as_cbz_description">Compress downloaded chapters into CBZ archives</string>
+    <string name="settings_cbz_encryption">Encrypt CBZ archives</string>
+    <string name="settings_cbz_encryption_description">Password-protect CBZ archives with AES-256 encryption</string>
+    <string name="settings_cbz_encryption_password_title">Set CBZ password</string>
+    <string name="settings_cbz_encryption_password_hint">Password</string>
     <string name="settings_auto_download_new_chapters">Auto-Download New Chapters</string>
     <string name="settings_auto_download_new_chapters_description">Automatically download new chapters found during library updates</string>
     <string name="settings_download_only_wifi">Download Only on Wi-Fi</string>

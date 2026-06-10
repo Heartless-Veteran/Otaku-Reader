@@ -93,6 +93,11 @@ class DownloadSettingsDelegate @Inject constructor(
                 )) }
             }.collect { }
         }
+        scope.launch {
+            downloadPreferences.cbzEncryptionEnabled.collect { enabled ->
+                updateState { it.copy(downloads = it.downloads.copy(cbzEncryptionEnabled = enabled)) }
+            }
+        }
     }
 
     @Suppress("CyclomaticComplexMethod")
@@ -141,6 +146,14 @@ class DownloadSettingsDelegate @Inject constructor(
         }
         is SettingsEvent.SetAutoDownloadCategoryExclude -> {
             downloadPreferences.setAutoDownloadCategoryExclude(event.categoryIds)
+            true
+        }
+        is SettingsEvent.SetCbzEncryptionEnabled -> {
+            if (event.enabled) {
+                sendEffect(SettingsEffect.ShowCbzEncryptionPasswordDialog)
+            } else {
+                downloadPreferences.setCbzEncryptionEnabled(false)
+            }
             true
         }
         is SettingsEvent.NavigateToDataUsage -> {

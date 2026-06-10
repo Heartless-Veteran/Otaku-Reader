@@ -5,6 +5,7 @@ import app.otakureader.core.common.network.NetworkMonitor
 import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.entity.DownloadQueueEntity
+import app.otakureader.core.preferences.CbzEncryptionStore
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.model.DownloadItem
@@ -67,6 +68,7 @@ class DownloadManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloader: Downloader,
     private val downloadPreferences: DownloadPreferences,
+    private val cbzEncryptionStore: CbzEncryptionStore,
     private val networkMonitor: NetworkMonitor,
     private val downloadQueueDao: DownloadQueueDao,
     @ApplicationScope private val scope: CoroutineScope
@@ -556,13 +558,21 @@ class DownloadManager @Inject constructor(
                                 request.mangaTitle,
                                 request.chapterTitle
                             )
-                            CbzCreator.createCbz(chapterDir).onSuccess {
+                            CbzCreator.createCbz(chapterDir).onSuccess { cbzFile ->
                                 chapterDir.listFiles()
                                     ?.filter { file ->
                                         file.isFile &&
                                             file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
                                     }
                                     ?.forEach { it.delete() }
+                                // Encrypt the CBZ in-place if the feature is enabled.
+                                val encryptionEnabled = downloadPreferences.cbzEncryptionEnabled.first()
+                                if (encryptionEnabled) {
+                                    val passphrase = cbzEncryptionStore.getPassphrase()
+                                    if (passphrase != null) {
+                                        CbzCreator.encryptInPlace(cbzFile, passphrase)
+                                    }
+                                }
                             }
                         }
                         mutex.withLock { updateStatus(chapterId, DownloadStatus.COMPLETED) }

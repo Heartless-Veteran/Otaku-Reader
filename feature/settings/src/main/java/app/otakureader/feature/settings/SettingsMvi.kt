@@ -152,6 +152,7 @@ data class SettingsState(
     val autoDownloadCategoryInclude get() = downloads.autoDownloadCategoryInclude
     val autoDownloadCategoryExclude get() = downloads.autoDownloadCategoryExclude
     val availableCategories get() = downloads.availableCategories
+    val cbzEncryptionEnabled get() = downloads.cbzEncryptionEnabled
 
     // --- Backup ---
     val isBackupInProgress get() = backup.isBackupInProgress
@@ -391,6 +392,10 @@ sealed interface SettingsEvent : UiEvent {
     data object OpenAutoDownloadCategoryExcludePicker : SettingsEvent
     data class SetAutoDownloadCategoryInclude(val categoryIds: Set<Long>) : SettingsEvent
     data class SetAutoDownloadCategoryExclude(val categoryIds: Set<Long>) : SettingsEvent
+
+    // Downloads — CBZ Encryption
+    data class SetCbzEncryptionEnabled(val enabled: Boolean) : SettingsEvent
+    data class SetCbzEncryptionPassword(val password: String) : SettingsEvent
 }
 
 sealed interface SettingsEffect : UiEffect {
@@ -408,4 +413,5 @@ sealed interface SettingsEffect : UiEffect {
     data object ShowEncryptionPasswordSetupDialog : SettingsEffect
     data class ShowEncryptionPasswordForBackupDialog(val uri: Uri) : SettingsEffect
     data class ShowEncryptionPasswordForRestoreDialog(val uri: Uri) : SettingsEffect
+    data object ShowCbzEncryptionPasswordDialog : SettingsEffect
 }

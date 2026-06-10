@@ -68,6 +68,7 @@ fun SettingsDownloadsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    var showCbzPasswordDialog by remember { mutableStateOf(false) }
 
     val downloadLocationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -82,9 +83,20 @@ fun SettingsDownloadsScreen(
                 is SettingsEffect.ShowDownloadLocationPicker -> downloadLocationLauncher.launch(null)
                 is SettingsEffect.NavigateToDataUsage -> onNavigateToDataUsage()
                 is SettingsEffect.NavigateToStorageAnalytics -> onNavigateToStorageAnalytics()
+                is SettingsEffect.ShowCbzEncryptionPasswordDialog -> showCbzPasswordDialog = true
                 else -> Unit
             }
         }
+    }
+
+    if (showCbzPasswordDialog) {
+        CbzPasswordDialog(
+            onDismiss = { showCbzPasswordDialog = false },
+            onConfirm = { password ->
+                showCbzPasswordDialog = false
+                viewModel.onEvent(SettingsEvent.SetCbzEncryptionPassword(password))
+            },
+        )
     }
 
     Scaffold(
@@ -329,6 +341,19 @@ private fun DownloadsContent(state: SettingsState, onEvent: (SettingsEvent) -> U
         },
     )
 
+    if (state.saveAsCbz) {
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.settings_cbz_encryption)) },
+            supportingContent = { Text(stringResource(R.string.settings_cbz_encryption_description)) },
+            trailingContent = {
+                Switch(
+                    checked = state.cbzEncryptionEnabled,
+                    onCheckedChange = { onEvent(SettingsEvent.SetCbzEncryptionEnabled(it)) },
+                )
+            },
+        )
+    }
+
     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
     SmartDownloadSection(state = state, onEvent = onEvent)
 
@@ -517,6 +542,39 @@ private fun CategoryPickerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun CbzPasswordDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var password by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_cbz_encryption_password_title)) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(stringResource(R.string.settings_cbz_encryption_password_hint)) },
+                singleLine = true,
+                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(
+                onClick = { if (password.isNotBlank()) onConfirm(password) },
+                enabled = password.isNotBlank(),
+            ) { Text(stringResource(android.R.string.ok)) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text(stringResource(android.R.string.cancel))
             }
         },
