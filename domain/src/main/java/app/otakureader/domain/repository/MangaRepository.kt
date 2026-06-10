@@ -75,4 +75,14 @@ interface MangaRepository {
 
     /** Returns the category IDs that a manga belongs to. */
     suspend fun getCategoryIdsForManga(mangaId: Long): List<Long>
+
+    // Alternative source linking (#1053)
+    /** Links two library manga as alternative versions of the same series. */
+    suspend fun linkAlternativeSource(mangaId: Long, altMangaId: Long)
+
+    /** Removes the alternative-source link between two manga. */
+    suspend fun unlinkAlternativeSource(mangaId: Long, altMangaId: Long)
+
+    /** Returns IDs of all manga linked as alternatives to the given manga. */
+    suspend fun getAlternativeSourceIds(mangaId: Long): List<Long>
 }

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.usecase.FillMissingChaptersUseCase
+import app.otakureader.domain.usecase.LinkAlternativeSourceUseCase
 import app.otakureader.domain.usecase.MergeDuplicateMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -23,6 +25,8 @@ class MergeDuplicatesViewModel @Inject constructor(
     private val mangaRepository: MangaRepository,
     private val sourceRepository: SourceRepository,
     private val mergeDuplicateManga: MergeDuplicateMangaUseCase,
+    private val linkAlternativeSource: LinkAlternativeSourceUseCase,
+    private val fillMissingChapters: FillMissingChaptersUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MergeDuplicatesState())
@@ -42,21 +46,33 @@ class MergeDuplicatesViewModel @Inject constructor(
             is MergeDuplicatesEvent.SelectPrimary -> selectPrimary(event.groupIndex, event.primaryId)
             is MergeDuplicatesEvent.MergeGroup -> mergeGroup(event.group)
             is MergeDuplicatesEvent.MergeAll -> mergeAll()
+            is MergeDuplicatesEvent.LinkAsAlternative -> linkAsAlternative(event.primaryId, event.altId)
+            is MergeDuplicatesEvent.FillMissingChapters -> fillMissing(event.primaryId, event.altId)
+            is MergeDuplicatesEvent.UnlinkAlternative -> unlinkAlternative(event.primaryId, event.altId)
         }
     }
 
     private fun observeDuplicates() {
         mangaRepository.findDuplicates()
             .onEach { duplicateLists ->
-                _state.update { current ->
-                    val newGroups = duplicateLists.map { entries ->
-                        // Preserve user's primary selection for groups already shown
-                        val existing = current.duplicateGroups.firstOrNull { g ->
-                            g.entries.map { it.id }.toSet() == entries.map { it.id }.toSet()
-                        }
-                        existing?.copy(entries = entries) ?: DuplicateGroup(entries)
+                val newGroups = duplicateLists.map { entries ->
+                    val existing = _state.value.duplicateGroups.firstOrNull { g ->
+                        g.entries.map { it.id }.toSet() == entries.map { it.id }.toSet()
                     }
-                    current.copy(isLoading = false, duplicateGroups = newGroups, error = null)
+                    existing?.copy(entries = entries) ?: DuplicateGroup(entries)
+                }
+                // Hydrate linkedAlternatives for every manga ID currently on screen
+                val allIds = newGroups.flatMap { g -> g.entries.map { it.id } }.distinct()
+                val linked = allIds.associate { id ->
+                    id to mangaRepository.getAlternativeSourceIds(id).toSet()
+                }
+                _state.update { current ->
+                    current.copy(
+                        isLoading = false,
+                        duplicateGroups = newGroups,
+                        linkedAlternatives = linked,
+                        error = null,
+                    )
                 }
             }
             .launchIn(viewModelScope)
@@ -130,6 +146,60 @@ class MergeDuplicatesViewModel @Inject constructor(
             if (_state.value.duplicateGroups.isEmpty()) {
                 _effect.send(MergeDuplicatesEffect.NavigateBack)
             }
+        }
+    }
+
+    private fun linkAsAlternative(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                linkAlternativeSource(primaryId, altId)
+                updateLinkedAlternatives(primaryId, altId)
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Linked as alternative sources"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Link failed: ${e.message}"))
+            }
+        }
+    }
+
+    private fun fillMissing(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                val added = fillMissingChapters(primaryId, altId)
+                val msg = if (added == 0) "No missing chapters found" else "Added $added missing chapter(s)"
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar(msg))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Fill failed: ${e.message}"))
+            }
+        }
+    }
+
+    private fun unlinkAlternative(primaryId: Long, altId: Long) {
+        viewModelScope.launch {
+            try {
+                mangaRepository.unlinkAlternativeSource(primaryId, altId)
+                updateLinkedAlternatives(primaryId, altId)
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Alternative link removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(MergeDuplicatesEffect.ShowSnackbar("Unlink failed: ${e.message}"))
+            }
+        }
+    }
+
+    /** Fetches fresh link state from the DB then applies it atomically to avoid race conditions. */
+    private suspend fun updateLinkedAlternatives(primaryId: Long, altId: Long) {
+        val primaryAlts = mangaRepository.getAlternativeSourceIds(primaryId).toSet()
+        val altAlts = mangaRepository.getAlternativeSourceIds(altId).toSet()
+        _state.update { current ->
+            val updated = current.linkedAlternatives.toMutableMap()
+            updated[primaryId] = primaryAlts
+            updated[altId] = altAlts
+            current.copy(linkedAlternatives = updated)
         }
     }
 }

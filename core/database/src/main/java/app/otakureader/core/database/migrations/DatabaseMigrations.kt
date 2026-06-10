@@ -428,6 +428,26 @@ internal val MIGRATION_34_35 = object : Migration(34, 35) {
     }
 }
 
+/** v35 → v36: Manga alternative-source linking table (#1053). */
+internal val MIGRATION_35_36 = object : Migration(35, 36) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS manga_alternative_source (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                manga_id INTEGER NOT NULL,
+                alt_manga_id INTEGER NOT NULL,
+                FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE,
+                FOREIGN KEY (alt_manga_id) REFERENCES manga(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_manga_alternative_source_manga_id ON manga_alternative_source(manga_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_manga_alternative_source_alt_manga_id ON manga_alternative_source(alt_manga_id)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_manga_alternative_source_manga_id_alt_manga_id ON manga_alternative_source(manga_id, alt_manga_id)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -437,5 +457,6 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22,
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
-    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35
+    MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35,
+    MIGRATION_35_36,
 )

@@ -1,8 +1,10 @@
 package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
+import app.otakureader.core.database.entity.MangaAlternativeSourceEntity
 import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
@@ -21,6 +23,7 @@ class MangaRepositoryImpl @Inject constructor(
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
     private val mangaCategoryDao: MangaCategoryDao,
+    private val altSourceDao: MangaAlternativeSourceDao,
     private val downloadRepository: dagger.Lazy<app.otakureader.domain.repository.DownloadRepository>
 ) : MangaRepository {
 
@@ -243,6 +246,21 @@ class MangaRepositoryImpl @Inject constructor(
 
     override suspend fun getCategoryIdsForManga(mangaId: Long): List<Long> =
         mangaCategoryDao.getCategoryIdsForManga(mangaId)
+
+    override suspend fun linkAlternativeSource(mangaId: Long, altMangaId: Long) {
+        // Always store as (min, max) so (A,B) and (B,A) map to the same row and the
+        // unique index correctly prevents duplicate symmetric entries.
+        val (minId, maxId) = if (mangaId < altMangaId) mangaId to altMangaId else altMangaId to mangaId
+        altSourceDao.insert(MangaAlternativeSourceEntity(mangaId = minId, altMangaId = maxId))
+    }
+
+    override suspend fun unlinkAlternativeSource(mangaId: Long, altMangaId: Long) {
+        val (minId, maxId) = if (mangaId < altMangaId) mangaId to altMangaId else altMangaId to mangaId
+        altSourceDao.unlink(minId, maxId)
+    }
+
+    override suspend fun getAlternativeSourceIds(mangaId: Long): List<Long> =
+        altSourceDao.getAlternativeIdsForMangaSync(mangaId)
 
     private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
         id = id,
