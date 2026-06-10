@@ -77,4 +77,12 @@
     <string name="tracking_pull_success">Progress pulled from trackers</string>
     <string name="tracking_conflict_resolved">Conflict resolved</string>
     <string name="tracking_mangaupdates_security_note">MangaUpdates requires your password directly (OAuth not yet supported by their API). Your password is sent securely over HTTPS and is not stored — only the session token is saved.</string>
+
+    <!-- Sync Health section -->
+    <string name="tracking_health_section">Sync Health</string>
+    <string name="tracking_last_sync">Last sync: %1$s</string>
+    <string name="tracking_failed_updates">%1$d failed update(s)</string>
+    <string name="tracking_retry_failed">Retry failed</string>
+    <string name="tracking_never_synced">Never</string>
+    <string name="tracking_retrying_failed_updates">Retrying failed updates…</string>
 </resources>
