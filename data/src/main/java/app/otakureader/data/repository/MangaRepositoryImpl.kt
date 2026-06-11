@@ -230,7 +230,8 @@ class MangaRepositoryImpl @Inject constructor(
 
     override suspend fun clearLocalOverrides(id: Long) {
         // Also remove any stored custom cover file before its path reference is cleared.
-        deleteCustomCoverFiles(id)
+        // File I/O must run off the caller's thread (often Dispatchers.Main in a ViewModel).
+        withContext(Dispatchers.IO) { deleteCustomCoverFiles(id) }
         mangaDao.updateUserOverrides(
             id = id,
             title = null,

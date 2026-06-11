@@ -408,6 +408,8 @@ private fun ThemeOptionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            // Clip before clickable so the ripple follows the card's rounded corners.
+            .clip(CardDefaults.shape)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (selected) {
