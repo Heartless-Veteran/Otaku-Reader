@@ -1,6 +1,7 @@
 package app.otakureader.domain.repository
 
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.OrphanScanResult
 import app.otakureader.domain.model.ReindexResult
 import kotlinx.coroutines.flow.Flow
 
@@ -135,6 +136,24 @@ interface DownloadRepository {
      * that exist but contain no valid page files or CBZ archive.
      */
     suspend fun reindexDownloads(): ReindexResult
+
+    /**
+     * Scans the downloads directory for chapter folders that have no matching record in
+     * the manga/chapter database. These are "orphaned" files left behind when manga entries
+     * are deleted without cleaning up their downloads.
+     *
+     * @return count of orphaned chapter dirs and their total size on disk.
+     */
+    suspend fun scanOrphanedDownloads(): OrphanScanResult
+
+    /**
+     * Deletes all orphaned chapter dirs found by the same scan logic as [scanOrphanedDownloads].
+     * Re-runs the scan internally so the result is always fresh — no stale state between
+     * scan and delete.
+     *
+     * @return the [OrphanScanResult] describing what was deleted.
+     */
+    suspend fun deleteOrphanedDownloads(): OrphanScanResult
 
     suspend fun migrateChapterDownload(
         fromSourceName: String,

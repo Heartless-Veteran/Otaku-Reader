@@ -3,10 +3,11 @@ package app.otakureader.feature.library.maintenance
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler
+import app.otakureader.domain.usecase.downloads.DeleteOrphanedDownloadsUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
+import app.otakureader.domain.usecase.downloads.ScanOrphanedDownloadsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +23,9 @@ import javax.inject.Inject
  * - Refresh Covers: triggers the library update scheduler (which re-downloads covers)
  * - Refresh Metadata: triggers the library update scheduler to pull fresh metadata
  * - Reindex Downloads: calls [ReindexDownloadsUseCase] to sync download status with disk
- * - Orphan Scan / Delete: placeholder — will be backed by a real use case in a future iteration
+ * - Orphan Scan / Delete: backed by [ScanOrphanedDownloadsUseCase] /
+ *   [DeleteOrphanedDownloadsUseCase], which compare the downloads directory against the
+ *   manga/chapter database and remove stale directories
  *
  * Each task exposes a `Running` flag and a nullable `Result` string in [LibraryMaintenanceState].
  * One-shot feedback (e.g. errors) is delivered via [LibraryMaintenanceEffect].
@@ -30,6 +33,8 @@ import javax.inject.Inject
 @HiltViewModel
 class LibraryMaintenanceViewModel @Inject constructor(
     private val reindexDownloadsUseCase: ReindexDownloadsUseCase,
+    private val scanOrphanedDownloadsUseCase: ScanOrphanedDownloadsUseCase,
+    private val deleteOrphanedDownloadsUseCase: DeleteOrphanedDownloadsUseCase,
     private val libraryUpdateScheduler: LibraryUpdateScheduler,
 ) : ViewModel() {
 
@@ -53,8 +58,6 @@ class LibraryMaintenanceViewModel @Inject constructor(
 
     private suspend fun refreshCovers() {
         _state.update { it.copy(coverRefreshRunning = true, coverRefreshResult = null) }
-        // Trigger the existing library update scheduler, which re-fetches covers.
-        // The actual worker runs in the background; we report that the job was queued.
         runCatching { libraryUpdateScheduler.enqueueNow() }
             .onSuccess {
                 _state.update {
@@ -105,23 +108,62 @@ class LibraryMaintenanceViewModel @Inject constructor(
     }
 
     private suspend fun scanOrphans() {
+        // Guard against repeated taps spawning concurrent disk scans.
+        if (_state.value.orphanScanRunning) return
         _state.update { it.copy(orphanScanRunning = true, orphanScanResult = null) }
-        // Orphan scanning is not yet backed by a dedicated use case.
-        // A 500 ms delay simulates work so the progress indicator is visible.
-        delay(500)
-        _state.update {
-            it.copy(
-                orphanScanRunning = false,
-                orphanCount = 0,
-                orphanScanResult = "No orphaned files found",
-            )
-        }
+        runCatching { scanOrphanedDownloadsUseCase() }
+            .onSuccess { result ->
+                val resultText = if (result.count == 0) {
+                    "No orphaned files found"
+                } else {
+                    "${result.count} orphaned folder(s) found (${result.sizeBytes.formatBytes()})"
+                }
+                _state.update {
+                    it.copy(
+                        orphanScanRunning = false,
+                        orphanCount = result.count,
+                        orphanedSizeBytes = result.sizeBytes,
+                        orphanScanResult = resultText,
+                    )
+                }
+            }
+            .onFailure { error ->
+                _state.update { it.copy(orphanScanRunning = false) }
+                _effect.send(LibraryMaintenanceEffect.ShowSnackbar("Scan failed: ${error.message}"))
+            }
     }
 
     private suspend fun deleteOrphans() {
-        // Deletion is gated on a prior scan so users know what will be removed.
-        _effect.send(
-            LibraryMaintenanceEffect.ShowSnackbar("Orphaned file cleanup not yet implemented"),
-        )
+        // Guard against repeated taps spawning concurrent delete operations.
+        if (_state.value.orphanScanRunning) return
+        if (_state.value.orphanCount == 0) return
+        _state.update { it.copy(orphanScanRunning = true, orphanScanResult = null) }
+        runCatching { deleteOrphanedDownloadsUseCase() }
+            .onSuccess { result ->
+                val resultText = if (result.count == 0) {
+                    "No orphaned files found"
+                } else {
+                    "Deleted ${result.count} folder(s) (${result.sizeBytes.formatBytes()} freed)"
+                }
+                _state.update {
+                    it.copy(
+                        orphanScanRunning = false,
+                        orphanCount = 0,
+                        orphanedSizeBytes = 0L,
+                        orphanScanResult = resultText,
+                    )
+                }
+            }
+            .onFailure { error ->
+                _state.update { it.copy(orphanScanRunning = false) }
+                _effect.send(LibraryMaintenanceEffect.ShowSnackbar("Delete failed: ${error.message}"))
+            }
+    }
+
+    private fun Long.formatBytes(): String = when {
+        this < 1_024L -> "$this B"
+        this < 1_048_576L -> "%.1f KB".format(this / 1_024.0)
+        this < 1_073_741_824L -> "%.1f MB".format(this / 1_048_576.0)
+        else -> "%.2f GB".format(this / 1_073_741_824.0)
     }
 }
