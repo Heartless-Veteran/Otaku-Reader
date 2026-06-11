@@ -1,5 +1,6 @@
 package app.otakureader.data.repository
 
+import android.content.Context
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.dao.MangaCategoryDao
@@ -10,16 +11,21 @@ import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.repository.MangaRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class MangaRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val mangaDao: MangaDao,
     private val chapterDao: ChapterDao,
     private val mangaCategoryDao: MangaCategoryDao,
@@ -223,6 +229,8 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearLocalOverrides(id: Long) {
+        // Also remove any stored custom cover file before its path reference is cleared.
+        deleteCustomCoverFiles(id)
         mangaDao.updateUserOverrides(
             id = id,
             title = null,
@@ -233,6 +241,33 @@ class MangaRepositoryImpl @Inject constructor(
             genre = null,
             status = null,
         )
+    }
+
+    override suspend fun setCustomCover(id: Long, contentUri: String) = withContext(Dispatchers.IO) {
+        val coversDir = File(context.filesDir, CUSTOM_COVERS_DIR).apply { mkdirs() }
+        // Timestamped filename so Coil's cache (keyed by path) never serves a stale image
+        // after the cover is replaced.
+        val coverFile = File(coversDir, "${id}_${System.currentTimeMillis()}.img")
+        val uri = android.net.Uri.parse(contentUri)
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            coverFile.outputStream().use { output -> input.copyTo(output) }
+        } ?: error("Could not open selected image")
+
+        // Remove older cover files for this manga before pointing at the new one.
+        deleteCustomCoverFiles(id, except = coverFile)
+        mangaDao.updateUserThumbnail(id, "file://${coverFile.absolutePath}")
+    }
+
+    override suspend fun removeCustomCover(id: Long) = withContext(Dispatchers.IO) {
+        deleteCustomCoverFiles(id)
+        mangaDao.updateUserThumbnail(id, null)
+    }
+
+    /** Deletes stored custom cover files for [id], optionally keeping [except]. */
+    private fun deleteCustomCoverFiles(id: Long, except: File? = null) {
+        File(context.filesDir, CUSTOM_COVERS_DIR)
+            .listFiles { f -> f.isFile && f.name.startsWith("${id}_") }
+            ?.forEach { if (it != except) it.delete() }
     }
 
     override fun findDuplicates(): Flow<List<List<Manga>>> =
@@ -297,6 +332,7 @@ class MangaRepositoryImpl @Inject constructor(
         mangaThemeOverride = mangaThemeOverride,
         isUserEdited = userTitle != null || userDescription != null || userAuthor != null ||
             userArtist != null || userThumbnailUrl != null || userGenre != null || userStatus != null,
+        hasCustomCover = userThumbnailUrl != null,
     )
 
     private fun Manga.toEntity() = MangaEntity(
@@ -330,4 +366,9 @@ class MangaRepositoryImpl @Inject constructor(
         userDropped = userDropped,
         mangaThemeOverride = mangaThemeOverride,
     )
+
+    private companion object {
+        /** App-private directory under filesDir holding user-chosen cover images. */
+        const val CUSTOM_COVERS_DIR = "custom_covers"
+    }
 }

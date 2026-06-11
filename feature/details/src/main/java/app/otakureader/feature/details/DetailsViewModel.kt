@@ -163,6 +163,8 @@ class DetailsViewModel @Inject constructor(
                 _state.update { it.copy(isEditInfoSheetVisible = false) }
             is DetailsContract.Event.SaveMangaInfo -> saveMangaInfo(event)
             is DetailsContract.Event.ResetMangaInfo -> resetMangaInfo()
+            is DetailsContract.Event.SetCustomCover -> setCustomCover(event.imageUri)
+            is DetailsContract.Event.RemoveCustomCover -> removeCustomCover()
         }
     }
 
@@ -1235,6 +1237,32 @@ class DetailsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to reset manga info: ${e.message}"))
+            }
+        }
+    }
+
+    private fun setCustomCover(imageUri: String) {
+        viewModelScope.launch {
+            try {
+                mangaRepository.setCustomCover(mangaId, imageUri)
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover set"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to set custom cover: ${e.message}"))
+            }
+        }
+    }
+
+    private fun removeCustomCover() {
+        viewModelScope.launch {
+            try {
+                mangaRepository.removeCustomCover(mangaId)
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to remove custom cover: ${e.message}"))
             }
         }
     }

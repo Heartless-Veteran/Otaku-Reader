@@ -196,4 +196,8 @@
     <string name="details_edit_reset_confirm_title">Reset manga info?</string>
     <string name="details_edit_reset_confirm_body">This will clear all your custom edits and restore the original source data.</string>
     <string name="details_edit_reset_confirm_ok">Reset</string>
+
+    <!-- Custom cover art -->
+    <string name="details_set_custom_cover">Set custom cover</string>
+    <string name="details_remove_custom_cover">Remove custom cover</string>
 </resources>

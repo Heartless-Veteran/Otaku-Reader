@@ -259,6 +259,11 @@ object DetailsContract {
             val status: MangaStatus?,
         ) : Event
         data object ResetMangaInfo : Event
+
+        // Custom cover art
+        /** [imageUri] is a content:// URI string returned by the system image picker. */
+        data class SetCustomCover(val imageUri: String) : Event
+        data object RemoveCustomCover : Event
     }
 
     /**

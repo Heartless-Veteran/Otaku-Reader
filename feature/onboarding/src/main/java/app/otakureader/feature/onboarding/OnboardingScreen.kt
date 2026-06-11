@@ -30,11 +30,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -52,8 +58,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 
 /** Type of each onboarding page — drives which permission UI (if any) is shown. */
@@ -61,6 +70,7 @@ enum class OnboardingPageType {
     WELCOME,
     NOTIFICATIONS,  // Android 13+ only
     BATTERY,        // Battery optimisation exclusion
+    APPEARANCE,     // Theme selection (applies live)
     EXTENSIONS,     // "Install extensions" action
 }
 
@@ -77,7 +87,8 @@ data class OnboardingPage(
  *  1. Welcome
  *  2. [Android 13+] Notifications permission
  *  3. Battery-optimisation exclusion
- *  4. Install extensions
+ *  4. Appearance (theme — applies live)
+ *  5. Install extensions (with quick-start hints)
  *
  * Each permission page shows a live status icon and an action button that is
  * disabled once the permission has been granted.
@@ -89,8 +100,10 @@ fun OnboardingScreen(
     onSkip: () -> Unit = onComplete,
     onNavigateToExtensions: () -> Unit = {},
     modifier: Modifier = Modifier,
+    viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
     // Build page list dynamically; notifications page is Android 13+ only
     val pages = remember {
@@ -119,6 +132,14 @@ fun OnboardingScreen(
                     titleRes = R.string.onboarding_title_battery,
                     descriptionRes = R.string.onboarding_desc_battery,
                     icon = Icons.Default.PowerSettingsNew,
+                ),
+            )
+            add(
+                OnboardingPage(
+                    type = OnboardingPageType.APPEARANCE,
+                    titleRes = R.string.onboarding_title_appearance,
+                    descriptionRes = R.string.onboarding_desc_appearance,
+                    icon = Icons.Default.Palette,
                 ),
             )
             add(
@@ -191,6 +212,8 @@ fun OnboardingScreen(
                 page = pages[pageIndex],
                 notificationsGranted = notificationsGranted,
                 batteryOptimizationIgnored = batteryOptimizationIgnored,
+                themeMode = themeMode,
+                onThemeModeSelected = viewModel::setThemeMode,
                 onRequestNotifications = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -217,6 +240,8 @@ private fun OnboardingPageContent(
     page: OnboardingPage,
     notificationsGranted: Boolean,
     batteryOptimizationIgnored: Boolean,
+    themeMode: Int,
+    onThemeModeSelected: (Int) -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestBatteryOptimization: () -> Unit,
     modifier: Modifier = Modifier,
@@ -335,6 +360,121 @@ private fun OnboardingPageContent(
                 )
             }
         }
+
+        if (page.type == OnboardingPageType.APPEARANCE) {
+            Spacer(modifier = Modifier.height(32.dp))
+            ThemeOptionCard(
+                label = stringResource(R.string.onboarding_theme_system),
+                icon = Icons.Default.PhoneAndroid,
+                selected = themeMode == 0,
+                onClick = { onThemeModeSelected(0) },
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            ThemeOptionCard(
+                label = stringResource(R.string.onboarding_theme_light),
+                icon = Icons.Default.LightMode,
+                selected = themeMode == 1,
+                onClick = { onThemeModeSelected(1) },
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            ThemeOptionCard(
+                label = stringResource(R.string.onboarding_theme_dark),
+                icon = Icons.Default.DarkMode,
+                selected = themeMode == 2,
+                onClick = { onThemeModeSelected(2) },
+            )
+        }
+
+        if (page.type == OnboardingPageType.EXTENSIONS) {
+            Spacer(modifier = Modifier.height(24.dp))
+            QuickStartHint(stringResource(R.string.onboarding_hint_browse))
+            Spacer(modifier = Modifier.height(8.dp))
+            QuickStartHint(stringResource(R.string.onboarding_hint_library))
+            Spacer(modifier = Modifier.height(8.dp))
+            QuickStartHint(stringResource(R.string.onboarding_hint_trackers))
+        }
+    }
+}
+
+/** A selectable card for one theme choice on the Appearance page. */
+@Composable
+private fun ThemeOptionCard(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            },
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                modifier = Modifier.weight(1f),
+            )
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+/** A single quick-start bullet on the Extensions page. */
+@Composable
+private fun QuickStartHint(text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
