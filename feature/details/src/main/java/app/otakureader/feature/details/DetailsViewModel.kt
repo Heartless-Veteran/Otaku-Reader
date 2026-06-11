@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.SourceChapter
 import kotlinx.coroutines.async
@@ -1241,10 +1243,14 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    // Serializes set/remove cover operations: each mutates files + DB, so two running
+    // concurrently (rapid taps) could leave the DB pointing at a deleted file.
+    private val coverMutex = Mutex()
+
     private fun setCustomCover(imageUri: String) {
         viewModelScope.launch {
             try {
-                mangaRepository.setCustomCover(mangaId, imageUri)
+                coverMutex.withLock { mangaRepository.setCustomCover(mangaId, imageUri) }
                 _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover set"))
             } catch (e: CancellationException) {
                 throw e
@@ -1257,7 +1263,7 @@ class DetailsViewModel @Inject constructor(
     private fun removeCustomCover() {
         viewModelScope.launch {
             try {
-                mangaRepository.removeCustomCover(mangaId)
+                coverMutex.withLock { mangaRepository.removeCustomCover(mangaId) }
                 _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover removed"))
             } catch (e: CancellationException) {
                 throw e

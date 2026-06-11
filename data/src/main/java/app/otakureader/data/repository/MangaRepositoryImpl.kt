@@ -229,9 +229,8 @@ class MangaRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clearLocalOverrides(id: Long) {
-        // Also remove any stored custom cover file before its path reference is cleared.
-        // File I/O must run off the caller's thread (often Dispatchers.Main in a ViewModel).
-        withContext(Dispatchers.IO) { deleteCustomCoverFiles(id) }
+        // DB first: if the update fails, the stored cover file is still referenced and
+        // nothing is lost. Files are only deleted once the DB no longer points at them.
         mangaDao.updateUserOverrides(
             id = id,
             title = null,
@@ -242,6 +241,7 @@ class MangaRepositoryImpl @Inject constructor(
             genre = null,
             status = null,
         )
+        withContext(Dispatchers.IO) { deleteCustomCoverFiles(id) }
     }
 
     override suspend fun setCustomCover(id: Long, contentUri: String) = withContext(Dispatchers.IO) {
@@ -254,14 +254,16 @@ class MangaRepositoryImpl @Inject constructor(
             coverFile.outputStream().use { output -> input.copyTo(output) }
         } ?: error("Could not open selected image")
 
-        // Remove older cover files for this manga before pointing at the new one.
-        deleteCustomCoverFiles(id, except = coverFile)
+        // Point the DB at the new file first; only then clean up older files so a failed
+        // DB write can never leave the row referencing a deleted path.
         mangaDao.updateUserThumbnail(id, "file://${coverFile.absolutePath}")
+        deleteCustomCoverFiles(id, except = coverFile)
     }
 
     override suspend fun removeCustomCover(id: Long) = withContext(Dispatchers.IO) {
-        deleteCustomCoverFiles(id)
+        // DB first for the same crash-safety reason as setCustomCover.
         mangaDao.updateUserThumbnail(id, null)
+        deleteCustomCoverFiles(id)
     }
 
     /** Deletes stored custom cover files for [id], optionally keeping [except]. */
@@ -333,7 +335,10 @@ class MangaRepositoryImpl @Inject constructor(
         mangaThemeOverride = mangaThemeOverride,
         isUserEdited = userTitle != null || userDescription != null || userAuthor != null ||
             userArtist != null || userThumbnailUrl != null || userGenre != null || userStatus != null,
-        hasCustomCover = userThumbnailUrl != null,
+        // Only app-stored picker images count as a "custom cover". A manual cover URL set
+        // via Edit Info also lives in userThumbnailUrl but must not enable the
+        // "Remove custom cover" path, which would silently discard that URL override.
+        hasCustomCover = userThumbnailUrl?.contains("/$CUSTOM_COVERS_DIR/") == true,
     )
 
     private fun Manga.toEntity() = MangaEntity(
