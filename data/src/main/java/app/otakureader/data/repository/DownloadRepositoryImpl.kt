@@ -1,15 +1,19 @@
 package app.otakureader.data.repository
 
 import android.content.Context
+import app.otakureader.core.common.di.ApplicationScope
+import app.otakureader.core.database.dao.ChapterDao
+import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.data.download.CbzCreator
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
 import app.otakureader.data.download.DownloadProvider
-import app.otakureader.core.common.di.ApplicationScope
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.OrphanScanResult
 import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.repository.DownloadRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +27,8 @@ import kotlinx.coroutines.withContext
 class DownloadRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val downloadManager: DownloadManager,
+    private val mangaDao: MangaDao,
+    private val chapterDao: ChapterDao,
     @ApplicationScope private val scope: CoroutineScope
 ) : DownloadRepository {
 
@@ -172,6 +178,71 @@ class DownloadRepositoryImpl @Inject constructor(
             }
         }
         ReindexResult(verified, empty)
+    }
+
+    override suspend fun scanOrphanedDownloads(): OrphanScanResult = withContext(Dispatchers.IO) {
+        val orphans = findOrphanedChapterDirs()
+        val totalBytes = orphans.sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }
+        OrphanScanResult(count = orphans.size, sizeBytes = totalBytes)
+    }
+
+    override suspend fun deleteOrphanedDownloads(): OrphanScanResult = withContext(Dispatchers.IO) {
+        val orphans = findOrphanedChapterDirs()
+        var deletedCount = 0
+        var deletedBytes = 0L
+        for (dir in orphans) {
+            val size = dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+            if (dir.deleteRecursively()) {
+                deletedCount++
+                deletedBytes += size
+            }
+        }
+        OrphanScanResult(count = deletedCount, sizeBytes = deletedBytes)
+    }
+
+    /**
+     * Returns chapter directories on disk that have no matching record in the database.
+     * A directory is "orphaned" when its parent manga was deleted from the library without
+     * cleaning up the downloaded files.
+     *
+     * The directory path is derived from the same sanitization logic used when the download
+     * was originally created: sourceId.toString() / sanitize(title) / sanitize(name).
+     */
+    private suspend fun findOrphanedChapterDirs(): List<File> {
+        val rootDir = DownloadProvider.getRootDir(context)
+        if (!rootDir.isDirectory) return emptyList()
+
+        // Build the set of expected chapter dir absolute paths from the database.
+        val rootParent = rootDir.parentFile ?: return emptyList()
+        val expectedPaths = buildSet<String> {
+            for (manga in mangaDao.getAllMangaOnce()) {
+                for (chapter in chapterDao.getChaptersByMangaIdOnce(manga.id)) {
+                    val dir = DownloadProvider.getChapterDir(
+                        rootParent,
+                        manga.sourceId.toString(),
+                        manga.title,
+                        chapter.name,
+                    )
+                    add(dir.absolutePath)
+                }
+            }
+        }
+
+        // Walk 3 levels: source / manga / chapter
+        val orphans = mutableListOf<File>()
+        val sourceDirs = rootDir.listFiles { f -> f.isDirectory } ?: return emptyList()
+        for (sourceDir in sourceDirs) {
+            val mangaDirs = sourceDir.listFiles { f -> f.isDirectory } ?: continue
+            for (mangaDir in mangaDirs) {
+                val chapterDirs = mangaDir.listFiles { f -> f.isDirectory } ?: continue
+                for (chapterDir in chapterDirs) {
+                    if (chapterDir.absolutePath !in expectedPaths) {
+                        orphans += chapterDir
+                    }
+                }
+            }
+        }
+        return orphans
     }
 
     override suspend fun migrateChapterDownload(

@@ -30,6 +30,9 @@ interface MangaDao {
 
     @Query("SELECT * FROM manga WHERE id IN (:ids)")
     suspend fun getMangaByIds(ids: List<Long>): List<MangaEntity>
+
+    @Query("SELECT * FROM manga")
+    suspend fun getAllMangaOnce(): List<MangaEntity>
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(manga: MangaEntity): Long
