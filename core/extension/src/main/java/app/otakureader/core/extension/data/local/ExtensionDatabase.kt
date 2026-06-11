@@ -10,6 +10,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -122,9 +123,23 @@ interface ExtensionDao {
     
     @Query("SELECT * FROM extensions WHERE name LIKE '%' || :query || '%' OR pkg_name LIKE '%' || :query || '%'")
     fun searchExtensions(query: String): Flow<List<ExtensionEntity>>
-    
+
     @Query("DELETE FROM extensions")
     suspend fun clearAll()
+
+    @Query("DELETE FROM extensions WHERE status = 'AVAILABLE'")
+    suspend fun deleteAllAvailable()
+
+    /**
+     * Atomically replaces the cached AVAILABLE extension list with a fresh fetch.
+     * Without the delete step, extensions from removed/changed repositories linger
+     * in the database forever and keep showing in the Available tab.
+     */
+    @Transaction
+    suspend fun replaceAllAvailable(entities: List<ExtensionEntity>) {
+        deleteAllAvailable()
+        insertExtensions(entities)
+    }
 }
 
 @Database(

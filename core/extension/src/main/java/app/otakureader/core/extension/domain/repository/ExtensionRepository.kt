@@ -42,6 +42,15 @@ interface ExtensionRepository {
      * @return Result containing the installed Extension or an error
      */
     suspend fun installExtension(pkgName: String, apkPath: String): Result<Extension>
+
+    /**
+     * Install an extension using the fully-loaded [extension] object as fallback metadata.
+     *
+     * Unlike [installExtension] (pkgName overload), this does not fail when the extension
+     * has no pre-existing database row — e.g. when installing from a just-added repository
+     * before the available-extensions refresh has synced to the database.
+     */
+    suspend fun installExtension(extension: Extension, apkPath: String): Result<Extension>
     
     /**
      * Uninstall an extension.

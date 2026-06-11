@@ -253,7 +253,10 @@ class ExtensionInstaller(
 
                 _installationState.value = InstallationState.Installing
                 val finalExtension = extension.copy(apkPath = destFile.absolutePath)
-                val result = repository.installExtension(finalExtension.pkgName, destFile.absolutePath)
+                // Pass the fully-loaded extension so the install succeeds even when the
+                // database has no row yet (e.g. repo was just added and the available-list
+                // refresh hasn't synced).
+                val result = repository.installExtension(finalExtension, destFile.absolutePath)
                 result.onSuccess { ext ->
                     _installationState.value = InstallationState.Success(ext)
                     ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
