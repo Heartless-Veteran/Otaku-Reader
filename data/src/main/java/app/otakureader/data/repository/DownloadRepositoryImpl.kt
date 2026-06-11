@@ -208,10 +208,12 @@ class DownloadRepositoryImpl @Inject constructor(
      */
     private fun deleteEmptyParents(deletedDir: File, rootDir: File) {
         var parent = deletedDir.parentFile
-        while (parent != null && parent != rootDir) {
-            val children = parent.listFiles()
-            if (children == null || children.isNotEmpty()) break
-            if (!parent.delete()) break
+        // Stop at the downloads root, a non-empty dir, or a failed delete.
+        while (parent != null &&
+            parent != rootDir &&
+            parent.listFiles()?.isEmpty() == true &&
+            parent.delete()
+        ) {
             parent = parent.parentFile
         }
     }
