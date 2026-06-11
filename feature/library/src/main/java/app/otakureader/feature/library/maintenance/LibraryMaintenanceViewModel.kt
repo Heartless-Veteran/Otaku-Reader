@@ -108,6 +108,8 @@ class LibraryMaintenanceViewModel @Inject constructor(
     }
 
     private suspend fun scanOrphans() {
+        // Guard against repeated taps spawning concurrent disk scans.
+        if (_state.value.orphanScanRunning) return
         _state.update { it.copy(orphanScanRunning = true, orphanScanResult = null) }
         runCatching { scanOrphanedDownloadsUseCase() }
             .onSuccess { result ->
@@ -132,6 +134,8 @@ class LibraryMaintenanceViewModel @Inject constructor(
     }
 
     private suspend fun deleteOrphans() {
+        // Guard against repeated taps spawning concurrent delete operations.
+        if (_state.value.orphanScanRunning) return
         if (_state.value.orphanCount == 0) return
         _state.update { it.copy(orphanScanRunning = true, orphanScanResult = null) }
         runCatching { deleteOrphanedDownloadsUseCase() }

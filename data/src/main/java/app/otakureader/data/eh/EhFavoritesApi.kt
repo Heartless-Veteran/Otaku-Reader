@@ -10,8 +10,8 @@ import javax.inject.Inject
  * Fetches and parses all pages of the E-Hentai favorites list using stored session cookies.
  *
  * This class performs synchronous OkHttp calls — callers must dispatch on an IO dispatcher.
- * Pages are fetched in a loop (up to [MAX_PAGES] pages, 25 items each) so users with more
- * than 25 favorites receive the complete list on every sync.
+ * Pages are fetched in a loop until the server returns an empty page (with a [MAX_PAGES]
+ * safety cap), so users with more than 25 favorites receive the complete list on every sync.
  *
  * The igneous cookie determines which host to use:
  *   - Non-empty igneous → ExHentai (exhentai.org) for ExHentai-only content.
@@ -19,17 +19,21 @@ import javax.inject.Inject
  *
  * @param hostOverrideForTests when non-null, bypasses [resolveHost] — used in unit tests
  *   to point requests at a [okhttp3.mockwebserver.MockWebServer].
+ * @param interPageDelayMillis pause between consecutive page requests. EH aggressively
+ *   rate-limits rapid scraping, so production keeps the default; tests pass 0.
  */
 class EhFavoritesApi(
     private val okHttpClient: OkHttpClient,
     private val hostOverrideForTests: String? = null,
+    private val interPageDelayMillis: Long = INTER_PAGE_DELAY_MS,
 ) {
-    @Inject constructor(okHttpClient: OkHttpClient) : this(okHttpClient, null)
+    @Inject constructor(okHttpClient: OkHttpClient) : this(okHttpClient, null, INTER_PAGE_DELAY_MS)
 
     fun fetchFavorites(session: EhSession): List<EhFavorite> {
         val result = mutableListOf<EhFavorite>()
         var page = 0
         while (page < MAX_PAGES) {
+            if (page > 0 && interPageDelayMillis > 0) Thread.sleep(interPageDelayMillis)
             val items = fetchFavoritesPage(session, page)
             if (items.isEmpty()) break
             result += items
@@ -116,8 +120,12 @@ class EhFavoritesApi(
         const val USER_AGENT =
             "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
 
-        // Hard cap: 40 pages × 25 items = 1 000 favorites max. Prevents runaway loops if EH
-        // ever changes its pagination structure and never returns an empty page.
-        const val MAX_PAGES = 40
+        // Safety cap against runaway loops if EH ever changes its pagination markup and an
+        // "empty" page never occurs. Termination is normally server-driven (first empty page
+        // stops the loop); 200 pages × 25 items = 5 000 favorites covers realistic accounts.
+        const val MAX_PAGES = 200
+
+        // EH rate-limits and can temporarily IP-ban clients making rapid sequential requests.
+        const val INTER_PAGE_DELAY_MS = 500L
     }
 }

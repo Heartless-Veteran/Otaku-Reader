@@ -115,7 +115,7 @@ class EhFavoritesApiTest {
             server.enqueue(MockResponse().setBody(page3Html))
 
             val hostOverride = server.url("").toString().trimEnd('/')
-            val paginatedApi = EhFavoritesApi(OkHttpClient(), hostOverride)
+            val paginatedApi = EhFavoritesApi(OkHttpClient(), hostOverride, interPageDelayMillis = 0)
             val session = EhSession(memberId = "1", passHash = "hash", igneous = "")
 
             val result = paginatedApi.fetchFavorites(session)
@@ -131,7 +131,11 @@ class EhFavoritesApiTest {
         server.use {
             server.enqueue(MockResponse().setBody(""))
 
-            val paginatedApi = EhFavoritesApi(OkHttpClient(), server.url("").toString().trimEnd('/'))
+            val paginatedApi = EhFavoritesApi(
+                OkHttpClient(),
+                server.url("").toString().trimEnd('/'),
+                interPageDelayMillis = 0,
+            )
             val session = EhSession(memberId = "1", passHash = "hash", igneous = "")
 
             val result = paginatedApi.fetchFavorites(session)

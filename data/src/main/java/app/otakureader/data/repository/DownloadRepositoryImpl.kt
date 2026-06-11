@@ -187,6 +187,7 @@ class DownloadRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteOrphanedDownloads(): OrphanScanResult = withContext(Dispatchers.IO) {
+        val rootDir = DownloadProvider.getRootDir(context)
         val orphans = findOrphanedChapterDirs()
         var deletedCount = 0
         var deletedBytes = 0L
@@ -195,9 +196,24 @@ class DownloadRepositoryImpl @Inject constructor(
             if (dir.deleteRecursively()) {
                 deletedCount++
                 deletedBytes += size
+                deleteEmptyParents(dir, rootDir)
             }
         }
         OrphanScanResult(count = deletedCount, sizeBytes = deletedBytes)
+    }
+
+    /**
+     * Removes now-empty manga/source directories left behind after a chapter dir was deleted,
+     * stopping at (and never deleting) the downloads root itself.
+     */
+    private fun deleteEmptyParents(deletedDir: File, rootDir: File) {
+        var parent = deletedDir.parentFile
+        while (parent != null && parent != rootDir) {
+            val children = parent.listFiles()
+            if (children == null || children.isNotEmpty()) break
+            if (!parent.delete()) break
+            parent = parent.parentFile
+        }
     }
 
     /**
@@ -213,18 +229,20 @@ class DownloadRepositoryImpl @Inject constructor(
         if (!rootDir.isDirectory) return emptyList()
 
         // Build the set of expected chapter dir absolute paths from the database.
+        // Exactly 2 queries: all manga + all chapters, joined in memory — avoids an
+        // N+1 query per manga which would stall on large libraries.
         val rootParent = rootDir.parentFile ?: return emptyList()
+        val mangaById = mangaDao.getAllMangaOnce().associateBy { it.id }
         val expectedPaths = buildSet<String> {
-            for (manga in mangaDao.getAllMangaOnce()) {
-                for (chapter in chapterDao.getChaptersByMangaIdOnce(manga.id)) {
-                    val dir = DownloadProvider.getChapterDir(
-                        rootParent,
-                        manga.sourceId.toString(),
-                        manga.title,
-                        chapter.name,
-                    )
-                    add(dir.absolutePath)
-                }
+            for (chapter in chapterDao.getAllChaptersOnce()) {
+                val manga = mangaById[chapter.mangaId] ?: continue
+                val dir = DownloadProvider.getChapterDir(
+                    rootParent,
+                    manga.sourceId.toString(),
+                    manga.title,
+                    chapter.name,
+                )
+                add(dir.absolutePath)
             }
         }
 
