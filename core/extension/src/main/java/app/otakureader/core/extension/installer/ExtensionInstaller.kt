@@ -124,12 +124,12 @@ class ExtensionInstaller(
 
             // Register the extension inside the app, passing the repo-verified hash so the
             // universal trust gate inside ExtensionLoader can be satisfied without a separate
-            // user confirmation step. The repo URL rides along so a fallback-created DB row
-            // still records provenance (#1019).
+            // user confirmation step. The repository-backed extension rides along so a
+            // fallback-created DB row keeps provenance (#1019) plus apkUrl/iconUrl metadata.
             val result = install(
                 downloadFile,
                 trustedHash = extension.signatureHash,
-                repoUrl = extension.repoUrl,
+                repoMetadata = extension,
             )
 
             result.onSuccess { installed ->
@@ -224,15 +224,16 @@ class ExtensionInstaller(
      *   a repository-sourced expected hash. The extension's actual loaded hash is compared
      *   against this value; the trust store is only updated **after** the extension has been
      *   successfully loaded and moved to its permanent location.
-     * @param repoUrl The repository this APK was downloaded from, when known. Recorded as
-     *   install provenance (#1019) — without it, a fallback-created DB row would have null
-     *   sourceRepoUrl and the cross-repo replacement guard would be inactive until the next
-     *   update check backfilled it.
+     * @param repoMetadata The repository-index-backed extension this APK was downloaded
+     *   for, when known. The APK loader only knows manifest-derived fields, so repoUrl
+     *   (install provenance, #1019), apkUrl, and iconUrl are merged from this object —
+     *   without it, a fallback-created DB row would have null sourceRepoUrl and the
+     *   cross-repo replacement guard would be inactive until the next update check.
      */
     suspend fun install(
         apkFile: File,
         trustedHash: String? = null,
-        repoUrl: String? = null,
+        repoMetadata: Extension? = null,
     ): Result<Extension> =
         withContext(Dispatchers.IO) {
             var tempFile: File? = null
@@ -265,9 +266,12 @@ class ExtensionInstaller(
                 extension.signatureHash?.let { loader.trustExtension(it) }
 
                 _installationState.value = InstallationState.Installing
+                // Merge repo-index metadata the APK loader can't know about.
                 val finalExtension = extension.copy(
                     apkPath = destFile.absolutePath,
-                    repoUrl = extension.repoUrl ?: repoUrl,
+                    repoUrl = extension.repoUrl ?: repoMetadata?.repoUrl,
+                    apkUrl = extension.apkUrl ?: repoMetadata?.apkUrl,
+                    iconUrl = extension.iconUrl ?: repoMetadata?.iconUrl,
                 )
                 // Pass the fully-loaded extension so the install succeeds even when the
                 // database has no row yet (e.g. repo was just added and the available-list

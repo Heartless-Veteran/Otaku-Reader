@@ -127,7 +127,12 @@ interface ExtensionDao {
     @Query("DELETE FROM extensions")
     suspend fun clearAll()
 
-    @Query("DELETE FROM extensions WHERE status = 'AVAILABLE'")
+    /**
+     * Clears cached non-installed rows before a refresh. ERROR rows (failed installs)
+     * are included: they represent nothing installed on disk, and clearing them lets
+     * the fresh AVAILABLE row make the extension reinstallable again.
+     */
+    @Query("DELETE FROM extensions WHERE status IN ('AVAILABLE', 'ERROR')")
     suspend fun deleteAllAvailable()
 
     /**

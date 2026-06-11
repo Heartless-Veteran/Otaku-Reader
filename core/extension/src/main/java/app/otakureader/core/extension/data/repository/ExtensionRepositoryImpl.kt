@@ -243,8 +243,15 @@ class ExtensionRepositoryImpl(
             
             val remoteExtensions = remoteResult.getOrThrow()
             val installed = localDataSource.getInstalledExtensions().first()
-            val installedPkgNames = installed.map { it.pkgName }.toSet()
-            
+            // ERROR rows are failed installs, not installed extensions — they must NOT be
+            // filtered out here, or the extension would vanish from the Available tab and
+            // become un-reinstallable. The refresh below replaces them with a fresh
+            // AVAILABLE row.
+            val installedPkgNames = installed
+                .filter { it.status != InstallStatus.ERROR.name }
+                .map { it.pkgName }
+                .toSet()
+
             // Filter out already installed extensions, mark as AVAILABLE
             val availableExtensions = remoteExtensions
                 .filter { it.pkgName !in installedPkgNames }
