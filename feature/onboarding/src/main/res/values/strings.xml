@@ -8,6 +8,7 @@
     <string name="onboarding_title_extensions">Install Extensions</string>
     <string name="onboarding_title_notifications">Notifications</string>
     <string name="onboarding_title_battery">Background Updates</string>
+    <string name="onboarding_title_appearance">Make It Yours</string>
 
     <!-- Page descriptions -->
     <string name="onboarding_desc_welcome">Your personal manga library. Track your reading, discover new series, and enjoy your favorite manga offline.</string>
@@ -17,6 +18,17 @@
     <string name="onboarding_desc_extensions">Otaku Reader uses extensions to access manga sources. Install your first extension to get started!</string>
     <string name="onboarding_desc_notifications">Get notified when new chapters of your favorite manga become available.</string>
     <string name="onboarding_desc_battery">Disable battery optimization so Otaku Reader can fetch updates reliably in the background.</string>
+    <string name="onboarding_desc_appearance">Pick a theme — it applies instantly. You can change this anytime in Settings.</string>
+
+    <!-- Appearance page theme options -->
+    <string name="onboarding_theme_system">System default</string>
+    <string name="onboarding_theme_light">Light</string>
+    <string name="onboarding_theme_dark">Dark</string>
+
+    <!-- Extensions page quick-start hints -->
+    <string name="onboarding_hint_browse">Tap Browse to search 500+ community sources</string>
+    <string name="onboarding_hint_library">Favorite a manga to add it to your Library</string>
+    <string name="onboarding_hint_trackers">Link MAL, AniList &amp; more in Settings → Tracking</string>
 
     <!-- Buttons -->
     <string name="onboarding_btn_next">Next</string>

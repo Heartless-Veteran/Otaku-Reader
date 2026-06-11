@@ -112,6 +112,10 @@ interface MangaDao {
         status: Int?,
     )
 
+    /** Update only the user cover override, leaving other user-info overrides intact. */
+    @Query("UPDATE manga SET userThumbnailUrl = :thumbnailUrl WHERE id = :id")
+    suspend fun updateUserThumbnail(id: Long, thumbnailUrl: String?)
+
     @Query("SELECT * FROM manga WHERE favorite = 1 AND userCompleted = 1 ORDER BY title ASC")
     fun getCompletedManga(): Flow<List<MangaEntity>>
 

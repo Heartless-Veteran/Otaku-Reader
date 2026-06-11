@@ -2,6 +2,8 @@
 package app.otakureader.feature.details
 
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -217,6 +219,15 @@ fun DetailsScreen(
                         Icon(Icons.Default.QueryStats, contentDescription = stringResource(R.string.details_tracking))
                     }
                     var overflowExpanded by remember { mutableStateOf(false) }
+                    // System image picker for custom cover art. The picked content:// URI is
+                    // passed to the ViewModel, which copies the image into app storage.
+                    val coverPickerLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent(),
+                    ) { uri ->
+                        if (uri != null) {
+                            viewModel.onEvent(DetailsContract.Event.SetCustomCover(uri.toString()))
+                        }
+                    }
                     IconButton(onClick = { overflowExpanded = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More options")
                     }
@@ -306,6 +317,22 @@ fun DetailsScreen(
                                 overflowExpanded = false
                             }
                         )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.details_set_custom_cover)) },
+                            onClick = {
+                                coverPickerLauncher.launch("image/*")
+                                overflowExpanded = false
+                            }
+                        )
+                        if (state.manga?.hasCustomCover == true) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.details_remove_custom_cover)) },
+                                onClick = {
+                                    viewModel.onEvent(DetailsContract.Event.RemoveCustomCover)
+                                    overflowExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
             )

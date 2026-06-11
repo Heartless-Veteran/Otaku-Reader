@@ -58,6 +58,9 @@ data class Manga(
 
     /** True when the user has manually overridden at least one metadata field (#998). */
     val isUserEdited: Boolean = false,
+
+    /** True when [thumbnailUrl] is a user-chosen custom cover rather than the source cover. */
+    val hasCustomCover: Boolean = false,
 )
 
 @Serializable
