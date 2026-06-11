@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -160,10 +161,12 @@ class LibraryMaintenanceViewModel @Inject constructor(
             }
     }
 
+    // Locale.US keeps the decimal separator deterministic — the default-locale overload
+    // produces "47,2 MB" on e.g. Turkish devices and trips lint's DefaultLocale check.
     private fun Long.formatBytes(): String = when {
         this < 1_024L -> "$this B"
-        this < 1_048_576L -> "%.1f KB".format(this / 1_024.0)
-        this < 1_073_741_824L -> "%.1f MB".format(this / 1_048_576.0)
-        else -> "%.2f GB".format(this / 1_073_741_824.0)
+        this < 1_048_576L -> String.format(Locale.US, "%.1f KB", this / 1_024.0)
+        this < 1_073_741_824L -> String.format(Locale.US, "%.1f MB", this / 1_048_576.0)
+        else -> String.format(Locale.US, "%.2f GB", this / 1_073_741_824.0)
     }
 }

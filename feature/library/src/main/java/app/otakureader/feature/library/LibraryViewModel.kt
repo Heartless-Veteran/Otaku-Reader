@@ -667,6 +667,10 @@ class LibraryViewModel @Inject constructor(
                     downloadRepository.enqueueChapter(
                         mangaId = mangaId,
                         chapterId = chapter.id,
+                        // Must match the sourceId-based directory key used everywhere else;
+                        // omitting it stored files under a malformed path that
+                        // isChapterDownloaded()/deleteChapterDownload() could never find.
+                        sourceName = manga.sourceId.toString(),
                         mangaTitle = manga.title,
                         chapterTitle = chapter.name
                     )
