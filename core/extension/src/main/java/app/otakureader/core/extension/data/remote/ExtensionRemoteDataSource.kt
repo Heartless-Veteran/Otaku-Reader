@@ -57,7 +57,15 @@ data class ExtensionDto(
     val sources: List<ExtensionSourceDto>,
 
     @SerialName("apk_url")
-    val apkUrl: String,
+    val apkUrl: String? = null,
+
+    /**
+     * Some repos serve standard-format index.json but use the minified field name `apk`
+     * (a bare filename) instead of `apk_url`. Accept both; [toDomain] resolves whichever
+     * is present against the repo base URL.
+     */
+    @SerialName("apk")
+    val apk: String? = null,
 
     @SerialName("icon_url")
     val iconUrl: String? = null,
@@ -208,11 +216,41 @@ class ExtensionRemoteDataSourceImpl(
                 if (repositories.isEmpty()) return@withContext Result.success(emptyList())
 
                 val extensions = mutableListOf<Extension>()
+                val failures = mutableListOf<Pair<String, Exception>>()
+                var successCount = 0
 
+                // Isolate failures per repository: one unreachable or malformed repo must
+                // not wipe out the extension list from every other configured repo.
                 repositories.forEach { rawUrl ->
                     val baseUrl = normalizeRepoUrl(rawUrl)
-                    val repoExtensions = fetchFromRepository(baseUrl)
-                    extensions.addAll(repoExtensions.map { it.copy(repoUrl = baseUrl) })
+                    try {
+                        val repoExtensions = fetchFromRepository(baseUrl)
+                        extensions.addAll(repoExtensions.map { it.copy(repoUrl = baseUrl) })
+                        successCount++
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        android.util.Log.w(
+                            "ExtensionRemoteDS",
+                            "Failed to fetch extensions from $baseUrl: ${e.message}"
+                        )
+                        failures.add(baseUrl to e)
+                    }
+                }
+
+                // Only report failure when every repository failed — a repo that responds
+                // with a legitimately empty list still counts as a success, and partial
+                // results are far more useful to the user than an empty error state.
+                if (successCount == 0 && failures.isNotEmpty()) {
+                    val (firstUrl, firstError) = failures.first()
+                    val exception = ExtensionFetchException(
+                        "All ${failures.size} extension repositories failed " +
+                            "(first: $firstUrl — ${firstError.message})",
+                        firstError
+                    )
+                    // Preserve the other repos' errors for debugging.
+                    failures.drop(1).forEach { (_, error) -> exception.addSuppressed(error) }
+                    return@withContext Result.failure(exception)
                 }
 
                 // Deduplicate by package name preferring highest versionCode
@@ -305,7 +343,7 @@ class ExtensionRemoteDataSourceImpl(
             }
 
             val repoResponse = json.decodeFromString(ExtensionRepoResponse.serializer(), responseBody)
-            repoResponse.extensions.map { it.toDomain() }
+            repoResponse.extensions.map { it.toDomain(baseUrl) }
         }
     }
 
@@ -371,7 +409,13 @@ class ExtensionFetchException(message: String, cause: Throwable? = null) :
     RuntimeException(message, cause)
 
 /** Convert [ExtensionDto] to the [Extension] domain model. */
-private fun ExtensionDto.toDomain(): Extension {
+private fun ExtensionDto.toDomain(baseUrl: String): Extension {
+    // Prefer a non-blank apk_url, fall back to the minified-style apk filename. Either may
+    // be relative, so both go through resolveApkUrl which prepends the repo base + /apk/
+    // as needed. Blank strings are treated as absent so an empty apk_url can't shadow a
+    // valid apk filename.
+    val resolvedApkUrl = (apkUrl?.takeIf { it.isNotBlank() } ?: apk?.takeIf { it.isNotBlank() })
+        ?.let { resolveApkUrl(baseUrl, it) }
     return Extension(
         id = id,
         pkgName = pkgName,
@@ -381,7 +425,7 @@ private fun ExtensionDto.toDomain(): Extension {
         sources = sources.map { it.toDomain() },
         status = InstallStatus.AVAILABLE,
         apkPath = null,
-        apkUrl = apkUrl,
+        apkUrl = resolvedApkUrl,
         iconUrl = iconUrl,
         lang = lang,
         isNsfw = isNsfw,

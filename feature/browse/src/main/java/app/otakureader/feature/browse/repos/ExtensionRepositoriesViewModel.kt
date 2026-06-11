@@ -100,12 +100,9 @@ class ExtensionRepositoriesViewModel @Inject constructor(
         if (parsed.scheme != "https" && parsed.scheme != "http") {
             return "URL must start with http:// or https://"
         }
-        // Repos point at a directory; the loader appends index.min.json/index.json itself.
-        // We just check the URL doesn't itself end with one of those filenames.
-        val path = parsed.encodedPath
-        if (path.endsWith("/index.json") || path.endsWith("/index.min.json")) {
-            return "Drop the trailing /index.json — point to the directory"
-        }
+        // Full index URLs (…/index.min.json) are accepted — that's the form repo links are
+        // shared in across the Tachiyomi/Komikku ecosystem. The repository layer strips the
+        // filename via normalizeRepoUrl() before storage, so no error is needed here.
         return null
     }
 }

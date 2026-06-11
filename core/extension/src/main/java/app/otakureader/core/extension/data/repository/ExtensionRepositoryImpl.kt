@@ -65,7 +65,24 @@ class ExtensionRepositoryImpl(
         }
     }
     
-    override suspend fun installExtension(pkgName: String, apkPath: String): Result<Extension> {
+    override suspend fun installExtension(pkgName: String, apkPath: String): Result<Extension> =
+        installExtensionInternal(pkgName, apkPath, fallback = null)
+
+    override suspend fun installExtension(extension: Extension, apkPath: String): Result<Extension> =
+        installExtensionInternal(extension.pkgName, apkPath, fallback = extension)
+
+    /**
+     * Shared install logic. Prefers the existing database row (it carries repo-sourced
+     * metadata like apkUrl, iconUrl, and first-seen repo provenance); when no row exists
+     * and [fallback] is provided, a new row is created from the loaded extension instead
+     * of failing — this covers installs from a just-added repository whose refresh hasn't
+     * synced to the database yet.
+     */
+    private suspend fun installExtensionInternal(
+        pkgName: String,
+        apkPath: String,
+        fallback: Extension?,
+    ): Result<Extension> {
         return try {
             // Blocklist enforcement (#1018): refuse install even if the caller bypassed
             // the filtered available list (e.g. a stale UI snapshot).
@@ -78,15 +95,27 @@ class ExtensionRepositoryImpl(
             }
             // Update status to installing
             localDataSource.updateStatus(pkgName, InstallStatus.INSTALLING.name)
-            
-            // Get existing or create new extension record
+
             val existing = localDataSource.getExtensionByPkgName(pkgName)
-            val extension = existing?.copy(
-                status = InstallStatus.INSTALLED.name,
-                apkPath = apkPath,
-                installDate = System.currentTimeMillis()
-            ) ?: return Result.failure(Exception("Extension not found: $pkgName"))
-            
+            val extension = when {
+                existing != null -> existing.copy(
+                    status = InstallStatus.INSTALLED.name,
+                    apkPath = apkPath,
+                    installDate = System.currentTimeMillis(),
+                    // Backfill provenance for rows created before the column existed (#1019)
+                    // so the cross-repo replacement guard is active immediately.
+                    sourceRepoUrl = existing.sourceRepoUrl ?: fallback?.repoUrl
+                )
+                fallback != null -> mapper.toEntity(
+                    fallback.copy(
+                        status = InstallStatus.INSTALLED,
+                        apkPath = apkPath,
+                        installDate = System.currentTimeMillis()
+                    )
+                )
+                else -> return Result.failure(Exception("Extension not found: $pkgName"))
+            }
+
             localDataSource.insertExtension(extension)
             Result.success(mapper.toDomain(extension))
         } catch (e: CancellationException) {
@@ -214,17 +243,26 @@ class ExtensionRepositoryImpl(
             
             val remoteExtensions = remoteResult.getOrThrow()
             val installed = localDataSource.getInstalledExtensions().first()
-            val installedPkgNames = installed.map { it.pkgName }.toSet()
-            
+            // ERROR rows are failed installs, not installed extensions — they must NOT be
+            // filtered out here, or the extension would vanish from the Available tab and
+            // become un-reinstallable. The refresh below replaces them with a fresh
+            // AVAILABLE row.
+            val installedPkgNames = installed
+                .filter { it.status != InstallStatus.ERROR.name }
+                .map { it.pkgName }
+                .toSet()
+
             // Filter out already installed extensions, mark as AVAILABLE
             val availableExtensions = remoteExtensions
                 .filter { it.pkgName !in installedPkgNames }
-                .map { 
+                .map {
                     mapper.toEntity(it.copy(status = InstallStatus.AVAILABLE))
                 }
-            
-            // Clear old available extensions and insert new ones
-            localDataSource.insertExtensions(availableExtensions)
+
+            // Atomically clear old available extensions and insert the fresh list.
+            // A plain upsert would leave stale entries behind forever when a repository
+            // is removed or stops offering an extension.
+            localDataSource.replaceAllAvailable(availableExtensions)
             
             Result.success(Unit)
         } catch (e: CancellationException) {
