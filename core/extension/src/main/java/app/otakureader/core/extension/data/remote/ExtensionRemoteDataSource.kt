@@ -217,6 +217,7 @@ class ExtensionRemoteDataSourceImpl(
 
                 val extensions = mutableListOf<Extension>()
                 val failures = mutableListOf<Pair<String, Exception>>()
+                var successCount = 0
 
                 // Isolate failures per repository: one unreachable or malformed repo must
                 // not wipe out the extension list from every other configured repo.
@@ -225,6 +226,7 @@ class ExtensionRemoteDataSourceImpl(
                     try {
                         val repoExtensions = fetchFromRepository(baseUrl)
                         extensions.addAll(repoExtensions.map { it.copy(repoUrl = baseUrl) })
+                        successCount++
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -236,17 +238,19 @@ class ExtensionRemoteDataSourceImpl(
                     }
                 }
 
-                // Only report failure when every repository failed — partial results are
-                // far more useful to the user than an empty error state.
-                if (extensions.isEmpty() && failures.isNotEmpty()) {
+                // Only report failure when every repository failed — a repo that responds
+                // with a legitimately empty list still counts as a success, and partial
+                // results are far more useful to the user than an empty error state.
+                if (successCount == 0 && failures.isNotEmpty()) {
                     val (firstUrl, firstError) = failures.first()
-                    return@withContext Result.failure(
-                        ExtensionFetchException(
-                            "All ${failures.size} extension repositories failed " +
-                                "(first: $firstUrl — ${firstError.message})",
-                            firstError
-                        )
+                    val exception = ExtensionFetchException(
+                        "All ${failures.size} extension repositories failed " +
+                            "(first: $firstUrl — ${firstError.message})",
+                        firstError
                     )
+                    // Preserve the other repos' errors for debugging.
+                    failures.drop(1).forEach { (_, error) -> exception.addSuppressed(error) }
+                    return@withContext Result.failure(exception)
                 }
 
                 // Deduplicate by package name preferring highest versionCode
@@ -406,9 +410,12 @@ class ExtensionFetchException(message: String, cause: Throwable? = null) :
 
 /** Convert [ExtensionDto] to the [Extension] domain model. */
 private fun ExtensionDto.toDomain(baseUrl: String): Extension {
-    // Prefer apk_url, fall back to the minified-style apk filename. Either may be relative,
-    // so both go through resolveApkUrl which prepends the repo base + /apk/ as needed.
-    val resolvedApkUrl = (apkUrl ?: apk)?.let { resolveApkUrl(baseUrl, it) }
+    // Prefer a non-blank apk_url, fall back to the minified-style apk filename. Either may
+    // be relative, so both go through resolveApkUrl which prepends the repo base + /apk/
+    // as needed. Blank strings are treated as absent so an empty apk_url can't shadow a
+    // valid apk filename.
+    val resolvedApkUrl = (apkUrl?.takeIf { it.isNotBlank() } ?: apk?.takeIf { it.isNotBlank() })
+        ?.let { resolveApkUrl(baseUrl, it) }
     return Extension(
         id = id,
         pkgName = pkgName,

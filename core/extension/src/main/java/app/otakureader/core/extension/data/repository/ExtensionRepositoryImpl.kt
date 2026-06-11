@@ -101,7 +101,10 @@ class ExtensionRepositoryImpl(
                 existing != null -> existing.copy(
                     status = InstallStatus.INSTALLED.name,
                     apkPath = apkPath,
-                    installDate = System.currentTimeMillis()
+                    installDate = System.currentTimeMillis(),
+                    // Backfill provenance for rows created before the column existed (#1019)
+                    // so the cross-repo replacement guard is active immediately.
+                    sourceRepoUrl = existing.sourceRepoUrl ?: fallback?.repoUrl
                 )
                 fallback != null -> mapper.toEntity(
                     fallback.copy(

@@ -124,8 +124,13 @@ class ExtensionInstaller(
 
             // Register the extension inside the app, passing the repo-verified hash so the
             // universal trust gate inside ExtensionLoader can be satisfied without a separate
-            // user confirmation step.
-            val result = install(downloadFile, trustedHash = extension.signatureHash)
+            // user confirmation step. The repo URL rides along so a fallback-created DB row
+            // still records provenance (#1019).
+            val result = install(
+                downloadFile,
+                trustedHash = extension.signatureHash,
+                repoUrl = extension.repoUrl,
+            )
 
             result.onSuccess { installed ->
                 installed.apkPath?.let { path ->
@@ -219,8 +224,16 @@ class ExtensionInstaller(
      *   a repository-sourced expected hash. The extension's actual loaded hash is compared
      *   against this value; the trust store is only updated **after** the extension has been
      *   successfully loaded and moved to its permanent location.
+     * @param repoUrl The repository this APK was downloaded from, when known. Recorded as
+     *   install provenance (#1019) — without it, a fallback-created DB row would have null
+     *   sourceRepoUrl and the cross-repo replacement guard would be inactive until the next
+     *   update check backfilled it.
      */
-    suspend fun install(apkFile: File, trustedHash: String? = null): Result<Extension> =
+    suspend fun install(
+        apkFile: File,
+        trustedHash: String? = null,
+        repoUrl: String? = null,
+    ): Result<Extension> =
         withContext(Dispatchers.IO) {
             var tempFile: File? = null
             try {
@@ -252,7 +265,10 @@ class ExtensionInstaller(
                 extension.signatureHash?.let { loader.trustExtension(it) }
 
                 _installationState.value = InstallationState.Installing
-                val finalExtension = extension.copy(apkPath = destFile.absolutePath)
+                val finalExtension = extension.copy(
+                    apkPath = destFile.absolutePath,
+                    repoUrl = extension.repoUrl ?: repoUrl,
+                )
                 // Pass the fully-loaded extension so the install succeeds even when the
                 // database has no row yet (e.g. repo was just added and the available-list
                 // refresh hasn't synced).
