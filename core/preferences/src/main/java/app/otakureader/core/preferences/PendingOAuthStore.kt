@@ -2,8 +2,6 @@ package app.otakureader.core.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -31,20 +29,11 @@ class PendingOAuthStore @Inject constructor(
         private const val SESSION_TTL_MS = 10 * 60 * 1000L
     }
 
-    private val masterKey: MasterKey by lazy {
-        MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-    }
 
+    // Created via EncryptedPrefsFactory so Keystore corruption recovers instead of
+    // crash-looping the app (stored secrets are reset; the user re-authenticates).
     private val prefs: SharedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        EncryptedPrefsFactory.create(context, FILE_NAME)
     }
 
     /** Persists an OAuth PKCE session before opening the browser. */

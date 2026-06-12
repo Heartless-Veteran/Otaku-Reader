@@ -2,8 +2,7 @@ package app.otakureader.crash
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import app.otakureader.core.preferences.EncryptedPrefsFactory
 import app.otakureader.core.preferences.CrashReportingStore
 
 /**
@@ -109,16 +108,11 @@ object CrashHandler {
     @Volatile private var cachedPrefs: SharedPreferences? = null
 
     private fun prefs(context: Context): SharedPreferences {
+        // EncryptedPrefsFactory recovers from Keystore corruption — essential here:
+        // a crash handler that itself crashes hides the original crash report.
         return cachedPrefs ?: synchronized(this) {
-            cachedPrefs ?: EncryptedSharedPreferences.create(
-                context.applicationContext,
-                PREFS_NAME,
-                MasterKey.Builder(context.applicationContext)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build(),
-                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            ).also { cachedPrefs = it }
+            cachedPrefs ?: EncryptedPrefsFactory.create(context.applicationContext, PREFS_NAME)
+                .also { cachedPrefs = it }
         }
     }
 }
