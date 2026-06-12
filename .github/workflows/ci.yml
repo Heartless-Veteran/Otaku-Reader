@@ -86,7 +86,7 @@ jobs:
 
       - name: 📤 Upload Test Results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: test-results-${{ github.run_number }}
           path: '**/build/test-results/**/*.xml'
@@ -141,7 +141,7 @@ jobs:
 
       - name: 📤 Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-reports-${{ github.run_number }}
           path: |
@@ -182,7 +182,7 @@ jobs:
           CI: true
 
       - name: 📊 Upload Build Artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: app-debug-${{ github.run_number }}
           path: |
@@ -231,7 +231,7 @@ jobs:
 
       - name: 📤 Upload screenshot diff artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: screenshot-diffs-${{ github.run_number }}
           path: |
@@ -290,7 +290,7 @@ jobs:
           CI: true
 
       - name: 📤 Upload License Report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: dependency-licenses-${{ github.run_number }}
           path: docs/DEPENDENCY_LICENSES.md
