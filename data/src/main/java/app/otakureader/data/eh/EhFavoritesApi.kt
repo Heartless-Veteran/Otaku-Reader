@@ -53,7 +53,11 @@ class EhFavoritesApi(
             .build()
 
         val body = okHttpClient.newCall(request).execute().use { response ->
-            check(response.isSuccessful) { "EH returned HTTP ${response.code}" }
+            // IOException (not check()'s IllegalStateException) so the sync worker's
+            // IOException → Result.retry() path applies to transient EH errors.
+            if (!response.isSuccessful) {
+                throw java.io.IOException("EH returned HTTP ${response.code}")
+            }
             response.body?.string() ?: return emptyList()
         }
 

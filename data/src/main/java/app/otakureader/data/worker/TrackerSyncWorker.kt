@@ -34,6 +34,9 @@ class TrackerSyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
+        // Cap retries: a permanently failing tracker (e.g. revoked token) must not
+        // retry-loop until the next period, draining battery and hammering the API.
+        if (runAttemptCount >= MAX_RETRIES) return Result.failure()
         return try {
             val summary = trackerSyncRepository.syncAllPending()
             // Retry if any hard failures occurred; conflicts are handled by the user
@@ -47,6 +50,7 @@ class TrackerSyncWorker @AssistedInject constructor(
 
     companion object {
         const val WORK_NAME = "tracker_2way_sync"
+        private const val MAX_RETRIES = 3
 
         /**
          * Schedules (or reschedules) the periodic tracker sync job.
