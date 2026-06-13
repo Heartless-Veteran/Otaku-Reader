@@ -324,7 +324,13 @@ class ExtensionInstaller(
                 _installationState.value = InstallationState.Error("Extension trust hash mismatch", null)
                 Result.failure(SecurityException("Trust hash mismatch for ${ext.pkgName}"))
             } else {
-                Result.success(ext)
+                // The extension is NOT trusted yet. Persist it with a null signatureHash so
+                // Extension.isTrusted (== signatureHash != null) stays false and the UI shows
+                // "Unverified" + Trust button. trustExtension() recomputes the hash from the
+                // installed APK when the user taps Trust. Without this, the APK-derived hash
+                // would be stored and the UI would falsely show "Verified" while the loader
+                // still rejects the source as untrusted (state mismatch → "No sources").
+                Result.success(ext.copy(signatureHash = null))
             }
         }
         is ExtensionLoadResult.Error -> {

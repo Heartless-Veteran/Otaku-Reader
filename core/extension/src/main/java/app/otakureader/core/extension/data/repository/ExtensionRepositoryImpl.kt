@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Implementation of ExtensionRepository.
@@ -218,27 +220,38 @@ class ExtensionRepositoryImpl(
         localDataSource.updateEnabled(pkgName, enabled)
     }
 
-    override suspend fun trustExtension(pkgName: String): Result<Unit> = runCatching {
-        val ext = localDataSource.getExtensionByPkgName(pkgName)
-            ?: error("Extension $pkgName not found")
-        val hash = ext.signatureHash ?: run {
-            // Hash not yet in DB (e.g. installed from a minified-index repo that doesn't
-            // include the signing-cert hash). Load the installed APK to compute it.
-            val apkPath = ext.apkPath
-                ?: error("Extension $pkgName has no installed APK — install it before trusting")
-            val loadResult = extensionLoader.loadExtension(apkPath)
-            when (loadResult) {
-                is ExtensionLoadResult.Untrusted -> loadResult.extension.signatureHash
-                is ExtensionLoadResult.Success -> loadResult.extension.signatureHash
-                is ExtensionLoadResult.Error ->
-                    error("Cannot read extension to determine its signature: ${loadResult.message}")
-            } ?: error("Extension $pkgName has no signature hash — cannot trust")
-        }
-        extensionLoader.trustExtension(hash)
-        // Persist the hash so isTrusted reflects the new state immediately and future
-        // trust/revoke calls don't need to re-parse the APK.
-        if (ext.signatureHash == null) {
-            localDataSource.updateSignatureHash(pkgName, hash)
+    // Dispatched to IO: loadExtension() parses an APK from disk (blocking file I/O), so this
+    // must not run on the caller's (likely Main) thread. A plain try/catch rethrows
+    // CancellationException to keep structured-concurrency cancellation working (runCatching
+    // would swallow it).
+    override suspend fun trustExtension(pkgName: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val ext = localDataSource.getExtensionByPkgName(pkgName)
+                ?: error("Extension $pkgName not found")
+            val hash = ext.signatureHash ?: run {
+                // Hash not yet in DB (e.g. installed from a minified-index repo that doesn't
+                // include the signing-cert hash). Load the installed APK to compute it.
+                val apkPath = ext.apkPath
+                    ?: error("Extension $pkgName has no installed APK — install it before trusting")
+                val loadResult = extensionLoader.loadExtension(apkPath)
+                when (loadResult) {
+                    is ExtensionLoadResult.Untrusted -> loadResult.extension.signatureHash
+                    is ExtensionLoadResult.Success -> loadResult.extension.signatureHash
+                    is ExtensionLoadResult.Error ->
+                        error("Cannot read extension to determine its signature: ${loadResult.message}")
+                } ?: error("Extension $pkgName has no signature hash — cannot trust")
+            }
+            extensionLoader.trustExtension(hash)
+            // Persist the hash so isTrusted reflects the new state immediately and future
+            // trust/revoke calls don't need to re-parse the APK.
+            if (ext.signatureHash == null) {
+                localDataSource.updateSignatureHash(pkgName, hash)
+            }
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 
