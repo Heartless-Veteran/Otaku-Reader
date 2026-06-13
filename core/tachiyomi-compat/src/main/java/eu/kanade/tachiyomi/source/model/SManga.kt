@@ -107,6 +107,7 @@ fun SManga.copy(
     genre: String? = this.originalGenre,
     status: Int = this.status,
     thumbnail_url: String? = this.originalThumbnailUrl,
+    update_strategy: UpdateStrategy = this.update_strategy,
     initialized: Boolean = this.initialized,
 ) = SManga.create().also {
     it.url = url
@@ -117,6 +118,7 @@ fun SManga.copy(
     it.genre = genre
     it.status = status
     it.thumbnail_url = thumbnail_url
+    it.update_strategy = update_strategy
     it.initialized = initialized
 }
 // SY <--

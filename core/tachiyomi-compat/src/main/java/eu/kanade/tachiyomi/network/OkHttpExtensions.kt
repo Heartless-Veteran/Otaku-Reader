@@ -77,7 +77,7 @@ private suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
             object : Callback {
                 override fun onResponse(call: Call, response: Response) {
                     continuation.resume(response) {
-                        response.body.close()
+                        response.body?.close()
                     }
                 }
 
@@ -124,9 +124,14 @@ fun OkHttpClient.newCachelessCallWithProgress(request: Request, listener: Progre
         .cache(null)
         .addNetworkInterceptor { chain ->
             val originalResponse = chain.proceed(chain.request())
-            originalResponse.newBuilder()
-                .body(ProgressResponseBody(originalResponse.body, listener))
-                .build()
+            val body = originalResponse.body
+            if (body == null) {
+                originalResponse
+            } else {
+                originalResponse.newBuilder()
+                    .body(ProgressResponseBody(body, listener))
+                    .build()
+            }
         }
         .build()
 
@@ -140,7 +145,8 @@ inline fun <reified T> Response.parseAs(): T {
 @PublishedApi
 internal fun <T> Response.internalParseAs(deserializer: DeserializationStrategy<T>): T {
     val json = Injekt.get<Json>()
-    return body.string().let { json.decodeFromString(deserializer, it) }
+    val bodyString = body?.string() ?: throw IllegalStateException("Response body is null")
+    return json.decodeFromString(deserializer, bodyString)
 }
 
 /**

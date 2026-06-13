@@ -23,7 +23,6 @@ import app.otakureader.data.backup.mapper.toOpdsServerEntity
 import app.otakureader.data.backup.mapper.toSyncConfigurationEntity
 import app.otakureader.data.backup.mapper.toTrackerSyncStateEntity
 import app.otakureader.data.backup.model.BackupData
-import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
