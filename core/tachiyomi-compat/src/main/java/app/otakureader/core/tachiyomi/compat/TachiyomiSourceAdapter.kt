@@ -9,13 +9,9 @@ import app.otakureader.sourceapi.Page
 import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.sourceapi.SourceManga
 import eu.kanade.tachiyomi.source.CatalogueSource
-import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import rx.Observable
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
  * Adapter that wraps a Tachiyomi CatalogueSource and exposes it as an Otaku Reader MangaSource.
@@ -37,8 +33,9 @@ class TachiyomiSourceAdapter(
     override val lang: String
         get() = tachiyomiSource.lang
 
+    // baseUrl / headers only exist on HttpSource; non-HTTP sources expose neutral defaults.
     override val baseUrl: String
-        get() = tachiyomiSource.baseUrl
+        get() = (tachiyomiSource as? HttpSource)?.baseUrl ?: ""
 
     override val supportsLatest: Boolean
         get() = tachiyomiSource.supportsLatest
@@ -46,14 +43,14 @@ class TachiyomiSourceAdapter(
     val supportsSearch: Boolean = true
 
     val headers: Map<String, String>
-        get() = tachiyomiSource.headers.toMap()
+        get() = (tachiyomiSource as? HttpSource)?.headers?.toMap() ?: emptyMap()
 
     /**
      * Get popular manga from the source
      */
     override suspend fun fetchPopularManga(page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
-            val mangasPage = tachiyomiSource.fetchPopularManga(page).awaitFirst()
+            val mangasPage = tachiyomiSource.getPopularManga(page)
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -63,7 +60,7 @@ class TachiyomiSourceAdapter(
      */
     override suspend fun fetchLatestUpdates(page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
-            val mangasPage = tachiyomiSource.fetchLatestUpdates(page).awaitFirst()
+            val mangasPage = tachiyomiSource.getLatestUpdates(page)
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -74,7 +71,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchSearchManga(page: Int, query: String, filters: FilterList): MangaPage {
         return withContext(Dispatchers.IO) {
             val tachiyomiFilters = convertFilters(filters)
-            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, tachiyomiFilters).awaitFirst()
+            val mangasPage = tachiyomiSource.getSearchManga(page, query, tachiyomiFilters)
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -85,7 +82,7 @@ class TachiyomiSourceAdapter(
     suspend fun searchManga(query: String, page: Int): MangaPage {
         return withContext(Dispatchers.IO) {
             val filterList = eu.kanade.tachiyomi.source.model.FilterList()
-            val mangasPage = tachiyomiSource.fetchSearchManga(page, query, filterList).awaitFirst()
+            val mangasPage = tachiyomiSource.getSearchManga(page, query, filterList)
             TachiyomiModelsAdapter.toMangaPage(mangasPage)
         }
     }
@@ -96,7 +93,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchChapterList(manga: SourceManga): List<SourceChapter> {
         return withContext(Dispatchers.IO) {
             val sManga = TachiyomiModelsAdapter.toTachiyomiSManga(manga)
-            val sChapters = tachiyomiSource.fetchChapterList(sManga).awaitFirst()
+            val sChapters = tachiyomiSource.getChapterList(sManga)
             TachiyomiModelsAdapter.toSourceChapterList(sChapters)
         }
     }
@@ -107,7 +104,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchPageList(chapter: SourceChapter): List<Page> {
         return withContext(Dispatchers.IO) {
             val sChapter = TachiyomiModelsAdapter.toTachiyomiSChapter(chapter)
-            val sPages = tachiyomiSource.fetchPageList(sChapter).awaitFirst()
+            val sPages = tachiyomiSource.getPageList(sChapter)
             TachiyomiModelsAdapter.toPageList(sPages, chapter.hashCode().toLong())
         }
     }
@@ -118,7 +115,7 @@ class TachiyomiSourceAdapter(
     override suspend fun fetchMangaDetails(manga: SourceManga): SourceManga {
         return withContext(Dispatchers.IO) {
             val sManga = TachiyomiModelsAdapter.toTachiyomiSManga(manga)
-            val detailedManga = tachiyomiSource.fetchMangaDetails(sManga).awaitFirst()
+            val detailedManga = tachiyomiSource.getMangaDetails(sManga)
             TachiyomiModelsAdapter.toSourceManga(
                 TachiyomiModelsAdapter.fromTachiyomiSManga(detailedManga),
             ).copy(url = manga.url)
@@ -242,6 +239,9 @@ class TachiyomiSourceAdapter(
                     .map { convertTachiyomiFilter(it) }
                 Filters.GroupFilter(filter.name, childFilters)
             }
+            // SY-only AutoComplete filter — not represented in source-api; render as a header.
+            is eu.kanade.tachiyomi.source.model.Filter.AutoComplete ->
+                Filter.Header(filter.name)
         }
     }
 
@@ -255,18 +255,4 @@ class TachiyomiSourceAdapter(
         }
         return map
     }
-
-    /**
-     * Suspends until this Observable emits its first item, propagating cancellation.
-     * Replaces toBlocking().first() to avoid blocking the IO thread pool under
-     * concurrent source requests (global search, background library updates).
-     */
-    private suspend fun <T> Observable<T>.awaitFirst(): T =
-        suspendCancellableCoroutine { cont ->
-            val subscription = first().subscribe(
-                { value -> if (cont.isActive) cont.resume(value) },
-                { error -> if (cont.isActive) cont.resumeWithException(error) }
-            )
-            cont.invokeOnCancellation { subscription.unsubscribe() }
-        }
 }

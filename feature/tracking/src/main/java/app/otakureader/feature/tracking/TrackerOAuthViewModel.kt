@@ -65,11 +65,15 @@ class TrackerOAuthViewModel @Inject constructor(
 
             try {
                 val result = trackManager.login(tracker, code, session.codeVerifier)
-                // Always clear the one-time session regardless of outcome.
-                pendingOAuthStore.clear()
                 if (result) {
+                    // Done with the one-time session.
+                    pendingOAuthStore.clear()
                     _state.update { it.copy(isLoading = false, success = true) }
                 } else {
+                    // The provider rejected the code. OAuth authorization codes are single-use,
+                    // so re-exchanging the same code can never succeed — clear the session and
+                    // require a fresh login (the Retry button would otherwise loop on a dead code).
+                    pendingOAuthStore.clear()
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -80,7 +84,9 @@ class TrackerOAuthViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                pendingOAuthStore.clear()
+                // Transient failure (e.g. network). Keep the PKCE session so Retry can re-attempt
+                // the exchange — previously this cleared the session, so every retry failed with
+                // "session expired" even when the code was still valid.
                 _state.update {
                     it.copy(
                         isLoading = false,

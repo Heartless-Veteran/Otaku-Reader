@@ -1,4 +1,35 @@
-// Stub matching tachiyomiorg/extensions-lib — used at compile time only.
 package eu.kanade.tachiyomi.source.model
 
-data class MangasPage(val mangas: List<SManga>, val hasNextPage: Boolean)
+/* SY --> */ open /* SY <-- */ class MangasPage(open val mangas: List<SManga>, open val hasNextPage: Boolean) {
+    // SY -->
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MangasPage) return false
+
+        if (mangas != other.mangas) return false
+        if (hasNextPage != other.hasNextPage) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = mangas.hashCode()
+        result = 31 * result + hasNextPage.hashCode()
+        return result
+    }
+    // SY <--
+
+    fun copy(mangas: List<SManga> = this.mangas, hasNextPage: Boolean = this.hasNextPage): MangasPage {
+        return MangasPage(mangas, hasNextPage)
+    }
+
+    override fun toString(): String {
+        return "MangasPage(mangas=$mangas, hasNextPage=$hasNextPage)"
+    }
+
+    // KMK -->
+    // Additional methods to mimic data class behavior
+    operator fun component1() = mangas
+    operator fun component2() = hasNextPage
+    // KMK <--
+}

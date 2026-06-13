@@ -67,12 +67,19 @@ class DetailsViewModel @Inject constructor(
     val effect: Flow<DetailsContract.Effect> = _effect.receiveAsFlow()
 
     // Thumbnail cache: chapterId -> Pair(thumbnailUrl, totalPages)
-    // LRU bounded to 50 entries to prevent unbounded memory growth
-    private val thumbnailCache = object : LinkedHashMap<Long, Pair<String?, Int>>(50, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<Long, Pair<String?, Int>>): Boolean {
-            return size > 50
-        }
-    }
+    // LRU bounded to 50 entries to prevent unbounded memory growth.
+    // Wrapped in a synchronized map: this is an access-order LinkedHashMap (accessOrder=true), so
+    // even get() structurally mutates it. It's read from the loadChapters collector and written
+    // from parallel async blocks in fetchThumbnailsForDownloadedChapters, so unsynchronized access
+    // risked ConcurrentModificationException / corrupted links. All call sites are single ops.
+    private val thumbnailCache: MutableMap<Long, Pair<String?, Int>> =
+        java.util.Collections.synchronizedMap(
+            object : LinkedHashMap<Long, Pair<String?, Int>>(50, 0.75f, true) {
+                override fun removeEldestEntry(eldest: Map.Entry<Long, Pair<String?, Int>>): Boolean {
+                    return size > 50
+                }
+            }
+        )
 
     init {
         loadMangaDetails()

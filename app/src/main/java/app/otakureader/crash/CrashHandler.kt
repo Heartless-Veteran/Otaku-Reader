@@ -1,9 +1,14 @@
 package app.otakureader.crash
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import app.otakureader.core.preferences.EncryptedPrefsFactory
 import app.otakureader.core.preferences.CrashReportingStore
+import java.io.File
 
 /**
  * Custom [Thread.UncaughtExceptionHandler] that captures fatal crashes, writes the
@@ -21,15 +26,25 @@ object CrashHandler {
     private const val MAX_STACK_TRACE_LENGTH = 65_536
     private const val MAX_TRACE_DEPTH = 30
 
+    @Volatile private var installed = false
+    @Volatile private var reportingStore: CrashReportingStore? = null
+
     /**
-     * Replace the default [Thread.UncaughtExceptionHandler] with one that persists
-     * the crash report before handing control back to the original handler.
+     * Replace the default [Thread.UncaughtExceptionHandler] with one that persists the crash
+     * report before handing control back to the original handler.
      *
-     * Must be called early in [app.otakureader.OtakuReaderApplication.onCreate] so
-     * crashes during Hilt graph construction or any other startup code are captured.
+     * Idempotent: the first call (ideally from [Application.attachBaseContext], which runs
+     * BEFORE all ContentProviders such as Sentry/FileProvider/androidx.startup) installs the
+     * handler so even a ContentProvider crash is captured. A later call from onCreate simply
+     * attaches the [crashReportingStore] for Sentry forwarding without re-wrapping.
      */
     fun install(context: Context, crashReportingStore: CrashReportingStore? = null) {
-        val appContext = context.applicationContext
+        // getApplicationContext() can be null during attachBaseContext — fall back to the
+        // passed context, which is valid for prefs/file/MediaStore operations.
+        val appContext = context.applicationContext ?: context
+        if (crashReportingStore != null) reportingStore = crashReportingStore
+        if (installed) return
+        installed = true
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
 
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -37,13 +52,49 @@ object CrashHandler {
                 // Forward to Sentry first (synchronously flushes) so the report leaves the
                 // device before the system kills the process. Falls back to the local-only
                 // path when no store is wired or the user hasn't opted in (#952).
-                crashReportingStore?.let { CrashReporter.captureIfEnabled(it, throwable) }
-                saveReport(appContext, buildReport(thread, throwable))
+                reportingStore?.let { CrashReporter.captureIfEnabled(it, throwable) }
+                val report = buildReport(thread, throwable)
+                saveReport(appContext, report)
+                // Also write a plaintext copy to the public Downloads folder. When a crash
+                // happens before any Activity can show the saved report (ContentProvider or
+                // Application.onCreate), this file is the only way a non-developer (no adb)
+                // can retrieve the trace — just open Downloads in the Files app.
+                dumpToDownloads(appContext, report)
             } catch (_: Throwable) {
                 // Never allow the crash handler itself to throw – always fall through.
             } finally {
                 defaultHandler?.uncaughtException(thread, throwable)
             }
+        }
+    }
+
+    /**
+     * Writes the crash report to the device's public Downloads folder as a plaintext file
+     * so it can be opened with any file manager without a computer. Best-effort: any failure
+     * is swallowed because the crash handler must never throw.
+     */
+    private fun dumpToDownloads(context: Context, report: String) {
+        val fileName = "otaku_crash_${System.currentTimeMillis()}.txt"
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                    put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+                val resolver = context.contentResolver
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: return
+                resolver.openOutputStream(uri)?.use { it.write(report.toByteArray()) }
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            } else {
+                @Suppress("DEPRECATION")
+                val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                File(downloads, fileName).writeText(report)
+            }
+        } catch (_: Throwable) {
+            // Swallow: a diagnostics write must never mask or replace the original crash.
         }
     }
 

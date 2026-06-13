@@ -56,6 +56,9 @@ fun Manga.toEntity(): MangaEntity = MangaEntity(
     notes = notes,
     notifyNewChapters = notifyNewChapters,
     dateAdded = dateAdded,
+    // Was omitted, so every insert/update (e.g. a library refresh, which does a full-row REPLACE)
+    // silently reset lastUpdate to 0, corrupting "recently updated" sorting and update tracking.
+    lastUpdate = lastUpdate,
     // Per-manga reader settings (#260)
     readerDirection = readerDirection,
     readerMode = readerMode,
@@ -79,7 +82,9 @@ fun ChapterEntity.toChapter(): Chapter = Chapter(
     chapterNumber = chapterNumber,
     read = read,
     bookmark = bookmark,
-    lastPageRead = lastPageRead
+    lastPageRead = lastPageRead,
+    dateFetch = dateFetch,
+    userNotes = userNotes,
 )
 
 /** Maps domain [Chapter] to [ChapterEntity]. */
@@ -93,5 +98,10 @@ fun Chapter.toEntity(): ChapterEntity = ChapterEntity(
     chapterNumber = chapterNumber,
     read = read,
     bookmark = bookmark,
-    lastPageRead = lastPageRead
+    lastPageRead = lastPageRead,
+    // Were omitted, so a full-row REPLACE during chapter refresh zeroed dateFetch (breaking
+    // "recent updates" sorting) and erased userNotes. Match the complete mapper in
+    // ChapterRepositoryImpl.
+    dateFetch = dateFetch,
+    userNotes = userNotes,
 )

@@ -28,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,9 +65,14 @@ fun BiometricLockGate(
     // chain to find the hosting FragmentActivity rather than casting directly.
     val activity = remember(context) { context.findFragmentActivity() }
 
-    var locked by rememberSaveable { mutableStateOf(false) }
-    var initialized by rememberSaveable { mutableStateOf(false) }
-    var backgroundedAt by rememberSaveable { mutableLongStateOf(0L) }
+    // Deliberately remember (NOT rememberSaveable): saved state survives process death, so after
+    // the OS kills the app in the background and restores it, rememberSaveable restored
+    // initialized=true / locked=false and the app came back UNLOCKED — a lock bypass. With
+    // remember, any Activity recreation (process restore, and also rotation) re-runs the
+    // cold-start lock guard below, erring toward locked. Mihon's app lock behaves the same way.
+    var locked by remember { mutableStateOf(false) }
+    var initialized by remember { mutableStateOf(false) }
+    var backgroundedAt by remember { mutableLongStateOf(0L) }
 
     // Lock once when the feature is first known to be on (cold start). Disabling resets the
     // one-shot guard so re-enabling within the same process locks again immediately.
@@ -102,8 +106,10 @@ fun BiometricLockGate(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    content()
-
+    // Gate composition: while locked, do NOT compose content() at all. Previously content() was
+    // always composed and the overlay merely drawn on top, so protected screens were fully built
+    // (and briefly visible during transitions) behind the lock. Composing it only when unlocked
+    // keeps sensitive UI out of the tree entirely while locked.
     if (effectivelyEnabled && locked) {
         val title = stringResource(R.string.biometric_lock_title)
         val subtitle = stringResource(R.string.biometric_lock_subtitle)
@@ -123,6 +129,8 @@ fun BiometricLockGate(
                 activity?.let { promptUnlock(it, title, subtitle) { locked = false } }
             }
         }
+    } else {
+        content()
     }
 }
 

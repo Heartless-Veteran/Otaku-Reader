@@ -73,8 +73,12 @@ fun ShareLibraryScreen(
             error = encodeErrorFormat.format(e.message ?: "")
             return@LaunchedEffect
         }
-        // ZXing can handle ~2-3KB reliably at medium ECC level
-        qrBitmap = generateQrCode(json, size = 512)
+        // ZXing can handle ~2-3KB reliably at medium ECC level. Encode off the main thread:
+        // generating a 512x512 QR is a ~262k-pixel setPixel loop + ZXing encode that would
+        // otherwise block the UI thread (ANR) inside this LaunchedEffect.
+        qrBitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            generateQrCode(json, size = 512)
+        }
         if (qrBitmap == null) {
             error = qrError
         }

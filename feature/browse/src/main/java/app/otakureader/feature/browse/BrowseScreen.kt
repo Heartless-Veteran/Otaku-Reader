@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -695,17 +696,27 @@ private fun SourceChipWithMenu(
     Box {
         FilterChip(
             selected = isSelected,
-            // Pass empty lambda so combinedClickable is the sole click handler.
-            // Without this, both FilterChip.onClick and combinedClickable.onClick fire on tap.
-            onClick = {},
+            // Tap selects the source. A combinedClickable on the chip's own modifier does NOT
+            // work: FilterChip renders an internal clickable Surface that sits above the outer
+            // modifier and swallows the tap, so onSelect never fired (the source chip appeared
+            // dead). The long-press menu is handled by the transparent overlay below instead.
+            onClick = onSelect,
             label = { Text(sourceId.substringAfterLast(".").take(20)) },
             leadingIcon = if (isPinned) {
                 { Icon(Icons.Default.PushPin, contentDescription = null, modifier = Modifier.size(14.dp)) }
             } else null,
-            modifier = Modifier.combinedClickable(
-                onClick = onSelect,
-                onLongClick = { menuExpanded = true },
-            ),
+        )
+        // Transparent overlay matching the chip: intercepts long-press for the context menu
+        // while still forwarding taps to onSelect. Drawn on top, so it reliably receives both.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onSelect,
+                    onLongClick = { menuExpanded = true },
+                ),
         )
         DropdownMenu(
             expanded = menuExpanded,

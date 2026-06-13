@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation & Guides
+    url: https://heartless-veteran.github.io/Otaku-Reader/docs/getting-started
+    about: Read the docs before opening an issue — many common questions are answered there.
+  - name: FAQ
+    url: https://heartless-veteran.github.io/Otaku-Reader/docs/faq
+    about: Quick answers to the most common questions.
+  - name: Discussions
+    url: https://github.com/Heartless-Veteran/Otaku-Reader/discussions
+    about: Not sure if it's a bug? Ask in Discussions first.

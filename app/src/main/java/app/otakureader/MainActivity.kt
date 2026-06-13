@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.otakureader.security.BiometricLockGate
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -77,6 +79,11 @@ class MainActivity : FragmentActivity() {
         const val THEME_MODE_SYSTEM = 0
         const val THEME_MODE_LIGHT = 1
         const val THEME_MODE_DARK = 2
+
+        // Minimum time (ms) the cold-start splash is held on screen. Startup got fast enough
+        // after the crash fixes that the system splash could flash for <100ms and the mascot
+        // logo was never visible. This is a short, always-released hold — see onCreate.
+        private const val SPLASH_MIN_DISPLAY_MS = 650L
     }
 
 
@@ -92,10 +99,31 @@ class MainActivity : FragmentActivity() {
     // Crash report from the previous run – shown once, then cleared from SharedPreferences
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
-    @Suppress("LongMethod", "CognitiveComplexMethod")
+    // Flips to false once the minimum splash time has elapsed; gates the keep-on-screen condition.
+    private var keepSplashOnScreen = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        // installSplashScreen() must run before super.onCreate(). Capture the handle so we can
+        // hold the splash briefly; wrapped because a splash failure must never abort startup.
+        val splashScreen = runCatching { installSplashScreen() }.getOrNull()
+        splashScreen?.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
+        // Release the splash after a bounded delay on the main looper so the mascot shows for a
+        // perceptible beat on fast cold starts. This always fires — even if startApp() throws —
+        // so the splash can never hold the UI hostage.
+        window.decorView.postDelayed({ keepSplashOnScreen = false }, SPLASH_MIN_DISPLAY_MS)
+        try {
+            startApp(savedInstanceState)
+        } catch (t: Throwable) {
+            // Startup failed before the UI could render. Paint the stack trace on-screen so
+            // it can be screenshotted, instead of the process dying invisibly with no report.
+            android.util.Log.e("MainActivity", "Fatal error during startup", t)
+            setContent { StartupErrorScreen(t.stackTraceToString()) }
+        }
+    }
+
+    @Suppress("LongMethod", "CognitiveComplexMethod")
+    private fun startApp(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         applyLocaleFromPreferences()
 
@@ -106,37 +134,46 @@ class MainActivity : FragmentActivity() {
             pendingCrashReport = CrashHandler.getAndClearCrashReport(this)
         }
 
-        // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation)
+        // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation).
+        // The whole body is guarded: this runs asynchronously, OUTSIDE onCreate's try/catch,
+        // so an exception here (e.g. WorkManager scheduling) would otherwise reach the
+        // uncaught handler and crash the app at launch. Scheduling background work must never
+        // prevent the UI from opening.
         if (savedInstanceState == null) {
             lifecycleScope.launch {
-                val (updateIntervalHours, updateOnlyOnWifi) = combine(
-                    generalPreferences.updateCheckInterval,
-                    libraryPreferences.updateOnlyOnWifi
-                ) { interval, wifiOnly ->
-                    interval to wifiOnly
-                }.first()
-                libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
-                trackerSyncScheduler.schedule()
-                app.otakureader.data.worker.EhFavoritesSyncWorker.schedule(applicationContext)
-                app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
+                try {
+                    val (updateIntervalHours, updateOnlyOnWifi) = combine(
+                        generalPreferences.updateCheckInterval,
+                        libraryPreferences.updateOnlyOnWifi
+                    ) { interval, wifiOnly ->
+                        interval to wifiOnly
+                    }.first()
+                    libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
+                    trackerSyncScheduler.schedule()
+                    app.otakureader.data.worker.EhFavoritesSyncWorker.schedule(applicationContext)
+                    app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
 
-                // Reconcile the periodic extension-update check with the user's preference.
-                if (generalPreferences.extensionAutoUpdateEnabled.first()) {
-                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.schedule(
-                        context = applicationContext,
-                        intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
-                        wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
-                    )
-                } else {
-                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
-                }
+                    // Reconcile the periodic extension-update check with the user's preference.
+                    if (generalPreferences.extensionAutoUpdateEnabled.first()) {
+                        app.otakureader.data.worker.ExtensionAutoUpdateWorker.schedule(
+                            context = applicationContext,
+                            intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
+                            wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
+                        )
+                    } else {
+                        app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
+                    }
 
-                // Security mechanism, not a preference — always scheduled (#1018).
-                app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
+                    // Security mechanism, not a preference — always scheduled (#1018).
+                    app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
 
-                val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
-                if (autoRefresh) {
-                    libraryUpdateScheduler.enqueueNow()
+                    val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
+                    if (autoRefresh) {
+                        libraryUpdateScheduler.enqueueNow()
+                    }
+                } catch (t: Throwable) {
+                    if (t is kotlinx.coroutines.CancellationException) throw t
+                    android.util.Log.e("MainActivity", "Startup background scheduling failed", t)
                 }
             }
         }
@@ -422,6 +459,39 @@ private fun CrashReportDialog(
             }
         },
     )
+}
+
+/**
+ * Last-resort screen shown when [MainActivity.startApp] throws during startup.
+ *
+ * It deliberately uses no app theme, DataStore, or DI — just hard-coded colors and a
+ * scrollable, selectable stack trace — so it can render even when the failure is in
+ * theme setup, Compose initialization, or dependency injection. The user can screenshot
+ * or copy this to report the exact cause instead of the app vanishing on launch.
+ */
+@Composable
+private fun StartupErrorScreen(trace: String) {
+    // Deliberately uses ONLY foundation primitives (Box + BasicText) and hard-coded
+    // colors — no Material3, no MaterialTheme, no app theme. Material components read
+    // theme CompositionLocals, so if the startup crash were theme-related, a Material-based
+    // error screen could itself fail to render and hide the trace. This cannot.
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1B1B1B))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        androidx.compose.foundation.text.BasicText(
+            text = "Otaku Reader failed to start\n\n$trace",
+            style = androidx.compose.ui.text.TextStyle(
+                color = Color(0xFFFFB1C8),
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+            ),
+        )
+    }
 }
 
 /**

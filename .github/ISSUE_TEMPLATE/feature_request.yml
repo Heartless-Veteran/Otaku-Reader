@@ -1,0 +1,63 @@
+name: Feature Request
+description: Suggest a new feature or improvement
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/Heartless-Veteran/Otaku-Reader/blob/main/ROADMAP.md) and [existing requests](https://github.com/Heartless-Veteran/Otaku-Reader/issues?q=label%3Aenhancement) before opening a new one.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation where you wish the app did something it currently doesn't. Good feature requests are rooted in a real pain point.
+      placeholder: "Example: When I import a backup from another device, my custom category sort order is lost and I have to set it up again from scratch."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this to work? Be as specific as you like — UI placement, behaviour, edge cases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+      description: Have you found a workaround, or is there a different approach that could also solve this? Why does your proposal win?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area of the app is this for?
+      options:
+        - Reader
+        - Library
+        - Browse / Sources
+        - Tracking (AniList, MAL, Kitsu…)
+        - Downloads
+        - Backup & Sync
+        - Extensions / Repositories
+        - Settings
+        - Notifications
+        - Widgets
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Mockups or references
+      description: Attach any sketches, mockups, or screenshots from other apps that show the idea.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else worth knowing — related issues, how common this need is, or why it matters to you.

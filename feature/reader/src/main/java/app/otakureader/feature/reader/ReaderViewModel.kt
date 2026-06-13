@@ -313,15 +313,21 @@ class ReaderViewModel @Inject constructor(
     @Suppress("LongMethod")
     private fun loadChapter() {
         loadChapterJob?.cancel()
+        // Capture the target ID now so the coroutine can guard against stale writes.
+        // If loadChapterById() is called again before this job finishes, the new job
+        // updates this.chapterId — the old job detects the mismatch and discards its result.
+        val targetChapterId = chapterId
         loadChapterJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = chapterLoaderDelegate.load(mangaId, chapterId)) {
+            when (val result = chapterLoaderDelegate.load(mangaId, targetChapterId)) {
                 is ReaderChapterLoaderDelegate.Result.NotFound -> {
+                    if (targetChapterId != chapterId) return@launch
                     _state.update {
                         it.copy(isLoading = false, error = result.message)
                     }
                 }
                 is ReaderChapterLoaderDelegate.Result.Failure -> {
+                    if (targetChapterId != chapterId) return@launch
                     _state.update {
                         it.copy(
                             isLoading = false,
@@ -330,6 +336,9 @@ class ReaderViewModel @Inject constructor(
                     }
                 }
                 is ReaderChapterLoaderDelegate.Result.Success -> {
+                    // Discard the result if the user navigated to a different chapter while
+                    // this load was in flight — prevents stale pages overwriting the new chapter.
+                    if (targetChapterId != chapterId) return@launch
                     currentManga = result.manga
                     currentChapter = result.chapter
                     observeContentType(result.manga)

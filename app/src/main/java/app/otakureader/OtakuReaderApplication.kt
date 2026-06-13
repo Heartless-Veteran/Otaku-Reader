@@ -9,6 +9,10 @@ import app.otakureader.core.preferences.CrashReportingStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.crash.CrashHandler
 import app.otakureader.crash.CrashReporter
+import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.serialization.json.Json
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.addSingletonFactory
 import app.otakureader.shortcut.AppShortcutManager
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -55,6 +59,21 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
             .setWorkerFactory(workerFactory)
             .build()
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Earliest point we control — runs BEFORE every ContentProvider (Sentry's
+        // SentryInitProvider/SentryPerformanceProvider, FileProvider, androidx.startup
+        // InitializationProvider) executes its onCreate. Installing the crash handler here
+        // means a crash in any of those providers is captured to Downloads/prefs instead of
+        // killing the process invisibly. onCreate later re-calls install() to attach the
+        // Sentry store; install() is idempotent.
+        try {
+            CrashHandler.install(base)
+        } catch (_: Throwable) {
+            // Never let diagnostics setup prevent the app from starting.
+        }
+    }
+
     override fun onCreate() {
         // Read crash-reporting prefs directly (no Hilt) since CrashHandler installs BEFORE
         // super.onCreate() and the Hilt graph isn't constructed yet at that point. The store
@@ -66,10 +85,33 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         // or any other startup code are captured and shown on the next launch.
         CrashHandler.install(this, crashReportingStore)
         super.onCreate()
-        // Enable Material You dynamic colors on Android 12+ (API 31+)
-        DynamicColors.applyToActivitiesIfAvailable(this)
-        // Initialize launcher shortcuts (Library, Updates, Continue Reading)
-        appShortcutManager.initialize()
+        // Post-DI initialization is wrapped so a failure in optional startup work (dynamic
+        // color registration, launcher-shortcut sync) can never crash the process before
+        // the first Activity opens. Each is non-essential to launching the app.
+        // Bootstrap Injekt so loaded extension APKs can resolve NetworkHelper and Json via
+        // injectLazy() / Injekt.get(). Must run after super.onCreate() so the Hilt graph is
+        // ready (okHttpClient is injected by Hilt). Both registrations are lazy singletons —
+        // the factory runs once on first get() and the result is cached.
+        Injekt.addSingletonFactory<NetworkHelper> { NetworkHelper(applicationContext, baseClient = okHttpClient) }
+        Injekt.addSingletonFactory<Json> {
+            Json {
+                isLenient = true
+                ignoreUnknownKeys = true
+            }
+        }
+
+        try {
+            // Enable Material You dynamic colors on Android 12+ (API 31+)
+            DynamicColors.applyToActivitiesIfAvailable(this)
+        } catch (t: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "DynamicColors init failed", t)
+        }
+        try {
+            // Initialize launcher shortcuts (Library, Updates, Continue Reading)
+            appShortcutManager.initialize()
+        } catch (t: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "App shortcut init failed", t)
+        }
     }
 
     // Trim Coil's memory cache when the OS signals memory pressure, preventing the

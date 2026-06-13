@@ -1,28 +1,59 @@
-// Stub matching tachiyomiorg/extensions-lib — used at compile time only.
-// At runtime the real implementations come from the extension APKs.
 package eu.kanade.tachiyomi.source
 
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
-import rx.Observable
 
-@Suppress("unused")
+/**
+ * A basic interface for creating a source. It could be an online source, a local source, stub source, etc.
+ */
 interface Source {
+
+    /**
+     * ID for the source. Must be unique.
+     */
     val id: Long
+
+    /**
+     * Name of the source.
+     */
     val name: String
 
-    suspend fun getMangaDetails(manga: SManga): SManga =
-        fetchMangaDetails(manga).toBlocking().single()
+    val lang: String
+        get() = ""
 
-    suspend fun getChapterList(manga: SManga): List<SChapter> =
-        fetchChapterList(manga).toBlocking().single()
+    /**
+     * Get the updated details for a manga.
+     *
+     * @since extensions-lib 1.4
+     */
+    suspend fun getMangaDetails(manga: SManga): SManga
 
-    fun fetchPageList(chapter: SChapter): Observable<List<Page>>
+    /**
+     * Get all the available chapters for a manga.
+     *
+     * @since extensions-lib 1.4
+     */
+    suspend fun getChapterList(manga: SManga): List<SChapter>
 
-    @Deprecated("Use the non-RxJava API instead", ReplaceWith("getMangaDetails"))
-    fun fetchMangaDetails(manga: SManga): Observable<SManga>
+    /**
+     * Get the list of pages a chapter has.
+     *
+     * @since komikku/extensions-lib 1.7
+     */
+    suspend fun getPageList(chapter: SChapter): List<Page>
 
-    @Deprecated("Use the non-RxJava API instead", ReplaceWith("getChapterList"))
-    fun fetchChapterList(manga: SManga): Observable<List<SChapter>>
+    // KMK -->
+
+    /**
+     * Get all the available related mangas for a manga.
+     *
+     * @since komikku/extensions-lib 1.6
+     */
+    suspend fun getRelatedMangaList(
+        manga: SManga,
+        exceptionHandler: (Throwable) -> Unit,
+        pushResults: suspend (relatedManga: Pair<String, List<SManga>>, completed: Boolean) -> Unit,
+    )
+    // KMK <--
 }

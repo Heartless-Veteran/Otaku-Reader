@@ -193,6 +193,11 @@ object ExtensionLoadingUtils {
         val sourceClassEntry = metadata.getString(METADATA_SOURCE_CLASS)
         if (sourceClassEntry.isNullOrBlank()) return SourceResolution(sources, errors)
 
+        // NotFound is tolerated silently per-entry because a `;`-separated list can legitimately
+        // name classes that don't exist in this particular extension. But if NO sources are
+        // produced at all, those NotFounds ARE the failure — surface them so the user sees
+        // "X: ClassNotFoundException" instead of the misleading "no source class declared".
+        val notFound = mutableListOf<String>()
         sourceClassEntry
             .split(";")
             .map { it.trim() }
@@ -200,9 +205,13 @@ object ExtensionLoadingUtils {
             .forEach { rawClass ->
                 processClassEntry(
                     resolveClassName(rawClass, pkgName),
-                    classLoader, filterType, sources, errors,
+                    classLoader, filterType, sources, errors, notFound,
                 )
             }
+
+        if (sources.isEmpty()) {
+            notFound.forEach { errors += "$it: ClassNotFoundException" }
+        }
 
         return SourceResolution(sources, errors)
     }
@@ -234,17 +243,19 @@ object ExtensionLoadingUtils {
         return false
     }
 
-    /** Walk a single `tachiyomi.extension.class` entry; tolerate `NotFound` silently. */
+    /** Walk a single `tachiyomi.extension.class` entry; record `NotFound` so the caller can
+     *  surface it only when no sources were produced at all. */
     private fun processClassEntry(
         resolvedClass: String,
         classLoader: ClassLoader,
         filterType: Class<*>?,
         sources: MutableList<Source>,
         errors: MutableList<String>,
+        notFound: MutableList<String>,
     ) {
         when (val result = instantiateClass(classLoader, resolvedClass)) {
             is InstantiationResult.Success -> appendSuccess(resolvedClass, result.instance, filterType, sources, errors)
-            is InstantiationResult.NotFound -> Unit // routine for `;`-separated lists
+            is InstantiationResult.NotFound -> notFound += resolvedClass
             is InstantiationResult.Failure -> errors += "$resolvedClass: ${result.reason}"
         }
     }

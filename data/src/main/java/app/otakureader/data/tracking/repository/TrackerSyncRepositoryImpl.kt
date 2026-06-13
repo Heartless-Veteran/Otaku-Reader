@@ -179,9 +179,13 @@ class TrackerSyncRepositoryImpl @Inject constructor(
 
             val lastSync = syncState.lastSuccessfulSync
             val localChanged = lastSync == null || syncState.localLastModified > lastSync
-            val remoteLastModified = syncState.remoteLastModified
+            // Detect remote change by diffing the freshly-fetched entry against our stored
+            // remote snapshot. Using the stored remoteLastModified timestamp was wrong —
+            // it's a locally-controlled value we set ourselves on every sync, so it can never
+            // lag behind lastSuccessfulSync and would never detect real tracker-side changes.
             val remoteChanged = lastSync == null ||
-                (remoteLastModified != null && remoteLastModified > lastSync)
+                remoteEntry.lastChapterRead != syncState.remoteLastChapterRead ||
+                remoteEntry.totalChapters != syncState.remoteTotalChapters
 
             // Conflict: both sides changed and their chapter progress diverged
             val hasConflict = localChanged && remoteChanged &&

@@ -1,19 +1,60 @@
-// Stub matching tachiyomiorg/extensions-lib — used at compile time only.
-@file:Suppress("VariableNaming")
+@file:Suppress("PropertyName")
+
 package eu.kanade.tachiyomi.source.model
 
-@Suppress("unused")
-interface SManga {
+import java.io.Serializable
+
+interface SManga : Serializable {
+
     var url: String
+
     var title: String
+
     var artist: String?
+
     var author: String?
+
     var description: String?
+
     var genre: String?
+
     var status: Int
+
     var thumbnail_url: String?
+
     var update_strategy: UpdateStrategy
+
     var initialized: Boolean
+
+    fun getGenres(): List<String>? {
+        if (genre.isNullOrBlank()) return null
+        return genre?.split(", ")?.map { it.trim() }?.filterNot { it.isBlank() }?.distinct()
+    }
+
+    // SY -->
+    val originalTitle: String
+    val originalAuthor: String?
+    val originalArtist: String?
+    val originalThumbnailUrl: String?
+    val originalDescription: String?
+    val originalGenre: String?
+    val originalStatus: Int
+    // SY <--
+
+    fun copy() = create().also {
+        it.url = url
+        // SY -->
+        it.title = originalTitle
+        it.artist = originalArtist
+        it.author = originalAuthor
+        it.thumbnail_url = originalThumbnailUrl
+        it.description = originalDescription
+        it.genre = originalGenre
+        it.status = originalStatus
+        // SY <--
+        it.update_strategy = update_strategy
+        it.initialized = initialized
+    }
 
     companion object {
         const val UNKNOWN = 0
@@ -24,20 +65,60 @@ interface SManga {
         const val CANCELLED = 5
         const val ON_HIATUS = 6
 
-        fun create(): SManga = SMangaImpl()
+        fun create(): SManga {
+            return SMangaImpl()
+        }
+
+        // SY -->
+        operator fun invoke(
+            url: String,
+            title: String,
+            artist: String? = null,
+            author: String? = null,
+            description: String? = null,
+            genre: String? = null,
+            status: Int = 0,
+            thumbnail_url: String? = null,
+            initialized: Boolean = false,
+        ): SManga {
+            return create().also {
+                it.url = url
+                it.title = title
+                it.artist = artist
+                it.author = author
+                it.description = description
+                it.genre = genre
+                it.status = status
+                it.thumbnail_url = thumbnail_url
+                it.initialized = initialized
+            }
+        }
+        // SY <--
     }
 }
 
-/** Minimal mutable implementation used when creating SManga instances in the host app. */
-internal class SMangaImpl : SManga {
-    override var url: String = ""
-    override var title: String = ""
-    override var artist: String? = null
-    override var author: String? = null
-    override var description: String? = null
-    override var genre: String? = null
-    override var status: Int = SManga.UNKNOWN
-    override var thumbnail_url: String? = null
-    override var update_strategy: UpdateStrategy = UpdateStrategy.ALWAYS_UPDATE
-    override var initialized: Boolean = false
+// SY -->
+fun SManga.copy(
+    url: String = this.url,
+    title: String = this.originalTitle,
+    artist: String? = this.originalArtist,
+    author: String? = this.originalAuthor,
+    description: String? = this.originalDescription,
+    genre: String? = this.originalGenre,
+    status: Int = this.status,
+    thumbnail_url: String? = this.originalThumbnailUrl,
+    update_strategy: UpdateStrategy = this.update_strategy,
+    initialized: Boolean = this.initialized,
+) = SManga.create().also {
+    it.url = url
+    it.title = title
+    it.artist = artist
+    it.author = author
+    it.description = description
+    it.genre = genre
+    it.status = status
+    it.thumbnail_url = thumbnail_url
+    it.update_strategy = update_strategy
+    it.initialized = initialized
 }
+// SY <--

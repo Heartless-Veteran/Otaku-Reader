@@ -1,0 +1,85 @@
+name: Crash Report
+description: The app crashed or closed unexpectedly
+title: "[Crash] "
+labels: ["crash", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A crash is when the app closes on its own or shows "App has stopped." If you opted in to crash reporting, the report was already sent — but a GitHub issue with reproduction steps helps us fix it faster.
+
+        Search [existing crash reports](https://github.com/Heartless-Veteran/Otaku-Reader/issues?q=label%3Acrash) first.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What were you doing when the app crashed?
+      description: Describe what you were doing immediately before the crash. The more detail, the better.
+      placeholder: "Example: I was swiping to the next chapter in the webtoon reader when the app closed."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: If the crash is repeatable, list the exact steps.
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does the crash occur?
+      options:
+        - Every time (100%)
+        - Most of the time
+        - Occasionally
+        - Only happened once
+    validations:
+      required: true
+
+  - type: textarea
+    id: logcat
+    attributes:
+      label: Crash log / stack trace
+      description: |
+        If you have a logcat or stack trace, paste it here. To capture one:
+        • Android Studio → Logcat → filter by "Fatal"
+        • Or enable crash reporting in Settings → Advanced → Crash Reporting (opt-in, Sentry endpoint required)
+        • Or use `adb logcat -d | grep -E "FATAL|AndroidRuntime"` from a terminal
+      render: text
+      placeholder: "Paste crash log here, or leave blank if unavailable."
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: Found in Settings → About.
+      placeholder: "1.0.0-beta (build 42)"
+    validations:
+      required: true
+
+  - type: input
+    id: android_version
+    attributes:
+      label: Android version and device
+      placeholder: "Android 14 — Samsung Galaxy S24"
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source / extension (if relevant)
+      placeholder: "MangaDex v6.4.1"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help. Did the crash start after an update? Does it happen with a specific manga or chapter?

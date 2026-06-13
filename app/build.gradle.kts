@@ -154,6 +154,9 @@ dependencies {
     implementation(projects.core.discord)
     implementation(projects.core.webview)
     implementation(projects.core.network)
+    // tachiyomi-compat exposes Injekt/NetworkHelper to extension APKs at runtime;
+    // the app module needs a direct dep to call Injekt.addSingletonFactory in Application.onCreate.
+    implementation(projects.core.tachiyomiCompat)
     implementation(projects.domain)
     implementation(projects.sourceApi)
 

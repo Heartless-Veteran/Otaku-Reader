@@ -64,6 +64,10 @@ class PanelDetectionService @Inject constructor(
 
             synchronized(cacheLock) { resultCache.put(imageUrl, panels) }
             panels
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // Don't swallow cancellation (e.g. chapter switch / leaving Smart Panels) — rethrow
+            // so structured concurrency unwinds correctly instead of reporting "no panels".
+            throw e
         } catch (e: Exception) {
             emptyList()
         }
@@ -84,6 +88,8 @@ class PanelDetectionService @Inject constructor(
                 is SuccessResult -> result.image.toBitmap()
                 else -> null
             }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             null
         }

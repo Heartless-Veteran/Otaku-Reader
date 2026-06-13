@@ -34,7 +34,7 @@ class OpdsViewModel @Inject constructor(
     private val _state = MutableStateFlow(OpdsState())
     val state: StateFlow<OpdsState> = _state.asStateFlow()
 
-    private val _effect = Channel<OpdsEffect>()
+    private val _effect = Channel<OpdsEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
     init {

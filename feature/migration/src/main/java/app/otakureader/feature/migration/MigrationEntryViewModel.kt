@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,9 @@ class MigrationEntryViewModel @Inject constructor(
     private val _effect = Channel<MigrationEntryEffect>(Channel.BUFFERED)
     val effect: Flow<MigrationEntryEffect> = _effect.receiveAsFlow()
 
+    /** Tracks the active library collection so Retry cancels the prior one instead of stacking. */
+    private var loadJob: Job? = null
+
     init {
         loadLibrary()
     }
@@ -45,8 +49,12 @@ class MigrationEntryViewModel @Inject constructor(
     }
 
     private fun loadLibrary() {
+        // Cancel any in-flight collection first: loadLibrary() runs in init and again on every
+        // Retry, and each launchIn started a new collector. Without cancelling, N retries left N
+        // concurrent collectors racing to update _state. Hold the Job and cancel before relaunch.
+        loadJob?.cancel()
         _state.update { it.copy(isLoading = true, error = null) }
-        getLibraryManga()
+        loadJob = getLibraryManga()
             .onEach { manga ->
                 _state.update { state ->
                     state.copy(

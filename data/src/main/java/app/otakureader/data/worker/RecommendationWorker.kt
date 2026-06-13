@@ -33,12 +33,15 @@ class RecommendationWorker @AssistedInject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Result.retry()
+            // Cap retries so a persistently-failing refresh doesn't back off and wake the device
+            // forever; failure() defers to the next periodic run.
+            if (runAttemptCount >= MAX_RETRIES) Result.failure() else Result.retry()
         }
     }
 
     companion object {
         const val WORK_NAME = "recommendation_refresh"
+        private const val MAX_RETRIES = 3
 
         fun schedule(context: Context) {
             val constraints = Constraints.Builder()

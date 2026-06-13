@@ -16,6 +16,9 @@ interface DownloadQueueDao {
     @Query("SELECT * FROM download_queue ORDER BY priority ASC, added_at ASC")
     suspend fun getAllOnce(): List<DownloadQueueEntity>
 
+    @Query("SELECT * FROM download_queue WHERE chapter_id = :chapterId LIMIT 1")
+    suspend fun getByChapterId(chapterId: Long): DownloadQueueEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: DownloadQueueEntity)
 
