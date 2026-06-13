@@ -91,6 +91,7 @@ class BrowseViewModelTest {
         coEvery { generalPreferences.setSavedSourceSearchesJson(any()) } just Awaits
         every { generalPreferences.lastUsedSourceIds } returns flowOf(emptyList())
         coEvery { generalPreferences.recordSourceUsed(any()) } just Awaits
+        coEvery { extensionManagementRepository.refreshSources() } returns Result.success(Unit)
 
         // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
         every { mangaRepository.getLibraryManga() } returns flowOf(emptyList())
