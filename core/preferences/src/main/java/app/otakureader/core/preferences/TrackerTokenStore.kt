@@ -2,8 +2,6 @@ package app.otakureader.core.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,20 +16,11 @@ import javax.inject.Singleton
 @Singleton
 class TrackerTokenStore @Inject constructor(private val context: Context) {
 
-    private val masterKey: MasterKey by lazy {
-        MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-    }
 
+    // Created via EncryptedPrefsFactory so Keystore corruption recovers instead of
+    // crash-looping the app (stored secrets are reset; the user re-authenticates).
     private val prefs: SharedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            "tracker_tokens",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        EncryptedPrefsFactory.create(context, "tracker_tokens")
     }
 
     fun saveTokens(

@@ -165,13 +165,20 @@ fun WebViewScreen(
                         onGo = {
                             val targetUrl = urlText.trim()
                             if (targetUrl.isNotBlank()) {
-                                val resolvedUrl = if (targetUrl.startsWith("http://") || targetUrl.startsWith("https://")) {
-                                    targetUrl
-                                } else {
+                                // Prefix bare hosts with https://, then validate the final
+                                // scheme: anything else (javascript:, data:, file:, intent:)
+                                // typed into the address bar must never reach loadUrl, where
+                                // it would execute script or read local content.
+                                val resolvedUrl = if (Uri.parse(targetUrl).scheme == null) {
                                     "https://$targetUrl"
+                                } else {
+                                    targetUrl
                                 }
-                                committedUrl = resolvedUrl
-                                webViewRef?.loadUrl(resolvedUrl)
+                                val scheme = Uri.parse(resolvedUrl).scheme?.lowercase()
+                                if (scheme == "http" || scheme == "https") {
+                                    committedUrl = resolvedUrl
+                                    webViewRef?.loadUrl(resolvedUrl)
+                                }
                             }
                             focusManager.clearFocus()
                         },

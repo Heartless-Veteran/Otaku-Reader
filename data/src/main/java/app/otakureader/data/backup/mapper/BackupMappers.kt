@@ -50,6 +50,24 @@ fun MangaEntity.toBackupManga(
     notes = notes,
     readerBackgroundColor = readerBackgroundColor,
     contentRating = contentRating,
+    autoDownload = autoDownload,
+    notifyNewChapters = notifyNewChapters,
+    readerDirection = readerDirection,
+    readerMode = readerMode,
+    readerColorFilter = readerColorFilter,
+    readerCustomTintColor = readerCustomTintColor,
+    preloadPagesBefore = preloadPagesBefore,
+    preloadPagesAfter = preloadPagesAfter,
+    userCompleted = userCompleted,
+    userDropped = userDropped,
+    mangaThemeOverride = mangaThemeOverride,
+    userTitle = userTitle,
+    userDescription = userDescription,
+    userAuthor = userAuthor,
+    userArtist = userArtist,
+    userThumbnailUrl = userThumbnailUrl,
+    userGenre = userGenre,
+    userStatus = userStatus,
 )
 
 /**
@@ -77,6 +95,26 @@ fun BackupManga.toMangaEntity(): MangaEntity = MangaEntity(
     notes = notes,
     readerBackgroundColor = readerBackgroundColor,
     contentRating = contentRating,
+    autoDownload = autoDownload,
+    notifyNewChapters = notifyNewChapters,
+    readerDirection = readerDirection,
+    readerMode = readerMode,
+    readerColorFilter = readerColorFilter,
+    readerCustomTintColor = readerCustomTintColor,
+    preloadPagesBefore = preloadPagesBefore,
+    preloadPagesAfter = preloadPagesAfter,
+    userCompleted = userCompleted,
+    userDropped = userDropped,
+    mangaThemeOverride = mangaThemeOverride,
+    userTitle = userTitle,
+    userDescription = userDescription,
+    userAuthor = userAuthor,
+    userArtist = userArtist,
+    // Custom covers are app-private file:// paths that won't exist on a different
+    // device/install; restoring them would show a broken cover. URL overrides survive.
+    userThumbnailUrl = userThumbnailUrl?.takeUnless { it.startsWith("file://") },
+    userGenre = userGenre,
+    userStatus = userStatus,
 )
 
 /**
@@ -97,7 +135,8 @@ fun ChapterEntity.toBackupChapter(
     dateFetch = dateFetch,
     dateUpload = dateUpload,
     lastModified = lastModified,
-    readingHistory = readingHistory
+    readingHistory = readingHistory,
+    userNotes = userNotes,
 )
 
 /**
@@ -117,7 +156,8 @@ fun BackupChapter.toChapterEntity(mangaId: Long): ChapterEntity = ChapterEntity(
     sourceOrder = sourceOrder,
     dateFetch = dateFetch,
     dateUpload = dateUpload,
-    lastModified = lastModified
+    lastModified = lastModified,
+    userNotes = userNotes,
 )
 
 /**
@@ -146,7 +186,9 @@ fun CategoryEntity.toBackupCategory(): BackupCategory = BackupCategory(
     id = id,
     name = name,
     order = order,
-    flags = flags
+    flags = flags,
+    updateFrequency = updateFrequency,
+    lockType = lockType,
 )
 
 /**
@@ -157,7 +199,9 @@ fun BackupCategory.toCategoryEntity(): CategoryEntity = CategoryEntity(
     id = id,
     name = name,
     order = order,
-    flags = flags
+    flags = flags,
+    updateFrequency = updateFrequency,
+    lockType = lockType,
 )
 
 fun OpdsServerEntity.toBackupOpdsServer(): BackupOpdsServer = BackupOpdsServer(

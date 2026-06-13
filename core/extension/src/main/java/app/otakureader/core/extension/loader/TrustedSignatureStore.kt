@@ -3,8 +3,7 @@ package app.otakureader.core.extension.loader
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import app.otakureader.core.preferences.EncryptedPrefsFactory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,17 +25,11 @@ import javax.inject.Singleton
 @Singleton
 class TrustedSignatureStore @Inject constructor(@ApplicationContext context: Context) {
 
+    // Created via EncryptedPrefsFactory so Keystore corruption recovers instead of
+    // crash-looping the app. A reset trust list means previously trusted extensions
+    // prompt for trust again — safe-by-default.
     private val prefs: SharedPreferences by lazy {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        EncryptedPrefsFactory.create(context, PREFS_NAME)
     }
 
     fun isTrusted(signatureHash: String): Boolean =
