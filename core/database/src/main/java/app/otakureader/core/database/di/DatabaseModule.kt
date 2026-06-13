@@ -109,4 +109,7 @@ object DatabaseModule {
     fun provideMangaAlternativeSourceDao(
         database: OtakuReaderDatabase,
     ): MangaAlternativeSourceDao = database.mangaAlternativeSourceDao()
+
+    @Provides
+    fun provideReaderCommentDao(database: OtakuReaderDatabase) = database.readerCommentDao()
 }

@@ -55,6 +55,7 @@ import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.ChapterFilterBottomSheet
+import app.otakureader.feature.reader.ui.ReaderCommentsOverlay
 import app.otakureader.feature.reader.ui.FullPageGallery
 import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
@@ -334,9 +335,27 @@ fun ReaderScreen(
             onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
             onToggleChapterFilter = { showChapterFilterSheet = true },
             onToggleChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
+            onToggleComments = { viewModel.onEvent(ReaderEvent.ToggleCommentsOverlay) },
             presets = state.presets,
             onApplyPreset = { viewModel.onEvent(ReaderEvent.ApplyPreset(it)) },
         )
+
+        if (state.isCommentsOverlayVisible) {
+            val chapterComments by viewModel.chapterComments.collectAsStateWithLifecycle()
+            val bookComments by viewModel.bookComments.collectAsStateWithLifecycle()
+            val chapterNote by viewModel.currentChapterNote.collectAsStateWithLifecycle()
+            val externalLinks by viewModel.externalDiscussionLinks.collectAsStateWithLifecycle()
+            ReaderCommentsOverlay(
+                chapterComments = chapterComments,
+                bookComments = bookComments,
+                chapterNote = chapterNote,
+                externalLinks = externalLinks,
+                onAddComment = { body, chapterScoped -> viewModel.addComment(body, chapterScoped) },
+                onDeleteComment = { viewModel.deleteComment(it) },
+                onSaveChapterNote = { viewModel.saveChapterNote(it) },
+                onDismiss = { viewModel.onEvent(ReaderEvent.ToggleCommentsOverlay) },
+            )
+        }
 
         if (showChapterFilterSheet) {
             ChapterFilterBottomSheet(

@@ -53,6 +53,9 @@ data class ReaderState(
     /** Whether the chapter-list overlay is visible (slide-in from right edge) */
     val isChapterListOverlayVisible: Boolean = false,
 
+    /** Whether the reader comments bottom sheet is visible */
+    val isCommentsOverlayVisible: Boolean = false,
+
     /** Number of columns displayed in the gallery grid (2, 3, or 4) */
     val galleryColumns: Int = 3,
 
@@ -265,6 +268,7 @@ data class ReaderState(
             showTapZonesOverlay = showTapZonesOverlay,
             isSettingsOverlayVisible = isSettingsOverlayVisible,
             isChapterListOverlayVisible = isChapterListOverlayVisible,
+            isCommentsOverlayVisible = isCommentsOverlayVisible,
         )
 
     /** Display and rendering settings — changes infrequently. */
@@ -322,6 +326,7 @@ data class OverlayState(
     val showTapZonesOverlay: Boolean,
     val isSettingsOverlayVisible: Boolean = false,
     val isChapterListOverlayVisible: Boolean = false,
+    val isCommentsOverlayVisible: Boolean = false,
 )
 
 /** Projection of rendering and display preference fields. */
@@ -353,6 +358,12 @@ data class WebtoonState(
     val webtoonMenuHideSensitivity: Int,
     val webtoonDoubleTapZoom: Boolean,
     val webtoonDisableZoomOut: Boolean
+)
+
+/** An "Open <tracker>" button in the comments overlay, built from an existing tracker link. */
+data class ExternalDiscussionLink(
+    val trackerName: String,
+    val url: String,
 )
 
 /**
@@ -508,6 +519,9 @@ sealed interface ReaderEvent {
 
     /** Toggle the chapter-list overlay (slide-in panel from right edge). */
     data object ToggleChapterListOverlay : OverlayControl
+
+    /** Toggle the reader comments bottom sheet. */
+    data object ToggleCommentsOverlay : OverlayControl
 
     /** Toggle auto-scroll (webtoon mode). */
     data object ToggleAutoScroll : AutoScrollControl

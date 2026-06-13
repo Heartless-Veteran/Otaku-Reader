@@ -14,6 +14,7 @@ import app.otakureader.core.database.dao.MangaCategoryDao
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.OpdsServerDao
 import app.otakureader.core.database.dao.PageBookmarkDao
+import app.otakureader.core.database.dao.ReaderCommentDao
 import app.otakureader.core.database.dao.ReadingHistoryDao
 import app.otakureader.core.database.dao.ReadingListDao
 import app.otakureader.core.database.dao.ReadingStreakDao
@@ -38,6 +39,7 @@ import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.MangaFtsEntity
 import app.otakureader.core.database.entity.OpdsServerEntity
 import app.otakureader.core.database.entity.PageBookmarkEntity
+import app.otakureader.core.database.entity.ReaderCommentEntity
 import app.otakureader.core.database.entity.ReadingHistoryEntity
 import app.otakureader.core.database.entity.ReadingListEntity
 import app.otakureader.core.database.entity.ReadingListItemEntity
@@ -90,8 +92,10 @@ import app.otakureader.core.database.entity.UpdateRunSummaryEntity
         UpdateRunSummaryEntity::class,
         // Alternative-source linking for cross-source duplicate merge (#1053)
         MangaAlternativeSourceEntity::class,
+        // Local reader comments (chapter + book scoped)
+        ReaderCommentEntity::class,
     ],
-    version = 36,
+    version = 37,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -118,6 +122,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun syncQueueDao(): SyncQueueDao
     abstract fun updateRunSummaryDao(): UpdateRunSummaryDao
     abstract fun mangaAlternativeSourceDao(): MangaAlternativeSourceDao
+    abstract fun readerCommentDao(): ReaderCommentDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

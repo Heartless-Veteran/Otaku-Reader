@@ -44,6 +44,8 @@ import app.otakureader.domain.history.ReadingHistoryScheduler
 import app.otakureader.domain.loader.PageLoader
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
 import app.otakureader.data.repository.PageBookmarkRepositoryImpl
+import app.otakureader.data.repository.ReaderCommentRepositoryImpl
+import app.otakureader.domain.repository.ReaderCommentRepository
 import app.otakureader.data.repository.ReadingListRepositoryImpl
 import app.otakureader.data.repository.SourceRepositoryImpl
 import app.otakureader.data.repository.StatisticsRepositoryImpl
@@ -113,6 +115,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindPageBookmarkRepository(impl: PageBookmarkRepositoryImpl): PageBookmarkRepository
+
+    @Binds
+    abstract fun bindReaderCommentRepository(impl: ReaderCommentRepositoryImpl): ReaderCommentRepository
 
     @Binds
     abstract fun bindSourceRepository(impl: SourceRepositoryImpl): SourceRepository
