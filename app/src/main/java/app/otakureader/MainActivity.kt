@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -446,38 +447,26 @@ private fun CrashReportDialog(
  */
 @Composable
 private fun StartupErrorScreen(trace: String) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF1B1B1B),
+    // Deliberately uses ONLY foundation primitives (Box + BasicText) and hard-coded
+    // colors — no Material3, no MaterialTheme, no app theme. Material components read
+    // theme CompositionLocals, so if the startup crash were theme-related, a Material-based
+    // error screen could itself fail to render and hide the trace. This cannot.
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF1B1B1B))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            Text(
-                text = "Otaku Reader failed to start",
-                color = Color.White,
-                fontSize = 18.sp,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
-            Text(
-                text = "Screenshot this screen and send it to the developer.",
-                color = Color(0xFFB0B0B0),
-                fontSize = 13.sp,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
-            SelectionContainer {
-                Text(
-                    text = trace,
-                    color = Color(0xFFFFB1C8),
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp,
-                )
-            }
-        }
+        androidx.compose.foundation.text.BasicText(
+            text = "Otaku Reader failed to start\n\n$trace",
+            style = androidx.compose.ui.text.TextStyle(
+                color = Color(0xFFFFB1C8),
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+                lineHeight = 15.sp,
+            ),
+        )
     }
 }
 
