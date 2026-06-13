@@ -263,7 +263,13 @@ class ExtensionInstaller(
                 }
                 tempFile = null
 
-                extension.signatureHash?.let { loader.trustExtension(it) }
+                // Auto-trust only when the repo provided a matching expected hash.
+                // Repos using the minified index.min.json format (e.g. Keiyoushi) don't
+                // include a signing-cert hash, so trustedHash is null — in that case the
+                // user must trust the extension manually via the detail screen.
+                if (trustedHash != null && extension.signatureHash == trustedHash) {
+                    loader.trustExtension(trustedHash)
+                }
 
                 _installationState.value = InstallationState.Installing
                 // Merge repo-index metadata the APK loader can't know about.
@@ -310,13 +316,15 @@ class ExtensionInstaller(
         }
         is ExtensionLoadResult.Untrusted -> {
             val ext = loadResult.extension
-            if (trustedHash != null && ext.signatureHash == trustedHash) {
-                Result.success(ext)
+            // Reject only on a real hash mismatch — someone could be swapping the APK.
+            // When no trusted hash is available (e.g. Keiyoushi/Mihon minified index.min.json
+            // doesn't include a signing-cert hash), install the APK anyway so the user can
+            // review it and tap "Trust" on the detail screen.
+            if (trustedHash != null && ext.signatureHash != trustedHash) {
+                _installationState.value = InstallationState.Error("Extension trust hash mismatch", null)
+                Result.failure(SecurityException("Trust hash mismatch for ${ext.pkgName}"))
             } else {
-                _installationState.value = InstallationState.Error(
-                    "Extension is not trusted. Please verify its signature before installing.", null
-                )
-                Result.failure(IllegalStateException("Untrusted extension: ${ext.pkgName}"))
+                Result.success(ext)
             }
         }
         is ExtensionLoadResult.Error -> {

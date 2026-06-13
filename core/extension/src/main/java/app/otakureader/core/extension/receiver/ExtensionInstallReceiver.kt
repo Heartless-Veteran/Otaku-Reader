@@ -92,14 +92,23 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
     private suspend fun handlePackageAdded(packageName: String) {
         try {
             val loadResult = extensionLoader.loadExtensionFromPkgName(packageName)
-            if (loadResult is ExtensionLoadResult.Success) {
-                val apkPath = loadResult.extension.apkPath
-                if (apkPath.isNullOrBlank()) {
-                    Log.w(TAG, "Extension $packageName loaded but has no APK path; skipping install")
+            // Accept both Success and Untrusted — untrusted extensions are installed in the DB
+            // so the user can see them and tap Trust. A Success result means the signing cert
+            // was already trusted from a prior install.
+            val extension = when (loadResult) {
+                is ExtensionLoadResult.Success -> loadResult.extension
+                is ExtensionLoadResult.Untrusted -> loadResult.extension
+                is ExtensionLoadResult.Error -> {
+                    Log.w(TAG, "Cannot load extension $packageName: ${loadResult.message}")
                     return
                 }
-                extensionRepository.installExtension(packageName, apkPath)
             }
+            val apkPath = extension.apkPath
+            if (apkPath.isNullOrBlank()) {
+                Log.w(TAG, "Extension $packageName loaded but has no APK path; skipping install")
+                return
+            }
+            extensionRepository.installExtension(packageName, apkPath)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

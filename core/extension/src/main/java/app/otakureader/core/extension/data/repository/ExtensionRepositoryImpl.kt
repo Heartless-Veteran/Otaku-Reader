@@ -6,12 +6,12 @@ import app.otakureader.core.extension.data.remote.ExtensionRemoteDataSource
 import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.model.InstallStatus
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
+import app.otakureader.core.extension.loader.ExtensionLoadResult
 import app.otakureader.core.extension.loader.ExtensionLoader
 import app.otakureader.core.extension.blocklist.ExtensionBlocklistStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.CancellationException
 
@@ -221,9 +221,25 @@ class ExtensionRepositoryImpl(
     override suspend fun trustExtension(pkgName: String): Result<Unit> = runCatching {
         val ext = localDataSource.getExtensionByPkgName(pkgName)
             ?: error("Extension $pkgName not found")
-        val hash = ext.signatureHash
-            ?: error("Extension $pkgName has no signature hash — cannot trust")
+        val hash = ext.signatureHash ?: run {
+            // Hash not yet in DB (e.g. installed from a minified-index repo that doesn't
+            // include the signing-cert hash). Load the installed APK to compute it.
+            val apkPath = ext.apkPath
+                ?: error("Extension $pkgName has no installed APK — install it before trusting")
+            val loadResult = extensionLoader.loadExtension(apkPath)
+            when (loadResult) {
+                is ExtensionLoadResult.Untrusted -> loadResult.extension.signatureHash
+                is ExtensionLoadResult.Success -> loadResult.extension.signatureHash
+                is ExtensionLoadResult.Error ->
+                    error("Cannot read extension to determine its signature: ${loadResult.message}")
+            } ?: error("Extension $pkgName has no signature hash — cannot trust")
+        }
         extensionLoader.trustExtension(hash)
+        // Persist the hash so isTrusted reflects the new state immediately and future
+        // trust/revoke calls don't need to re-parse the APK.
+        if (ext.signatureHash == null) {
+            localDataSource.updateSignatureHash(pkgName, hash)
+        }
     }
 
     override suspend fun revokeExtensionTrust(pkgName: String): Result<Unit> = runCatching {
