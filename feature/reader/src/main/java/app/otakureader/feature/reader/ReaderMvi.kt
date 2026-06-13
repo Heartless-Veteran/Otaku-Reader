@@ -217,9 +217,9 @@ data class ReaderState(
     val isFirstPage: Boolean
         get() = currentPage <= 0
 
-    /** Check if we're on the last page */
+    /** Check if we're on the last page. False while no pages are loaded. */
     val isLastPage: Boolean
-        get() = currentPage >= pages.size - 1
+        get() = pages.isNotEmpty() && currentPage >= pages.size - 1
 
     /** Get current page or null */
     val currentPageData: ReaderPage?

@@ -174,7 +174,9 @@ private fun ChapterListItem(
                 if (chapter.bookmark) {
                     Icon(
                         imageVector = Icons.Filled.Bookmark,
-                        contentDescription = null,
+                        // Status indicators carry real information for screen-reader
+                        // users — the row text alone doesn't say bookmarked/read.
+                        contentDescription = stringResource(R.string.reader_chapter_bookmarked),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp),
                     )
@@ -183,7 +185,7 @@ private fun ChapterListItem(
                 if (chapter.read && !isCurrent) {
                     Icon(
                         imageVector = Icons.Filled.CheckCircle,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.reader_chapter_read),
                         tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         modifier = Modifier.size(16.dp),
                     )

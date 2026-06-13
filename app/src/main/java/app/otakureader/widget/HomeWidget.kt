@@ -1,6 +1,7 @@
 package app.otakureader.widget
 
 import android.content.Context
+import android.util.Log
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.runtime.Composable
@@ -84,7 +85,8 @@ class HomeWidget : GlanceAppWidget() {
 
         val items = try {
             buildItems(context, mangaRepository, chapterRepository)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w("HomeWidget", "Failed to load home widget items", e)
             emptyList()
         }
 

@@ -92,6 +92,9 @@ class SyncRepositoryImpl @Inject constructor(
                 syncQueueDao.recordAttemptFailure(item.id, e.message)
             }
         }
+        // Items that just hit the attempt cap fall out of getPending() forever —
+        // delete them so the table doesn't grow without bound.
+        syncQueueDao.pruneExhausted()
     }
 
     override suspend fun pullAndApply(deviceId: String, since: Long) {

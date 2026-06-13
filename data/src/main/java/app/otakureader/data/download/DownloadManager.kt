@@ -1,6 +1,7 @@
 package app.otakureader.data.download
 
 import android.content.Context
+import android.util.Log
 import app.otakureader.core.common.network.NetworkMonitor
 import app.otakureader.core.common.network.NetworkType
 import app.otakureader.core.database.dao.DownloadQueueDao
@@ -11,6 +12,9 @@ import app.otakureader.domain.model.DownloadBlockedException
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.DownloadPriority
 import app.otakureader.domain.model.DownloadStatus
+import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.sourceapi.SourceChapter
 import app.otakureader.core.common.di.ApplicationScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -71,6 +75,8 @@ class DownloadManager @Inject constructor(
     private val cbzEncryptionStore: CbzEncryptionStore,
     private val networkMonitor: NetworkMonitor,
     private val downloadQueueDao: DownloadQueueDao,
+    private val chapterRepository: ChapterRepository,
+    private val sourceRepository: SourceRepository,
     @ApplicationScope private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
@@ -177,9 +183,18 @@ class DownloadManager @Inject constructor(
             // Only start immediately if under the limit
             jobs.size < maxConcurrentDownloads
         }
-        
-        val request = requests[chapterId] ?: return
-        
+
+        val request = requests[chapterId]
+        if (request == null) {
+            // Without the original request the item can never start; leaving it PAUSED
+            // would strand it in the queue with a resume button that silently does nothing.
+            // FAILED is honest and lets the user retry (which re-reads the persisted request).
+            Log.w(TAG, "resume($chapterId): no stored request — marking FAILED")
+            mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
+            downloadQueueDao.updateStatus(chapterId, DownloadStatus.FAILED.name)
+            return
+        }
+
         if (canStart) {
             launchDownloadJob(chapterId, request)
         } else {
@@ -509,21 +524,24 @@ class DownloadManager @Inject constructor(
             updateStatus(chapterId, DownloadStatus.DOWNLOADING)
 
             jobs[chapterId] = scope.launch {
-                // Track whether actual page downloads were attempted.  When pageUrls is empty
-                // the item is re-queued and waits for page URLs to be resolved; in that case
-                // processPendingQueue must NOT be called to avoid an infinite retry loop.
-                var downloadedPages = false
                 try {
-                    val pageUrls = request.pageUrls
+                    // Most callers (Details, Updates, Library bulk download, auto-download)
+                    // enqueue without page URLs — resolve them from the source now. A request
+                    // that still has no pages after resolution can never download, so it is
+                    // marked FAILED (visible + retryable) rather than re-queued forever.
+                    val pageUrls = request.pageUrls.ifEmpty { resolvePageUrls(request) }
                     val totalPages = pageUrls.size
 
                     if (totalPages == 0) {
-                        // Pages not yet resolved – park the item back as QUEUED and stop.
-                        mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
+                        mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
                         return@launch
                     }
-
-                    downloadedPages = true
+                    if (request.pageUrls.isEmpty()) {
+                        // Cache the resolved URLs so retries and process-death restores
+                        // don't have to hit the source again.
+                        mutex.withLock { requests[chapterId] = request.copy(pageUrls = pageUrls) }
+                        downloadQueueDao.updatePageUrls(chapterId, Json.encodeToString(pageUrls))
+                    }
                     val packAsCbz = downloadPreferences.saveAsCbz.first()
 
                     pageUrls.forEachIndexed { index, url ->
@@ -551,31 +569,10 @@ class DownloadManager @Inject constructor(
                     }
 
                     if (isActive) {
-                        if (packAsCbz) {
-                            val chapterDir = DownloadProvider.getChapterDir(
-                                context,
-                                request.sourceName,
-                                request.mangaTitle,
-                                request.chapterTitle
-                            )
-                            CbzCreator.createCbz(chapterDir).onSuccess { cbzFile ->
-                                chapterDir.listFiles()
-                                    ?.filter { file ->
-                                        file.isFile &&
-                                            file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
-                                    }
-                                    ?.forEach { it.delete() }
-                                // Encrypt the CBZ in-place if the feature is enabled.
-                                val encryptionEnabled = downloadPreferences.cbzEncryptionEnabled.first()
-                                if (encryptionEnabled) {
-                                    val passphrase = cbzEncryptionStore.getPassphrase()
-                                    if (passphrase != null) {
-                                        CbzCreator.encryptInPlace(cbzFile, passphrase)
-                                    }
-                                }
-                            }
-                        }
-                        mutex.withLock { updateStatus(chapterId, DownloadStatus.COMPLETED) }
+                        val packagingOk = !packAsCbz || packageChapterAsCbz(chapterId, request)
+                        val finalState =
+                            if (packagingOk) DownloadStatus.COMPLETED else DownloadStatus.FAILED
+                        mutex.withLock { updateStatus(chapterId, finalState) }
                     }
                 } finally {
                     val finalStatus = mutex.withLock {
@@ -587,13 +584,95 @@ class DownloadManager @Inject constructor(
                         DownloadStatus.FAILED -> downloadQueueDao.updateStatus(chapterId, DownloadStatus.FAILED.name)
                         else -> Unit
                     }
-                    // Only look for the next queued item when real download work was done.
-                    // Skipping this when pages were empty prevents an infinite re-launch loop.
-                    if (downloadedPages) {
-                        processPendingQueue()
-                    }
+                    // Every outcome of this job is terminal (COMPLETED / FAILED / cancelled),
+                    // so pumping the queue here can never re-launch the same item in a loop.
+                    processPendingQueue()
                 }
             }
         }
+    }
+
+    /**
+     * Packs the downloaded loose pages into a CBZ and optionally encrypts it in place.
+     *
+     * Returns false only when the user has CBZ encryption enabled and encrypting failed —
+     * a silently-unencrypted CBZ would violate the user's encryption setting, so the
+     * download is surfaced as FAILED instead. A failed packaging step (CBZ not created)
+     * still returns true: the loose pages on disk remain fully readable.
+     */
+    private suspend fun packageChapterAsCbz(chapterId: Long, request: ChapterDownloadRequest): Boolean {
+        var encryptionFailed = false
+        val chapterDir = DownloadProvider.getChapterDir(
+            context,
+            request.sourceName,
+            request.mangaTitle,
+            request.chapterTitle
+        )
+        CbzCreator.createCbz(chapterDir).onSuccess { cbzFile ->
+            chapterDir.listFiles()
+                ?.filter { file ->
+                    file.isFile &&
+                        file.extension.lowercase() in DownloadProvider.PAGE_EXTENSIONS
+                }
+                ?.forEach { it.delete() }
+            // Encrypt the CBZ in-place if the feature is enabled.
+            val encryptionEnabled = downloadPreferences.cbzEncryptionEnabled.first()
+            if (encryptionEnabled) {
+                val passphrase = cbzEncryptionStore.getPassphrase()
+                if (passphrase != null) {
+                    // encryptInPlace throws on failure; uncaught it would escape the
+                    // download job's try (which has no catch) into the app scope.
+                    runCatching {
+                        CbzCreator.encryptInPlace(cbzFile, passphrase)
+                    }.onFailure { e ->
+                        Log.e(TAG, "CBZ encryption failed for chapter $chapterId", e)
+                        encryptionFailed = true
+                    }
+                }
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "CBZ packaging failed for chapter $chapterId; leaving loose pages", e)
+        }
+        return !encryptionFailed
+    }
+
+    /**
+     * Resolves page image URLs for a request that was enqueued without them.
+     *
+     * Loads the chapter from the database to recover its source URL, then asks the source
+     * for the page list. Returns an empty list when the chapter no longer exists, the
+     * source is unavailable, or the source returned no usable URLs.
+     */
+    private suspend fun resolvePageUrls(request: ChapterDownloadRequest): List<String> {
+        // runCatching: a throw here would escape the download job's try/finally (which has
+        // no catch) and crash the application scope. An unresolvable chapter must instead
+        // surface as an empty list → FAILED item.
+        val chapter = runCatching { chapterRepository.getChapterById(request.chapterId) }
+            .onFailure { e -> Log.w(TAG, "resolvePageUrls: chapter lookup failed", e) }
+            .getOrNull()
+        if (chapter == null) {
+            Log.w(TAG, "resolvePageUrls: chapter ${request.chapterId} not found in database")
+            return emptyList()
+        }
+        val sourceChapter = SourceChapter(
+            url = chapter.url,
+            name = chapter.name,
+            dateUpload = chapter.dateUpload,
+            chapterNumber = chapter.chapterNumber,
+            scanlator = chapter.scanlator ?: "",
+        )
+        return sourceRepository.getPageList(request.sourceName, sourceChapter)
+            .onFailure { e ->
+                Log.w(TAG, "resolvePageUrls: source failed for chapter ${request.chapterId}", e)
+            }
+            .getOrNull()
+            ?.mapNotNull { page ->
+                page.imageUrl?.takeIf { it.isNotBlank() } ?: page.url.takeIf { it.isNotBlank() }
+            }
+            .orEmpty()
+    }
+
+    private companion object {
+        const val TAG = "DownloadManager"
     }
 }

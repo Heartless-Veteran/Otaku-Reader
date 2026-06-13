@@ -1,5 +1,6 @@
 package app.otakureader.feature.browse
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,12 +43,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.sourceapi.SourceManga
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 
 /**
  * Global search screen that queries all installed sources simultaneously and
@@ -259,11 +263,17 @@ private fun GlobalSearchMangaCard(
     ) {
         Column {
             AsyncImage(
-                model = manga.thumbnailUrl,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga.thumbnailUrl)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = manga.title,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(2f / 3f),
+                    .aspectRatio(2f / 3f)
+                    // Tonal backdrop so failed/missing covers show a neutral block
+                    // instead of an empty hole in the result row.
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentScale = ContentScale.Crop
             )
             Text(

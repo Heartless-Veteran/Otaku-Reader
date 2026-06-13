@@ -86,4 +86,5 @@
     <string name="updates_date_this_week">This week</string>
     <string name="updates_date_this_month">This month</string>
     <string name="updates_date_older">Older</string>
+    <string name="updates_unknown_error">Something went wrong while loading updates</string>
 </resources>

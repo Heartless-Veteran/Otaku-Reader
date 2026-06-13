@@ -1,5 +1,6 @@
 package app.otakureader.feature.browse
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,6 +47,8 @@ import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.sourceapi.SourceManga
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -259,10 +263,17 @@ fun SourceMangaCard(
                     .aspectRatio(2f / 3f)
             ) {
                 AsyncImage(
-                    model = manga.thumbnailUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(manga.thumbnailUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = manga.title,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Tonal backdrop so failed/missing covers show a neutral block
+                        // instead of an empty hole in the grid.
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
             }
 

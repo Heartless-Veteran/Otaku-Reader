@@ -97,7 +97,9 @@ fun ErrorScreen(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = title,
+            // Decorative: the title Text below carries the meaning; a description here
+            // would make TalkBack announce the error twice.
+            contentDescription = null,
             modifier = Modifier.size(64.dp),
             tint = otaku.danger
         )
@@ -122,7 +124,7 @@ fun ErrorScreen(
         if (onRetry != null) {
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onRetry) {
-                Icon(Icons.Default.Refresh, contentDescription = "Retry")
+                Icon(Icons.Default.Refresh, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
                 Text(retryText)
             }

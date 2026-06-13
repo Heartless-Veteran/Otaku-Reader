@@ -200,4 +200,7 @@
     <!-- Custom cover art -->
     <string name="details_set_custom_cover">Set custom cover</string>
     <string name="details_remove_custom_cover">Remove custom cover</string>
+    <string name="details_more_options">More options</string>
+    <string name="details_download_all_chapters">Download all chapters</string>
+    <string name="details_download_unread_chapters">Download unread chapters</string>
 </resources>

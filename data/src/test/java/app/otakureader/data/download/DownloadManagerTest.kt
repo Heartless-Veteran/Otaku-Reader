@@ -8,6 +8,10 @@ import app.otakureader.core.preferences.CbzEncryptionStore
 import app.otakureader.core.preferences.DownloadPreferences
 import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.DownloadPriority
+import app.otakureader.domain.model.Chapter
+import app.otakureader.domain.repository.ChapterRepository
+import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.sourceapi.Page
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -39,6 +43,8 @@ class DownloadManagerTest {
     private lateinit var cbzEncryptionStore: CbzEncryptionStore
     private lateinit var networkMonitor: NetworkMonitor
     private lateinit var downloadQueueDao: DownloadQueueDao
+    private lateinit var chapterRepository: ChapterRepository
+    private lateinit var sourceRepository: SourceRepository
     private lateinit var downloadManager: DownloadManager
 
     private val testRequest = ChapterDownloadRequest(
@@ -73,7 +79,23 @@ class DownloadManagerTest {
         // Mock file operations
         every { context.getExternalFilesDir(null) } returns File("/tmp/test")
 
-        downloadManager = DownloadManager(context, downloader, downloadPreferences, cbzEncryptionStore, networkMonitor, downloadQueueDao, TestScope(testDispatcher))
+        // Default: page resolution finds nothing, so legacy tests that enqueue with
+        // emptyList() pageUrls get a deterministic terminal FAILED state. Individual
+        // tests override these stubs to exercise the successful-resolution path.
+        chapterRepository = mockk { coEvery { getChapterById(any()) } returns null }
+        sourceRepository = mockk(relaxed = true)
+
+        downloadManager = DownloadManager(
+            context,
+            downloader,
+            downloadPreferences,
+            cbzEncryptionStore,
+            networkMonitor,
+            downloadQueueDao,
+            chapterRepository,
+            sourceRepository,
+            TestScope(testDispatcher)
+        )
     }
 
     // -------------------------------------------------------------------------
@@ -411,24 +433,40 @@ class DownloadManagerTest {
     // -------------------------------------------------------------------------
 
     @Test
-    fun `enqueue with empty pageUrls keeps download QUEUED`() = runTest(testDispatcher) {
-        // Given - request with no pages
-        val emptyRequest = testRequest.copy(pageUrls = emptyList())
+    fun `enqueue with empty pageUrls resolves pages from the source and downloads`() = runTest(testDispatcher) {
+        // Given - the chapter exists and the source returns a page list
+        coEvery { chapterRepository.getChapterById(testRequest.chapterId) } returns Chapter(
+            id = testRequest.chapterId,
+            mangaId = testRequest.mangaId,
+            url = "/chapter/1",
+            name = testRequest.chapterTitle,
+        )
+        coEvery { sourceRepository.getPageList(any(), any()) } returns Result.success(
+            listOf(Page(index = 0, imageUrl = "https://example.com/resolved-page1.jpg"))
+        )
 
-        // When
-        downloadManager.enqueue(emptyRequest)
+        // When - enqueued without page URLs (how Details/Updates/auto-download enqueue)
+        downloadManager.enqueue(testRequest.copy(pageUrls = emptyList()))
         advanceUntilIdle()
 
-        // Poll until the IO job completes and sets the status back to QUEUED
-        var downloads = downloadManager.downloads.first()
-        while (downloads.firstOrNull()?.status == DownloadStatus.DOWNLOADING) {
-            advanceUntilIdle()
-            downloads = downloadManager.downloads.first()
-        }
+        // Then - pages were resolved, downloaded, and persisted for restore
+        coVerify { downloader.downloadPage("https://example.com/resolved-page1.jpg", any()) }
+        coVerify { downloadQueueDao.updatePageUrls(testRequest.chapterId, any()) }
+    }
 
-        // Then - should stay QUEUED (not fail)
+    @Test
+    fun `enqueue with empty pageUrls fails when page resolution fails`() = runTest(testDispatcher) {
+        // Given - the chapter no longer exists in the database
+        coEvery { chapterRepository.getChapterById(testRequest.chapterId) } returns null
+
+        // When
+        downloadManager.enqueue(testRequest.copy(pageUrls = emptyList()))
+        advanceUntilIdle()
+
+        // Then - terminal FAILED (visible and retryable), never parked QUEUED forever
+        val downloads = downloadManager.downloads.first()
         assertEquals(1, downloads.size)
-        assertEquals(DownloadStatus.QUEUED, downloads[0].status)
+        assertEquals(DownloadStatus.FAILED, downloads[0].status)
     }
 
     // -------------------------------------------------------------------------

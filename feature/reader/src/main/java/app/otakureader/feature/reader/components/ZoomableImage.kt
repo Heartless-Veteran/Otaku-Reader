@@ -13,8 +13,18 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.Image
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -32,8 +42,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import app.otakureader.feature.reader.R
 import coil3.compose.AsyncImage
 import coil3.decode.Decoder
 import coil3.request.ImageRequest
@@ -161,10 +174,20 @@ fun ZoomableImage(
     ) {
         if (imageUrl != null) {
             val context = LocalContext.current
+            // Bumped by the retry button on load failure; keyed into the request's memory-cache
+            // key so the rebuilt request is not equal to the failed one and Coil re-executes it.
+            var retryAttempt by remember(imageUrl) { mutableStateOf(0) }
+            var loadState by remember(imageUrl, retryAttempt) {
+                mutableStateOf<PageLoadState>(PageLoadState.Loading)
+            }
             val imageModel = remember(
-                imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize, decoderFactory, context
+                imageUrl, cropBordersEnabled, imageQuality, dataSaverEnabled, containerSize,
+                decoderFactory, context, retryAttempt
             ) {
                 val builder = ImageRequest.Builder(context).data(imageUrl)
+                if (retryAttempt > 0) {
+                    builder.memoryCacheKey("$imageUrl#retry=$retryAttempt")
+                }
                 // Determine the container's longest side in px (0 when not yet measured).
                 val containerMax = if (containerSize != IntSize.Zero)
                     max(containerSize.width, containerSize.height) else 0
@@ -203,7 +226,10 @@ fun ZoomableImage(
             AsyncImage(
                 model = imageModel,
                 contentDescription = contentDescription,
+                onLoading = { loadState = PageLoadState.Loading },
+                onError = { loadState = PageLoadState.Error },
                 onSuccess = { state ->
+                    loadState = PageLoadState.Success
                     onImageSizeKnown?.invoke(state.result.image.width, state.result.image.height)
                 },
                 modifier = Modifier
@@ -228,9 +254,42 @@ fun ZoomableImage(
                 contentScale = contentScale,
                 filterQuality = renderFilterQuality
             )
+
+            when (loadState) {
+                PageLoadState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        strokeWidth = 3.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    )
+                }
+                PageLoadState.Error -> {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(
+                            painter = painterResource(R.drawable.img_mascot_page_error),
+                            contentDescription = null,
+                            modifier = Modifier.size(96.dp),
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.reader_page_load_failed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(onClick = { retryAttempt++ }) {
+                            Text(stringResource(R.string.reader_retry))
+                        }
+                    }
+                }
+                PageLoadState.Success -> Unit
+            }
         }
     }
 }
+
+/** Load lifecycle of the current page image, driving the progress / error overlays. */
+private enum class PageLoadState { Loading, Success, Error }
 
 /**
  * Advanced zoomable state with smooth animations and boundary constraints.

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.OtakuReaderBase" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- SplashScreen: window background must be opaque (indigo) -->
-        <item name="android:windowBackground">#0f172a</item>
+        <!-- SplashScreen: window background must be opaque (mascot navy) -->
+        <item name="android:windowBackground">#2B2F3A</item>
     </style>
 
     <!-- SplashScreen theme for cold start -->
     <style name="Theme.OtakuReaderSplash" parent="Theme.SplashScreen">
-        <!-- Window background (indigo - original) -->
-        <item name="windowSplashScreenBackground">#0f172a</item>
+        <!-- Window background: dark navy matching the mascot icon set's backdrop -->
+        <item name="windowSplashScreenBackground">#2B2F3A</item>
 
-        <!-- Animated icon: use the foreground vector (required for splash) -->
+        <!-- Animated icon: the launcher foreground (mascot hugging a manga stack) -->
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
 
-        <!-- Icon background tint (indigo - original) -->
-        <item name="windowSplashScreenIconBackgroundColor">#0f172a</item>
+        <!-- Circle behind the icon: same navy so the mascot floats on the splash -->
+        <item name="windowSplashScreenIconBackgroundColor">#2B2F3A</item>
 
         <!-- Animation duration (max 1000ms per Android guidelines) -->
         <item name="windowSplashScreenAnimationDuration">300</item>

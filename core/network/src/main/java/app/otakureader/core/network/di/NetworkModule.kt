@@ -46,6 +46,11 @@ object NetworkModule {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            // readTimeout only bounds the gap between individual reads — a server trickling
+            // one byte every 29 s never times out. callTimeout caps the whole call so a
+            // stalled page download fails (and can be retried) instead of hanging forever.
+            // 2 minutes is generous enough for large page images on slow connections.
+            .callTimeout(2, TimeUnit.MINUTES)
             // IgnoreGzipInterceptor must come before BrotliInterceptor so it can strip the
             // transparent gzip header added by BridgeInterceptor, allowing BrotliInterceptor
             // to handle both gzip and Brotli decompression explicitly.

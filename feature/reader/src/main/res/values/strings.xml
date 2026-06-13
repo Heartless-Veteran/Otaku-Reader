@@ -178,4 +178,7 @@
     <string name="reader_comments_note_hint">Private note for this chapter</string>
     <string name="reader_comments_note_save">Save note</string>
     <string name="reader_comments_external_title">Discussions elsewhere</string>
+    <string name="reader_page_load_failed">Page failed to load</string>
+    <string name="reader_chapter_bookmarked">Bookmarked</string>
+    <string name="reader_chapter_read">Read</string>
 </resources>

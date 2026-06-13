@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +62,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.domain.model.MangaUpdate
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import kotlinx.coroutines.flow.collectLatest
 import java.time.Instant
 import java.time.LocalDate
@@ -175,7 +178,7 @@ fun UpdatesScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = state.error ?: "Unknown error",
+                    text = state.error ?: stringResource(R.string.updates_unknown_error),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -405,10 +408,16 @@ private fun UpdateItem(
             // Manga cover thumbnail
             Surface(
                 shape = MaterialTheme.shapes.small,
+                // Tonal backdrop so a failed/missing thumbnail shows a neutral block
+                // instead of an empty hole in the row.
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier.size(width = 40.dp, height = 56.dp)
             ) {
                 AsyncImage(
-                    model = update.manga.thumbnailUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(update.manga.thumbnailUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = update.manga.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -445,7 +454,7 @@ private fun UpdateItem(
                 )
             }
             // Per-item download button
-            IconButton(onClick = onDownloadClick, modifier = Modifier.size(32.dp)) {
+            IconButton(onClick = onDownloadClick) {
                 Icon(
                     imageVector = Icons.Default.Download,
                     contentDescription = stringResource(R.string.updates_download_chapter),
