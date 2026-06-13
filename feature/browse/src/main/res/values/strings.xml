@@ -120,6 +120,9 @@
     <string name="browse_global_search_idle_hint">Enter a query to search all sources</string>
 
     <!-- ExtensionsBottomSheet -->
+    <string name="extensions_tab_installed">Installed</string>
+    <string name="extensions_tab_available">Available</string>
+    <string name="extensions_tab_updates">Updates</string>
     <string name="extensions_sheet_title">Extensions</string>
     <string name="extensions_search_placeholder">Search extensions...</string>
     <string name="extensions_repo_url_placeholder">https://raw.githubusercontent.com/komikku-app/extensions/repo</string>

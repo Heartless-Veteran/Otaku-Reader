@@ -40,10 +40,8 @@ fun NavGraphBuilder.browseScreen(
             onMangaClick = { sourceId, mangaUrl ->
                 onMangaClick(sourceId, mangaUrl, "")
             },
-            onInstallExtensionClick = onNavigateToExtensions,
             onGlobalSearchClick = onNavigateToGlobalSearch,
             onOpdsClick = onNavigateToOpds,
-            onNavigateToMigration = onNavigateToMigration,
             onNavigateToReader = onNavigateToReader,
             onNavigateToFeedManagement = onNavigateToFeedManagement,
             onNavigateToExtensionSettings = onNavigateToExtensionSettings,

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -108,11 +109,9 @@ import kotlinx.coroutines.launch
 fun BrowseScreen(
     viewModel: BrowseViewModel,
     onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
-    onInstallExtensionClick: () -> Unit,
     onGlobalSearchClick: () -> Unit = {},
     onOpdsClick: () -> Unit = {},
     onNavigateToLibrary: (() -> Unit)? = null,
-    onNavigateToMigration: () -> Unit = {},
     // Feed tab callbacks
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
     onNavigateToFeedManagement: () -> Unit = {},
@@ -255,7 +254,6 @@ fun BrowseScreen(
                     )
                     BrowseTab.EXTENSIONS -> {
                         ExtensionsTabBody(
-                            onNavigateToSettings = onNavigateToExtensionSettings,
                             onNavigateToRepositories = onNavigateToExtensionRepositories,
                             onNavigateToExtensionDetail = onNavigateToExtensionDetail,
                             modifier = Modifier.fillMaxSize(),
@@ -387,7 +385,6 @@ private fun SourcesTabContent(
                     source = state.sources.find { it.id == state.currentSourceId },
                     sourceId = state.currentSourceId,
                     onBack = { onEvent(BrowseEvent.ClearSourceSelection) },
-                    onSearch = {},
                 )
                 BrowseSearchBar(state = state, onEvent = onEvent)
                 if (state.isLoading && state.popularManga.isEmpty()) {
@@ -490,7 +487,6 @@ private fun SelectedSourceHeader(
     source: MangaSource?,
     sourceId: String,
     onBack: () -> Unit,
-    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -893,7 +889,7 @@ private fun MangaGrid(
             )
         }
         if (hasNextPage || isLoading) {
-            item {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Box(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     contentAlignment = Alignment.Center,
@@ -941,8 +937,8 @@ private fun MangaCard(
                             .align(Alignment.TopStart)
                             .padding(6.dp)
                             .background(
-                                color = if (isManga) Color(0xFFFF4757).copy(alpha = 0.15f)
-                                else Color(0xFF9B59B6).copy(alpha = 0.15f),
+                                color = if (isManga) MaterialTheme.colorScheme.errorContainer
+                                else MaterialTheme.colorScheme.tertiaryContainer,
                                 shape = RoundedCornerShape(6.dp),
                             )
                             .padding(horizontal = 8.dp, vertical = 3.dp),
@@ -951,7 +947,8 @@ private fun MangaCard(
                             text = if (isManga) stringResource(R.string.browse_manga_type_badge)
                             else stringResource(R.string.browse_manhwa_type_badge),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6),
+                            color = if (isManga) MaterialTheme.colorScheme.onErrorContainer
+                            else MaterialTheme.colorScheme.onTertiaryContainer,
                         )
                     }
                 }

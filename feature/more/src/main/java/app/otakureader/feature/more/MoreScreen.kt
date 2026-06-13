@@ -226,15 +226,24 @@ fun MoreScreen(
     }
 }
 
+private val SectionDividerTopPadding = 8.dp
+private val SectionTitleStartPadding = 16.dp
+private val SectionTitleTopPadding = 12.dp
+private val SectionTitleBottomPadding = 4.dp
+
 @Composable
 private fun MoreSectionHeader(title: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(top = SectionDividerTopPadding))
         Text(
             text = title,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+            modifier = Modifier.padding(
+                start = SectionTitleStartPadding,
+                top = SectionTitleTopPadding,
+                bottom = SectionTitleBottomPadding,
+            ),
         )
     }
 }

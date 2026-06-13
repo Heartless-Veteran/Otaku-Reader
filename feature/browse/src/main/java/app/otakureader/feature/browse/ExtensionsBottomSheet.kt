@@ -139,7 +139,11 @@ private fun ExtensionsBody(
     modifier: Modifier = Modifier,
 ) {
     val selectedTab = state.selectedTab
-    val tabs = listOf("Installed", "Available", "Updates")
+    val tabs = listOf(
+        stringResource(R.string.extensions_tab_installed),
+        stringResource(R.string.extensions_tab_available),
+        stringResource(R.string.extensions_tab_updates),
+    )
 
     Column(modifier = modifier) {
         // Search bar
@@ -321,7 +325,6 @@ private fun ExtensionsContent(
  */
 @Composable
 internal fun ExtensionsTabBody(
-    onNavigateToSettings: () -> Unit = {},
     onNavigateToRepositories: () -> Unit = {},
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
     modifier: Modifier = Modifier,
@@ -329,13 +332,12 @@ internal fun ExtensionsTabBody(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is ExtensionsEffect.ShowSnackbar -> scope.launch { snackbarHostState.showSnackbar(effect.message) }
-                is ExtensionsEffect.ShowError -> scope.launch { snackbarHostState.showSnackbar(effect.message) }
+                is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is ExtensionsEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
             }
         }
     }

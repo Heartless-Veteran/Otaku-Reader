@@ -335,11 +335,11 @@ class BrowseViewModel @Inject constructor(
     }
 
     private fun loadLatestUpdates(sourceId: String? = null) {
-        val sourceId = sourceId ?: _state.value.currentSourceId ?: return
+        val resolvedSourceId = sourceId ?: _state.value.currentSourceId ?: return
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            getLatestUpdatesUseCase(sourceId, 1)
+            getLatestUpdatesUseCase(resolvedSourceId, 1)
                 .onSuccess { mangaPage ->
                     _state.update {
                         it.copy(
