@@ -1,0 +1,62 @@
+name: Extension / Source Request
+description: Request support for a new manga source
+title: "[Source] "
+labels: ["extension-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Otaku Reader runs community-maintained Tachiyomi-compatible extensions. If an extension already exists for your source in the [Tachiyomi](https://github.com/tachiyomiorg/tachiyomi-extensions), [Mihon](https://github.com/keiyoushi/extensions), or [Komikku](https://codeberg.org/Komikku/extensions) repos, it will already work — install it from Settings → Extensions without needing a new request.
+
+        Only open a request here if the source has **no existing Tachiyomi-compatible extension** and you'd like one built for Otaku Reader specifically.
+
+  - type: input
+    id: name
+    attributes:
+      label: Source name
+      placeholder: "Example: AcgRip"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Source URL
+      placeholder: "https://example.com"
+    validations:
+      required: true
+
+  - type: input
+    id: language
+    attributes:
+      label: Primary language
+      placeholder: "English / Japanese / Chinese (Traditional) / etc."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: existing_extension
+    attributes:
+      label: Existing Tachiyomi-compatible extension?
+      description: Check all that apply.
+      options:
+        - label: I checked the Tachiyomi extensions repo — no extension exists
+        - label: I checked the Mihon / Keiyoushi extensions repo — no extension exists
+        - label: An extension exists but it's broken or unmaintained
+
+  - type: dropdown
+    id: nsfw
+    attributes:
+      label: Does the source contain adult content?
+      options:
+        - "No"
+        - "Yes — NSFW"
+        - "Mixed (has NSFW sections)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else worth knowing — how popular the source is, what types of content it hosts, login requirements, or API availability.

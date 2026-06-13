@@ -1,0 +1,75 @@
+name: Bug Report
+description: Something in the app isn't working correctly
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a new report, please search [existing issues](https://github.com/Heartless-Veteran/Otaku-Reader/issues) to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. Include what you were doing and what went wrong.
+      placeholder: "Example: Tapping 'Download chapter' from the Details screen silently does nothing — no progress, no error."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: How can we trigger this bug reliably?
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should have happened instead?
+    validations:
+      required: true
+
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: Found in Settings → About. Example — 1.0.0-beta (build 42).
+      placeholder: "1.0.0-beta (build 42)"
+    validations:
+      required: true
+
+  - type: input
+    id: android_version
+    attributes:
+      label: Android version
+      description: Android version and device model.
+      placeholder: "Android 14 — Pixel 7"
+    validations:
+      required: true
+
+  - type: input
+    id: source
+    attributes:
+      label: Source / extension (if relevant)
+      description: Which source or extension were you using when the bug occurred? Leave blank if not source-related.
+      placeholder: "MangaDex v6.4.1"
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots or screen recording
+      description: Attach any screenshots or a short screen recording that illustrate the issue.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — related settings, frequency ("happens every time" vs "happened once"), or relevant behaviour you noticed.
