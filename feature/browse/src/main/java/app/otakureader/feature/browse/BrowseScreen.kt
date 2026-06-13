@@ -116,7 +116,6 @@ fun BrowseScreen(
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
     onNavigateToFeedManagement: () -> Unit = {},
     // Extensions tab callbacks
-    onNavigateToExtensionSettings: () -> Unit = {},
     onNavigateToExtensionRepositories: () -> Unit = {},
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
     // Migrate tab callback — navigate to the migration wizard with selected manga

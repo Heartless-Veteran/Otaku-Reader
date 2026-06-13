@@ -44,7 +44,6 @@ fun NavGraphBuilder.browseScreen(
             onOpdsClick = onNavigateToOpds,
             onNavigateToReader = onNavigateToReader,
             onNavigateToFeedManagement = onNavigateToFeedManagement,
-            onNavigateToExtensionSettings = onNavigateToExtensionSettings,
             onNavigateToExtensionRepositories = onNavigateToExtensionRepositories,
             onNavigateToExtensionDetail = onNavigateToExtensionDetail,
             onStartMigration = onStartMigration,
