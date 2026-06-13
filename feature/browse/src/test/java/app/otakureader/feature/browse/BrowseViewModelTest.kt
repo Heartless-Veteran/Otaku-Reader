@@ -89,6 +89,8 @@ class BrowseViewModelTest {
         every { generalPreferences.sourceCategoryMap } returns flowOf(emptyMap())
         every { generalPreferences.savedSourceSearchesJson } returns flowOf("[]")
         coEvery { generalPreferences.setSavedSourceSearchesJson(any()) } just Awaits
+        every { generalPreferences.lastUsedSourceIds } returns flowOf(emptyList())
+        coEvery { generalPreferences.recordSourceUsed(any()) } just Awaits
 
         // observeLibraryFavorites() is called in ViewModel.init and subscribes to this flow.
         every { mangaRepository.getLibraryManga() } returns flowOf(emptyList())
