@@ -207,6 +207,9 @@ fun OtakuReaderNavHost(
             onNavigateToOpds = {
                 navController.navigate(Route.OpdsCatalog())
             },
+            onNavigateToMigration = {
+                navController.navigate(Route.MigrationEntry)
+            },
         )
 
         // OPDS catalog

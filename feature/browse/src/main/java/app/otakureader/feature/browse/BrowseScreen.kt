@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.PushPin
@@ -103,7 +104,7 @@ fun BrowseScreen(
     onGlobalSearchClick: () -> Unit = {},
     onOpdsClick: () -> Unit = {},
     onNavigateToLibrary: (() -> Unit)? = null,
-    onNavigateToMigration: (() -> Unit)? = null,
+    onNavigateToMigration: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -131,7 +132,7 @@ fun BrowseScreen(
         }
     }
     LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.collect { page ->
+        snapshotFlow { pagerState.settledPage }.collect { page ->
             val tab = tabs.getOrNull(page)
             if (tab != null && tab != state.selectedTab) {
                 viewModel.onEvent(BrowseEvent.SelectTab(tab))
@@ -160,6 +161,9 @@ fun BrowseScreen(
                 TopAppBar(
                     title = { Text(stringResource(R.string.browse_title)) },
                     actions = {
+                        IconButton(onClick = onOpdsClick) {
+                            Icon(Icons.Default.Language, contentDescription = stringResource(R.string.browse_opds_catalogs))
+                        }
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                         }
@@ -340,7 +344,7 @@ private fun ExtensionsTabContent(
 
 @Composable
 private fun MigrateTabContent(
-    onNavigateToMigration: (() -> Unit)?,
+    onNavigateToMigration: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -357,10 +361,8 @@ private fun MigrateTabContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 32.dp),
             )
-            if (onNavigateToMigration != null) {
-                Button(onClick = onNavigateToMigration) {
-                    Text(stringResource(R.string.browse_go_to_migrate))
-                }
+            Button(onClick = onNavigateToMigration) {
+                Text(stringResource(R.string.browse_go_to_migrate))
             }
         }
     }
@@ -455,13 +457,13 @@ private fun BrowseSearchBar(
                 },
                 singleLine = true,
             )
-            if (state.searchQuery.isNotBlank()) {
+            if (state.searchQuery.isNotBlank() && state.currentSourceId != null) {
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(onClick = { onEvent(BrowseEvent.ShowSaveSearchDialog) }) {
                     Icon(Icons.Default.BookmarkBorder, contentDescription = stringResource(R.string.browse_save_search))
                 }
             }
-            if (state.availableFilters.filters.isNotEmpty()) {
+            if (state.currentSourceId != null && state.availableFilters.filters.isNotEmpty()) {
                 Spacer(modifier = Modifier.width(4.dp))
                 FilterButton(activeCount = countActiveFilters(state.activeFilters), onClick = { onEvent(BrowseEvent.ToggleFilterSheet) })
             }
@@ -539,7 +541,14 @@ private fun SourceListContent(
     modifier: Modifier = Modifier,
 ) {
     // Resolve last-used MangaSources from the full source list
-    val allSources = state.sources
+    val allSources = if (state.searchQuery.isBlank()) {
+        state.sources
+    } else {
+        state.sources.filter {
+            it.name.contains(state.searchQuery, ignoreCase = true) ||
+                it.lang.contains(state.searchQuery, ignoreCase = true)
+        }
+    }
     val lastUsedSources = state.lastUsedSourceIds.mapNotNull { id -> allSources.find { it.id == id } }
 
     val pinnedSources = allSources.filter { it.id.toSourceId() in state.pinnedSourceIds }
@@ -589,6 +598,39 @@ private fun SourceListContent(
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription = stringResource(R.string.browse_search_history_remove),
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        // Named saved searches — only shown when there are saved searches for any source
+        if (state.namedSavedSearches.isNotEmpty()) {
+            item(key = "named_searches_header") {
+                SourceSectionHeader(stringResource(R.string.browse_saved_searches))
+            }
+            item(key = "named_searches_row") {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(state.namedSavedSearches, key = { "ns_${it.id}" }) { search ->
+                        FilterChip(
+                            selected = false,
+                            onClick = { onEvent(BrowseEvent.ApplyNamedSavedSearch(search)) },
+                            label = { Text(search.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { onEvent(BrowseEvent.DeleteNamedSavedSearch(search.id)) },
+                                    modifier = Modifier.size(24.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.browse_delete_saved_search),
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
@@ -711,7 +753,7 @@ private fun SourceRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SourceAvatar(name = source.name, isPinned = isPinned)
+            SourceAvatar(name = source.name)
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -760,11 +802,15 @@ private fun SourceRow(
     }
 }
 
+private const val AVATAR_HUE_MASK = 0xFFFFFF
+private const val AVATAR_HUE_DEGREES = 360
+
 @Composable
-private fun SourceAvatar(name: String, isPinned: Boolean, modifier: Modifier = Modifier) {
+private fun SourceAvatar(name: String, modifier: Modifier = Modifier) {
     val initial = name.firstOrNull()?.uppercaseChar() ?: '?'
     // Derive a stable color from the source name hash
-    val hue = (name.hashCode().and(0xFFFFFF).toLong() % 360).toFloat().let { if (it < 0) it + 360f else it }
+    val hue = (name.hashCode().and(AVATAR_HUE_MASK).toLong() % AVATAR_HUE_DEGREES).toFloat()
+        .let { if (it < 0) it + AVATAR_HUE_DEGREES else it }
     val bgColor = Color.hsl(hue, 0.5f, 0.4f)
     Box(
         modifier = modifier
@@ -911,7 +957,8 @@ private fun MangaCard(
                             .padding(horizontal = 8.dp, vertical = 3.dp),
                     ) {
                         Text(
-                            text = if (isManga) "MANGA" else "MANHWA",
+                            text = if (isManga) stringResource(R.string.browse_manga_type_badge)
+                            else stringResource(R.string.browse_manhwa_type_badge),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6),
                         )

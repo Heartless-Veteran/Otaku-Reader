@@ -207,4 +207,8 @@
     <string name="extension_has_changelog_cd">Has changelog</string>
     <!-- Extension blocklist (#1018) -->
     <string name="extension_blocked_warning">Blocked: %1$s</string>
+
+    <!-- Manga/Manhwa type badges on source cards -->
+    <string name="browse_manga_type_badge">MANGA</string>
+    <string name="browse_manhwa_type_badge">MANHWA</string>
 </resources>

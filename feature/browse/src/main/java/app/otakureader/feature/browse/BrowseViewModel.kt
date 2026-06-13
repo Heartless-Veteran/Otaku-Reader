@@ -122,6 +122,9 @@ class BrowseViewModel @Inject constructor(
                         hasSearchResults = false,
                         searchResults = emptyList(),
                         error = null,
+                        availableFilters = FilterList(),
+                        activeFilters = FilterList(),
+                        showFilterSheet = false,
                     )
                 }
             }

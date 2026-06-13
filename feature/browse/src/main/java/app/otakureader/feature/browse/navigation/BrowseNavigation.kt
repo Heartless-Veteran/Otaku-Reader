@@ -23,6 +23,7 @@ fun NavGraphBuilder.browseScreen(
     onNavigateToExtensions: () -> Unit,
     onNavigateToGlobalSearch: () -> Unit,
     onNavigateToOpds: () -> Unit = {},
+    onNavigateToMigration: () -> Unit = {},
 ) {
     composable<Route.Browse> {
         BrowseScreen(
@@ -32,7 +33,8 @@ fun NavGraphBuilder.browseScreen(
             },
             onInstallExtensionClick = onNavigateToExtensions,
             onGlobalSearchClick = onNavigateToGlobalSearch,
-            onOpdsClick = onNavigateToOpds
+            onOpdsClick = onNavigateToOpds,
+            onNavigateToMigration = onNavigateToMigration,
         )
     }
 }

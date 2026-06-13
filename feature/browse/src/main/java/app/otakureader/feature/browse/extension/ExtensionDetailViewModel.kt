@@ -94,11 +94,12 @@ class ExtensionDetailViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         loadExtension()
-                        if (!ext.isTrusted) {
-                            // Trust granted — reload sources so the extension's sources appear immediately
-                            extensionManagementRepository.refreshSources()
+                        val msg = if (!ext.isTrusted) {
+                            val refreshOk = extensionManagementRepository.refreshSources().isSuccess
+                            if (refreshOk) "Extension trusted" else "Extension trusted — sources reload failed"
+                        } else {
+                            "Extension trust revoked"
                         }
-                        val msg = if (!ext.isTrusted) "Extension trusted" else "Extension trust revoked"
                         _effect.send(ExtensionDetailEffect.ShowSnackbar(msg))
                     },
                     onFailure = { e ->
