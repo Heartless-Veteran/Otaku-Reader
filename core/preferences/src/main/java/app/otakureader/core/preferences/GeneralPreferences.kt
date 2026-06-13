@@ -328,7 +328,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val current = prefs[Keys.LAST_USED_SOURCE_IDS]?.split("\n")?.filter { it.isNotBlank() }?.toMutableList() ?: mutableListOf()
         current.remove(sourceId)
         current.add(0, sourceId)
-        prefs[Keys.LAST_USED_SOURCE_IDS] = current.take(5).joinToString("\n")
+        prefs[Keys.LAST_USED_SOURCE_IDS] = current.take(MAX_LAST_USED_SOURCES).joinToString("\n")
     }
 
     // --- Source Pinning & Categories ---
@@ -493,5 +493,6 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         const val DEFAULT_COIL_DISK_CACHE_MB = 512
         const val MIN_COIL_DISK_CACHE_MB = 64
         const val MAX_COIL_DISK_CACHE_MB = 2048
+        const val MAX_LAST_USED_SOURCES = 5
     }
 }
