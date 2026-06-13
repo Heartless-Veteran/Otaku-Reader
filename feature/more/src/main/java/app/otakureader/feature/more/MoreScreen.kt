@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -54,7 +53,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import app.otakureader.core.ui.R as CoreUiR
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.theme.LocalOtakuColors
 
@@ -107,17 +105,8 @@ fun MoreScreen(
             AppLogoCard(versionName = versionName)
             Spacer(modifier = Modifier.height(8.dp))
 
-            MoreListItem(
-                icon = Icons.Default.Settings,
-                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                headline = stringResource(R.string.more_settings),
-                supporting = stringResource(R.string.more_settings_desc),
-                onClick = onNavigateToSettings
-            )
-
-            HorizontalDivider()
-
+            // ── Library Tools ──────────────────────────────────────────────────
+            MoreSectionHeader(stringResource(R.string.more_section_library_tools))
             MoreListItem(
                 icon = Icons.Default.Extension,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -126,9 +115,7 @@ fun MoreScreen(
                 supporting = stringResource(R.string.more_extensions_desc),
                 onClick = onNavigateToExtensions
             )
-
             HorizontalDivider()
-
             MoreListItem(
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -137,43 +124,16 @@ fun MoreScreen(
                 supporting = stringResource(R.string.more_reading_lists_desc),
                 onClick = onNavigateToReadingLists,
             )
-
             HorizontalDivider()
-
             MoreListItem(
-                icon = Icons.Default.Notifications,
-                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                headline = stringResource(R.string.more_feed),
-                supporting = stringResource(R.string.more_feed_desc),
-                onClick = onNavigateToFeed
+                icon = Icons.Default.Download,
+                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+                iconTint = MaterialTheme.colorScheme.onErrorContainer,
+                headline = stringResource(R.string.more_downloads),
+                supporting = stringResource(R.string.more_downloads_desc),
+                onClick = onNavigateToDownloads
             )
-
             HorizontalDivider()
-
-            MoreListItem(
-                icon = Icons.Default.CloudUpload,
-                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                headline = stringResource(R.string.more_backup),
-                supporting = stringResource(R.string.more_backup_desc),
-                onClick = onNavigateToBackup
-            )
-
-            HorizontalDivider()
-
-            // QR Library Sharing (#711)
-            MoreListItem(
-                icon = Icons.Default.QrCode,
-                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                headline = stringResource(R.string.more_share_library),
-                supporting = stringResource(R.string.more_share_library_desc),
-                onClick = onNavigateToShareLibrary
-            )
-
-            HorizontalDivider()
-
             MoreListItem(
                 icon = Icons.Default.PhotoCamera,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -183,19 +143,26 @@ fun MoreScreen(
                 onClick = onNavigateToScanLibrary
             )
 
-            HorizontalDivider()
-
+            // ── Backup & Sync ──────────────────────────────────────────────────
+            MoreSectionHeader(stringResource(R.string.more_section_backup_sync))
             MoreListItem(
-                icon = Icons.Default.Download,
-                iconContainerColor = MaterialTheme.colorScheme.errorContainer,
-                iconTint = MaterialTheme.colorScheme.onErrorContainer,
-                headline = stringResource(R.string.more_downloads),
-                supporting = stringResource(R.string.more_downloads_desc),
-                onClick = onNavigateToDownloads
+                icon = Icons.Default.CloudUpload,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                headline = stringResource(R.string.more_backup),
+                supporting = stringResource(R.string.more_backup_desc),
+                onClick = onNavigateToBackup
             )
-
             HorizontalDivider()
-
+            MoreListItem(
+                icon = Icons.Default.QrCode,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                headline = stringResource(R.string.more_share_library),
+                supporting = stringResource(R.string.more_share_library_desc),
+                onClick = onNavigateToShareLibrary
+            )
+            HorizontalDivider()
             MoreListItem(
                 icon = Icons.Default.ErrorOutline,
                 iconContainerColor = MaterialTheme.colorScheme.errorContainer,
@@ -205,8 +172,26 @@ fun MoreScreen(
                 onClick = onNavigateToUpdateErrors
             )
 
+            // ── Personalization ────────────────────────────────────────────────
+            MoreSectionHeader(stringResource(R.string.more_section_personalization))
+            MoreListItem(
+                icon = Icons.Default.Notifications,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                headline = stringResource(R.string.more_feed),
+                supporting = stringResource(R.string.more_feed_desc),
+                onClick = onNavigateToFeed
+            )
             HorizontalDivider()
-
+            MoreListItem(
+                icon = Icons.Default.Bookmark,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                headline = stringResource(R.string.more_bookmarks),
+                supporting = stringResource(R.string.more_bookmarks_description),
+                onClick = onNavigateToBookmarks
+            )
+            HorizontalDivider()
             MoreListItem(
                 icon = Icons.Default.QueryStats,
                 iconContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -216,19 +201,17 @@ fun MoreScreen(
                 onClick = onNavigateToStatistics
             )
 
-            HorizontalDivider()
-
+            // ── Info & Settings ────────────────────────────────────────────────
+            MoreSectionHeader(stringResource(R.string.more_section_info_settings))
             MoreListItem(
-                icon = Icons.Default.Bookmark,
-                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                headline = stringResource(R.string.more_bookmarks),
-                supporting = stringResource(R.string.more_bookmarks_description),
-                onClick = onNavigateToBookmarks
+                icon = Icons.Default.Settings,
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                headline = stringResource(R.string.more_settings),
+                supporting = stringResource(R.string.more_settings_desc),
+                onClick = onNavigateToSettings
             )
-
             HorizontalDivider()
-
             MoreListItem(
                 icon = Icons.Default.Info,
                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -240,6 +223,19 @@ fun MoreScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+@Composable
+private fun MoreSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
+        )
     }
 }
 
@@ -280,8 +276,6 @@ private fun AppLogoCard(
                         .background(Color.White.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Brand logo in place of the previous generic AutoAwesome placeholder.
-                    // No tint — keep the marketing-logo colours intact.
                     Image(
                         painter = painterResource(CoreUiR.drawable.ic_otaku_logo),
                         contentDescription = stringResource(R.string.more_app_name),

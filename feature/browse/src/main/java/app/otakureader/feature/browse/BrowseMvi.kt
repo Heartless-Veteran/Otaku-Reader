@@ -7,14 +7,20 @@ import app.otakureader.domain.model.FeedSavedSearch
 import app.otakureader.domain.model.SavedSourceSearch
 import app.otakureader.domain.model.SourceHealthEntry
 import app.otakureader.sourceapi.FilterList
+import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
 
 enum class BrowseSearchScope { SOURCES, LIBRARY }
 
+enum class BrowseTab { FEED, SOURCES, EXTENSIONS, MIGRATE }
+
 data class BrowseState(
     val isLoading: Boolean = false,
-    val sources: List<String> = emptyList(),
+    val sources: List<MangaSource> = emptyList(),
     val currentSourceId: String? = null,
+    val selectedTab: BrowseTab = BrowseTab.SOURCES,
+    /** IDs of the last 5 sources the user browsed (most recent first). */
+    val lastUsedSourceIds: List<String> = emptyList(),
     val popularManga: List<SourceManga> = emptyList(),
     val searchQuery: String = "",
     val searchResults: List<SourceManga> = emptyList(),
@@ -61,7 +67,9 @@ data class BrowseState(
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
-    data class SelectSource(val sourceId: String) : BrowseEvent
+    data class SelectSource(val sourceId: String, val loadLatest: Boolean = false) : BrowseEvent
+    data object ClearSourceSelection : BrowseEvent
+    data class SelectTab(val tab: BrowseTab) : BrowseEvent
     data class OnSearchQueryChange(val query: String) : BrowseEvent
     data object Search : BrowseEvent
     data class OnMangaClick(val manga: SourceManga) : BrowseEvent

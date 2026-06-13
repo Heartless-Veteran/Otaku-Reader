@@ -7,6 +7,7 @@ import app.otakureader.core.extension.domain.model.ExtensionSource
 import app.otakureader.core.extension.domain.model.InstallStatus
 import eu.kanade.tachiyomi.source.CatalogueSource
 import eu.kanade.tachiyomi.source.Source
+import eu.kanade.tachiyomi.source.online.HttpSource
 import java.io.File
 
 /**
@@ -396,11 +397,12 @@ class ExtensionLoader(
     /** Convert a loaded [Source] to the [ExtensionSource] domain model. */
     private fun Source.toExtensionSource(): ExtensionSource {
         val catalogue = this as? CatalogueSource
+        val http = this as? HttpSource
         return ExtensionSource(
             id = this.id,
             name = this.name,
             lang = catalogue?.lang ?: "",
-            baseUrl = catalogue?.baseUrl ?: "",
+            baseUrl = http?.baseUrl ?: "",
             supportsSearch = true,
             supportsLatest = catalogue?.supportsLatest ?: false,
         )

@@ -6,6 +6,24 @@
     <string name="extensions_sort_recently_added">Recently Added</string>
     <string name="extensions_sort_language">Language</string>
 
+    <!-- Browse tab labels -->
+    <string name="browse_tab_feed">Feed</string>
+    <string name="browse_tab_sources">Sources</string>
+    <string name="browse_tab_extensions">Extensions</string>
+    <string name="browse_tab_migrate">Migrate</string>
+
+    <!-- Browse source list sections -->
+    <string name="browse_last_used">Last used</string>
+    <string name="browse_all_sources">All sources</string>
+    <string name="browse_source_latest">Latest</string>
+    <string name="browse_back_to_sources">Back to sources</string>
+    <string name="browse_source_nsfw_badge">18+</string>
+    <string name="browse_manage_extensions">Manage Extensions</string>
+    <string name="browse_extensions_tab_desc">Install, update, and manage manga source extensions</string>
+    <string name="browse_feed_tab_desc">Your activity feed will appear here</string>
+    <string name="browse_migrate_tab_desc">Migrate manga between sources</string>
+    <string name="browse_go_to_migrate">Open Migration Tool</string>
+
     <!-- Browse screen -->
     <string name="browse_title">Browse</string>
     <string name="browse_search">Search</string>

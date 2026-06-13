@@ -18,24 +18,30 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -43,16 +49,19 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,7 +70,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -70,19 +81,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import app.otakureader.core.ui.theme.ContentType
-import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.sourceapi.Filter
-import app.otakureader.sourceapi.isActive
+import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
+import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.toSourceId
 import coil3.compose.AsyncImage
-import androidx.compose.ui.tooling.preview.Preview
-import app.otakureader.core.ui.theme.OtakuReaderTheme
+import kotlinx.coroutines.launch
 
 /**
- * Browse screen for discovering manga from various sources.
+ * Browse screen — Feed | Sources | Extensions | Migrate tab layout.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,26 +103,38 @@ fun BrowseScreen(
     onGlobalSearchClick: () -> Unit = {},
     onOpdsClick: () -> Unit = {},
     onNavigateToLibrary: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onNavigateToMigration: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
-    val otaku = LocalOtakuColors.current
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Handle effects
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                is BrowseEffect.NavigateToMangaDetail -> {
-                    onMangaClick(effect.sourceId, effect.mangaUrl)
-                }
-                is BrowseEffect.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(effect.message)
-                }
-                is BrowseEffect.NavigateToLibrary -> {
-                    // Navigate to library after bulk add
-                    onNavigateToLibrary?.invoke()
-                }
+                is BrowseEffect.NavigateToMangaDetail -> onMangaClick(effect.sourceId, effect.mangaUrl)
+                is BrowseEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is BrowseEffect.NavigateToLibrary -> onNavigateToLibrary?.invoke()
+            }
+        }
+    }
+
+    val tabs = BrowseTab.entries
+    val pagerState = rememberPagerState { tabs.size }
+    val scope = rememberCoroutineScope()
+
+    // Keep pager and state in sync
+    LaunchedEffect(state.selectedTab) {
+        val target = tabs.indexOf(state.selectedTab)
+        if (target >= 0 && pagerState.currentPage != target) {
+            pagerState.animateScrollToPage(target)
+        }
+    }
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            val tab = tabs.getOrNull(page)
+            if (tab != null && tab != state.selectedTab) {
+                viewModel.onEvent(BrowseEvent.SelectTab(tab))
             }
         }
     }
@@ -132,54 +154,84 @@ fun BrowseScreen(
                         IconButton(onClick = { viewModel.onEvent(BrowseEvent.ClearSelection) }) {
                             Icon(Icons.Default.ClearAll, contentDescription = stringResource(R.string.browse_clear_selection))
                         }
-                    }
+                    },
                 )
             } else {
                 TopAppBar(
                     title = { Text(stringResource(R.string.browse_title)) },
                     actions = {
-                        IconButton(onClick = onOpdsClick) {
-                            Icon(Icons.Default.Storage, contentDescription = stringResource(R.string.browse_opds_catalogs))
-                        }
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                         }
-                    }
+                    },
                 )
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (state.isBulkSelectionMode) {
-                FloatingActionButton(
-                    onClick = { viewModel.onEvent(BrowseEvent.AddSelectedToLibrary) }
-                ) {
+                FloatingActionButton(onClick = { viewModel.onEvent(BrowseEvent.AddSelectedToLibrary) }) {
                     Icon(Icons.Default.LibraryAdd, contentDescription = stringResource(R.string.browse_add_to_library))
                 }
-            } else {
-                FloatingActionButton(onClick = onInstallExtensionClick) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.browse_install_extension))
+            }
+        },
+    ) { paddingValues ->
+        Column(modifier = Modifier.padding(paddingValues)) {
+            // ── Tab Row ───────────────────────────────────────────────────────
+            ScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                edgePadding = 0.dp,
+            ) {
+                tabs.forEachIndexed { index, tab ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        text = {
+                            Text(
+                                when (tab) {
+                                    BrowseTab.FEED -> stringResource(R.string.browse_tab_feed)
+                                    BrowseTab.SOURCES -> stringResource(R.string.browse_tab_sources)
+                                    BrowseTab.EXTENSIONS -> stringResource(R.string.browse_tab_extensions)
+                                    BrowseTab.MIGRATE -> stringResource(R.string.browse_tab_migrate)
+                                }
+                            )
+                        },
+                    )
+                }
+            }
+
+            // ── Pager content ─────────────────────────────────────────────────
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                userScrollEnabled = state.currentSourceId == null,
+            ) { page ->
+                when (tabs.getOrNull(page)) {
+                    BrowseTab.FEED -> FeedTabContent()
+                    BrowseTab.SOURCES -> SourcesTabContent(
+                        state = state,
+                        onEvent = viewModel::onEvent,
+                    )
+                    BrowseTab.EXTENSIONS -> ExtensionsTabContent(
+                        onManageExtensions = onInstallExtensionClick,
+                    )
+                    BrowseTab.MIGRATE -> MigrateTabContent(
+                        onNavigateToMigration = onNavigateToMigration,
+                    )
+                    null -> {}
                 }
             }
         }
-    ) { paddingValues ->
-        BrowseContent(
-            state = state,
-            onEvent = viewModel::onEvent,
-            modifier = Modifier.padding(paddingValues)
-        )
     }
 
-    // Show filter sheet
+    // Filter sheet
     if (state.showFilterSheet && state.activeFilters.filters.isNotEmpty()) {
         SourceFilterSheet(
             filters = state.activeFilters,
-            onFilterUpdate = { index, filter ->
-                viewModel.onEvent(BrowseEvent.UpdateFilter(index, filter))
-            },
+            onFilterUpdate = { index, filter -> viewModel.onEvent(BrowseEvent.UpdateFilter(index, filter)) },
             onReset = { viewModel.onEvent(BrowseEvent.ResetFilters) },
             onApply = { viewModel.onEvent(BrowseEvent.ApplyFilters) },
-            onDismiss = { viewModel.onEvent(BrowseEvent.ToggleFilterSheet) }
+            onDismiss = { viewModel.onEvent(BrowseEvent.ToggleFilterSheet) },
         )
     }
 
@@ -210,7 +262,7 @@ fun BrowseScreen(
         )
     }
 
-    // Save search dialog (#1051)
+    // Save search dialog
     if (state.showSaveSearchDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.onEvent(BrowseEvent.HideSaveSearchDialog) },
@@ -238,20 +290,158 @@ fun BrowseScreen(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab content composables
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-private fun BrowseContent(
+private fun FeedTabContent(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = stringResource(R.string.browse_tab_feed),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.browse_feed_tab_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExtensionsTabContent(
+    onManageExtensions: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(
+                Icons.Default.Extension,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(R.string.browse_extensions_tab_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 32.dp),
+            )
+            Button(onClick = onManageExtensions) {
+                Text(stringResource(R.string.browse_manage_extensions))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MigrateTabContent(
+    onNavigateToMigration: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Icon(
+                Icons.Default.SwapHoriz,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(R.string.browse_migrate_tab_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 32.dp),
+            )
+            if (onNavigateToMigration != null) {
+                Button(onClick = onNavigateToMigration) {
+                    Text(stringResource(R.string.browse_go_to_migrate))
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sources tab — source list + inline manga grid
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SourcesTabContent(
     state: BrowseState,
     onEvent: (BrowseEvent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val otaku = LocalOtakuColors.current
     Column(modifier = modifier.fillMaxSize()) {
-        // Search bar with filter button
+        when {
+            state.hasSearchResults || state.isSearching -> {
+                // Search bar + results
+                BrowseSearchBar(state = state, onEvent = onEvent)
+                SearchResultsContent(
+                    results = state.searchResults,
+                    onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
+                    onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
+                    hasNextPage = state.hasNextPage,
+                    isLoading = state.isSearching || state.isLoading,
+                    onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
+                )
+            }
+            state.currentSourceId != null -> {
+                // Selected source: show manga grid with back button header
+                SelectedSourceHeader(
+                    source = state.sources.find { it.id == state.currentSourceId },
+                    sourceId = state.currentSourceId,
+                    onBack = { onEvent(BrowseEvent.ClearSourceSelection) },
+                    onSearch = {},
+                )
+                BrowseSearchBar(state = state, onEvent = onEvent)
+                if (state.isLoading && state.popularManga.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    MangaGrid(
+                        manga = state.popularManga,
+                        onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
+                        onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
+                        hasNextPage = state.hasNextPage,
+                        isLoading = state.isLoading,
+                        currentSourceId = state.currentSourceId,
+                        onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
+                    )
+                }
+                state.error?.let { error ->
+                    Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                        Text(text = error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+            state.sources.isEmpty() -> EmptySourcesContent()
+            else -> {
+                // Source browser: search bar + source list
+                BrowseSearchBar(state = state, onEvent = onEvent)
+                SourceListContent(state = state, onEvent = onEvent)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BrowseSearchBar(
+    state: BrowseState,
+    onEvent: (BrowseEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
                 value = state.searchQuery,
@@ -263,245 +453,362 @@ private fun BrowseContent(
                         Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                     }
                 },
-                singleLine = true
+                singleLine = true,
             )
-
-            // Bookmark icon: opens the "Save search" name dialog when query is non-empty
             if (state.searchQuery.isNotBlank()) {
                 Spacer(modifier = Modifier.width(4.dp))
                 IconButton(onClick = { onEvent(BrowseEvent.ShowSaveSearchDialog) }) {
-                    Icon(
-                        Icons.Default.BookmarkBorder,
-                        contentDescription = stringResource(R.string.browse_save_search),
-                    )
+                    Icon(Icons.Default.BookmarkBorder, contentDescription = stringResource(R.string.browse_save_search))
                 }
             }
-
-            // Filter button - shown when a source has filters
             if (state.availableFilters.filters.isNotEmpty()) {
                 Spacer(modifier = Modifier.width(4.dp))
-                FilterButton(
-                    activeCount = countActiveFilters(state.activeFilters),
-                    onClick = { onEvent(BrowseEvent.ToggleFilterSheet) }
-                )
+                FilterButton(activeCount = countActiveFilters(state.activeFilters), onClick = { onEvent(BrowseEvent.ToggleFilterSheet) })
             }
         }
 
-        // Search scope segmented button
-        SingleChoiceSegmentedButtonRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
-        ) {
-            BrowseSearchScope.entries.forEachIndexed { index, scope ->
-                SegmentedButton(
-                    selected = state.searchScope == scope,
-                    onClick = { onEvent(BrowseEvent.SetSearchScope(scope)) },
-                    shape = SegmentedButtonDefaults.itemShape(index, BrowseSearchScope.entries.size),
-                    label = {
-                        Text(
-                            when (scope) {
-                                BrowseSearchScope.SOURCES -> stringResource(R.string.browse_scope_sources)
-                                BrowseSearchScope.LIBRARY -> stringResource(R.string.browse_scope_library)
-                            }
-                        )
-                    }
-                )
-            }
-        }
-
-        // Search history (shown when query is blank and scope is SOURCES)
-        if (state.searchQuery.isBlank() && state.searchHistory.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        // Search scope selector — only show when a source is selected
+        if (state.currentSourceId != null) {
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.browse_search_history),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                TextButton(onClick = { onEvent(BrowseEvent.ClearSearchHistory) }) {
-                    Text(stringResource(R.string.filter_sheet_clear_all))
-                }
-            }
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.searchHistory) { query ->
-                    FilterChip(
-                        selected = false,
-                        onClick = {
-                            onEvent(BrowseEvent.OnSearchQueryChange(query))
-                            onEvent(BrowseEvent.Search)
-                        },
-                        label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        trailingIcon = {
-                            // 24.dp IconButton meets the dense-inline accessibility minimum
-                            // (the 18.dp Icon was easy to miss, and tapping near it could
-                            // trigger the chip's onClick search action by mistake).
-                            IconButton(
-                                onClick = { onEvent(BrowseEvent.DeleteSearchHistoryItem(query)) },
-                                modifier = Modifier.size(24.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.browse_search_history_remove),
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        },
-                    )
-                }
-            }
-        }
-
-        // Saved search chips (DB-backed FeedSavedSearch)
-        if (state.savedSearches.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.savedSearches, key = { it.id }) { search ->
-                    FilterChip(
-                        selected = state.searchQuery == search.query,
-                        onClick = { onEvent(BrowseEvent.ApplySavedSearch(search)) },
-                        label = { Text(search.query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Bookmark,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                BrowseSearchScope.entries.forEachIndexed { index, scope ->
+                    SegmentedButton(
+                        selected = state.searchScope == scope,
+                        onClick = { onEvent(BrowseEvent.SetSearchScope(scope)) },
+                        shape = SegmentedButtonDefaults.itemShape(index, BrowseSearchScope.entries.size),
+                        label = {
+                            Text(
+                                when (scope) {
+                                    BrowseSearchScope.SOURCES -> stringResource(R.string.browse_scope_sources)
+                                    BrowseSearchScope.LIBRARY -> stringResource(R.string.browse_scope_library)
+                                },
                             )
                         },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { onEvent(BrowseEvent.DeleteSavedSearch(search.id)) },
-                                modifier = Modifier.size(18.dp),
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.browse_delete_saved_search),
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        },
                     )
                 }
-            }
-        }
-
-        // Named saved source searches (#1051) — preferences-backed, long-press to delete
-        if (state.namedSavedSearches.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.browse_saved_searches),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
-            )
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(state.namedSavedSearches, key = { it.id }) { search ->
-                    FilterChip(
-                        selected = state.searchQuery == search.query,
-                        onClick = { onEvent(BrowseEvent.ApplyNamedSavedSearch(search)) },
-                        label = { Text(search.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Bookmark,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        },
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { onEvent(BrowseEvent.DeleteNamedSavedSearch(search.id)) },
-                                modifier = Modifier.size(18.dp),
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.browse_delete_saved_search),
-                                    modifier = Modifier.size(14.dp),
-                                )
-                            }
-                        },
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (state.isSearching || state.hasSearchResults) {
-            // Show search results (isSearching acts as loading indicator within results view)
-            SearchResultsContent(
-                results = state.searchResults,
-                onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
-                onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
-                hasNextPage = state.hasNextPage,
-                isLoading = state.isSearching || state.isLoading,
-                onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
-            )
-        } else {
-            // Show sources and popular manga
-            if (state.sources.isEmpty()) {
-                EmptySourcesContent()
-            } else {
-                SourcesContent(
-                    sources = state.sources,
-                    currentSourceId = state.currentSourceId,
-                    popularManga = state.popularManga,
-                    pinnedSourceIds = state.pinnedSourceIds,
-                    sourceCategoryMap = state.sourceCategoryMap,
-                    onSourceSelect = { onEvent(BrowseEvent.SelectSource(it)) },
-                    onMangaClick = { onEvent(BrowseEvent.OnMangaClick(it)) },
-                    onLoadMore = { onEvent(BrowseEvent.LoadNextPage) },
-                    hasNextPage = state.hasNextPage,
-                    isLoading = state.isLoading,
-                    onMangaLongClick = { onEvent(BrowseEvent.LongClickManga(it)) },
-                    onTogglePin = { sourceId -> onEvent(BrowseEvent.TogglePinSource(sourceId)) },
-                    onOpenSetCategory = { sourceId, current ->
-                        onEvent(BrowseEvent.OpenSetCategoryDialog(sourceId, current))
-                    },
-                )
-            }
-        }
-
-        // Show error if any
-        state.error?.let { error ->
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = error,
-                    color = otaku.danger,
-                    style = MaterialTheme.typography.bodyMedium
-                )
             }
         }
     }
 }
 
 @Composable
-private fun FilterButton(
-    activeCount: Int,
-    onClick: () -> Unit
+private fun SelectedSourceHeader(
+    source: MangaSource?,
+    sourceId: String,
+    onBack: () -> Unit,
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onBack) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.browse_back_to_sources))
+        }
+        val displayName = source?.name ?: sourceId.substringAfterLast(".")
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        source?.let {
+            LanguageBadge(lang = it.lang)
+            if (it.isNsfw) {
+                Spacer(Modifier.width(4.dp))
+                NsfwBadge()
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Source list (browse mode — no source selected)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun SourceListContent(
+    state: BrowseState,
+    onEvent: (BrowseEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Resolve last-used MangaSources from the full source list
+    val allSources = state.sources
+    val lastUsedSources = state.lastUsedSourceIds.mapNotNull { id -> allSources.find { it.id == id } }
+
+    val pinnedSources = allSources.filter { it.id.toSourceId() in state.pinnedSourceIds }
+    val unpinnedSources = allSources.filter { it.id.toSourceId() !in state.pinnedSourceIds }
+    val grouped: Map<String, List<MangaSource>> = unpinnedSources.groupBy { src ->
+        state.sourceCategoryMap[src.id.toSourceId()] ?: ""
+    }
+    val categoryOrder = grouped.keys.sortedWith(compareBy { if (it.isBlank()) "" else it })
+
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        // Recent searches
+        if (state.searchHistory.isNotEmpty()) {
+            item(key = "search_history_header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.browse_search_history),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    TextButton(onClick = { onEvent(BrowseEvent.ClearSearchHistory) }) {
+                        Text(stringResource(R.string.filter_sheet_clear_all))
+                    }
+                }
+            }
+            item(key = "search_history_row") {
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(state.searchHistory) { query ->
+                        FilterChip(
+                            selected = false,
+                            onClick = {
+                                onEvent(BrowseEvent.OnSearchQueryChange(query))
+                                onEvent(BrowseEvent.Search)
+                            },
+                            label = { Text(query, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = { onEvent(BrowseEvent.DeleteSearchHistoryItem(query)) },
+                                    modifier = Modifier.size(24.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.browse_search_history_remove),
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        // Last used section
+        if (lastUsedSources.isNotEmpty()) {
+            item(key = "last_used_header") {
+                SourceSectionHeader(stringResource(R.string.browse_last_used))
+            }
+            items(lastUsedSources, key = { "last_${it.id}" }) { source ->
+                SourceRow(
+                    source = source,
+                    isPinned = source.id.toSourceId() in state.pinnedSourceIds,
+                    categoryMap = state.sourceCategoryMap,
+                    onSelect = { onEvent(BrowseEvent.SelectSource(source.id)) },
+                    onLatest = { onEvent(BrowseEvent.SelectSource(source.id, loadLatest = true)) },
+                    onTogglePin = { onEvent(BrowseEvent.TogglePinSource(source.id.toSourceId())) },
+                    onOpenSetCategory = { sid, cat -> onEvent(BrowseEvent.OpenSetCategoryDialog(sid, cat)) },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+            }
+        }
+
+        // Pinned section
+        if (pinnedSources.isNotEmpty()) {
+            item(key = "pinned_header") {
+                SourceSectionHeader(stringResource(R.string.source_pinned_section))
+            }
+            items(pinnedSources, key = { "pinned_${it.id}" }) { source ->
+                SourceRow(
+                    source = source,
+                    isPinned = true,
+                    categoryMap = state.sourceCategoryMap,
+                    onSelect = { onEvent(BrowseEvent.SelectSource(source.id)) },
+                    onLatest = { onEvent(BrowseEvent.SelectSource(source.id, loadLatest = true)) },
+                    onTogglePin = { onEvent(BrowseEvent.TogglePinSource(source.id.toSourceId())) },
+                    onOpenSetCategory = { sid, cat -> onEvent(BrowseEvent.OpenSetCategoryDialog(sid, cat)) },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+            }
+        }
+
+        // Unpinned sources, grouped by category
+        for (category in categoryOrder) {
+            val catSources = grouped[category] ?: continue
+            if (category.isNotBlank()) {
+                item(key = "cat_header_$category") {
+                    SourceSectionHeader(category)
+                }
+            } else if (pinnedSources.isNotEmpty() || lastUsedSources.isNotEmpty()) {
+                // "All sources" header when there are other sections above
+                item(key = "all_sources_header") {
+                    SourceSectionHeader(stringResource(R.string.browse_all_sources))
+                }
+            }
+            items(catSources, key = { "src_${it.id}" }) { source ->
+                SourceRow(
+                    source = source,
+                    isPinned = false,
+                    categoryMap = state.sourceCategoryMap,
+                    onSelect = { onEvent(BrowseEvent.SelectSource(source.id)) },
+                    onLatest = { onEvent(BrowseEvent.SelectSource(source.id, loadLatest = true)) },
+                    onTogglePin = { onEvent(BrowseEvent.TogglePinSource(source.id.toSourceId())) },
+                    onOpenSetCategory = { sid, cat -> onEvent(BrowseEvent.OpenSetCategoryDialog(sid, cat)) },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceSectionHeader(title: String, modifier: Modifier = Modifier) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.SemiBold,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 12.dp, bottom = 4.dp, end = 16.dp),
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SourceRow composable
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SourceRow(
+    source: MangaSource,
+    isPinned: Boolean,
+    categoryMap: Map<Long, String>,
+    onSelect: () -> Unit,
+    onLatest: () -> Unit,
+    onTogglePin: () -> Unit,
+    onOpenSetCategory: (Long, String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val sourceIdLong = source.id.toSourceId()
+    val currentCategory = categoryMap[sourceIdLong] ?: ""
+
+    Box {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onSelect,
+                    onLongClick = { menuExpanded = true },
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            SourceAvatar(name = source.name, isPinned = isPinned)
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = source.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    LanguageBadge(lang = source.lang)
+                    if (source.isNsfw) NsfwBadge()
+                }
+            }
+
+            if (source.supportsLatest) {
+                TextButton(
+                    onClick = onLatest,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                ) {
+                    Text(stringResource(R.string.browse_source_latest), style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
+            IconButton(onClick = onTogglePin, modifier = Modifier.size(36.dp)) {
+                Icon(
+                    imageVector = if (isPinned) Icons.Default.PushPin else Icons.Outlined.PushPin,
+                    contentDescription = if (isPinned) stringResource(R.string.source_unpin) else stringResource(R.string.source_pin),
+                    tint = if (isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
+        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+            DropdownMenuItem(
+                text = { Text(if (isPinned) stringResource(R.string.source_unpin) else stringResource(R.string.source_pin)) },
+                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
+                onClick = { menuExpanded = false; onTogglePin() },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.source_set_category)) },
+                onClick = { menuExpanded = false; onOpenSetCategory(sourceIdLong, currentCategory) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SourceAvatar(name: String, isPinned: Boolean, modifier: Modifier = Modifier) {
+    val initial = name.firstOrNull()?.uppercaseChar() ?: '?'
+    // Derive a stable color from the source name hash
+    val hue = (name.hashCode().and(0xFFFFFF).toLong() % 360).toFloat().let { if (it < 0) it + 360f else it }
+    val bgColor = Color.hsl(hue, 0.5f, 0.4f)
+    Box(
+        modifier = modifier
+            .size(40.dp)
+            .background(color = bgColor, shape = RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = initial.toString(),
+            color = Color.White,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun LanguageBadge(lang: String, modifier: Modifier = Modifier) {
+    Badge(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+    ) {
+        Text(lang.uppercase(), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+private fun NsfwBadge(modifier: Modifier = Modifier) {
+    Badge(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+    ) {
+        Text(stringResource(R.string.browse_source_nsfw_badge), style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manga grid + cards
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
     TextButton(onClick = onClick) {
         Text(stringResource(R.string.browse_filters))
         if (activeCount > 0) {
@@ -511,12 +818,8 @@ private fun FilterButton(
     }
 }
 
-/**
- * Count the number of filters that have been changed from their default state.
- */
-private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int {
-    return filters.filters.count { filter -> filter.isActive() }
-}
+private fun countActiveFilters(filters: app.otakureader.sourceapi.FilterList): Int =
+    filters.filters.count { filter -> filter.isActive() }
 
 /** Returns true when a source ID string suggests manhwa/webtoon content. */
 private fun isManhwaSource(sourceId: String): Boolean {
@@ -525,225 +828,6 @@ private fun isManhwaSource(sourceId: String): Boolean {
         normalized.contains("korean") || normalized.contains("toon") ||
         normalized.contains("naver") || normalized.contains("kakao") ||
         normalized.contains("lezhin")
-}
-
-@Composable
-private fun SourcesContent(
-    sources: List<String>,
-    currentSourceId: String?,
-    popularManga: List<SourceManga>,
-    pinnedSourceIds: Set<Long>,
-    sourceCategoryMap: Map<Long, String>,
-    onSourceSelect: (String) -> Unit,
-    onMangaClick: (SourceManga) -> Unit,
-    onLoadMore: () -> Unit,
-    hasNextPage: Boolean,
-    isLoading: Boolean,
-    onMangaLongClick: ((SourceManga) -> Unit)? = null,
-    onTogglePin: (Long) -> Unit = {},
-    onOpenSetCategory: (Long, String) -> Unit = { _, _ -> },
-) {
-    // Determine if the currently selected source is manga or manhwa for the accent bar
-    val isMangaSection = currentSourceId == null || !isManhwaSource(currentSourceId)
-
-    // Partition sources into pinned and unpinned, then group unpinned by category
-    val (pinnedIds, unpinnedIds) = sources.partition { sourceId ->
-        sourceId.toSourceId() in pinnedSourceIds
-    }
-    // Group unpinned sources by their user-defined category; sources without a category go under ""
-    val grouped: Map<String, List<String>> = unpinnedIds.groupBy { sourceId ->
-        sourceCategoryMap[sourceId.toSourceId()] ?: ""
-    }
-
-    Column {
-        // Section header with colored accent bar
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(20.dp)
-                    .background(
-                        color = if (isMangaSection) Color(0xFFFF4757) else Color(0xFF9B59B6),
-                        shape = RoundedCornerShape(2.dp)
-                    )
-            )
-            Text(
-                text = stringResource(R.string.browse_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
-
-        // --- Pinned section ---
-        if (pinnedIds.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.source_pinned_section),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp),
-            )
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(pinnedIds, key = { it }) { sourceId ->
-                    SourceChipWithMenu(
-                        sourceId = sourceId,
-                        isSelected = sourceId == currentSourceId,
-                        isPinned = true,
-                        onSelect = { onSourceSelect(sourceId) },
-                        onTogglePin = onTogglePin,
-                        onOpenSetCategory = onOpenSetCategory,
-                        categoryMap = sourceCategoryMap,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        // --- Grouped unpinned sources ---
-        // Show sources without a category first (empty key), then named categories alphabetically
-        val categoryOrder = grouped.keys.sortedWith(compareBy { if (it.isBlank()) "" else it })
-        for (category in categoryOrder) {
-            val categorySourceIds = grouped[category] ?: continue
-            if (category.isNotBlank()) {
-                Text(
-                    text = category,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, top = 6.dp, bottom = 2.dp),
-                )
-            }
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(categorySourceIds, key = { it }) { sourceId ->
-                    SourceChipWithMenu(
-                        sourceId = sourceId,
-                        isSelected = sourceId == currentSourceId,
-                        isPinned = false,
-                        onSelect = { onSourceSelect(sourceId) },
-                        onTogglePin = onTogglePin,
-                        onOpenSetCategory = onOpenSetCategory,
-                        categoryMap = sourceCategoryMap,
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        if (currentSourceId == null) {
-            // Show prompt to select a source
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.browse_select_source),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        } else if (isLoading && popularManga.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            // Show manga grid
-            MangaGrid(
-                manga = popularManga,
-                onMangaClick = onMangaClick,
-                onLoadMore = onLoadMore,
-                hasNextPage = hasNextPage,
-                isLoading = isLoading,
-                currentSourceId = currentSourceId,
-                onMangaLongClick = onMangaLongClick,
-            )
-        }
-    }
-}
-
-/**
- * A source [FilterChip] that shows a [DropdownMenu] on long-press with "Pin/Unpin" and
- * "Set category" options.
- *
- * Why long-press + DropdownMenu?  We want the normal tap to still select the source, so we
- * intercept the long-press via [combinedClickable] and surface the contextual actions in a
- * lightweight menu without navigating away from the screen.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun SourceChipWithMenu(
-    sourceId: String,
-    isSelected: Boolean,
-    isPinned: Boolean,
-    onSelect: () -> Unit,
-    onTogglePin: (Long) -> Unit,
-    onOpenSetCategory: (Long, String) -> Unit,
-    categoryMap: Map<Long, String>,
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    val sourceIdLong = sourceId.toSourceId()
-    val currentCategory = categoryMap[sourceIdLong] ?: ""
-
-    Box {
-        FilterChip(
-            selected = isSelected,
-            // Tap selects the source. A combinedClickable on the chip's own modifier does NOT
-            // work: FilterChip renders an internal clickable Surface that sits above the outer
-            // modifier and swallows the tap, so onSelect never fired (the source chip appeared
-            // dead). The long-press menu is handled by the transparent overlay below instead.
-            onClick = onSelect,
-            label = { Text(sourceId.substringAfterLast(".").take(20)) },
-            leadingIcon = if (isPinned) {
-                { Icon(Icons.Default.PushPin, contentDescription = null, modifier = Modifier.size(14.dp)) }
-            } else null,
-        )
-        // Transparent overlay matching the chip: intercepts long-press for the context menu
-        // while still forwarding taps to onSelect. Drawn on top, so it reliably receives both.
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .combinedClickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onSelect,
-                    onLongClick = { menuExpanded = true },
-                ),
-        )
-        DropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false },
-        ) {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        if (isPinned) stringResource(R.string.source_unpin)
-                        else stringResource(R.string.source_pin)
-                    )
-                },
-                leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
-                onClick = {
-                    menuExpanded = false
-                    onTogglePin(sourceIdLong)
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.source_set_category)) },
-                onClick = {
-                    menuExpanded = false
-                    onOpenSetCategory(sourceIdLong, currentCategory)
-                },
-            )
-        }
-    }
 }
 
 @Composable
@@ -761,7 +845,7 @@ private fun MangaGrid(
         columns = GridCells.Adaptive(minSize = 120.dp),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(manga, key = { it.url }) { mangaItem ->
             MangaCard(
@@ -771,14 +855,11 @@ private fun MangaGrid(
                 onLongClick = onMangaLongClick?.let { { it(mangaItem) } },
             )
         }
-
         if (hasNextPage || isLoading) {
             item {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (isLoading) {
                         CircularProgressIndicator()
@@ -786,7 +867,7 @@ private fun MangaGrid(
                         Text(
                             text = stringResource(R.string.browse_load_more),
                             modifier = Modifier.clickable { onLoadMore() },
-                            color = otaku.accent
+                            color = otaku.accent,
                         )
                     }
                 }
@@ -807,21 +888,16 @@ private fun MangaCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Column {
             Box {
-                // Manga cover
                 AsyncImage(
                     model = manga.thumbnailUrl,
                     contentDescription = manga.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(0.7f),
-                    contentScale = ContentScale.Crop
+                    modifier = Modifier.fillMaxWidth().aspectRatio(0.7f),
+                    contentScale = ContentScale.Crop,
                 )
-
-                // Content-type badge pill
                 if (currentSourceId != null) {
                     Box(
                         modifier = Modifier
@@ -829,27 +905,25 @@ private fun MangaCard(
                             .padding(6.dp)
                             .background(
                                 color = if (isManga) Color(0xFFFF4757).copy(alpha = 0.15f)
-                                        else Color(0xFF9B59B6).copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp)
+                                else Color(0xFF9B59B6).copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp),
                             )
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
                     ) {
                         Text(
                             text = if (isManga) "MANGA" else "MANHWA",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6)
+                            color = if (isManga) Color(0xFFFF4757) else Color(0xFF9B59B6),
                         )
                     }
                 }
             }
-
-            // Manga title
             Text(
                 text = manga.title,
                 modifier = Modifier.padding(8.dp),
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -865,13 +939,10 @@ private fun SearchResultsContent(
     onMangaLongClick: ((SourceManga) -> Unit)? = null,
 ) {
     if (results.isEmpty() && !isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = stringResource(R.string.browse_no_results),
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
         }
     } else {
@@ -888,29 +959,17 @@ private fun SearchResultsContent(
 
 @Composable
 private fun EmptySourcesContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = stringResource(R.string.browse_no_sources_title),
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.browse_no_sources_message),
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
 }
-
-@Preview(showBackground = true, backgroundColor = 0xFF12121A)
-@Composable
-private fun EmptySourcesContentPreview() {
-    OtakuReaderTheme {
-        EmptySourcesContent()
-    }
-}
-

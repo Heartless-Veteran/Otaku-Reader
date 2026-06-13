@@ -7,6 +7,7 @@ import androidx.navigation.toRoute
 import app.otakureader.core.extension.domain.model.Extension
 import app.otakureader.core.extension.domain.repository.ExtensionRepository
 import app.otakureader.core.navigation.Route
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -37,6 +38,7 @@ sealed interface ExtensionDetailEffect {
 class ExtensionDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val extensionRepository: ExtensionRepository,
+    private val extensionManagementRepository: ExtensionManagementRepository,
 ) : ViewModel() {
 
     private val route: Route.ExtensionDetail = savedStateHandle.toRoute()
@@ -92,6 +94,10 @@ class ExtensionDetailViewModel @Inject constructor(
                 result.fold(
                     onSuccess = {
                         loadExtension()
+                        if (!ext.isTrusted) {
+                            // Trust granted — reload sources so the extension's sources appear immediately
+                            extensionManagementRepository.refreshSources()
+                        }
                         val msg = if (!ext.isTrusted) "Extension trusted" else "Extension trust revoked"
                         _effect.send(ExtensionDetailEffect.ShowSnackbar(msg))
                     },
