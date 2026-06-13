@@ -33,16 +33,13 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -82,14 +79,25 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.theme.LocalOtakuColors
+import app.otakureader.feature.feed.FeedContent
+import app.otakureader.feature.feed.FeedEffect
+import app.otakureader.feature.feed.FeedEvent
+import app.otakureader.feature.feed.FeedViewModel
+import app.otakureader.feature.migration.MigrationEntryContent
+import app.otakureader.feature.migration.MigrationEntryEffect
+import app.otakureader.feature.migration.MigrationEntryEvent
+import app.otakureader.feature.migration.MigrationEntryItem
+import app.otakureader.feature.migration.MigrationEntryViewModel
 import app.otakureader.sourceapi.Filter
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
 import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.toSourceId
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
@@ -105,6 +113,15 @@ fun BrowseScreen(
     onOpdsClick: () -> Unit = {},
     onNavigateToLibrary: (() -> Unit)? = null,
     onNavigateToMigration: () -> Unit = {},
+    // Feed tab callbacks
+    onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
+    onNavigateToFeedManagement: () -> Unit = {},
+    // Extensions tab callbacks
+    onNavigateToExtensionSettings: () -> Unit = {},
+    onNavigateToExtensionRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
+    // Migrate tab callback — navigate to the migration wizard with selected manga
+    onStartMigration: (List<Long>) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -181,7 +198,7 @@ fun BrowseScreen(
         },
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
-            // ── Tab Row ───────────────────────────────────────────────────────
+            // ── Tab Row ──────────────────────────────────────────────────────────────────
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 0.dp,
@@ -204,24 +221,70 @@ fun BrowseScreen(
                 }
             }
 
-            // ── Pager content ─────────────────────────────────────────────────
+            // ── Pager content ──────────────────────────────────────────────────────────────
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize(),
                 userScrollEnabled = state.currentSourceId == null,
             ) { page ->
                 when (tabs.getOrNull(page)) {
-                    BrowseTab.FEED -> FeedTabContent()
+                    BrowseTab.FEED -> {
+                        val feedVm: FeedViewModel = hiltViewModel()
+                        val feedState by feedVm.state.collectAsStateWithLifecycle()
+                        LaunchedEffect(feedVm) {
+                            feedVm.effect.collectLatest { effect ->
+                                when (effect) {
+                                    is FeedEffect.NavigateToReader ->
+                                        onNavigateToReader(effect.mangaId, effect.chapterId)
+                                    is FeedEffect.ShowSnackbar ->
+                                        snackbarHostState.showSnackbar(effect.message)
+                                    FeedEffect.NavigateToFeedManagement ->
+                                        onNavigateToFeedManagement()
+                                }
+                            }
+                        }
+                        FeedContent(
+                            state = feedState,
+                            onEvent = feedVm::onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     BrowseTab.SOURCES -> SourcesTabContent(
                         state = state,
                         onEvent = viewModel::onEvent,
                     )
-                    BrowseTab.EXTENSIONS -> ExtensionsTabContent(
-                        onManageExtensions = onInstallExtensionClick,
-                    )
-                    BrowseTab.MIGRATE -> MigrateTabContent(
-                        onNavigateToMigration = onNavigateToMigration,
-                    )
+                    BrowseTab.EXTENSIONS -> {
+                        ExtensionsTabBody(
+                            onNavigateToSettings = onNavigateToExtensionSettings,
+                            onNavigateToRepositories = onNavigateToExtensionRepositories,
+                            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    BrowseTab.MIGRATE -> {
+                        val migVm: MigrationEntryViewModel = hiltViewModel()
+                        val migState by migVm.state.collectAsStateWithLifecycle()
+                        val migFiltered = remember(migState.mangaList, migState.searchQuery) {
+                            migVm.filteredList(migState)
+                        }
+                        LaunchedEffect(migVm) {
+                            migVm.effect.collectLatest { effect ->
+                                when (effect) {
+                                    is MigrationEntryEffect.NavigateToMigration ->
+                                        onStartMigration(effect.selectedMangaIds)
+                                    MigrationEntryEffect.NavigateBack -> { /* embedded — no back */ }
+                                    is MigrationEntryEffect.ShowError ->
+                                        snackbarHostState.showSnackbar(effect.message)
+                                }
+                            }
+                        }
+                        MigrationEntryContent(
+                            state = migState,
+                            filtered = migFiltered,
+                            onEvent = migVm::onEvent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                     null -> {}
                 }
             }
@@ -294,83 +357,9 @@ fun BrowseScreen(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab content composables
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun FeedTabContent(modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = stringResource(R.string.browse_tab_feed),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.browse_feed_tab_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ExtensionsTabContent(
-    onManageExtensions: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Icon(
-                Icons.Default.Extension,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.browse_extensions_tab_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 32.dp),
-            )
-            Button(onClick = onManageExtensions) {
-                Text(stringResource(R.string.browse_manage_extensions))
-            }
-        }
-    }
-}
-
-@Composable
-private fun MigrateTabContent(
-    onNavigateToMigration: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Icon(
-                Icons.Default.SwapHoriz,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                text = stringResource(R.string.browse_migrate_tab_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 32.dp),
-            )
-            Button(onClick = onNavigateToMigration) {
-                Text(stringResource(R.string.browse_go_to_migrate))
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 // Sources tab — source list + inline manga grid
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SourcesTabContent(
@@ -530,9 +519,9 @@ private fun SelectedSourceHeader(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 // Source list (browse mode — no source selected)
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SourceListContent(
@@ -721,9 +710,9 @@ private fun SourceSectionHeader(title: String, modifier: Modifier = Modifier) {
     )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 // SourceRow composable
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -849,9 +838,9 @@ private fun NsfwBadge(modifier: Modifier = Modifier) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 // Manga grid + cards
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
