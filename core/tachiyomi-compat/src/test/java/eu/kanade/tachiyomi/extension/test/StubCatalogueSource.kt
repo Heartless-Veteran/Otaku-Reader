@@ -6,30 +6,29 @@ import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.model.Page
 import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
-import rx.Observable
 
-/** Minimal CatalogueSource implementation for use in unit tests only. */
+/**
+ * Minimal CatalogueSource implementation for use in unit tests only.
+ *
+ * Mirrors the current Tachiyomi/Komikku suspend-based CatalogueSource contract; all calls
+ * return empty results. Subclasses only need to override [id] and [name].
+ */
 abstract class StubCatalogueSource : CatalogueSource {
     override val lang: String = "en"
     override val supportsLatest: Boolean = false
 
-    override fun fetchPopularManga(page: Int): Observable<MangasPage> =
-        Observable.empty<MangasPage>()
+    override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(emptyList(), false)
 
-    override fun fetchSearchManga(page: Int, query: String, filters: FilterList): Observable<MangasPage> =
-        Observable.empty<MangasPage>()
+    override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
+        MangasPage(emptyList(), false)
 
-    override fun fetchLatestUpdates(page: Int): Observable<MangasPage> =
-        Observable.empty<MangasPage>()
+    override suspend fun getLatestUpdates(page: Int): MangasPage = MangasPage(emptyList(), false)
 
     override fun getFilterList(): FilterList = FilterList()
 
-    override fun fetchPageList(chapter: SChapter): Observable<List<Page>> =
-        Observable.empty<List<Page>>()
+    override suspend fun getMangaDetails(manga: SManga): SManga = manga
 
-    override fun fetchMangaDetails(manga: SManga): Observable<SManga> =
-        Observable.empty<SManga>()
+    override suspend fun getChapterList(manga: SManga): List<SChapter> = emptyList()
 
-    override fun fetchChapterList(manga: SManga): Observable<List<SChapter>> =
-        Observable.empty<List<SChapter>>()
+    override suspend fun getPageList(chapter: SChapter): List<Page> = emptyList()
 }
