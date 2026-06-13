@@ -14,6 +14,8 @@ dependencies {
     implementation(projects.core.tachiyomiCompat)
     implementation(projects.domain)
     implementation(projects.sourceApi)
+    implementation(projects.feature.feed)
+    implementation(projects.feature.migration)
     implementation(libs.paging.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)
