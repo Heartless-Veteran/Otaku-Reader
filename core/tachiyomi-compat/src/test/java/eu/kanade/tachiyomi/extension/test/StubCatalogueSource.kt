@@ -17,6 +17,10 @@ abstract class StubCatalogueSource : CatalogueSource {
     override val lang: String = "en"
     override val supportsLatest: Boolean = false
 
+    // Test-only convenience: real HttpSource exposes baseUrl, but this stub implements the
+    // plain CatalogueSource contract, so declare it here for subclasses (e.g. MangaDex) to set.
+    open val baseUrl: String = ""
+
     override suspend fun getPopularManga(page: Int): MangasPage = MangasPage(emptyList(), false)
 
     override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage =
