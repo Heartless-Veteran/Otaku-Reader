@@ -48,8 +48,10 @@ class DownloadProviderTest {
     }
 
     @Test
-    fun sanitize_emptyString_returnsEmpty() {
-        assertEquals("", DownloadProvider.sanitize(""))
+    fun sanitize_emptyString_returnsPlaceholder() {
+        // An empty (or all-illegal) name must not yield an empty path segment, which would
+        // collapse into the parent directory; sanitize() returns "_" as a safe placeholder.
+        assertEquals("_", DownloadProvider.sanitize(""))
     }
 
     // -------------------------------------------------------------------------

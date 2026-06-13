@@ -145,7 +145,7 @@ inline fun <reified T> Response.parseAs(): T {
 @PublishedApi
 internal fun <T> Response.internalParseAs(deserializer: DeserializationStrategy<T>): T {
     val json = Injekt.get<Json>()
-    val bodyString = body?.string() ?: throw IllegalStateException("Response body is null")
+    val bodyString = body?.string() ?: error("Response body is null")
     return json.decodeFromString(deserializer, bodyString)
 }
 
