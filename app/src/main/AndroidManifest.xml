@@ -17,6 +17,11 @@
     <!-- Camera: used for QR code scanning (library share/import via QR) -->
     <uses-permission android:name="android.permission.CAMERA" />
 
+    <!-- Required for the onboarding "disable battery optimization" step: without this
+         permission, ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS silently does nothing.
+         Used so library-update and download workers aren't killed by Doze. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Storage permissions for legacy chapter downloads, local manga, covers, and CBZ export -->
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
