@@ -439,11 +439,13 @@ private fun BrowseSearchBar(
                 onValueChange = { onEvent(BrowseEvent.OnSearchQueryChange(it)) },
                 modifier = Modifier.weight(1f),
                 placeholder = { Text(stringResource(R.string.browse_search_placeholder)) },
-                trailingIcon = {
-                    IconButton(onClick = { onEvent(BrowseEvent.Search) }) {
-                        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                trailingIcon = if (state.currentSourceId != null) {
+                    {
+                        IconButton(onClick = { onEvent(BrowseEvent.Search) }) {
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                        }
                     }
-                },
+                } else null,
                 singleLine = true,
             )
             if (state.searchQuery.isNotBlank() && state.currentSourceId != null) {
