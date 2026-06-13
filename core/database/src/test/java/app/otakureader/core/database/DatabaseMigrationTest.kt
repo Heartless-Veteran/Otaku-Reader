@@ -27,6 +27,7 @@ import app.otakureader.core.database.migrations.MIGRATION_29_30
 import app.otakureader.core.database.migrations.MIGRATION_30_31
 import app.otakureader.core.database.migrations.MIGRATION_31_32
 import app.otakureader.core.database.migrations.MIGRATION_35_36
+import app.otakureader.core.database.migrations.MIGRATION_36_37
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +39,8 @@ import org.junit.runner.RunWith
 private const val TEST_DB = "migration-test"
 
 @RunWith(AndroidJUnit4::class)
+// One test class per migration chain: it grows by design with every schema version.
+@Suppress("LargeClass")
 class DatabaseMigrationTest {
 
     @get:Rule
@@ -52,7 +55,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 36", 36, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 37", 37, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -79,7 +82,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 34 migrations (v2→v36)", 34, ALL_MIGRATIONS.size)
+        assertEquals("Expected 35 migrations (v2→v37)", 35, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -688,6 +691,36 @@ class DatabaseMigrationTest {
             threw = true
         }
         assertTrue("Duplicate (manga_id, alt_manga_id) pair must throw", threw)
+        db.close()
+    }
+
+    // ── Migration 36 → 37 ───────────────────────────────────────────────────
+    // Adds: reader_comments table (chapter + book scoped local comments)
+
+    @Test
+    fun migration36To37_createsReaderCommentsTable() {
+        helper.createDatabase(TEST_DB, 36).close()
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 37, true, MIGRATION_36_37)
+        assertTrue(
+            "reader_comments must exist after 36→37",
+            "reader_comments" in db.tableNames(),
+        )
+        val cols = db.columnNames("reader_comments")
+        assertTrue("manga_id must exist", "manga_id" in cols)
+        assertTrue("chapter_id must exist", "chapter_id" in cols)
+        assertTrue("body must exist", "body" in cols)
+        assertTrue("created_at must exist", "created_at" in cols)
+        assertTrue("updated_at must exist", "updated_at" in cols)
+        val indexes = db.indexNames("reader_comments")
+        assertTrue(
+            "index_reader_comments_manga_id must exist",
+            "index_reader_comments_manga_id" in indexes,
+        )
+        assertTrue(
+            "index_reader_comments_chapter_id must exist",
+            "index_reader_comments_chapter_id" in indexes,
+        )
         db.close()
     }
 

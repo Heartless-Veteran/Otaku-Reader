@@ -103,6 +103,10 @@ class ReaderDisplayDelegate @Inject constructor(
         update { it.copy(isChapterListOverlayVisible = !it.isChapterListOverlayVisible) }
     }
 
+    fun toggleCommentsOverlay() {
+        update { it.copy(isCommentsOverlayVisible = !it.isCommentsOverlayVisible) }
+    }
+
     // ── Brightness ───────────────────────────────────────────────────────────
 
     fun updateBrightness(brightness: Float) {

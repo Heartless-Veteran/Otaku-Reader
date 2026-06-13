@@ -448,6 +448,28 @@ internal val MIGRATION_35_36 = object : Migration(35, 36) {
     }
 }
 
+/** v36 → v37: Local reader comments table (chapter + book scoped). */
+internal val MIGRATION_36_37 = object : Migration(36, 37) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS reader_comments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                manga_id INTEGER NOT NULL,
+                chapter_id INTEGER,
+                body TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE,
+                FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_reader_comments_manga_id ON reader_comments(manga_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_reader_comments_chapter_id ON reader_comments(chapter_id)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -458,5 +480,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
     MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35,
-    MIGRATION_35_36,
+    MIGRATION_35_36, MIGRATION_36_37,
 )
