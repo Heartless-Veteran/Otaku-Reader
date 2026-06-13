@@ -66,10 +66,21 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         // or any other startup code are captured and shown on the next launch.
         CrashHandler.install(this, crashReportingStore)
         super.onCreate()
-        // Enable Material You dynamic colors on Android 12+ (API 31+)
-        DynamicColors.applyToActivitiesIfAvailable(this)
-        // Initialize launcher shortcuts (Library, Updates, Continue Reading)
-        appShortcutManager.initialize()
+        // Post-DI initialization is wrapped so a failure in optional startup work (dynamic
+        // color registration, launcher-shortcut sync) can never crash the process before
+        // the first Activity opens. Each is non-essential to launching the app.
+        try {
+            // Enable Material You dynamic colors on Android 12+ (API 31+)
+            DynamicColors.applyToActivitiesIfAvailable(this)
+        } catch (t: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "DynamicColors init failed", t)
+        }
+        try {
+            // Initialize launcher shortcuts (Library, Updates, Continue Reading)
+            appShortcutManager.initialize()
+        } catch (t: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "App shortcut init failed", t)
+        }
     }
 
     // Trim Coil's memory cache when the OS signals memory pressure, preventing the

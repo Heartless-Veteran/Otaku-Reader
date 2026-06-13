@@ -119,37 +119,46 @@ class MainActivity : FragmentActivity() {
             pendingCrashReport = CrashHandler.getAndClearCrashReport(this)
         }
 
-        // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation)
+        // Trigger auto-refresh on app start if enabled (only on fresh launch, not recreation).
+        // The whole body is guarded: this runs asynchronously, OUTSIDE onCreate's try/catch,
+        // so an exception here (e.g. WorkManager scheduling) would otherwise reach the
+        // uncaught handler and crash the app at launch. Scheduling background work must never
+        // prevent the UI from opening.
         if (savedInstanceState == null) {
             lifecycleScope.launch {
-                val (updateIntervalHours, updateOnlyOnWifi) = combine(
-                    generalPreferences.updateCheckInterval,
-                    libraryPreferences.updateOnlyOnWifi
-                ) { interval, wifiOnly ->
-                    interval to wifiOnly
-                }.first()
-                libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
-                trackerSyncScheduler.schedule()
-                app.otakureader.data.worker.EhFavoritesSyncWorker.schedule(applicationContext)
-                app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
+                try {
+                    val (updateIntervalHours, updateOnlyOnWifi) = combine(
+                        generalPreferences.updateCheckInterval,
+                        libraryPreferences.updateOnlyOnWifi
+                    ) { interval, wifiOnly ->
+                        interval to wifiOnly
+                    }.first()
+                    libraryUpdateScheduler.schedule(updateIntervalHours, updateOnlyOnWifi)
+                    trackerSyncScheduler.schedule()
+                    app.otakureader.data.worker.EhFavoritesSyncWorker.schedule(applicationContext)
+                    app.otakureader.data.worker.LibrarySyncWorker.schedule(applicationContext)
 
-                // Reconcile the periodic extension-update check with the user's preference.
-                if (generalPreferences.extensionAutoUpdateEnabled.first()) {
-                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.schedule(
-                        context = applicationContext,
-                        intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
-                        wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
-                    )
-                } else {
-                    app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
-                }
+                    // Reconcile the periodic extension-update check with the user's preference.
+                    if (generalPreferences.extensionAutoUpdateEnabled.first()) {
+                        app.otakureader.data.worker.ExtensionAutoUpdateWorker.schedule(
+                            context = applicationContext,
+                            intervalHours = generalPreferences.extensionAutoUpdateIntervalHours.first(),
+                            wifiOnly = generalPreferences.extensionAutoUpdateWifiOnly.first(),
+                        )
+                    } else {
+                        app.otakureader.data.worker.ExtensionAutoUpdateWorker.cancel(applicationContext)
+                    }
 
-                // Security mechanism, not a preference — always scheduled (#1018).
-                app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
+                    // Security mechanism, not a preference — always scheduled (#1018).
+                    app.otakureader.data.worker.ExtensionBlocklistRefreshWorker.schedule(applicationContext)
 
-                val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
-                if (autoRefresh) {
-                    libraryUpdateScheduler.enqueueNow()
+                    val autoRefresh = libraryPreferences.autoRefreshOnStart.first()
+                    if (autoRefresh) {
+                        libraryUpdateScheduler.enqueueNow()
+                    }
+                } catch (t: Throwable) {
+                    if (t is kotlinx.coroutines.CancellationException) throw t
+                    android.util.Log.e("MainActivity", "Startup background scheduling failed", t)
                 }
             }
         }
