@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import app.otakureader.security.BiometricLockGate
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -92,10 +93,21 @@ class MainActivity : FragmentActivity() {
     // Crash report from the previous run – shown once, then cleared from SharedPreferences
     private var pendingCrashReport by mutableStateOf<String?>(null)
 
-    @Suppress("LongMethod", "CognitiveComplexMethod")
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        runCatching { installSplashScreen() }
         super.onCreate(savedInstanceState)
+        try {
+            startApp(savedInstanceState)
+        } catch (t: Throwable) {
+            // Startup failed before the UI could render. Paint the stack trace on-screen so
+            // it can be screenshotted, instead of the process dying invisibly with no report.
+            android.util.Log.e("MainActivity", "Fatal error during startup", t)
+            setContent { StartupErrorScreen(t.stackTraceToString()) }
+        }
+    }
+
+    @Suppress("LongMethod", "CognitiveComplexMethod")
+    private fun startApp(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         applyLocaleFromPreferences()
 
@@ -422,6 +434,51 @@ private fun CrashReportDialog(
             }
         },
     )
+}
+
+/**
+ * Last-resort screen shown when [MainActivity.startApp] throws during startup.
+ *
+ * It deliberately uses no app theme, DataStore, or DI — just hard-coded colors and a
+ * scrollable, selectable stack trace — so it can render even when the failure is in
+ * theme setup, Compose initialization, or dependency injection. The user can screenshot
+ * or copy this to report the exact cause instead of the app vanishing on launch.
+ */
+@Composable
+private fun StartupErrorScreen(trace: String) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFF1B1B1B),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Text(
+                text = "Otaku Reader failed to start",
+                color = Color.White,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+            Text(
+                text = "Screenshot this screen and send it to the developer.",
+                color = Color(0xFFB0B0B0),
+                fontSize = 13.sp,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            SelectionContainer {
+                Text(
+                    text = trace,
+                    color = Color(0xFFFFB1C8),
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                )
+            }
+        }
+    }
 }
 
 /**
