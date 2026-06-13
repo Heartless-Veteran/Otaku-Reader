@@ -40,7 +40,7 @@ class CoverRefreshWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
         createChannel()
-        setForeground(buildForeground(0, 0))
+        setForegroundSafely(buildForeground(0, 0))
 
         return try {
             val libraryManga = mangaRepository.getLibraryManga().first()
@@ -51,7 +51,7 @@ class CoverRefreshWorker @AssistedInject constructor(
                 .distinct()
                 .forEachIndexed { index, url ->
                     if (index % COVER_BATCH_SIZE == 0) {
-                        setForeground(buildForeground(index, total))
+                        setForegroundSafely(buildForeground(index, total))
                     }
                     val request = ImageRequest.Builder(context)
                         .data(url)
@@ -76,6 +76,22 @@ class CoverRefreshWorker @AssistedInject constructor(
         }
     }
 
+    /**
+     * Promotes the worker to a foreground service, tolerating failure. Android 12+ can throw
+     * ForegroundServiceStartNotAllowedException under background-start restrictions. The cover
+     * refresh is best-effort, so on failure we drop the progress notification and keep working
+     * rather than failing the whole job. Cancellation still propagates.
+     */
+    private suspend fun setForegroundSafely(info: ForegroundInfo) {
+        try {
+            setForeground(info)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not run as foreground service; continuing in background", e)
+        }
+    }
+
     private fun buildForeground(current: Int, total: Int): ForegroundInfo {
         val notification = NotificationCompat.Builder(context, COVER_REFRESH_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
@@ -92,7 +108,17 @@ class CoverRefreshWorker @AssistedInject constructor(
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .build()
-        return ForegroundInfo(COVER_REFRESH_PROGRESS_ID, notification)
+        // targetSdk 36: a worker-started foreground service must declare its type explicitly on
+        // Android 10+ (FOREGROUND_SERVICE_TYPE_DATA_SYNC) instead of relying on manifest merge.
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ForegroundInfo(
+                COVER_REFRESH_PROGRESS_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
+            )
+        } else {
+            ForegroundInfo(COVER_REFRESH_PROGRESS_ID, notification)
+        }
     }
 
     private fun createChannel() {

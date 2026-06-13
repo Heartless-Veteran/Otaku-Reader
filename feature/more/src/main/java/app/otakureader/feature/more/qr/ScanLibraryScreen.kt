@@ -72,28 +72,7 @@ fun ScanLibraryScreen(
         }
     }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            launchQrScanner(context) { result ->
-                isScanning = false
-                if (result.contents == null) {
-                    error = "Scan cancelled"
-                    return@launchQrScanner
-                }
-                try {
-                    scannedLibrary = Json.decodeFromString(result.contents)
-                } catch (e: Exception) {
-                    error = "Invalid QR code: ${e.message}"
-                }
-            }
-        } else {
-            error = "Camera permission required to scan QR codes"
-            isScanning = false
-        }
-    }
-
+    // Declared before cameraLauncher so the permission-granted path can launch it.
     val qrLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         isScanning = false
         if (result.contents == null) {
@@ -107,18 +86,26 @@ fun ScanLibraryScreen(
         }
     }
 
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permission just granted — actually open the scanner. This previously called an
+            // empty stub (launchQrScanner), so first-time users who granted the camera
+            // permission got a dead screen and the scanner never opened.
+            isScanning = true
+            qrLauncher.launch(qrScanOptions())
+        } else {
+            error = "Camera permission required to scan QR codes"
+            isScanning = false
+        }
+    }
+
     LaunchedEffect(Unit) {
         when (PackageManager.PERMISSION_GRANTED) {
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) -> {
                 isScanning = true
-                val options = ScanOptions().apply {
-                    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                    setPrompt("Scan a library QR code")
-                    setCameraId(0)
-                    setBeepEnabled(false)
-                    setBarcodeImageEnabled(false)
-                }
-                qrLauncher.launch(options)
+                qrLauncher.launch(qrScanOptions())
             }
             else -> cameraLauncher.launch(Manifest.permission.CAMERA)
         }
@@ -256,10 +243,10 @@ fun ScanLibraryScreen(
     }
 }
 
-@Suppress("UnusedParameter")
-private fun launchQrScanner(
-    context: android.content.Context,
-    onResult: (com.journeyapps.barcodescanner.ScanIntentResult) -> Unit
-) {
-    // Handled by the launcher in the composable
+private fun qrScanOptions(): ScanOptions = ScanOptions().apply {
+    setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+    setPrompt("Scan a library QR code")
+    setCameraId(0)
+    setBeepEnabled(false)
+    setBarcodeImageEnabled(false)
 }
