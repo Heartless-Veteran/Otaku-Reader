@@ -129,7 +129,11 @@ class BackupRestorer @Inject constructor(
         // version re-queried the full chapter list inside the per-chapter loop, making the
         // restore O(chapters²) — noticeably slow for long series. The whole restore already
         // runs inside restoreBackup's withTransaction, so no inserts can sneak in between.
-        val existingByUrl = chapterDao.getChaptersByMangaId(mangaId).first()
+        // getChaptersByMangaIdOnce is a direct suspend query (not a Flow), so it is safe
+        // to call here even though restoreChapters runs inside an outer withTransaction.
+        // Calling Flow.first() inside a transaction can deadlock because the Flow dispatcher
+        // tries to acquire a new database connection that the transaction already holds.
+        val existingByUrl = chapterDao.getChaptersByMangaIdOnce(mangaId)
             .associateBy { it.url }
             .toMutableMap()
 

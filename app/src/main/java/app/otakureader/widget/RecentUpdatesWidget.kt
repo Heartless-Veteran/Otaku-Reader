@@ -64,6 +64,7 @@ class RecentUpdatesWidget : GlanceAppWidget() {
                     )
                 }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w("RecentUpdatesWidget", "Failed to load recent updates for widget", e)
             emptyList()
         }

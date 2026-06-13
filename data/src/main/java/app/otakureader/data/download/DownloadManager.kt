@@ -177,28 +177,47 @@ class DownloadManager @Inject constructor(
     }
 
     suspend fun resume(chapterId: Long) {
-        val canStart = mutex.withLock {
+        // Read both canStart and the stored request atomically under the same lock to
+        // prevent a concurrent cancel()/clearAll() from removing the request between the
+        // two reads and causing a spurious FAILED transition.
+        val (canStart, request) = mutex.withLock {
             val item = downloadMap[chapterId]
             if (item?.status != DownloadStatus.PAUSED) return
-            // Only start immediately if under the limit
-            jobs.size < maxConcurrentDownloads
+            Pair(jobs.size < maxConcurrentDownloads, requests[chapterId])
         }
 
-        val request = requests[chapterId]
-        if (request == null) {
-            // Without the original request the item can never start; leaving it PAUSED
-            // would strand it in the queue with a resume button that silently does nothing.
-            // FAILED is honest and lets the user retry (which re-reads the persisted request).
-            Log.w(TAG, "resume($chapterId): no stored request — marking FAILED")
-            mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
-            downloadQueueDao.updateStatus(chapterId, DownloadStatus.FAILED.name)
-            return
+        val resolvedRequest = if (request != null) {
+            request
+        } else {
+            // The in-memory request was evicted (e.g., after process death and incomplete
+            // restore). Reconstruct from the persisted queue row so the item stays retryable.
+            val entity = downloadQueueDao.getByChapterId(chapterId)
+            if (entity != null) {
+                val pageUrls = try {
+                    Json.decodeFromString<List<String>>(entity.pageUrlsJson)
+                } catch (_: Exception) { emptyList() }
+                val recovered = ChapterDownloadRequest(
+                    mangaId = entity.mangaId,
+                    chapterId = entity.chapterId,
+                    sourceName = entity.sourceName,
+                    mangaTitle = entity.mangaTitle,
+                    chapterTitle = entity.chapterTitle,
+                    pageUrls = pageUrls,
+                    priority = entity.priority,
+                )
+                mutex.withLock { requests[chapterId] = recovered }
+                recovered
+            } else {
+                Log.w(TAG, "resume($chapterId): no stored request and no DB row — marking FAILED")
+                mutex.withLock { updateStatus(chapterId, DownloadStatus.FAILED) }
+                downloadQueueDao.updateStatus(chapterId, DownloadStatus.FAILED.name)
+                return
+            }
         }
 
         if (canStart) {
-            launchDownloadJob(chapterId, request)
+            launchDownloadJob(chapterId, resolvedRequest)
         } else {
-            // Just mark as queued, will be picked up when a slot opens
             mutex.withLock { updateStatus(chapterId, DownloadStatus.QUEUED) }
             downloadQueueDao.updateStatus(chapterId, DownloadStatus.QUEUED.name)
         }
@@ -215,8 +234,28 @@ class DownloadManager @Inject constructor(
         val request = mutex.withLock {
             if (downloadMap[chapterId]?.status != DownloadStatus.FAILED) return
             requests[chapterId]
-        } ?: return
-        enqueue(request)
+        }
+        if (request != null) {
+            enqueue(request)
+            return
+        }
+        // In-memory request is gone; try to restore from the persisted queue row so the
+        // item can actually be retried rather than silently no-oping.
+        val entity = downloadQueueDao.getByChapterId(chapterId) ?: return
+        val pageUrls = try {
+            Json.decodeFromString<List<String>>(entity.pageUrlsJson)
+        } catch (_: Exception) { emptyList() }
+        enqueue(
+            ChapterDownloadRequest(
+                mangaId = entity.mangaId,
+                chapterId = entity.chapterId,
+                sourceName = entity.sourceName,
+                mangaTitle = entity.mangaTitle,
+                chapterTitle = entity.chapterTitle,
+                pageUrls = pageUrls,
+                priority = entity.priority,
+            )
+        )
     }
 
     suspend fun cancel(chapterId: Long) {
@@ -628,6 +667,11 @@ class DownloadManager @Inject constructor(
                         Log.e(TAG, "CBZ encryption failed for chapter $chapterId", e)
                         encryptionFailed = true
                     }
+                } else {
+                    // Passphrase was wiped (e.g. Keystore corruption recovery). Silently
+                    // leaving an unencrypted CBZ would violate the user's explicit setting.
+                    Log.e(TAG, "CBZ encryption enabled but passphrase unavailable for chapter $chapterId — marking FAILED")
+                    encryptionFailed = true
                 }
             }
         }.onFailure { e ->
@@ -644,12 +688,18 @@ class DownloadManager @Inject constructor(
      * source is unavailable, or the source returned no usable URLs.
      */
     private suspend fun resolvePageUrls(request: ChapterDownloadRequest): List<String> {
-        // runCatching: a throw here would escape the download job's try/finally (which has
-        // no catch) and crash the application scope. An unresolvable chapter must instead
-        // surface as an empty list → FAILED item.
-        val chapter = runCatching { chapterRepository.getChapterById(request.chapterId) }
-            .onFailure { e -> Log.w(TAG, "resolvePageUrls: chapter lookup failed", e) }
-            .getOrNull()
+        // A throw here would escape the download job's try/finally (which has no catch)
+        // and crash the application scope. An unresolvable chapter must instead surface as
+        // an empty list → FAILED item. CancellationException must propagate so the download
+        // job stops cleanly when it is cancelled rather than continuing with empty pages.
+        val chapter = try {
+            chapterRepository.getChapterById(request.chapterId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "resolvePageUrls: chapter lookup failed", e)
+            null
+        }
         if (chapter == null) {
             Log.w(TAG, "resolvePageUrls: chapter ${request.chapterId} not found in database")
             return emptyList()

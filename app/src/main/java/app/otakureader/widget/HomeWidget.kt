@@ -86,6 +86,7 @@ class HomeWidget : GlanceAppWidget() {
         val items = try {
             buildItems(context, mangaRepository, chapterRepository)
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w("HomeWidget", "Failed to load home widget items", e)
             emptyList()
         }
