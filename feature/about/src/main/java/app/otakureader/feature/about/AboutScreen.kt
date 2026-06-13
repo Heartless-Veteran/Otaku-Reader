@@ -1,5 +1,7 @@
 package app.otakureader.feature.about
 
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -121,12 +123,7 @@ fun AboutScreen(
                 title = stringResource(R.string.about_how_to_add_sources_title),
                 subtitle = stringResource(R.string.about_how_to_add_sources_subtitle),
                 onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
-                        )
-                    )
+                    context.openUrl("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Adding-Sources")
                 }
             )
 
@@ -135,12 +132,7 @@ fun AboutScreen(
                 title = stringResource(R.string.about_faq_title),
                 subtitle = stringResource(R.string.about_faq_subtitle),
                 onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
-                        )
-                    )
+                    context.openUrl("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/FAQ")
                 }
             )
 
@@ -149,12 +141,7 @@ fun AboutScreen(
                 title = stringResource(R.string.about_getting_started_title),
                 subtitle = stringResource(R.string.about_getting_started_subtitle),
                 onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
-                        )
-                    )
+                    context.openUrl("https://github.com/Heartless-Veteran/Otaku-Reader/wiki/Getting-Started")
                 }
             )
 
@@ -194,12 +181,7 @@ fun AboutScreen(
                 title = stringResource(R.string.about_github_title),
                 subtitle = stringResource(R.string.about_github_subtitle),
                 onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader")
-                        )
-                    )
+                    context.openUrl("https://github.com/Heartless-Veteran/Otaku-Reader")
                 }
             )
 
@@ -208,12 +190,7 @@ fun AboutScreen(
                 title = stringResource(R.string.about_documentation_title),
                 subtitle = stringResource(R.string.about_documentation_subtitle),
                 onClick = {
-                    context.startActivity(
-                        Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
-                        )
-                    )
+                    context.openUrl("https://github.com/Heartless-Veteran/Otaku-Reader/wiki")
                 }
             )
 
@@ -303,6 +280,15 @@ private fun AboutSectionTitle(title: String) {
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
     )
+}
+
+private fun Context.openUrl(url: String) {
+    try {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (_: ActivityNotFoundException) {
+        // No browser installed — silently drop. The URL is visible in open-source
+        // code so users can copy it manually if needed.
+    }
 }
 
 @Composable

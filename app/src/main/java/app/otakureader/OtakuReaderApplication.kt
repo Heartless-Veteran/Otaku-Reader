@@ -9,6 +9,10 @@ import app.otakureader.core.preferences.CrashReportingStore
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.crash.CrashHandler
 import app.otakureader.crash.CrashReporter
+import eu.kanade.tachiyomi.network.NetworkHelper
+import kotlinx.serialization.json.Json
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.addSingletonFactory
 import app.otakureader.shortcut.AppShortcutManager
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -84,6 +88,18 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         // Post-DI initialization is wrapped so a failure in optional startup work (dynamic
         // color registration, launcher-shortcut sync) can never crash the process before
         // the first Activity opens. Each is non-essential to launching the app.
+        // Bootstrap Injekt so loaded extension APKs can resolve NetworkHelper and Json via
+        // injectLazy() / Injekt.get(). Must run after super.onCreate() so the Hilt graph is
+        // ready (okHttpClient is injected by Hilt). Both registrations are lazy singletons —
+        // the factory runs once on first get() and the result is cached.
+        Injekt.addSingletonFactory<NetworkHelper> { NetworkHelper(applicationContext, baseClient = okHttpClient) }
+        Injekt.addSingletonFactory<Json> {
+            Json {
+                isLenient = true
+                ignoreUnknownKeys = true
+            }
+        }
+
         try {
             // Enable Material You dynamic colors on Android 12+ (API 31+)
             DynamicColors.applyToActivitiesIfAvailable(this)

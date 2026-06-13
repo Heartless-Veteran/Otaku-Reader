@@ -1,31 +1,29 @@
 package eu.kanade.tachiyomi.source
 
+import android.app.Application
+import android.content.Context
 import android.content.SharedPreferences
-import eu.kanade.tachiyomi.source.model.FilterList
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 
-/**
- * Minimal stub for Tachiyomi extension compatibility.
- *
- * Extensions from Keiyoushi/Komikku that implement [ConfigurableSource] require
- * this interface in the host classloader so the app can detect and use it via
- * `is ConfigurableSource` checks. The app does not call [setupPreferenceScreen] —
- * it just needs the type to exist to prevent [NoClassDefFoundError] at load time.
- *
- * @see ExtensionLoader for the load-time type-check
- */
 interface ConfigurableSource : Source {
 
     /**
-     * Returns the readable name of the extension configuration.
+     * Gets instance of [SharedPreferences] scoped to the specific source.
      *
-     * Not used by Otaku Reader — kept for API parity with Tachiyomi extensions.
+     * @since extensions-lib 1.5
      */
-    fun getPreferenceScreen(): String
+    fun getSourcePreferences(): SharedPreferences =
+        Injekt.get<Application>().getSharedPreferences(preferenceKey(), Context.MODE_PRIVATE)
 
-    /**
-     * Sets up the extension's preference screen.
-     *
-     * Not invoked by Otaku Reader — kept for API parity with Tachiyomi extensions.
-     */
-    fun setupPreferenceScreen(screen: Any)
+    fun setupPreferenceScreen(screen: PreferenceScreen)
 }
+
+fun ConfigurableSource.preferenceKey(): String = "source_$id"
+
+// TODO: use getSourcePreferences once all extensions are on ext-lib 1.5
+fun ConfigurableSource.sourcePreferences(): SharedPreferences =
+    Injekt.get<Application>().getSharedPreferences(preferenceKey(), Context.MODE_PRIVATE)
+
+fun sourcePreferences(key: String): SharedPreferences =
+    Injekt.get<Application>().getSharedPreferences(key, Context.MODE_PRIVATE)

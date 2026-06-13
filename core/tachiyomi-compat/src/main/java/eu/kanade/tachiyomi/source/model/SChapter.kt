@@ -1,25 +1,50 @@
-// Stub matching tachiyomiorg/extensions-lib — used at compile time only.
-@file:Suppress("VariableNaming")
+@file:Suppress("PropertyName")
+
 package eu.kanade.tachiyomi.source.model
 
-@Suppress("unused")
-interface SChapter {
+import java.io.Serializable
+
+interface SChapter : Serializable {
+
     var url: String
+
     var name: String
+
     var date_upload: Long
+
     var chapter_number: Float
+
     var scanlator: String?
 
-    companion object {
-        fun create(): SChapter = SChapterImpl()
+    fun copyFrom(other: SChapter) {
+        name = other.name
+        url = other.url
+        date_upload = other.date_upload
+        chapter_number = other.chapter_number
+        scanlator = other.scanlator
     }
-}
 
-/** Minimal mutable implementation used when creating SChapter instances in the host app. */
-internal class SChapterImpl : SChapter {
-    override var url: String = ""
-    override var name: String = ""
-    override var date_upload: Long = 0L
-    override var chapter_number: Float = -1f
-    override var scanlator: String? = null
+    companion object {
+        fun create(): SChapter {
+            return SChapterImpl()
+        }
+
+        // SY -->
+        operator fun invoke(
+            name: String,
+            url: String,
+            date_upload: Long = 0,
+            chapter_number: Float = -1F,
+            scanlator: String? = null,
+        ): SChapter {
+            return create().apply {
+                this.name = name
+                this.url = url
+                this.date_upload = date_upload
+                this.chapter_number = chapter_number
+                this.scanlator = scanlator
+            }
+        }
+        // SY <--
+    }
 }

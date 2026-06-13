@@ -23,15 +23,33 @@ dependencies {
     implementation(projects.core.preferences)
     implementation(projects.core.network)
 
-    // RxJava 1.x — required by the Tachiyomi extension API (Observable-based methods)
-    implementation(libs.rxjava)
-    implementation(libs.rxandroid)
+    // RxJava 1.x — required by the Tachiyomi extension API (Observable-based methods).
+    // `api` so loaded extension APKs (compiled against extensions-lib's rx.* types) see
+    // the same rx.Observable classes the host's HttpSource exposes.
+    api(libs.rxjava)
+    api(libs.rxandroid)
 
-    // OkHttp (shared with Tachiyomi extensions)
-    implementation(libs.okhttp.core)
+    // OkHttp (shared with Tachiyomi extensions) — `api` so extensions' okhttp3.* references
+    // resolve against the host's classes.
+    api(libs.okhttp.core)
 
-    // Note: eu.kanade.tachiyomi.source.* types are provided by local stubs
-    // in src/main/java/eu/kanade/tachiyomi/ — no external extensions-lib needed.
+    // Jsoup — referenced by ParsedHttpSource / many extensions for HTML parsing.
+    api(libs.jsoup)
+
+    // Injekt (mihonapp fork) — extensions call Injekt.get<NetworkHelper>() / injectLazy().
+    api(libs.injekt)
+
+    // androidx.preference — backs the ConfigurableSource.setupPreferenceScreen(PreferenceScreen)
+    // contract (PreferenceScreen = androidx.preference.PreferenceScreen).
+    api(libs.androidx.preference)
+
+    // kotlinx.serialization Json — Response.parseAs() and the host Injekt-provided Json.
+    api(libs.kotlinx.serialization.json)
+    api(libs.kotlinx.coroutines.core)
+
+    // The eu.kanade.tachiyomi.* host contract (Source/HttpSource/network helpers/models)
+    // is defined in this module's src/main/java/eu/kanade/tachiyomi/ and exposed to
+    // extension APKs at runtime via the host classloader.
     // Note: org.xmlpull.v1.* is provided by the Android SDK — no standalone dep needed.
 
     // Testing
