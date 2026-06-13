@@ -39,6 +39,8 @@ import org.junit.runner.RunWith
 private const val TEST_DB = "migration-test"
 
 @RunWith(AndroidJUnit4::class)
+// One test class per migration chain: it grows by design with every schema version.
+@Suppress("LargeClass")
 class DatabaseMigrationTest {
 
     @get:Rule
