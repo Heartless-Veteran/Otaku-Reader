@@ -427,9 +427,16 @@ object DownloadProvider {
     /**
      * Replaces characters that are illegal in filesystem paths with underscores and
      * trims surrounding whitespace.
+     *
+     * Separators are replaced first, so the result is a single path segment. The only remaining
+     * traversal risk is the whole segment being "." or ".." (these come from untrusted extension
+     * metadata such as manga/chapter titles and would otherwise resolve outside the download
+     * directory), so those — and an empty result — are mapped to "_".
      */
-    fun sanitize(name: String): String =
-        name.replace(Regex("""[/\\:*?"<>|]"""), "_").trim()
+    fun sanitize(name: String): String {
+        val cleaned = name.replace(Regex("""[/\\:*?"<>|]"""), "_").trim()
+        return if (cleaned.isEmpty() || cleaned == "." || cleaned == "..") "_" else cleaned
+    }
 
     private fun rootFor(context: Context): File =
         context.getExternalFilesDir(null) ?: context.filesDir

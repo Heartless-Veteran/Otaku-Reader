@@ -46,7 +46,9 @@ class ExtensionAutoUpdateWorker @AssistedInject constructor(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Result.retry()
+            // Cap retries so a persistently-failing update check doesn't wake the device forever;
+            // failure() defers to the next periodic run.
+            if (runAttemptCount >= MAX_RETRIES) Result.failure() else Result.retry()
         }
     }
 
@@ -83,6 +85,7 @@ class ExtensionAutoUpdateWorker @AssistedInject constructor(
     companion object {
         private const val CHANNEL_ID = "extension_updates"
         private const val NOTIFICATION_ID = 4001
+        private const val MAX_RETRIES = 3
         const val WORK_NAME = "extension_auto_update_periodic"
 
         /** Schedule (or reschedule) periodic extension update checks. */
