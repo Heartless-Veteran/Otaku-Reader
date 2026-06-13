@@ -259,6 +259,10 @@
     <string name="settings_scan_directory_description">Directory scanned for local manga (CBZ, ZIP, EPUB and image folders).</string>
     <string name="settings_directory_path">Directory path</string>
     <string name="settings_save">Save</string>
+    <string name="settings_local_source_choose_folder">Choose folder…</string>
+    <string name="settings_local_source_grant_access">Allow access to your files</string>
+    <string name="settings_local_source_grant_access_description">Android needs "All files access" for the local source to read manga from a folder you pick. Without it, scanning finds nothing.</string>
+    <string name="settings_local_source_grant_access_button">Grant access</string>
     <string name="settings_scan_directory_supported">Supported: CBZ, ZIP (including ComicInfo.xml), EPUB, and plain image folders.</string>
 
     <!-- Tracking -->

@@ -30,6 +30,13 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
+    <!-- Local source reads CBZ/ZIP/EPUB from a user-chosen folder via java.io.File. On
+         Android 11+ scoped storage blocks arbitrary File access to shared storage, so the
+         local source needs All-Files-Access. Requested at runtime from the Local Source
+         screen; this is a sideloaded app (not Play-distributed), so the policy gate does
+         not apply. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
     <!-- Package visibility: required to discover and manage Tachiyomi-compatible extension
          packages. Uses targeted <queries> below instead of QUERY_ALL_PACKAGES so this
          does not trigger a Play Store policy review. -->
