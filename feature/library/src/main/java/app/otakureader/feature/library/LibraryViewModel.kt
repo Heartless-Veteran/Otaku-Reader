@@ -561,24 +561,14 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaClick(mangaId: Long) {
-        // Atomic check-and-toggle: if selection is active, toggle inside update block
-        // to prevent race between read and write.
-        _state.update { state ->
-            if (state.selectedManga.isNotEmpty()) {
-                // Selection mode is active — toggle this manga and stay in selection mode
-                val newSelection = if (state.selectedManga.contains(mangaId)) {
-                    state.selectedManga - mangaId
-                } else {
-                    state.selectedManga + mangaId
-                }
-                state.copy(selectedManga = newSelection)
-            } else {
-                // No selection active — navigate (effect is fired after update)
-                state
-            }
-        }
-        // Only navigate if we did NOT toggle (selection was empty before click)
-        if (_state.value.selectedManga.isEmpty()) {
+        // Route through the authoritative SelectionManager so a tap-toggle stays consistent with
+        // long-click selection. `selection.selected` is the single source of truth that drives
+        // `state.selectedManga` (see init); mutating `_state` directly here diverged from it, so
+        // the next `selection` emission (or a bulk action via snapshotAndClear) would silently
+        // drop or revert tap-toggled items. If selection is active, toggle; otherwise navigate.
+        if (selection.snapshot().isNotEmpty()) {
+            selection.toggle(mangaId)
+        } else {
             viewModelScope.launch {
                 _effect.send(LibraryEffect.NavigateToManga(mangaId))
             }

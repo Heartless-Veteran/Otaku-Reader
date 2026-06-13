@@ -3,7 +3,6 @@ package app.otakureader.core.ui.mvi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collectLatest
 
 /**
  * Collect one-shot effects from a [BaseMviViewModel] in Compose.
@@ -30,6 +29,10 @@ fun <F : app.otakureader.core.common.mvi.UiEffect> CollectAsEffect(
     collector: suspend (F) -> Unit,
 ) {
     LaunchedEffect(effectFlow) {
-        effectFlow.collectLatest(collector)
+        // Use collect, not collectLatest: effects are one-shot events (navigation, snackbars).
+        // collectLatest cancels an in-flight collector when a new effect arrives, so a suspending
+        // handler (e.g. snackbarHostState.showSnackbar, which suspends until dismissed) would be
+        // cancelled mid-way and that effect lost. collect processes each effect to completion.
+        effectFlow.collect(collector)
     }
 }

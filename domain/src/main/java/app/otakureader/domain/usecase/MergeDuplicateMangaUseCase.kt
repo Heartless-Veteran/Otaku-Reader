@@ -35,10 +35,12 @@ class MergeDuplicateMangaUseCase @Inject constructor(
                 chapterRepository.updateChapterProgress(toMarkRead, read = true, lastPageRead = 0)
             }
 
-            // Copy category memberships
+            // Copy category memberships. Tolerate per-category failures (e.g. already a member)
+            // but never swallow cancellation — runCatching catches Throwable, so rethrow it.
             val categoryIds = mangaRepository.getCategoryIdsForManga(secondaryId)
             for (catId in categoryIds) {
                 runCatching { categoryRepository.addMangaToCategory(primaryId, catId) }
+                    .onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
             }
 
             // Remove secondary (cascade-deletes its chapters via foreign key)

@@ -64,7 +64,10 @@ class NowReadingWidget : GlanceAppWidget() {
                         chapterName = entry.chapter.name,
                     )
                 }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // Don't swallow cancellation (e.g. Glance composition cancelled / widget removed) —
+            // rethrow so structured concurrency unwinds. Matches the other three widgets.
+            if (e is kotlinx.coroutines.CancellationException) throw e
             null
         }
 
