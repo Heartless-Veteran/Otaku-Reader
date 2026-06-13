@@ -6,9 +6,9 @@ This file is the AI assistant reference for the Otaku Reader codebase. Read it b
 
 ## What This Project Is
 
-Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is **alpha-ready** (all gates green) and currently in the **beta feature parity** phase.
+Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is feature-complete for beta: all 35 parity issues plus the hardening batch have shipped, and the current phase is **beta APK validation**.
 
-**Status:** Alpha shipped 2026-05-25. Beta features tracked in 35 GitHub issues (#926–#958).
+**Status:** Alpha shipped 2026-05-25. Beta feature parity (#926–#958) and the 2026-06 hardening batch (#1090–#1099) are merged. Project website: https://heartless-veteran.github.io/Otaku-Reader/
 
 **The developer is newer to Kotlin. Always explain what was wrong and why a fix works — never drop solutions without context.**
 
@@ -24,6 +24,7 @@ Otaku-Reader/
 ├── source-api/             # Tachiyomi extension API contracts (pure Kotlin/Java interfaces)
 ├── server/                 # Self-hosted Ktor sync server (optional, separate repo)
 ├── baselineprofile/        # Baseline profile generation for app startup performance
+├── website/                # VitePress project site, deployed to GitHub Pages by pages.yml
 ├── build-logic/            # Gradle convention plugins
 ├── core/
 │   ├── common/             # Shared utilities, Palette API, coroutine helpers
@@ -287,7 +288,7 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 
 - Solo developer, veteran background, newer to Kotlin — explain fixes, don't just drop code.
 - Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
-- **Current priority: beta feature parity (#926–#958).** Alpha is shipped.
+- **Current priority: beta APK validation and release.** Feature parity and hardening are merged.
 
 ---
 

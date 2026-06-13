@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Reader
+- Reader comments — private, timestamped comments scoped to the current chapter or the whole series, in a bottom sheet opened from the reader menu; the existing chapter note is editable in the same place, and linked tracker pages (MAL, AniList, …) open in one tap (#1098)
+
+### Added — Library & Sources
+- E-Hentai/ExHentai favorites sync — additive library import from EH favorites using WebView-captured session cookies, gated behind the NSFW preference (#1090)
+- EH favorites full pagination — sync now walks every favorites page instead of only the first 25 entries (#1092)
+- Real orphaned-file cleanup — Library Maintenance now scans the downloads tree against the database and reports folder count and size before deleting (#1092)
+- Custom cover art — set any image as a manga's cover from the Details overflow menu; covers show across library, details, and widgets and survive metadata refreshes (#1093)
+- Onboarding appearance step — pick system/light/dark theme during first-run, applied live (#1093)
+
+### Added — Project
+- Project website at https://heartless-veteran.github.io/Otaku-Reader/ — landing page, download with live latest-version lookup, guides (getting started, extensions, library, reader, tracking, backups), FAQ, and an auto-synced changelog; deployed from `website/` via GitHub Pages on every merge (#1099)
+
+### Fixed
+- Extension repository loading — five root-cause fixes: per-repo failure isolation, atomic replace of the available list, install fallback when the repo entry is missing, tolerance for both `apk` and `apk_url` index fields, and clearer error reporting (#1094)
+- Library bulk download enqueued chapters without `sourceName`, which failed downloads from the queue; byte sizes now format locale-safely (#1095)
+- Backup silently discarded user customization — backup format v4 now round-trips custom titles/covers/authors, per-manga reader settings, completion/dropped flags, chapter notes, and category update schedules; v3 backups still restore (#1097)
+- Reader crash at chapter transitions — pager could compose a stale page index while the page list shrank (#1097)
+- Tracker sync retried forever on permanently failing trackers (e.g. revoked tokens); now capped at 3 attempts, and transient EH HTTP errors retry instead of failing permanently (#1097)
+
+### Security
+- Android Keystore corruption recovery — all nine encrypted credential/session stores now recover (reset + re-auth) instead of crash-looping the app after OS updates or device restores (#1097)
+- WebView address bar only loads http/https — typed `javascript:`, `data:`, `file:`, and `intent:` URLs are rejected before reaching the WebView (#1097)
+
 ### Added — Extension Trust & Health
 - Extension Detail Screen 2.0 — full-screen extension page with version, package name, trust badge, signer hash, repo link, capability chips, expandable source list, and trust/untrust action (#1072, closes #1047)
 - Extension signer hash provenance — first-seen signer hash recorded per extension; a changed signing certificate after install shows a red warning icon and label in the extensions list (#1075, closes #1049)

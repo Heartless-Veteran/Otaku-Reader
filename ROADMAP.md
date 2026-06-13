@@ -1,7 +1,8 @@
 # ROADMAP.md — Otaku Reader
 
-**Status:** Beta: Feature Parity Complete | **Current Phase:** Beta stabilization
-**Updated:** 2026-06-10
+**Status:** Beta: Feature Parity Complete + Hardening Done | **Current Phase:** Beta APK validation
+**Updated:** 2026-06-13
+**Website:** https://heartless-veteran.github.io/Otaku-Reader/
 
 ---
 
@@ -11,7 +12,8 @@
 |-------|--------|-------|
 | Alpha | ✅ **SHIPPED** | All gates green. Build passes, tests pass, security audit clean. |
 | Beta | ✅ **FEATURE PARITY COMPLETE** | All 35 parity issues (#926–#958) plus the QoL/extension-system audit batches shipped 2026-06-06 → 2026-06-10. |
-| Production | 📋 **PLANNED** | After beta stabilization (remaining follow-ups: #1018, #1019, #1053, #1054, plus maintenance items below). |
+| Beta hardening | ✅ **DONE 2026-06-13** | EH sync + pagination (#1090/#1092), custom covers + onboarding (#1093), extension repo fixes (#1094), bulk download fix (#1095), full-app bug sweep (#1097), reader comments (#1098), project website (#1099). |
+| Production | 📋 **NEXT** | Beta APK build + on-device validation, then `v*` tag for a signed release. |
 
 ---
 
@@ -142,7 +144,22 @@ The post-rollout batch from the QoL/layout and extension-system audits, plus the
 | #1076 | WebView session bridge (Cloudflare) | #1052 |
 | #1077 | Cross-source duplicate detection display | #997 |
 
-**Remaining open follow-ups:** extension blocklist (#1018), repository provenance tracking (#1019), MangaUpdates OAuth (blocked upstream, #1020), user-facing privacy docs (#1021), macrobenchmarks (#1022), screenshot tests (#1023), EH favorites sync (#1024), remote library sync (#1025), reader preset round 2 (#1027), full cross-source merge workflow (#1053), extension smoke-test harness (#1054), cert pin live verification (#994).
+**Follow-ups since shipped:** extension blocklist (#1018 ✅), repository provenance tracking (#1019 ✅), privacy docs (#1021 ✅), macrobenchmarks (#1022 ✅), screenshot tests (#1023 ✅), EH favorites sync (#1024 ✅, full pagination in #1092), remote library sync (#1025 ✅), reader preset round 2 (#1027 ✅), cross-source merge workflow (#1053 ✅), extension smoke-test harness (#1054 ✅). **Still open:** MangaUpdates OAuth (blocked upstream, #1020), cert pin live verification (#994), backup coverage for reader comments (follow-up from #1098).
+
+---
+
+## ✅ Beta Hardening Batch (2026-06-11 → 2026-06-13)
+
+| PR | Change |
+|----|--------|
+| #1090 | E-Hentai/ExHentai favorites sync (NSFW-gated, WebView session cookies) |
+| #1092 | EH favorites full pagination + real orphaned-file cleanup with size reporting |
+| #1093 | Custom cover art + onboarding appearance step |
+| #1094 | Extension repository loading — five root-cause fixes (per-repo isolation, atomic replace, install fallback, apk/apk_url tolerance, error reporting) |
+| #1095 | Library bulk download missing `sourceName` + locale-safe byte formatting |
+| #1097 | Full-app bug sweep: backup v4 (all user customizations round-trip), reader pager bounds guards, Keystore corruption recovery across 9 encrypted stores, tracker sync retry cap, EH error routing, WebView scheme validation |
+| #1098 | Reader comments — chapter/book scoped private comments + in-reader chapter note + tracker discussion links (DB v37) |
+| #1099 | Project website (VitePress on GitHub Pages) with guides, live download version, auto-synced changelog |
 
 ---
 
