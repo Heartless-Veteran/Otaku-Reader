@@ -26,6 +26,10 @@ object EncryptedPrefsFactory {
 
     private const val TAG = "EncryptedPrefs"
 
+    // Keystore corruption surfaces as several unrelated exception types (GeneralSecurityException,
+    // IOException, KeyStoreException, even InvalidProtocolBufferException from Tink) — catching
+    // anything narrower would leave crash-loop paths open.
+    @Suppress("TooGenericExceptionCaught")
     fun create(context: Context, fileName: String): SharedPreferences {
         return try {
             createEncrypted(context, fileName)
