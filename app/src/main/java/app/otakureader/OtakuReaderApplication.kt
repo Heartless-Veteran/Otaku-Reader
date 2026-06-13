@@ -103,14 +103,14 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
         try {
             // Enable Material You dynamic colors on Android 12+ (API 31+)
             DynamicColors.applyToActivitiesIfAvailable(this)
-        } catch (t: Throwable) {
-            android.util.Log.e("OtakuReaderApp", "DynamicColors init failed", t)
+        } catch (e: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "DynamicColors init failed", e)
         }
         try {
             // Initialize launcher shortcuts (Library, Updates, Continue Reading)
             appShortcutManager.initialize()
-        } catch (t: Throwable) {
-            android.util.Log.e("OtakuReaderApp", "App shortcut init failed", t)
+        } catch (e: Throwable) {
+            android.util.Log.e("OtakuReaderApp", "App shortcut init failed", e)
         }
     }
 

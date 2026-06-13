@@ -114,11 +114,11 @@ class MainActivity : FragmentActivity() {
         window.decorView.postDelayed({ keepSplashOnScreen = false }, SPLASH_MIN_DISPLAY_MS)
         try {
             startApp(savedInstanceState)
-        } catch (t: Throwable) {
+        } catch (e: Throwable) {
             // Startup failed before the UI could render. Paint the stack trace on-screen so
             // it can be screenshotted, instead of the process dying invisibly with no report.
-            android.util.Log.e("MainActivity", "Fatal error during startup", t)
-            setContent { StartupErrorScreen(t.stackTraceToString()) }
+            android.util.Log.e("MainActivity", "Fatal error during startup", e)
+            setContent { StartupErrorScreen(e.stackTraceToString()) }
         }
     }
 
@@ -171,9 +171,10 @@ class MainActivity : FragmentActivity() {
                     if (autoRefresh) {
                         libraryUpdateScheduler.enqueueNow()
                     }
-                } catch (t: Throwable) {
-                    if (t is kotlinx.coroutines.CancellationException) throw t
-                    android.util.Log.e("MainActivity", "Startup background scheduling failed", t)
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    android.util.Log.e("MainActivity", "Startup background scheduling failed", e)
                 }
             }
         }
