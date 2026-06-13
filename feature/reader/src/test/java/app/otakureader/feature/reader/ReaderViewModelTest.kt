@@ -91,6 +91,9 @@ class ReaderViewModelTest {
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
     private lateinit var panelDetectionService: PanelDetectionService
     private lateinit var trackerSyncRepository: TrackerSyncRepository
+    private lateinit var readerCommentRepository: app.otakureader.domain.repository.ReaderCommentRepository
+    private lateinit var trackRepository: app.otakureader.domain.tracking.TrackRepository
+    private lateinit var trackManager: app.otakureader.domain.tracking.TrackManager
     private lateinit var historyScheduler: ReadingHistoryScheduler
     private lateinit var displayDelegate: ReaderDisplayDelegate
     private lateinit var readerPreferences: ReaderPreferences
@@ -119,6 +122,12 @@ class ReaderViewModelTest {
         panelDetectionService = mockk()
         historyScheduler = mockk(relaxed = true)
         trackerSyncRepository = mockk(relaxed = true)
+        readerCommentRepository = mockk(relaxed = true)
+        every { readerCommentRepository.observeBookComments(any()) } returns flowOf(emptyList())
+        every { readerCommentRepository.observeChapterComments(any()) } returns flowOf(emptyList())
+        trackRepository = mockk(relaxed = true)
+        every { trackRepository.observeEntriesForManga(any()) } returns flowOf(emptyList())
+        trackManager = mockk(relaxed = true)
         readerPreferences = mockk()
         every { readerPreferences.presets } returns flowOf(emptyList())
         displayDelegate = ReaderDisplayDelegate(
@@ -248,6 +257,9 @@ class ReaderViewModelTest {
             ),
             displayDelegate = displayDelegate,
             trackerSyncRepository = trackerSyncRepository,
+            readerCommentRepository = readerCommentRepository,
+            trackRepository = trackRepository,
+            trackManager = trackManager,
             readerPreferences = readerPreferences,
             savedStateHandle = SavedStateHandle(
                 mapOf("mangaId" to mangaId, "chapterId" to chapterId)
@@ -840,4 +852,67 @@ class ReaderViewModelTest {
 
     // ── OCR text search tests ────────────────────────────────────────────────
 
+    // ── Reader comments ──────────────────────────────────────────────────────
+
+    @Test
+    fun `ToggleCommentsOverlay flips visibility`() = runTest {
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(vm.state.value.isCommentsOverlayVisible)
+
+        vm.onEvent(ReaderEvent.ToggleCommentsOverlay)
+        assertTrue(vm.state.value.isCommentsOverlayVisible)
+
+        vm.onEvent(ReaderEvent.ToggleCommentsOverlay)
+        assertFalse(vm.state.value.isCommentsOverlayVisible)
+    }
+
+    @Test
+    fun `addComment chapter-scoped uses current chapter id`() = runTest {
+        coEvery { readerCommentRepository.addComment(any(), any(), any()) } just runs
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        vm.addComment("  great fight scene  ", chapterScoped = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { readerCommentRepository.addComment(mangaId, chapterId, "great fight scene") }
+    }
+
+    @Test
+    fun `addComment book-scoped passes null chapter id`() = runTest {
+        coEvery { readerCommentRepository.addComment(any(), any(), any()) } just runs
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        vm.addComment("series-wide thought", chapterScoped = false)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { readerCommentRepository.addComment(mangaId, null, "series-wide thought") }
+    }
+
+    @Test
+    fun `addComment ignores blank input`() = runTest {
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        vm.addComment("   ", chapterScoped = true)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify(exactly = 0) { readerCommentRepository.addComment(any(), any(), any()) }
+    }
+
+    @Test
+    fun `saveChapterNote persists trimmed note and clears empty text`() = runTest {
+        coEvery { chapterRepository.updateChapterNotes(any(), any()) } just runs
+        val vm = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        vm.saveChapterNote(" remember this cliffhanger ")
+        vm.saveChapterNote("   ")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { chapterRepository.updateChapterNotes(chapterId, "remember this cliffhanger") }
+        coVerify { chapterRepository.updateChapterNotes(chapterId, null) }
+    }
 }

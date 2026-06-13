@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.sourceapi.SourceChapter
 import kotlinx.coroutines.async
@@ -163,6 +165,8 @@ class DetailsViewModel @Inject constructor(
                 _state.update { it.copy(isEditInfoSheetVisible = false) }
             is DetailsContract.Event.SaveMangaInfo -> saveMangaInfo(event)
             is DetailsContract.Event.ResetMangaInfo -> resetMangaInfo()
+            is DetailsContract.Event.SetCustomCover -> setCustomCover(event.imageUri)
+            is DetailsContract.Event.RemoveCustomCover -> removeCustomCover()
         }
     }
 
@@ -1235,6 +1239,36 @@ class DetailsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to reset manga info: ${e.message}"))
+            }
+        }
+    }
+
+    // Serializes set/remove cover operations: each mutates files + DB, so two running
+    // concurrently (rapid taps) could leave the DB pointing at a deleted file.
+    private val coverMutex = Mutex()
+
+    private fun setCustomCover(imageUri: String) {
+        viewModelScope.launch {
+            try {
+                coverMutex.withLock { mangaRepository.setCustomCover(mangaId, imageUri) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover set"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to set custom cover: ${e.message}"))
+            }
+        }
+    }
+
+    private fun removeCustomCover() {
+        viewModelScope.launch {
+            try {
+                coverMutex.withLock { mangaRepository.removeCustomCover(mangaId) }
+                _effect.send(DetailsContract.Effect.ShowSnackbar("Custom cover removed"))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(DetailsContract.Effect.ShowError("Failed to remove custom cover: ${e.message}"))
             }
         }
     }

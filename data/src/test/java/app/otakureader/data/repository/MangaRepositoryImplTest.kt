@@ -55,7 +55,14 @@ class MangaRepositoryImplTest {
         mangaCategoryDao = mockk()
         altSourceDao = mockk()
         downloadRepository = mockk()
-        repository = MangaRepositoryImpl(mangaDao, chapterDao, mangaCategoryDao, altSourceDao, downloadRepository)
+        repository = MangaRepositoryImpl(
+            context = mockk(relaxed = true),
+            mangaDao = mangaDao,
+            chapterDao = chapterDao,
+            mangaCategoryDao = mangaCategoryDao,
+            altSourceDao = altSourceDao,
+            downloadRepository = downloadRepository,
+        )
     }
 
     // ---- getLibraryManga ----

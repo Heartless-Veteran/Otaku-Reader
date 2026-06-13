@@ -165,6 +165,19 @@
 
     <!-- Reader presets quick-switch -->
     <string name="reader_presets_quick">Presets</string>
+
+    <!-- Reader comments overlay -->
+    <string name="reader_comments_title">Reader comments</string>
+    <string name="reader_comments_tab_chapter">Chapter</string>
+    <string name="reader_comments_tab_book">Book</string>
+    <string name="reader_comments_empty">No comments yet. Add your first thought below.</string>
+    <string name="reader_comments_hint">Write a comment…</string>
+    <string name="reader_comments_add">Add</string>
+    <string name="reader_comments_delete">Delete comment</string>
+    <string name="reader_comments_note_label">Chapter note</string>
+    <string name="reader_comments_note_hint">Private note for this chapter</string>
+    <string name="reader_comments_note_save">Save note</string>
+    <string name="reader_comments_external_title">Discussions elsewhere</string>
     <string name="reader_page_load_failed">Page failed to load</string>
     <string name="reader_chapter_bookmarked">Bookmarked</string>
     <string name="reader_chapter_read">Read</string>

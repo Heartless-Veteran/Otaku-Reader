@@ -67,8 +67,8 @@ fun SmartPanelsReader(
         beyondViewportPageCount = 1,
         modifier = modifier.fillMaxSize()
     ) { pageIndex ->
-        // The pager can briefly compose a stale index while the page list is being
-        // replaced (e.g. on chapter switch); bail out instead of crashing.
+        // The pager can briefly compose an index past the end while the page list
+        // shrinks (e.g. chapter transition); skip the frame instead of crashing.
         val page = pages.getOrNull(pageIndex) ?: return@HorizontalPager
         val panels = page.panels
         

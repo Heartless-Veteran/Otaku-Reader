@@ -10,6 +10,7 @@ data class LibraryMaintenanceState(
     val orphanScanRunning: Boolean = false,
     val orphanScanResult: String? = null,
     val orphanCount: Int = 0,
+    val orphanedSizeBytes: Long = 0L,
 )
 
 sealed interface LibraryMaintenanceEvent {

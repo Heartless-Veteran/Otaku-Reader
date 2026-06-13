@@ -1,6 +1,10 @@
 package app.otakureader.data.eh
 
+import app.otakureader.core.preferences.EhSession
 import io.mockk.mockk
+import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -90,6 +94,55 @@ class EhFavoritesApiTest {
 
         assertEquals(1, result.size)
         assertEquals("/g/555555/eee55555/", result[0].galleryUrl)
+    }
+
+    // ── Pagination tests ────────────────────────────────────────────────────────
+
+    @Test
+    fun `fetchFavorites accumulates all pages until empty page returned`() {
+        val server = MockWebServer()
+        server.use {
+            // Pages 0 and 1 have 25 items each; page 2 has 3 items; page 3 is empty → stop.
+            // Tokens must be valid hex ([a-f0-9]+) to match GALLERY_URL_REGEX.
+            val page0Html = buildMultiGalleryHtml((1..25).map { Triple("${100000 + it}", "a${it.toString().padStart(7, '0')}", "Title $it") })
+            val page1Html = buildMultiGalleryHtml((26..50).map { Triple("${100000 + it}", "b${it.toString().padStart(7, '0')}", "Title $it") })
+            val page2Html = buildMultiGalleryHtml((51..53).map { Triple("${100000 + it}", "c${it.toString().padStart(7, '0')}", "Title $it") })
+            val page3Html = "" // empty page signals end of pagination
+
+            server.enqueue(MockResponse().setBody(page0Html))
+            server.enqueue(MockResponse().setBody(page1Html))
+            server.enqueue(MockResponse().setBody(page2Html))
+            server.enqueue(MockResponse().setBody(page3Html))
+
+            val hostOverride = server.url("").toString().trimEnd('/')
+            val paginatedApi = EhFavoritesApi(OkHttpClient(), hostOverride, interPageDelayMillis = 0)
+            val session = EhSession(memberId = "1", passHash = "hash", igneous = "")
+
+            val result = paginatedApi.fetchFavorites(session)
+
+            assertEquals(53, result.size)
+            assertEquals(4, server.requestCount) // pages 0, 1, 2, 3
+        }
+    }
+
+    @Test
+    fun `fetchFavorites returns empty list when first page is empty`() {
+        val server = MockWebServer()
+        server.use {
+            server.enqueue(MockResponse().setBody(""))
+
+            val paginatedApi = EhFavoritesApi(
+                OkHttpClient(),
+                server.url("").toString().trimEnd('/'),
+                interPageDelayMillis = 0,
+            )
+            val session = EhSession(memberId = "1", passHash = "hash", igneous = "")
+
+            val result = paginatedApi.fetchFavorites(session)
+
+            assertTrue(result.isEmpty())
+            assertEquals(1, server.requestCount)
+        }
     }
 
     // --- helpers ---

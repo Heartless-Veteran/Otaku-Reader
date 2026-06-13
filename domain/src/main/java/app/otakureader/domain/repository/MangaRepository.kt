@@ -69,6 +69,17 @@ interface MangaRepository {
     /** Remove all user-info overrides for this manga, reverting to source metadata. */
     suspend fun clearLocalOverrides(id: Long)
 
+    // Custom cover art
+    /**
+     * Copies the image at [contentUri] (a `content://` URI from the system image picker)
+     * into app-private storage and sets it as this manga's cover. Other user-info
+     * overrides are left untouched.
+     */
+    suspend fun setCustomCover(id: Long, contentUri: String)
+
+    /** Deletes the stored custom cover file (if any) and reverts to the source cover. */
+    suspend fun removeCustomCover(id: Long)
+
     // Duplicate detection (#997)
     /** Groups of library manga sharing the same normalised title (≥2 entries per group). */
     fun findDuplicates(): Flow<List<List<Manga>>>

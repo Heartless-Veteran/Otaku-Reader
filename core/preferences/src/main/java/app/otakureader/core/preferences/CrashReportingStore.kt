@@ -2,8 +2,6 @@ package app.otakureader.core.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,16 +15,10 @@ import javax.inject.Singleton
 @Singleton
 class CrashReportingStore @Inject constructor(context: Context) {
 
+    // Created via EncryptedPrefsFactory so Keystore corruption recovers instead of
+    // crash-looping the app (stored secrets are reset; the user re-authenticates).
     private val prefs: SharedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context.applicationContext,
-            STORE_NAME,
-            MasterKey.Builder(context.applicationContext)
-                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                .build(),
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        EncryptedPrefsFactory.create(context.applicationContext, STORE_NAME)
     }
 
     /** Sentry DSN supplied by the user. Empty/blank → reporting cannot start regardless of opt-in. */

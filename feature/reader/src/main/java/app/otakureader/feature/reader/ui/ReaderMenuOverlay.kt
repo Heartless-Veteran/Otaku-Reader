@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.FitScreen
@@ -104,6 +105,7 @@ fun ReaderMenuOverlay(
     onToggleFullscreen: () -> Unit,
     onToggleChapterFilter: (() -> Unit)? = null,
     onToggleChapterList: (() -> Unit)? = null,
+    onToggleComments: (() -> Unit)? = null,
     presets: List<ReaderPreset> = emptyList(),
     onApplyPreset: (ReaderPreset) -> Unit = {},
     modifier: Modifier = Modifier
@@ -152,6 +154,14 @@ fun ReaderMenuOverlay(
                         if (onToggleChapterList != null) {
                             IconButton(onClick = onToggleChapterList) {
                                 Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.reader_chapter_list_title))
+                            }
+                        }
+                        if (onToggleComments != null) {
+                            IconButton(onClick = onToggleComments) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Comment,
+                                    contentDescription = stringResource(R.string.reader_comments_title)
+                                )
                             }
                         }
                         IconButton(onClick = onToggleFullscreen) {

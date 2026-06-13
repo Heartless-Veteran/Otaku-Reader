@@ -74,7 +74,10 @@ fun SinglePageReader(
                 .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
-            
+            // The pager can briefly compose an index past the end while the page list
+            // shrinks (e.g. chapter transition); skip the frame instead of crashing.
+            val page = pages.getOrNull(pageIndex) ?: return@Box
+
             ZoomableImage(
                 imageUrl = page.imageUrl,
                 contentDescription = stringResource(R.string.reader_page_content, page.pageNumber),

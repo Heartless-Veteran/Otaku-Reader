@@ -20,7 +20,10 @@ data class BackupData(
     val syncConfigurations: List<BackupSyncConfiguration> = emptyList()
 ) {
     companion object {
-        const val CURRENT_VERSION = 3
+        // v4 (2026-06-11): added per-manga user overrides (#998), per-manga reader settings,
+        // auto-download/notification flags, chapter user notes, and category
+        // updateFrequency/lockType. Older backups deserialize via field defaults.
+        const val CURRENT_VERSION = 4
     }
 }
 
@@ -50,6 +53,26 @@ data class BackupManga(
     val notes: String? = null,
     val readerBackgroundColor: Long? = null,
     val contentRating: Int = 0,
+    // v4 fields — all defaulted so v3 and older backups still deserialize.
+    val autoDownload: Boolean = false,
+    val notifyNewChapters: Boolean = true,
+    val readerDirection: Int? = null,
+    val readerMode: Int? = null,
+    val readerColorFilter: Int? = null,
+    val readerCustomTintColor: Long? = null,
+    val preloadPagesBefore: Int? = null,
+    val preloadPagesAfter: Int? = null,
+    val userCompleted: Boolean = false,
+    val userDropped: Boolean = false,
+    val mangaThemeOverride: Boolean? = null,
+    // User-info overrides (#998)
+    val userTitle: String? = null,
+    val userDescription: String? = null,
+    val userAuthor: String? = null,
+    val userArtist: String? = null,
+    val userThumbnailUrl: String? = null,
+    val userGenre: String? = null,
+    val userStatus: Int? = null,
 )
 
 /**
@@ -68,7 +91,9 @@ data class BackupChapter(
     val dateFetch: Long = 0,
     val dateUpload: Long = 0,
     val lastModified: Long = 0,
-    val readingHistory: BackupReadingHistory? = null
+    val readingHistory: BackupReadingHistory? = null,
+    /** v4: per-chapter user notes. */
+    val userNotes: String? = null,
 )
 
 /**
@@ -88,7 +113,11 @@ data class BackupCategory(
     val id: Long,
     val name: String,
     val order: Int = 0,
-    val flags: Int = 0
+    val flags: Int = 0,
+    /** v4: per-category update frequency (CategoryUpdateFrequency ordinal). */
+    val updateFrequency: Int = 1,
+    /** v4: per-category lock type (null = unlocked). */
+    val lockType: String? = null,
 )
 
 /**

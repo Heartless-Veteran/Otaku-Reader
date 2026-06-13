@@ -2,8 +2,6 @@ package app.otakureader.core.preferences
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -21,20 +19,11 @@ class EncryptedOpdsCredentialStore @Inject constructor(
     private val context: Context
 ) {
 
-    private val masterKey: MasterKey by lazy {
-        MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-    }
 
+    // Created via EncryptedPrefsFactory so Keystore corruption recovers instead of
+    // crash-looping the app (stored secrets are reset; the user re-authenticates).
     private val sharedPreferences: SharedPreferences by lazy {
-        EncryptedSharedPreferences.create(
-            context,
-            FILE_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        EncryptedPrefsFactory.create(context, FILE_NAME)
     }
 
     /** Retrieves the stored username for the given server, or empty string. */

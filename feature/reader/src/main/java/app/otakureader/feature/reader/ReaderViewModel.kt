@@ -18,8 +18,12 @@ import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.ReaderComment
+import app.otakureader.domain.repository.ReaderCommentRepository
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.domain.repository.TrackerSyncRepository
+import app.otakureader.domain.tracking.TrackManager
+import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderChapterLoaderDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderDiscordDelegate
@@ -39,6 +43,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
@@ -87,6 +92,9 @@ class ReaderViewModel @Inject constructor(
     private val prefetchDelegate: ReaderPrefetchDelegate,
     private val downloadAheadDelegate: ReaderDownloadAheadDelegate,
     private val trackerSyncRepository: TrackerSyncRepository,
+    private val readerCommentRepository: ReaderCommentRepository,
+    private val trackRepository: TrackRepository,
+    private val trackManager: TrackManager,
     private val displayDelegate: ReaderDisplayDelegate,
     private val readerPreferences: ReaderPreferences,
     savedStateHandle: SavedStateHandle
@@ -111,6 +119,69 @@ class ReaderViewModel @Inject constructor(
     val chapters: StateFlow<List<Chapter>> = chapterRepository
         .getChaptersByMangaId(mangaId)
         .stateIn(viewModelScope, sharing, emptyList())
+
+    // ── Reader comments overlay ─────────────────────────────────────────────
+
+    /** Book-level comments — visible from any chapter of this manga. */
+    val bookComments: StateFlow<List<ReaderComment>> = readerCommentRepository
+        .observeBookComments(mangaId)
+        .stateIn(viewModelScope, sharing, emptyList())
+
+    /**
+     * Comments for the chapter currently on screen. flatMapLatest re-subscribes on
+     * every chapter switch, so navigating chapters changes the thread automatically.
+     */
+    val chapterComments: StateFlow<List<ReaderComment>> = state
+        .map { it.currentChapterId }
+        .distinctUntilChanged()
+        .flatMapLatest { id -> readerCommentRepository.observeChapterComments(id) }
+        .stateIn(viewModelScope, sharing, emptyList())
+
+    /** The current chapter's private note (ChapterEntity.userNotes), editable in the overlay. */
+    val currentChapterNote: StateFlow<String> = combine(
+        chapters,
+        state.map { it.currentChapterId }.distinctUntilChanged(),
+    ) { allChapters, id ->
+        allChapters.find { it.id == id }?.userNotes.orEmpty()
+    }.stateIn(viewModelScope, sharing, "")
+
+    /** "Open <tracker>" buttons for every linked tracker that has a remote page URL. */
+    val externalDiscussionLinks: StateFlow<List<ExternalDiscussionLink>> = trackRepository
+        .observeEntriesForManga(mangaId)
+        .map { entries ->
+            entries.mapNotNull { entry ->
+                val name = trackManager.get(entry.trackerId)?.name
+                if (name != null && entry.remoteUrl.isNotBlank()) {
+                    ExternalDiscussionLink(trackerName = name, url = entry.remoteUrl)
+                } else {
+                    null
+                }
+            }
+        }
+        .stateIn(viewModelScope, sharing, emptyList())
+
+    fun addComment(body: String, chapterScoped: Boolean) {
+        val trimmed = body.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            readerCommentRepository.addComment(
+                mangaId = mangaId,
+                chapterId = if (chapterScoped) _state.value.currentChapterId else null,
+                body = trimmed,
+            )
+        }
+    }
+
+    fun deleteComment(comment: ReaderComment) {
+        viewModelScope.launch { readerCommentRepository.deleteComment(comment.id) }
+    }
+
+    fun saveChapterNote(text: String) {
+        val targetChapterId = _state.value.currentChapterId
+        viewModelScope.launch {
+            chapterRepository.updateChapterNotes(targetChapterId, text.trim().ifEmpty { null })
+        }
+    }
 
     private var currentManga: Manga? = null
     private var currentChapter: Chapter? = null
@@ -424,6 +495,7 @@ class ReaderViewModel @Inject constructor(
             ReaderEvent.ToggleFullscreen -> displayDelegate.toggleFullscreen()
             ReaderEvent.ToggleSettingsOverlay -> displayDelegate.toggleSettingsOverlay()
             ReaderEvent.ToggleChapterListOverlay -> displayDelegate.toggleChapterListOverlay()
+            ReaderEvent.ToggleCommentsOverlay -> displayDelegate.toggleCommentsOverlay()
         }
     }
 
