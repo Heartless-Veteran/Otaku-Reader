@@ -120,6 +120,9 @@ interface ExtensionDao {
 
     @Query("UPDATE extensions SET is_enabled = :enabled WHERE pkg_name = :pkgName")
     suspend fun updateEnabled(pkgName: String, enabled: Boolean)
+
+    @Query("UPDATE extensions SET signature_hash = :hash WHERE pkg_name = :pkgName")
+    suspend fun updateSignatureHash(pkgName: String, hash: String)
     
     @Query("SELECT * FROM extensions WHERE name LIKE '%' || :query || '%' OR pkg_name LIKE '%' || :query || '%'")
     fun searchExtensions(query: String): Flow<List<ExtensionEntity>>
