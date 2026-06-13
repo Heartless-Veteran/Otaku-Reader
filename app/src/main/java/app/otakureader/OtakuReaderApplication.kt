@@ -55,6 +55,21 @@ class OtakuReaderApplication : Application(), Configuration.Provider, SingletonI
             .setWorkerFactory(workerFactory)
             .build()
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // Earliest point we control — runs BEFORE every ContentProvider (Sentry's
+        // SentryInitProvider/SentryPerformanceProvider, FileProvider, androidx.startup
+        // InitializationProvider) executes its onCreate. Installing the crash handler here
+        // means a crash in any of those providers is captured to Downloads/prefs instead of
+        // killing the process invisibly. onCreate later re-calls install() to attach the
+        // Sentry store; install() is idempotent.
+        try {
+            CrashHandler.install(base)
+        } catch (_: Throwable) {
+            // Never let diagnostics setup prevent the app from starting.
+        }
+    }
+
     override fun onCreate() {
         // Read crash-reporting prefs directly (no Hilt) since CrashHandler installs BEFORE
         // super.onCreate() and the Hilt graph isn't constructed yet at that point. The store

@@ -49,6 +49,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OtakuReaderBase">
 
+        <!-- Sentry crash reporting (#952) is opt-in and initialized manually at runtime via
+             CrashReporter only after the user supplies a DSN and opts in. Disable the SDK's
+             automatic ContentProvider init so nothing in Sentry runs at process start before
+             the user has consented (and so it cannot fail during early startup). -->
+        <meta-data android:name="io.sentry.auto-init" android:value="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
