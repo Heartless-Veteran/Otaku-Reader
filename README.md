@@ -12,6 +12,9 @@
   [![License](https://img.shields.io/badge/License-Apache%202.0-fbbf24?style=flat)](LICENSE)
   [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-FF4757?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
   [![GitHub Stars](https://img.shields.io/github/stars/Heartless-Veteran/Otaku-Reader?color=FF4757&style=flat&logo=github)](https://github.com/Heartless-Veteran/Otaku-Reader/stargazers)
+  [![Website](https://img.shields.io/badge/Website-otaku--reader-C00055?style=flat&logo=githubpages&logoColor=white)](https://heartless-veteran.github.io/Otaku-Reader/)
+
+  **[📖 Website & Guides](https://heartless-veteran.github.io/Otaku-Reader/)** · **[⬇ Download](https://heartless-veteran.github.io/Otaku-Reader/download.html)**
 
 </div>
 
@@ -47,7 +50,7 @@ cd Otaku-Reader
 ./gradlew assembleDebug
 ```
 
-Or grab a [release APK](https://github.com/Heartless-Veteran/Otaku-Reader/releases) — no accounts, no setup.
+Or grab a [release APK](https://github.com/Heartless-Veteran/Otaku-Reader/releases) — no accounts, no setup. New here? The [website](https://heartless-veteran.github.io/Otaku-Reader/) has install and setup guides.
 
 ---
 
@@ -89,7 +92,10 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 - 🔍 **Library search** — FTS4 full-text search across title, author, artist
 - 🔍 **Global search** — Search across all installed sources simultaneously
 - 🧹 **Library maintenance center** — Cover refresh, metadata refresh, download reindex, orphaned-file cleanup
-- 🔀 **Duplicate merge** — Detect and merge duplicate entries, with cross-source detection
+- 🖼️ **Custom cover art** — Replace any cover with your own image from the Details menu
+- ✏️ **Edit manga info** — Override title, author, artist, description, genres, and status; edits survive updates and are included in backups
+- 🤖 **Dynamic categories** — Rule-based categories that populate themselves
+- 🔀 **Duplicate merge** — Detect and merge duplicate entries, with cross-source detection and alternative-source linking
 - ✅ **Bulk action confirmations** — Destructive selection actions confirm before running
 - 📱 **Widget navigation** — Home screen widgets for continue reading, now reading, and recent updates with deep-link navigation
 - 📂 **QR library sharing** — Share library via text/URL (local, no server)
@@ -100,7 +106,12 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <summary>📖 Reading Experience</summary>
 
 - 📖 **All reader modes** — Paged, webtoon, continuous scroll, dual-page, smart panels
-- 🔖 **Page bookmarks** — Bookmark any page within a chapter in the reader
+- 🎛️ **Per-manga reader overrides** — Direction, mode, color filter, and tint remembered per series
+- 🎨 **Color filters & e-ink mode** — Night tints, custom tint color, B&W rendering with page-turn flash
+- 💾 **Reader presets** — Save full setting bundles (13 captured settings) and switch with one tap
+- 🔖 **Page bookmarks** — Bookmark any page within a chapter, with optional notes
+- 💬 **Reader comments** — Private timestamped comments per chapter or per series, plus the chapter note, in an in-reader panel with links to tracker discussion pages
+- 🔍 **OCR text search** — Find dialogue inside page images
 - 📱 **Adaptive layouts** — Optimized for phones, foldables, tablets, and DeX
 
 </details>
@@ -122,6 +133,8 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <summary>🔌 Discovery & Sources</summary>
 
 - 🔌 **Extension system** — Tachiyomi/Komikku-compatible sources (Keiyoushi, Komikku repos)
+- 🗃️ **Multi-repository management** — Add any number of extension repos; failures are isolated per repo with clear error messages
+- 🚫 **Extension blocklist** — Known-bad extensions filtered automatically (daily refresh)
 - 🛡️ **Extension trust & provenance** — Signer-hash continuity checks warn if an extension's signing certificate changes after install
 - 📄 **Extension detail screen** — Version, signer hash, repo link, capabilities, source list, trust/untrust action
 - 🩺 **Source health diagnostics** — Per-source failure tracking with warning badges in Browse
@@ -148,54 +161,17 @@ This is not a fork. Otaku Reader was written from the ground up — the core app
 <details open>
 <summary>💾 Backup & Migration</summary>
 
-- 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device
+- 💾 **Local backup/restore** — Human-readable JSON in ZIP, everything stays on-device; backup v4 covers every customization (custom titles/covers, per-manga reader settings, notes, category schedules)
+- ☁️ **WebDAV cloud backup** — Scheduled uploads to Nextcloud, ownCloud, or any WebDAV server (opt-in, your server)
+- 📦 **Tachiyomi/Mihon/Komikku import** — Restore an existing backup and keep reading in minutes
 - 🔄 **Auto-backup worker** — Periodic automatic backups run in background
 - 🔄 **Source-to-source migration** — Move manga between sources without losing progress
 
 </details>
 
-### Beta Roadmap (Coming Soon)
+### Beta Status
 
-The following features have data/backend support and are being wired up for the beta release. Track progress on [GitHub Issues](https://github.com/Heartless-Veteran/Otaku-Reader/issues?q=is%3Aissue+label%3Aenhancement+label%3A%22help+wanted%22+).
-
-<details>
-<summary>🔧 Beta Features (35 tracked issues)</summary>
-
-**P0 — Blockers:**
-- Library Search (in-library manga search)
-- Advanced Search & Filtering (genre, status, sort)
-- Biometric App Lock
-- Tachiyomi Backup Import (migration from Mihon)
-- Auto-Backup Scheduling UI
-
-**P1 — Competitive:**
-- Dynamic Categories (smart/rule-based)
-- Hidden Categories (privacy-locked)
-- Smart Download Rules (conditional auto-download)
-- Per-Manga Reader Settings
-- Page Bookmark Management Screen
-- Chapter Notes UI
-- Search History & Suggestions
-- Download Queue Manager (pause/resume/reorder)
-- Extension Auto-Update
-- Smart Notification Batching UI
-- Statistics Sharing (social cards)
-- Tracker Batch Sync
-
-**P2 — Polish:**
-- Recommendation Engine
-- Customizable Feeds & Discovery
-- Reading List Collections
-- Completed/Dropped Series Sections
-- Per-Manga Dynamic Theme
-- Pure Black AMOLED Mode
-- Home Screen Widget (large)
-- QR Code Library Sharing (full)
-- Read Time Estimation
-- Crash Reporting Integration
-- Extension Repository Management
-
-</details>
+**All 35 beta-parity issues (#926–#958) have shipped**, along with the extension trust/health audit, the QoL batch, and a full-app pre-release bug sweep. See [CHANGELOG.md](CHANGELOG.md) for the complete list and the [website](https://heartless-veteran.github.io/Otaku-Reader/) for user guides.
 
 ---
 
@@ -250,11 +226,11 @@ The following features have data/backend support and are being wired up for the 
 
 <div align="center">
 
-| Library | Browse | Reader | Settings |
-|---------|--------|--------|----------|
-| <img src="docs/screenshots/library.png" width="180" alt="Library screen"/> | <img src="docs/screenshots/browse.png" width="180" alt="Browse screen"/> | <img src="docs/screenshots/reader.png" width="180" alt="Reader screen"/> | <img src="docs/screenshots/settings.png" width="180" alt="Settings screen"/> |
+| Library | Reader |
+|---------|--------|
+| <img src="website/public/screenshots/library.png" width="220" alt="Library screen"/> | <img src="website/public/screenshots/reader.png" width="220" alt="Reader menu"/> |
 
-<em>Screenshots taken on Pixel 7 (Android 14). See <a href="docs/screenshots/">docs/screenshots/</a> for full-resolution images.</em>
+<em>UI captures from the Roborazzi screenshot test suite — device screenshots coming with the beta release.</em>
 
 </div>
 
@@ -330,7 +306,16 @@ The 35-issue beta parity backlog (#926–#958) plus the QoL and extension-system
 - [x] Source categories & pinning, saved source searches, WebView session bridge
 - [x] Cross-source duplicate detection, update history & diagnostics
 
-See [CHANGELOG.md](CHANGELOG.md) for the complete list. Remaining follow-up work is tracked in open issues (extension blocklist #1018, repo provenance tracking #1019, full cross-source merge workflow #1053, and others).
+See [CHANGELOG.md](CHANGELOG.md) for the complete list.
+
+### ✅ Phase 6: Beta Hardening (June 2026)
+- [x] Extension blocklist (#1018), repository provenance tracking (#1019), cross-source merge workflow (#1053)
+- [x] E-Hentai favorites sync with full pagination (#1090, #1092)
+- [x] Custom cover art + onboarding appearance step (#1093)
+- [x] Extension repository loading — five root-cause fixes (#1094)
+- [x] Full-app bug sweep: backup v4 customization coverage, reader pager crash guards, Keystore corruption recovery, sync retry caps, WebView scheme hardening (#1097)
+- [x] Reader comments with chapter/book scopes (#1098)
+- [x] Project website on GitHub Pages (#1099) — https://heartless-veteran.github.io/Otaku-Reader/
 
 ### Future Differentiators
 - [ ] Curated default extension index (opt-out)
