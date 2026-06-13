@@ -193,7 +193,7 @@ class ExtensionIndexSmokeTest {
     private data class IndexSource(
         @SerialName("name") val name: String = "",
         @SerialName("lang") val lang: String = "",
-        @SerialName("id") val id: String = "",
+        @SerialName("id") val id: Long = 0L,
         @SerialName("baseUrl") val baseUrl: String = "",
     )
 }

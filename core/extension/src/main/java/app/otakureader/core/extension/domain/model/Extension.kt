@@ -2,6 +2,7 @@ package app.otakureader.core.extension.domain.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
 /**
  * Represents an installed extension package.
@@ -94,6 +95,7 @@ data class Extension(
         get() = signatureHash != null
 }
 
+@Serializable
 @Parcelize
 data class ExtensionSource(
     /** Unique identifier for this source within the extension */

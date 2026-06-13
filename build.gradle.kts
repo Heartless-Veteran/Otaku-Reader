@@ -40,7 +40,11 @@ detekt {
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-    exclude("**/build/**", "**/generated/**")
+    // eu.kanade.* in core:tachiyomi-compat is a verbatim mirror of the Tachiyomi/Komikku
+    // extension API (snake_case field names, RxJava bridges, ported interceptors). It must
+    // match upstream exactly for extension binary compatibility, so this project's style
+    // rules don't apply — lint our own code, not the third-party API surface.
+    exclude("**/build/**", "**/generated/**", "**/eu/kanade/**")
 }
 
 // Security: Force secure versions of transitive dependencies

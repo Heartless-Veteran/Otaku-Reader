@@ -74,8 +74,9 @@ class ContinueReadingWidget : GlanceAppWidget() {
                         }
                     )
                 }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w("ContinueReadingWidget", "Failed to load continue-reading entries for widget", e)
             emptyList()
         }

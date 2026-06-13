@@ -397,12 +397,14 @@ class ExtensionLoader(
     /** Convert a loaded [Source] to the [ExtensionSource] domain model. */
     private fun Source.toExtensionSource(): ExtensionSource {
         val catalogue = this as? CatalogueSource
-        val http = this as? HttpSource
+        // baseUrl only exists on HttpSource (matching Tachiyomi/Komikku); non-HTTP
+        // sources (e.g. local) have no base URL.
+        val httpSource = this as? HttpSource
         return ExtensionSource(
             id = this.id,
             name = this.name,
             lang = catalogue?.lang ?: "",
-            baseUrl = http?.baseUrl ?: "",
+            baseUrl = httpSource?.baseUrl ?: "",
             supportsSearch = true,
             supportsLatest = catalogue?.supportsLatest ?: false,
         )

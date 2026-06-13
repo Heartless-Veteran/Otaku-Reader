@@ -13,6 +13,7 @@ import app.otakureader.sourceapi.MangaPage
 import app.otakureader.sourceapi.MangaSource
 import app.otakureader.sourceapi.SourceManga
 import eu.kanade.tachiyomi.source.CatalogueSource
+import eu.kanade.tachiyomi.source.online.HttpSource
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -431,7 +432,8 @@ class SourceRepositoryImplTest {
         lang: String = "en",
         baseUrl: String = "https://example.com",
     ): CatalogueSource {
-        val source = mockk<CatalogueSource>(relaxed = true)
+        // baseUrl lives on HttpSource (matching Tachiyomi/Komikku), so mock that subtype.
+        val source = mockk<HttpSource>(relaxed = true)
         every { source.id } returns id
         every { source.name } returns name
         every { source.lang } returns lang
@@ -460,7 +462,7 @@ class SourceRepositoryImplTest {
                     id = it.id.hashCode().toLong().and(0xFFFFFFFFL),
                     name = it.name,
                     lang = it.lang,
-                    baseUrl = it.baseUrl,
+                    baseUrl = (it as? HttpSource)?.baseUrl ?: "",
                 )
             },
             status = InstallStatus.INSTALLED,

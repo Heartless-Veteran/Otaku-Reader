@@ -92,13 +92,31 @@ class ExtensionInstallReceiver : BroadcastReceiver() {
     private suspend fun handlePackageAdded(packageName: String) {
         try {
             val loadResult = extensionLoader.loadExtensionFromPkgName(packageName)
-            if (loadResult is ExtensionLoadResult.Success) {
-                val apkPath = loadResult.extension.apkPath
-                if (apkPath.isNullOrBlank()) {
-                    Log.w(TAG, "Extension $packageName loaded but has no APK path; skipping install")
+            // Accept both Success and Untrusted — untrusted extensions are installed in the DB
+            // so the user can see them and tap Trust. A Success result means the signing cert
+            // was already trusted from a prior install.
+            val extension = when (loadResult) {
+                is ExtensionLoadResult.Success -> loadResult.extension
+                // Persist untrusted extensions with a null signatureHash so the UI shows them
+                // as "Unverified" with a Trust button rather than falsely "Verified"
+                // (Extension.isTrusted == signatureHash != null).
+                is ExtensionLoadResult.Untrusted -> loadResult.extension.copy(signatureHash = null)
+                is ExtensionLoadResult.Error -> {
+                    Log.w(TAG, "Cannot load extension $packageName: ${loadResult.message}")
                     return
                 }
-                extensionRepository.installExtension(packageName, apkPath)
+            }
+            val apkPath = extension.apkPath
+            if (apkPath.isNullOrBlank()) {
+                Log.w(TAG, "Extension $packageName loaded but has no APK path; skipping install")
+                return
+            }
+            // Use the fallback overload: a first-time system-installed extension has no DB row
+            // yet, so passing the loaded extension lets the repository create one instead of
+            // failing with "Extension not found".
+            val result = extensionRepository.installExtension(extension, apkPath)
+            result.onFailure { e ->
+                Log.e(TAG, "Failed to register extension $packageName in DB", e)
             }
         } catch (e: CancellationException) {
             throw e
