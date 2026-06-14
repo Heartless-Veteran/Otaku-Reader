@@ -136,6 +136,8 @@ sealed class LibraryEvent {
     data object ToggleSearchBar : LibraryEvent()
     data class OnCategorySelected(val categoryId: Long?) : LibraryEvent()
     data object ClearSelection : LibraryEvent()
+    data object SelectAllManga : LibraryEvent()
+    data object InvertSelection : LibraryEvent()
     data class ToggleFavorite(val mangaId: Long) : LibraryEvent()
     data class FilterHasNotes(val enabled: Boolean) : LibraryEvent()
     data class SetSortMode(val mode: LibrarySortMode) : LibraryEvent()

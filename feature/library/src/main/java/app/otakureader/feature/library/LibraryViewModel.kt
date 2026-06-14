@@ -121,7 +121,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.Refresh, is LibraryEvent.OnMangaClick,
             is LibraryEvent.OnMangaLongClick, is LibraryEvent.ContinueReadingClick -> handleNavEvent(event)
             is LibraryEvent.OnSearchQueryChange, is LibraryEvent.ToggleSearchBar,
-            is LibraryEvent.OnCategorySelected, is LibraryEvent.ClearSelection -> handleUiEvent(event)
+            is LibraryEvent.OnCategorySelected, is LibraryEvent.ClearSelection,
+            is LibraryEvent.SelectAllManga, is LibraryEvent.InvertSelection -> handleUiEvent(event)
             is LibraryEvent.FilterHasNotes, is LibraryEvent.SetSortMode, is LibraryEvent.SetFilterMode,
             is LibraryEvent.SetFilterSource, is LibraryEvent.ToggleNsfw, is LibraryEvent.SetFilterReadingList,
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
@@ -183,6 +184,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleSearchBar -> toggleSearchBar()
             is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
             is LibraryEvent.ClearSelection -> clearSelection()
+            is LibraryEvent.SelectAllManga -> selection.setAll(_state.value.mangaList.map { it.id }.toSet())
+            is LibraryEvent.InvertSelection -> selection.invert(_state.value.mangaList.map { it.id })
             else -> Unit
         }
     }

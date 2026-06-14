@@ -105,6 +105,8 @@
     <string name="library_download_selected">Download selected</string>
     <string name="library_remove_selected">Remove from library</string>
     <string name="library_more_actions">More actions</string>
+    <string name="library_select_all">Select all</string>
+    <string name="library_invert_selection">Invert selection</string>
     <string name="library_mark_selected_completed">Mark as completed</string>
     <string name="library_mark_selected_dropped">Mark as dropped</string>
     <string name="library_share_manga">Share</string>

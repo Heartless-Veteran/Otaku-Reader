@@ -219,6 +219,21 @@ fun LibraryScreen(
                             onDismissRequest = { selectionOverflowExpanded = false },
                         ) {
                             DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_select_all)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.SelectAllManga)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_invert_selection)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.InvertSelection)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            androidx.compose.material3.HorizontalDivider()
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_mark_selected_completed)) },
                                 onClick = {
                                     pendingBulkAction = LibraryEvent.MarkSelectedAsCompleted

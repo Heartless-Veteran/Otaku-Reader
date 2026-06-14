@@ -290,6 +290,37 @@ class LibraryViewModelTest {
     }
 
     @Test
+    fun onEvent_SelectAllManga_selectsEveryDisplayedManga() = runTest {
+        every { getLibraryManga() } returns flowOf(sampleMangas)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.SelectAllManga)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            sampleMangas.map { it.id }.toSet(),
+            viewModel.state.value.selectedManga
+        )
+    }
+
+    @Test
+    fun onEvent_InvertSelection_togglesSelectionAcrossDisplayedManga() = runTest {
+        every { getLibraryManga() } returns flowOf(sampleMangas)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
+        viewModel.onEvent(LibraryEvent.InvertSelection)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // 1 was selected, so after invert only 2 and 3 should remain selected.
+        assertEquals(setOf(2L, 3L), viewModel.state.value.selectedManga)
+    }
+
+    @Test
     fun onEvent_ToggleFavorite_callsUseCase() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
         coEvery { toggleFavoriteManga(any()) } returns Unit
