@@ -86,6 +86,7 @@ fun HistoryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var showClearConfirm by remember { mutableStateOf(false) }
 
@@ -94,7 +95,12 @@ fun HistoryScreen(
             when (effect) {
                 is HistoryEffect.NavigateToReader -> onChapterClick(effect.mangaId, effect.chapterId)
                 is HistoryEffect.ShowSnackbar -> scope.launch {
-                    snackbarHostState.showSnackbar(effect.message)
+                    val msg = if (effect.formatArgs.isEmpty()) {
+                        context.getString(effect.messageRes)
+                    } else {
+                        context.getString(effect.messageRes, *effect.formatArgs.toTypedArray())
+                    }
+                    snackbarHostState.showSnackbar(msg)
                 }
             }
         }
