@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import app.otakureader.feature.history.R
 
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
@@ -105,12 +106,17 @@ class HistoryViewModel @Inject constructor(
                         chapterRepository.removeFromHistory(chapterId)
                     }
                     clearSelection()
-                    _effect.send(HistoryEffect.ShowSnackbar("Removed ${selectedIds.size} item(s) from history"))
+                    _effect.send(
+                        HistoryEffect.ShowSnackbar(
+                            R.string.history_removed_count,
+                            formatArgs = listOf(selectedIds.size),
+                        )
+                    )
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
             }
         }
     }
@@ -125,11 +131,11 @@ class HistoryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.clearAllHistory()
-                _effect.send(HistoryEffect.ShowSnackbar("History cleared"))
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_cleared))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar("Failed to clear history"))
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_clear_failed))
             }
         }
     }
@@ -141,7 +147,7 @@ class HistoryViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar("Failed to remove from history"))
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
             }
         }
     }

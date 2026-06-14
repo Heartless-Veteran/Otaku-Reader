@@ -121,7 +121,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.Refresh, is LibraryEvent.OnMangaClick,
             is LibraryEvent.OnMangaLongClick, is LibraryEvent.ContinueReadingClick -> handleNavEvent(event)
             is LibraryEvent.OnSearchQueryChange, is LibraryEvent.ToggleSearchBar,
-            is LibraryEvent.OnCategorySelected, is LibraryEvent.ClearSelection -> handleUiEvent(event)
+            is LibraryEvent.OnCategorySelected, is LibraryEvent.ClearSelection,
+            is LibraryEvent.SelectAllManga, is LibraryEvent.InvertSelection -> handleUiEvent(event)
             is LibraryEvent.FilterHasNotes, is LibraryEvent.SetSortMode, is LibraryEvent.SetFilterMode,
             is LibraryEvent.SetFilterSource, is LibraryEvent.ToggleNsfw, is LibraryEvent.SetFilterReadingList,
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
@@ -130,12 +131,9 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
             is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
-            is LibraryEvent.SetGridSize -> viewModelScope.launch { libraryPreferences.setGridSize(event.size) }
-            is LibraryEvent.SetShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(event.enabled) }
-            is LibraryEvent.SetShowDownloadBadge ->
-                viewModelScope.launch { libraryPreferences.setShowDownloadBadge(event.enabled) }
-            is LibraryEvent.SetStaggeredGrid ->
-                viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
+            is LibraryEvent.SetGridSize, is LibraryEvent.SetShowBadges,
+            is LibraryEvent.SetShowDownloadBadge, is LibraryEvent.SetStaggeredGrid,
+            is LibraryEvent.SetDisplayMode -> handleDisplayEvent(event)
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
@@ -155,6 +153,21 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    /** Persists display-layout preference changes (grid size, badges, staggered/list mode). */
+    private fun handleDisplayEvent(event: LibraryEvent) {
+        when (event) {
+            is LibraryEvent.SetGridSize -> viewModelScope.launch { libraryPreferences.setGridSize(event.size) }
+            is LibraryEvent.SetShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(event.enabled) }
+            is LibraryEvent.SetShowDownloadBadge ->
+                viewModelScope.launch { libraryPreferences.setShowDownloadBadge(event.enabled) }
+            is LibraryEvent.SetStaggeredGrid ->
+                viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
+            is LibraryEvent.SetDisplayMode ->
+                viewModelScope.launch { libraryPreferences.setLibraryDisplayMode(event.mode.ordinal) }
+            else -> Unit
+        }
+    }
+
     private fun handleNavEvent(event: LibraryEvent) {
         when (event) {
             is LibraryEvent.Refresh -> loadLibrary()
@@ -171,6 +184,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleSearchBar -> toggleSearchBar()
             is LibraryEvent.OnCategorySelected -> onCategorySelected(event.categoryId)
             is LibraryEvent.ClearSelection -> clearSelection()
+            is LibraryEvent.SelectAllManga -> selection.setAll(_state.value.mangaList.map { it.id }.toSet())
+            is LibraryEvent.InvertSelection -> selection.invert(_state.value.mangaList.map { it.id })
             else -> Unit
         }
     }
@@ -414,6 +429,13 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.isStaggeredGrid
             .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.libraryDisplayMode
+            .onEach { modeInt ->
+                _state.update {
+                    it.copy(displayMode = LibraryDisplayMode.entries.getOrElse(modeInt) { LibraryDisplayMode.GRID })
+                }
+            }
             .launchIn(viewModelScope)
         generalPreferences.visualEffectsEnabled
             .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }

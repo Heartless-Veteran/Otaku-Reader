@@ -44,6 +44,8 @@
     <string name="updates_error_clear">Clear error</string>
     <string name="updates_error_clear_all">Clear all</string>
     
+    <string name="updates_refresh_now">Update library now</string>
+
     <!-- To-Be-Updated Screen -->
     <string name="updates_view_pending">Preview next update</string>
     <string name="updates_pending_title">To Be Updated</string>

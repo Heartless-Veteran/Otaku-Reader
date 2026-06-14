@@ -230,7 +230,7 @@ class HistoryViewModelTest {
 
             val effect = awaitItem()
             assertTrue(effect is HistoryEffect.ShowSnackbar)
-            assertEquals("History cleared", (effect as HistoryEffect.ShowSnackbar).message)
+            assertEquals(R.string.history_cleared, (effect as HistoryEffect.ShowSnackbar).messageRes)
         }
 
         coVerify(exactly = 1) { chapterRepository.clearAllHistory() }
@@ -250,7 +250,7 @@ class HistoryViewModelTest {
 
             val effect = awaitItem()
             assertTrue(effect is HistoryEffect.ShowSnackbar)
-            assertEquals("Failed to clear history", (effect as HistoryEffect.ShowSnackbar).message)
+            assertEquals(R.string.history_clear_failed, (effect as HistoryEffect.ShowSnackbar).messageRes)
         }
     }
 
@@ -286,7 +286,7 @@ class HistoryViewModelTest {
 
             val effect = awaitItem()
             assertTrue(effect is HistoryEffect.ShowSnackbar)
-            assertTrue((effect as HistoryEffect.ShowSnackbar).message.contains("2"))
+            assertTrue((effect as HistoryEffect.ShowSnackbar).formatArgs.contains(2))
         }
 
         assertTrue(viewModel.state.value.selectedItems.isEmpty())

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelectAll
@@ -52,8 +53,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,6 +86,7 @@ fun UpdatesScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = androidx.compose.material3.SnackbarHostState()
+    val haptic = LocalHapticFeedback.current
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -128,6 +132,13 @@ fun UpdatesScreen(
                         }
                     },
                     actions = {
+                        // Trigger a manual library update right from the Updates screen.
+                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.updates_refresh_now)
+                            )
+                        }
                         // To-Be-Updated preview icon
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.ShowPendingUpdates) }) {
                             Icon(
@@ -189,12 +200,23 @@ fun UpdatesScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.updates_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(horizontal = 32.dp)
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NewReleases,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.updates_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             else -> UpdatesList(
@@ -210,6 +232,7 @@ fun UpdatesScreen(
                     )
                 },
                 onChapterLongClick = { update ->
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
                 },
                 onDownloadClick = { update ->

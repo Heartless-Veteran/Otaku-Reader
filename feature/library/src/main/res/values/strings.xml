@@ -10,7 +10,16 @@
     <string name="library_settings">Settings</string>
     <string name="library_empty_title">Your library is empty</string>
     <string name="library_empty_message">Browse for manga to add to your collection</string>
+    <string name="library_empty_browse_cta">Browse sources</string>
     <string name="library_badge_overflow">99+</string>
+    <!-- Top bar / view controls -->
+    <string name="library_toggle_incognito">Toggle incognito mode</string>
+    <string name="library_view_mode_grid">Switch to grid view</string>
+    <string name="library_view_mode_list">Switch to list view</string>
+    <!-- Content-type filter tabs -->
+    <string name="library_content_tab_all">All</string>
+    <string name="library_content_tab_manga">Manga</string>
+    <string name="library_content_tab_manhwa">Manhwa</string>
     <!-- Bottom navigation -->
     <string name="library_nav_library">Library</string>
     <string name="library_nav_updates">Updates</string>
@@ -96,6 +105,8 @@
     <string name="library_download_selected">Download selected</string>
     <string name="library_remove_selected">Remove from library</string>
     <string name="library_more_actions">More actions</string>
+    <string name="library_select_all">Select all</string>
+    <string name="library_invert_selection">Invert selection</string>
     <string name="library_mark_selected_completed">Mark as completed</string>
     <string name="library_mark_selected_dropped">Mark as dropped</string>
     <string name="library_share_manga">Share</string>

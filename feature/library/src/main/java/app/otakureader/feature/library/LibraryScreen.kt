@@ -7,12 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
@@ -93,6 +95,7 @@ fun LibraryScreen(
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToMaintenance: () -> Unit = {},
+    onBrowseClick: (() -> Unit)? = null,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -216,6 +219,21 @@ fun LibraryScreen(
                             onDismissRequest = { selectionOverflowExpanded = false },
                         ) {
                             DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_select_all)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.SelectAllManga)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.library_invert_selection)) },
+                                onClick = {
+                                    viewModel.onEvent(LibraryEvent.InvertSelection)
+                                    selectionOverflowExpanded = false
+                                },
+                            )
+                            androidx.compose.material3.HorizontalDivider()
+                            DropdownMenuItem(
                                 text = { Text(stringResource(R.string.library_mark_selected_completed)) },
                                 onClick = {
                                     pendingBulkAction = LibraryEvent.MarkSelectedAsCompleted
@@ -289,8 +307,24 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleIncognito) }) {
                             Icon(
                                 imageVector = Icons.Outlined.VisibilityOff,
-                                contentDescription = "Toggle incognito mode",
+                                contentDescription = stringResource(R.string.library_toggle_incognito),
                                 tint = if (state.incognitoMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        val inListMode = state.displayMode == LibraryDisplayMode.LIST
+                        IconButton(onClick = {
+                            viewModel.onEvent(
+                                LibraryEvent.SetDisplayMode(
+                                    if (inListMode) LibraryDisplayMode.GRID else LibraryDisplayMode.LIST
+                                )
+                            )
+                        }) {
+                            Icon(
+                                imageVector = if (inListMode) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = if (inListMode)
+                                    stringResource(R.string.library_view_mode_grid)
+                                else
+                                    stringResource(R.string.library_view_mode_list),
                             )
                         }
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
@@ -399,6 +433,7 @@ fun LibraryScreen(
         LibraryContent(
             state = state,
             onEvent = viewModel::onEvent,
+            onBrowseClick = onBrowseClick,
             modifier = Modifier.padding(padding)
         )
     }
@@ -426,6 +461,7 @@ fun LibraryScreen(
 private fun LibraryContent(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
+    onBrowseClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val widthSizeClass = rememberWindowWidthSizeClass()
@@ -527,7 +563,10 @@ private fun LibraryContent(
                 }
                 state.mangaList.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        EmptyLibraryMessage(modifier = Modifier.align(Alignment.Center))
+                        EmptyLibraryMessage(
+                            onBrowseClick = onBrowseClick,
+                            modifier = Modifier.align(Alignment.Center),
+                        )
                     }
                 }
                 isExpandedWidth -> {

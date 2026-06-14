@@ -26,5 +26,5 @@ sealed interface HistoryEvent : UiEvent {
 
 sealed interface HistoryEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : HistoryEffect
-    data class ShowSnackbar(val message: String) : HistoryEffect
+    data class ShowSnackbar(val messageRes: Int, val formatArgs: List<Any> = emptyList()) : HistoryEffect
 }
