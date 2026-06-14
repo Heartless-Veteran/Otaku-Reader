@@ -155,6 +155,8 @@
 
     <!-- Quick-settings overlay (#985) -->
     <string name="reader_quick_settings_title">Quick Settings</string>
+    <string name="reader_crop_borders">Crop borders</string>
+    <string name="reader_incognito_mode">Incognito mode</string>
     <string name="reader_direction_title">Reading Direction</string>
     <string name="reader_direction_ltr">Left to Right</string>
     <string name="reader_direction_rtl">Right to Left</string>

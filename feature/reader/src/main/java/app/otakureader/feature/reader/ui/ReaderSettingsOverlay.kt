@@ -1,7 +1,9 @@
 package app.otakureader.feature.reader.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -9,11 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -40,10 +45,14 @@ fun ReaderSettingsOverlay(
     readingDirection: ReadingDirection,
     brightness: Float,
     colorFilterMode: ColorFilterMode,
+    cropBordersEnabled: Boolean,
+    incognitoMode: Boolean,
     onModeChange: (ReaderMode) -> Unit,
     onDirectionChange: (ReadingDirection) -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onColorFilterChange: (ColorFilterMode) -> Unit,
+    onToggleCropBorders: () -> Unit,
+    onToggleIncognito: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!isVisible) return
@@ -131,8 +140,40 @@ fun ReaderSettingsOverlay(
                 }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Toggles (state + persistence already handled by the ViewModel)
+            ReaderToggleRow(
+                label = stringResource(R.string.reader_crop_borders),
+                checked = cropBordersEnabled,
+                onToggle = onToggleCropBorders,
+            )
+            ReaderToggleRow(
+                label = stringResource(R.string.reader_incognito_mode),
+                checked = incognitoMode,
+                onToggle = onToggleIncognito,
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+@Composable
+private fun ReaderToggleRow(
+    label: String,
+    checked: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, onCheckedChange = { onToggle() })
     }
 }
 

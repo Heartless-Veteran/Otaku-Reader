@@ -445,10 +445,14 @@ fun ReaderScreen(
             readingDirection = state.readingDirection,
             brightness = state.brightness,
             colorFilterMode = state.colorFilterMode,
+            cropBordersEnabled = state.cropBordersEnabled,
+            incognitoMode = state.incognitoMode,
             onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
             onDirectionChange = { viewModel.onEvent(ReaderEvent.OnDirectionChange(it)) },
             onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
             onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
+            onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+            onToggleIncognito = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.INCOGNITO_MODE)) },
             onDismiss = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
         )
 
