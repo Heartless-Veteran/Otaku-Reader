@@ -46,10 +46,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,6 +61,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -85,14 +90,30 @@ fun UpdatesScreen(
     viewModel: UpdatesViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = androidx.compose.material3.SnackbarHostState()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is UpdatesEffect.NavigateToReader -> onMangaClick(effect.mangaId)
-                is UpdatesEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is UpdatesEffect.ShowSnackbar -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+                // Inline await — collectLatest cancels this if another swipe fires, which is
+                // correct since the chapter is already marked read at that point.
+                is UpdatesEffect.ShowUndoSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = context.getString(R.string.updates_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(UpdatesEvent.UnmarkChapterAsRead(effect.chapterId))
+                    }
+                }
             }
         }
     }
@@ -172,80 +193,82 @@ fun UpdatesScreen(
             }
         }
     ) { paddingValues ->
-        when {
-            state.isLoading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-
-            state.error != null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = state.error ?: stringResource(R.string.updates_unknown_error),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            state.updates.isEmpty() -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+        ) {
+            when {
+                state.isLoading -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.NewReleases,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    CircularProgressIndicator()
+                }
+
+                state.error != null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = stringResource(R.string.updates_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = state.error ?: stringResource(R.string.updates_unknown_error),
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
-            }
 
-            else -> UpdatesList(
-                updates = state.updates,
-                selectedItems = state.selectedItems,
-                lastRunSummary = state.lastRunSummary,
-                onChapterClick = { update ->
-                    viewModel.onEvent(
-                        UpdatesEvent.OnChapterClick(
-                            mangaId = update.manga.id,
-                            chapterId = update.chapter.id
+                state.updates.isEmpty() -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.NewReleases,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    )
-                },
-                onChapterLongClick = { update ->
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
-                },
-                onDownloadClick = { update ->
-                    viewModel.onEvent(
-                        UpdatesEvent.OnDownloadChapter(
-                            mangaId = update.manga.id,
-                            chapterId = update.chapter.id
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.updates_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    )
-                },
-                onMarkAsRead = { chapterId -> viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId)) },
-                modifier = Modifier.padding(paddingValues)
-            )
+                    }
+                }
+
+                else -> UpdatesList(
+                    updates = state.updates,
+                    selectedItems = state.selectedItems,
+                    lastRunSummary = state.lastRunSummary,
+                    onChapterClick = { update ->
+                        viewModel.onEvent(
+                            UpdatesEvent.OnChapterClick(
+                                mangaId = update.manga.id,
+                                chapterId = update.chapter.id
+                            )
+                        )
+                    },
+                    onChapterLongClick = { update ->
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
+                    },
+                    onDownloadClick = { update ->
+                        viewModel.onEvent(
+                            UpdatesEvent.OnDownloadChapter(
+                                mangaId = update.manga.id,
+                                chapterId = update.chapter.id
+                            )
+                        )
+                    },
+                    onMarkAsRead = { chapterId -> viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId)) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
 
         // Update Error Dialog

@@ -255,17 +255,90 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun onEvent_RemoveFromHistory_invokesRepository() = runTest {
+    fun onEvent_RemoveFromHistory_setsPendingDeleteAndEmitsUndoEffect() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(1L, viewModel.state.value.pendingDeleteChapterId)
+            val effect = awaitItem()
+            assertTrue(effect is HistoryEffect.ShowUndoSnackbar)
+        }
+        // Repo must NOT be called yet — deletion is buffered until confirmed
+        coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+    }
+
+    @Test
+    fun onEvent_ConfirmRemoveFromHistory_callsRepositoryAndClearsPending() = runTest {
         every { getHistoryUseCase() } returns flowOf(sampleHistory)
         coEvery { chapterRepository.removeFromHistory(any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+        // Stage a deletion
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem() // consume ShowUndoSnackbar
+        }
+        assertEquals(1L, viewModel.state.value.pendingDeleteChapterId)
+
+        viewModel.onEvent(HistoryEvent.ConfirmRemoveFromHistory)
         testDispatcher.scheduler.advanceUntilIdle()
 
+        assertNull(viewModel.state.value.pendingDeleteChapterId)
         coVerify(exactly = 1) { chapterRepository.removeFromHistory(1L) }
+    }
+
+    @Test
+    fun onEvent_UndoRemoveFromHistory_clearsPendingWithoutDeletion() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 2L))
+            testDispatcher.scheduler.advanceUntilIdle()
+            awaitItem()
+        }
+        assertEquals(2L, viewModel.state.value.pendingDeleteChapterId)
+
+        viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory)
+
+        assertNull(viewModel.state.value.pendingDeleteChapterId)
+        coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+    }
+
+    @Test
+    fun onEvent_MarkSelectedAsRead_callsRepositoryAndClearsSelection() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+        coEvery { chapterRepository.updateChapterProgress(any<Collection<Long>>(), any(), any()) } returns Unit
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.OnChapterLongClick(1L))
+        viewModel.onEvent(HistoryEvent.OnChapterLongClick(2L))
+        assertEquals(2, viewModel.state.value.selectedItems.size)
+
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.MarkSelectedAsRead)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is HistoryEffect.ShowSnackbar)
+            assertTrue((effect as HistoryEffect.ShowSnackbar).formatArgs.contains(2))
+        }
+
+        assertTrue(viewModel.state.value.selectedItems.isEmpty())
+        coVerify(exactly = 1) { chapterRepository.updateChapterProgress(match<Collection<Long>> { it.containsAll(listOf(1L, 2L)) }, true, 0) }
     }
 
     @Test

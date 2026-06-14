@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
@@ -36,8 +37,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -109,6 +112,19 @@ fun HistoryScreen(
                     }
                     snackbarHostState.showSnackbar(msg)
                 }
+                // Inline await so collectLatest cancels it if a new swipe fires (which is correct —
+                // the ViewModel commits the previous pending item automatically on a new swipe).
+                is HistoryEffect.ShowUndoSnackbar -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(effect.messageRes),
+                        actionLabel = context.getString(R.string.history_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.ActionPerformed -> viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory)
+                        SnackbarResult.Dismissed -> viewModel.onEvent(HistoryEvent.ConfirmRemoveFromHistory)
+                    }
+                }
             }
         }
     }
@@ -137,6 +153,9 @@ fun HistoryScreen(
                 },
                 actions = {
                     if (state.selectedItems.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onEvent(HistoryEvent.MarkSelectedAsRead) }) {
+                            Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.history_mark_read))
+                        }
                         IconButton(onClick = { viewModel.onEvent(HistoryEvent.RemoveSelectedFromHistory) }) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.history_delete_selected))
                         }

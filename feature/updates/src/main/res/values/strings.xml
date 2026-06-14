@@ -89,4 +89,8 @@
     <string name="updates_date_this_month">This month</string>
     <string name="updates_date_older">Older</string>
     <string name="updates_unknown_error">Something went wrong while loading updates</string>
+    <!-- Swipe-to-mark-read undo -->
+    <string name="updates_marked_as_read_single">Marked as read</string>
+    <string name="updates_unmark_as_read_failed">Failed to undo</string>
+    <string name="updates_undo_action">Undo</string>
 </resources>

@@ -35,11 +35,15 @@ class HistoryViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
 
+    /** Chapter ID currently staged for swipe-delete; filtered from the displayed list. */
+    private val pendingDeleteId = MutableStateFlow<Long?>(null)
+
     init {
         _state.update { it.copy(isLoading = true) }
-        combine(getHistoryUseCase(), searchQuery) { allEntries, query ->
-            if (query.isBlank()) allEntries
+        combine(getHistoryUseCase(), searchQuery, pendingDeleteId) { allEntries, query, pendingId ->
+            val filtered = if (query.isBlank()) allEntries
             else allEntries.filter { it.chapter.name.contains(query, ignoreCase = true) }
+            if (pendingId != null) filtered.filter { it.chapter.id != pendingId } else filtered
         }
             .onEach { filtered ->
                 _state.update { it.copy(isLoading = false, history = filtered, error = null) }
@@ -61,8 +65,11 @@ class HistoryViewModel @Inject constructor(
                 searchQuery.value = event.query
                 _state.update { it.copy(searchQuery = event.query) }
             }
-            is HistoryEvent.RemoveFromHistory -> removeFromHistory(event.chapterId)
+            is HistoryEvent.RemoveFromHistory -> scheduleRemoveFromHistory(event.chapterId)
+            is HistoryEvent.UndoRemoveFromHistory -> undoRemoveFromHistory()
+            is HistoryEvent.ConfirmRemoveFromHistory -> confirmRemoveFromHistory()
             is HistoryEvent.RemoveSelectedFromHistory -> removeSelectedFromHistory()
+            is HistoryEvent.MarkSelectedAsRead -> markSelectedAsRead()
         }
     }
 
@@ -94,6 +101,61 @@ class HistoryViewModel @Inject constructor(
         _state.update { state ->
             val allIds = state.history.map { it.chapter.id }.toSet()
             state.copy(selectedItems = allIds)
+        }
+    }
+
+    /**
+     * Buffer the chapter for deletion. If another chapter was already pending,
+     * it is committed first so only one undo is active at a time.
+     */
+    private fun scheduleRemoveFromHistory(chapterId: Long) {
+        val previousPending = pendingDeleteId.value
+        if (previousPending != null && previousPending != chapterId) {
+            viewModelScope.launch {
+                try { chapterRepository.removeFromHistory(previousPending) } catch (_: Exception) { }
+            }
+        }
+        pendingDeleteId.value = chapterId
+        _state.update { it.copy(pendingDeleteChapterId = chapterId) }
+        viewModelScope.launch {
+            _effect.send(HistoryEffect.ShowUndoSnackbar(R.string.history_removed_undo))
+        }
+    }
+
+    private fun undoRemoveFromHistory() {
+        pendingDeleteId.value = null
+        _state.update { it.copy(pendingDeleteChapterId = null) }
+    }
+
+    private fun confirmRemoveFromHistory() {
+        val chapterId = _state.value.pendingDeleteChapterId ?: return
+        pendingDeleteId.value = null
+        _state.update { it.copy(pendingDeleteChapterId = null) }
+        viewModelScope.launch {
+            try {
+                chapterRepository.removeFromHistory(chapterId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
+            }
+        }
+    }
+
+    private fun markSelectedAsRead() {
+        val selected = _state.value.selectedItems
+        if (selected.isEmpty()) return
+        val count = selected.size
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
+                _state.update { it.copy(selectedItems = it.selectedItems - selected) }
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_marked_read_count, listOf(count)))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_mark_read_failed))
+            }
         }
     }
 
@@ -136,18 +198,6 @@ class HistoryViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_clear_failed))
-            }
-        }
-    }
-
-    private fun removeFromHistory(chapterId: Long) {
-        viewModelScope.launch {
-            try {
-                chapterRepository.removeFromHistory(chapterId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
             }
         }
     }

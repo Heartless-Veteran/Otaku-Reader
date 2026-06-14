@@ -30,6 +30,7 @@ data class PendingUpdateManga(
 
 data class UpdatesState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val updates: List<MangaUpdate> = emptyList(),
     val error: String? = null,
     /** Selected chapter IDs for bulk operations. */
@@ -67,9 +68,13 @@ sealed interface UpdatesEvent : UiEvent {
     data object ShowPendingUpdates : UpdatesEvent
     data object HidePendingUpdates : UpdatesEvent
     data object StartLibraryUpdate : UpdatesEvent
+    /** Revert a swipe-to-mark-read action. */
+    data class UnmarkChapterAsRead(val chapterId: Long) : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : UpdatesEffect
     data class ShowSnackbar(val message: String) : UpdatesEffect
+    /** Snackbar with an Undo action after swipe-to-mark-read. Awaited inline by the screen. */
+    data class ShowUndoSnackbar(val message: String, val chapterId: Long) : UpdatesEffect
 }

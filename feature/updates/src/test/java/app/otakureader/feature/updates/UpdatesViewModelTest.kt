@@ -206,4 +206,20 @@ class UpdatesViewModelTest {
 
         coVerify(exactly = 1) { generalPreferences.setLastUpdatesViewedAt(any()) }
     }
+
+    @Test
+    fun onEvent_StartLibraryUpdate_clearsIsRefreshingAfterDelay() = runTest {
+        every { getRecentUpdatesUseCase() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.state.value.isRefreshing)
+
+        // Trigger the library update; advance through the full delay in one step
+        viewModel.onEvent(UpdatesEvent.StartLibraryUpdate)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.isRefreshing)
+        coVerify(exactly = 1) { libraryUpdateScheduler.enqueueNow() }
+    }
 }

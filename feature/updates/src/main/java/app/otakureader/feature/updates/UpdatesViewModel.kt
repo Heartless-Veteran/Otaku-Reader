@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
@@ -42,7 +43,7 @@ class UpdatesViewModel @Inject constructor(
     private val _state = MutableStateFlow(UpdatesState())
     val state: StateFlow<UpdatesState> = _state.asStateFlow()
 
-    private val _effect = Channel<UpdatesEffect>()
+    private val _effect = Channel<UpdatesEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
     init {
@@ -62,6 +63,7 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.DownloadSelected -> downloadSelected()
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
+            is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
 
             // Update Error Screen events
             UpdatesEvent.ShowUpdateErrors -> _state.update { it.copy(showUpdateErrors = true) }
@@ -194,10 +196,28 @@ class UpdatesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.updateChapterProgress(setOf(chapterId), read = true, lastPageRead = 0)
+                _effect.send(
+                    UpdatesEffect.ShowUndoSnackbar(
+                        message = context.getString(R.string.updates_marked_as_read_single),
+                        chapterId = chapterId,
+                    )
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    private fun unmarkChapterAsRead(chapterId: Long) {
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(setOf(chapterId), read = false, lastPageRead = 0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_unmark_as_read_failed)))
             }
         }
     }
@@ -254,12 +274,14 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
-    /** Start a manual library update. */
+    /** Start a manual library update; shows a brief pull-to-refresh indicator. */
     private fun startLibraryUpdate() {
+        _state.update { it.copy(isRefreshing = true, showPendingUpdates = false) }
         viewModelScope.launch {
             libraryUpdateScheduler.enqueueNow()
-            _state.update { it.copy(showPendingUpdates = false) }
             _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
+            delay(1_500L)
+            _state.update { it.copy(isRefreshing = false) }
         }
     }
 }
