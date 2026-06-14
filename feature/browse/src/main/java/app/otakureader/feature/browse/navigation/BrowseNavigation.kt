@@ -23,6 +23,16 @@ fun NavGraphBuilder.browseScreen(
     onNavigateToExtensions: () -> Unit,
     onNavigateToGlobalSearch: () -> Unit,
     onNavigateToOpds: () -> Unit = {},
+    onNavigateToMigration: () -> Unit = {},
+    // Feed tab
+    onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit = { _, _ -> },
+    onNavigateToFeedManagement: () -> Unit = {},
+    // Extensions tab
+    onNavigateToExtensionSettings: () -> Unit = {},
+    onNavigateToExtensionRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
+    // Migrate tab
+    onStartMigration: (List<Long>) -> Unit = {},
 ) {
     composable<Route.Browse> {
         BrowseScreen(
@@ -30,9 +40,13 @@ fun NavGraphBuilder.browseScreen(
             onMangaClick = { sourceId, mangaUrl ->
                 onMangaClick(sourceId, mangaUrl, "")
             },
-            onInstallExtensionClick = onNavigateToExtensions,
             onGlobalSearchClick = onNavigateToGlobalSearch,
-            onOpdsClick = onNavigateToOpds
+            onOpdsClick = onNavigateToOpds,
+            onNavigateToReader = onNavigateToReader,
+            onNavigateToFeedManagement = onNavigateToFeedManagement,
+            onNavigateToExtensionRepositories = onNavigateToExtensionRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
+            onStartMigration = onStartMigration,
         )
     }
 }

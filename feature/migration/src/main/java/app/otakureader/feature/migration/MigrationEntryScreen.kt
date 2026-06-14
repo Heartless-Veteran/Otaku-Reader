@@ -49,6 +49,102 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 
 /**
+ * Scaffold-free content for embedding in Browse's Migrate tab.
+ * Callers are responsible for handling [MigrationEntryEffect] (navigation, errors).
+ */
+@Composable
+fun MigrationEntryContent(
+    state: MigrationEntryState,
+    filtered: List<MigrationEntryItem>,
+    onEvent: (MigrationEntryEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = state.searchQuery,
+            onValueChange = { onEvent(MigrationEntryEvent.OnSearchQueryChange(it)) },
+            placeholder = { Text(stringResource(R.string.migration_entry_search_placeholder)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.migration_search)) },
+            trailingIcon = {
+                if (state.searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onEvent(MigrationEntryEvent.OnSearchQueryChange("")) }) {
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.migration_clear_search))
+                    }
+                }
+            },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                state.error != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = state.error ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        OutlinedButton(
+                            onClick = { onEvent(MigrationEntryEvent.Retry) },
+                            modifier = Modifier.padding(top = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.migration_entry_retry))
+                        }
+                    }
+                }
+                filtered.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (state.searchQuery.isBlank()) {
+                            stringResource(R.string.migration_entry_library_empty)
+                        } else {
+                            stringResource(R.string.migration_entry_no_results)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(filtered, key = { it.id }) { manga ->
+                        MigrationEntryMangaRow(
+                            manga = manga,
+                            isSelected = manga.id in state.selectedIds,
+                            onToggle = { onEvent(MigrationEntryEvent.OnMangaToggle(manga.id)) },
+                        )
+                    }
+                }
+            }
+        }
+
+        if (state.selectedIds.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            ) {
+                Button(
+                    onClick = { onEvent(MigrationEntryEvent.OnStartMigration) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        androidx.compose.ui.res.pluralStringResource(
+                            R.plurals.migration_entry_migrate_count,
+                            state.selectedIds.size,
+                            state.selectedIds.size,
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
  * Entry-point screen for migration that allows users to pick manga from their library
  * before proceeding to the [MigrationScreen].
  *
@@ -112,102 +208,15 @@ fun MigrationEntryScreen(
                 }
             )
         },
-        bottomBar = {
-            if (state.selectedIds.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
-                ) {
-                    Button(
-                        onClick = { viewModel.onEvent(MigrationEntryEvent.OnStartMigration) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            androidx.compose.ui.res.pluralStringResource(
-                                R.plurals.migration_entry_migrate_count,
-                                state.selectedIds.size,
-                                state.selectedIds.size
-                            )
-                        )
-                    }
-                }
-            }
-        }
     ) { paddingValues ->
-        Column(
+        MigrationEntryContent(
+            state = state,
+            filtered = filtered,
+            onEvent = viewModel::onEvent,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            OutlinedTextField(
-                value = state.searchQuery,
-                onValueChange = { viewModel.onEvent(MigrationEntryEvent.OnSearchQueryChange(it)) },
-                placeholder = { Text(stringResource(R.string.migration_entry_search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.migration_search)) },
-                trailingIcon = {
-                    if (state.searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onEvent(MigrationEntryEvent.OnSearchQueryChange("")) }) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.migration_clear_search))
-                        }
-                    }
-                },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-            when {
-                state.isLoading -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                state.error != null -> {
-                    val errorMessage = state.error ?: ""
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = errorMessage,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            OutlinedButton(
-                                onClick = { viewModel.onEvent(MigrationEntryEvent.Retry) },
-                                modifier = Modifier.padding(top = 8.dp)
-                            ) {
-                                Text(stringResource(R.string.migration_entry_retry))
-                            }
-                        }
-                    }
-                }
-                filtered.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = if (state.searchQuery.isBlank()) {
-                                stringResource(R.string.migration_entry_library_empty)
-                            } else {
-                                stringResource(R.string.migration_entry_no_results)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                else -> {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        items(filtered, key = { it.id }) { manga ->
-                            MigrationEntryMangaRow(
-                                manga = manga,
-                                isSelected = manga.id in state.selectedIds,
-                                onToggle = { viewModel.onEvent(MigrationEntryEvent.OnMangaToggle(manga.id)) }
-                            )
-                        }
-                    }
-                }
-            }
-        }
+                .padding(paddingValues),
+        )
     }
 }
 

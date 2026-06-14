@@ -317,6 +317,20 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setDarkModeEndMinuteOfDay(value: Int) =
         dataStore.edit { it[Keys.DARK_MODE_END_MINUTE] = value.coerceIn(0, 1439) }
 
+    // --- Last Used Sources ---
+
+    /** Most recently browsed source IDs, capped at 5, most recent first. */
+    val lastUsedSourceIds: Flow<List<String>> = dataStore.data.map { prefs ->
+        prefs[Keys.LAST_USED_SOURCE_IDS]?.split("\n")?.filter { it.isNotBlank() } ?: emptyList()
+    }
+
+    suspend fun recordSourceUsed(sourceId: String) = dataStore.edit { prefs ->
+        val current = prefs[Keys.LAST_USED_SOURCE_IDS]?.split("\n")?.filter { it.isNotBlank() }?.toMutableList() ?: mutableListOf()
+        current.remove(sourceId)
+        current.add(0, sourceId)
+        prefs[Keys.LAST_USED_SOURCE_IDS] = current.take(MAX_LAST_USED_SOURCES).joinToString("\n")
+    }
+
     // --- Source Pinning & Categories ---
 
     /**
@@ -468,6 +482,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val DARK_MODE_SCHEDULE_ENABLED = booleanPreferencesKey("dark_mode_schedule_enabled")
         val DARK_MODE_START_MINUTE = intPreferencesKey("dark_mode_start_minute")
         val DARK_MODE_END_MINUTE = intPreferencesKey("dark_mode_end_minute")
+        val LAST_USED_SOURCE_IDS = stringPreferencesKey("last_used_source_ids")
         val PINNED_SOURCE_IDS = stringPreferencesKey("pinned_source_ids")
         val SOURCE_CATEGORY_MAP = stringPreferencesKey("source_category_map")
         val SAVED_SOURCE_SEARCHES_JSON = stringPreferencesKey("saved_source_searches_json")
@@ -478,5 +493,6 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         const val DEFAULT_COIL_DISK_CACHE_MB = 512
         const val MIN_COIL_DISK_CACHE_MB = 64
         const val MAX_COIL_DISK_CACHE_MB = 2048
+        const val MAX_LAST_USED_SOURCES = 5
     }
 }

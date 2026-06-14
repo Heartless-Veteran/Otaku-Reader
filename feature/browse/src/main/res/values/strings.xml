@@ -6,6 +6,24 @@
     <string name="extensions_sort_recently_added">Recently Added</string>
     <string name="extensions_sort_language">Language</string>
 
+    <!-- Browse tab labels -->
+    <string name="browse_tab_feed">Feed</string>
+    <string name="browse_tab_sources">Sources</string>
+    <string name="browse_tab_extensions">Extensions</string>
+    <string name="browse_tab_migrate">Migrate</string>
+
+    <!-- Browse source list sections -->
+    <string name="browse_last_used">Last used</string>
+    <string name="browse_all_sources">All sources</string>
+    <string name="browse_source_latest">Latest</string>
+    <string name="browse_back_to_sources">Back to sources</string>
+    <string name="browse_source_nsfw_badge">18+</string>
+    <string name="browse_manage_extensions">Manage Extensions</string>
+    <string name="browse_extensions_tab_desc">Install, update, and manage manga source extensions</string>
+    <string name="browse_feed_tab_desc">Your activity feed will appear here</string>
+    <string name="browse_migrate_tab_desc">Migrate manga between sources</string>
+    <string name="browse_go_to_migrate">Open Migration Tool</string>
+
     <!-- Browse screen -->
     <string name="browse_title">Browse</string>
     <string name="browse_search">Search</string>
@@ -102,6 +120,9 @@
     <string name="browse_global_search_idle_hint">Enter a query to search all sources</string>
 
     <!-- ExtensionsBottomSheet -->
+    <string name="extensions_tab_installed">Installed</string>
+    <string name="extensions_tab_available">Available</string>
+    <string name="extensions_tab_updates">Updates</string>
     <string name="extensions_sheet_title">Extensions</string>
     <string name="extensions_search_placeholder">Search extensions...</string>
     <string name="extensions_repo_url_placeholder">https://raw.githubusercontent.com/komikku-app/extensions/repo</string>
@@ -189,4 +210,8 @@
     <string name="extension_has_changelog_cd">Has changelog</string>
     <!-- Extension blocklist (#1018) -->
     <string name="extension_blocked_warning">Blocked: %1$s</string>
+
+    <!-- Manga/Manhwa type badges on source cards -->
+    <string name="browse_manga_type_badge">MANGA</string>
+    <string name="browse_manhwa_type_badge">MANHWA</string>
 </resources>

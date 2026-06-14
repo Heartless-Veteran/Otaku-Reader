@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +53,74 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
+/**
+ * Scaffold-free content for embedding inside Browse's Feed tab.
+ * Callers are responsible for handling [FeedEffect] via the ViewModel.
+ */
+@Composable
+fun FeedContent(
+    state: FeedState,
+    onEvent: (FeedEvent) -> Unit,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+) {
+    val formatter = remember {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            .withZone(ZoneId.systemDefault())
+    }
+    when {
+        state.isLoading -> Box(
+            modifier = modifier.fillMaxSize().padding(contentPadding),
+            contentAlignment = Alignment.Center,
+        ) { CircularProgressIndicator() }
+
+        state.error != null -> Box(
+            modifier = modifier.fillMaxSize().padding(contentPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = state.error ?: stringResource(R.string.feed_error_unknown),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+
+        state.feedItems.isEmpty() -> Box(
+            modifier = modifier.fillMaxSize().padding(contentPadding),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = stringResource(R.string.feed_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        else -> LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = contentPadding,
+        ) {
+            item(key = "discovery_chips") {
+                DiscoveryModeChips(
+                    selected = state.discoveryMode,
+                    onSelect = { onEvent(FeedEvent.SetDiscoveryMode(it)) },
+                )
+            }
+            items(items = state.feedItems, key = { it.id }) { item ->
+                FeedItemRow(
+                    item = item,
+                    formatter = formatter,
+                    isFavorited = item.mangaId in state.favoritedMangaIds,
+                    onClick = { onEvent(FeedEvent.OnFeedItemClick(item.mangaId, item.chapterId)) },
+                    onMarkAsRead = { onEvent(FeedEvent.OnMarkAsRead(item.id)) },
+                    onLongClick = { onEvent(FeedEvent.LongClickManga(item.mangaId)) },
+                )
+                HorizontalDivider()
+            }
+        }
+    }
+}
+
 /** Feed screen showing the latest chapters across all configured feed sources. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +134,6 @@ fun FeedScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val formatter = remember {
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-            .withZone(ZoneId.systemDefault())
-    }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -120,77 +185,12 @@ fun FeedScreen(
             )
         }
     ) { paddingValues ->
-        when {
-            state.isLoading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-
-            state.error != null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = state.error ?: stringResource(R.string.feed_error_unknown),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            state.feedItems.isEmpty() -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = stringResource(R.string.feed_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            else -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                item(key = "discovery_chips") {
-                    DiscoveryModeChips(
-                        selected = state.discoveryMode,
-                        onSelect = { viewModel.onEvent(FeedEvent.SetDiscoveryMode(it)) },
-                    )
-                }
-                items(
-                    items = state.feedItems,
-                    key = { it.id }
-                ) { item ->
-                    FeedItemRow(
-                        item = item,
-                        formatter = formatter,
-                        isFavorited = item.mangaId in state.favoritedMangaIds,
-                        onClick = {
-                            viewModel.onEvent(
-                                FeedEvent.OnFeedItemClick(item.mangaId, item.chapterId)
-                            )
-                        },
-                        onMarkAsRead = {
-                            viewModel.onEvent(FeedEvent.OnMarkAsRead(item.id))
-                        },
-                        onLongClick = {
-                            viewModel.onEvent(FeedEvent.LongClickManga(item.mangaId))
-                        },
-                    )
-                    HorizontalDivider()
-                }
-            }
-        }
+        FeedContent(
+            state = state,
+            onEvent = viewModel::onEvent,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = paddingValues,
+        )
     }
 }
 

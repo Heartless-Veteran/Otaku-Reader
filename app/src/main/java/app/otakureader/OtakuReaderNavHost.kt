@@ -207,6 +207,27 @@ fun OtakuReaderNavHost(
             onNavigateToOpds = {
                 navController.navigate(Route.OpdsCatalog())
             },
+            onNavigateToMigration = {
+                navController.navigate(Route.MigrationEntry)
+            },
+            onNavigateToReader = { mangaId, chapterId ->
+                navController.navigate(Route.Reader(mangaId, chapterId))
+            },
+            onNavigateToFeedManagement = {
+                navController.navigate(Route.FeedManagement)
+            },
+            onNavigateToExtensionSettings = {
+                navController.navigate(Route.Settings)
+            },
+            onNavigateToExtensionRepositories = {
+                navController.navigate(Route.ExtensionRepositories)
+            },
+            onNavigateToExtensionDetail = { packageName ->
+                navController.navigate(Route.ExtensionDetail(packageName))
+            },
+            onStartMigration = { selectedMangaIds ->
+                navController.navigate(Route.Migration(selectedMangaIds))
+            },
         )
 
         // OPDS catalog

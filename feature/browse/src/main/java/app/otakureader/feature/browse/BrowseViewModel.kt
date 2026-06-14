@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.ui.selection.SelectionManager
+import app.otakureader.domain.repository.ExtensionManagementRepository
 import app.otakureader.domain.repository.FeedRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.usecase.library.AddMangaToLibraryUseCase
@@ -49,6 +50,7 @@ class BrowseViewModel @Inject constructor(
     private val feedRepository: FeedRepository,
     private val generalPreferences: GeneralPreferences,
     private val searchLibraryMangaUseCase: SearchLibraryMangaUseCase,
+    private val extensionManagementRepository: ExtensionManagementRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(BrowseState())
@@ -73,14 +75,10 @@ class BrowseViewModel @Inject constructor(
                 getSourcesUseCase(),
                 generalPreferences.showNsfwContent
             ) { sources, showNsfw ->
-                if (showNsfw) {
-                    sources
-                } else {
-                    sources.filter { !it.isNsfw }
-                }
+                if (showNsfw) sources else sources.filter { !it.isNsfw }
             }.collect { filteredSources ->
                 _sources.value = filteredSources
-                _state.update { it.copy(sources = filteredSources.map { s -> s.id }) }
+                _state.update { it.copy(sources = filteredSources) }
             }
         }
         observeSavedSearches()
@@ -94,12 +92,14 @@ class BrowseViewModel @Inject constructor(
         observeSearchHistory()
         observeSourcePinning()
         observeNamedSavedSearches()
+        observeLastUsedSources()
     }
 
     @Suppress("LongMethod", "CyclomaticComplexMethod")
     fun onEvent(event: BrowseEvent) {
         when (event) {
             is BrowseEvent.SelectSource -> {
+                viewModelScope.launch { generalPreferences.recordSourceUsed(event.sourceId) }
                 _state.update {
                     it.copy(
                         currentSourceId = event.sourceId,
@@ -110,8 +110,26 @@ class BrowseViewModel @Inject constructor(
                         searchResults = emptyList()
                     )
                 }
-                loadPopularManga(event.sourceId)
+                if (event.loadLatest) loadLatestUpdates(event.sourceId) else loadPopularManga(event.sourceId)
                 loadSourceFilters(event.sourceId)
+            }
+            is BrowseEvent.ClearSourceSelection -> {
+                _state.update {
+                    it.copy(
+                        currentSourceId = null,
+                        popularManga = emptyList(),
+                        searchQuery = "",
+                        hasSearchResults = false,
+                        searchResults = emptyList(),
+                        error = null,
+                        availableFilters = FilterList(),
+                        activeFilters = FilterList(),
+                        showFilterSheet = false,
+                    )
+                }
+            }
+            is BrowseEvent.SelectTab -> {
+                _state.update { it.copy(selectedTab = event.tab) }
             }
             is BrowseEvent.OnMangaClick -> {
                 val sourceId = _state.value.currentSourceId ?: return
@@ -316,12 +334,12 @@ class BrowseViewModel @Inject constructor(
         }
     }
 
-    private fun loadLatestUpdates() {
-        val sourceId = _state.value.currentSourceId ?: return
+    private fun loadLatestUpdates(sourceId: String? = null) {
+        val resolvedSourceId = sourceId ?: _state.value.currentSourceId ?: return
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
-            getLatestUpdatesUseCase(sourceId, 1)
+            getLatestUpdatesUseCase(resolvedSourceId, 1)
                 .onSuccess { mangaPage ->
                     _state.update {
                         it.copy(
@@ -381,8 +399,9 @@ class BrowseViewModel @Inject constructor(
 
     private fun refreshSources() {
         viewModelScope.launch {
-            // Sources are automatically refreshed through the flow
-            _effect.send(BrowseEffect.ShowSnackbar("Sources refreshed"))
+            extensionManagementRepository.refreshSources()
+                .onSuccess { _effect.send(BrowseEffect.ShowSnackbar("Sources refreshed")) }
+                .onFailure { _effect.send(BrowseEffect.ShowSnackbar("Failed to refresh sources")) }
         }
     }
 
@@ -491,6 +510,12 @@ class BrowseViewModel @Inject constructor(
             .launchIn(viewModelScope)
         generalPreferences.sourceCategoryMap
             .onEach { map -> _state.update { it.copy(sourceCategoryMap = map) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeLastUsedSources() {
+        generalPreferences.lastUsedSourceIds
+            .onEach { ids -> _state.update { it.copy(lastUsedSourceIds = ids) } }
             .launchIn(viewModelScope)
     }
 

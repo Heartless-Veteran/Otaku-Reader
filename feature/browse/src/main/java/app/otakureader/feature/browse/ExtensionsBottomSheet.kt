@@ -126,6 +126,155 @@ fun ExtensionsBottomSheet(
     }
 }
 
+/**
+ * Scaffold-free body used both by [ExtensionsContent] (inside the bottom sheet Scaffold) and
+ * by [ExtensionsTabBody] (embedded directly in Browse's Extensions tab).
+ */
+@Composable
+private fun ExtensionsBody(
+    state: ExtensionsState,
+    onEvent: (ExtensionsEvent) -> Unit,
+    onNavigateToRepositories: () -> Unit,
+    onNavigateToExtensionDetail: (packageName: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selectedTab = state.selectedTab
+    val tabs = listOf(
+        stringResource(R.string.extensions_tab_installed),
+        stringResource(R.string.extensions_tab_available),
+        stringResource(R.string.extensions_tab_updates),
+    )
+
+    Column(modifier = modifier) {
+        // Search bar
+        TextField(
+            value = state.searchQuery,
+            onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
+            placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.extensions_search_cd)) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        // Filter & Sort controls
+        FilterAndSortRow(
+            showNsfw = state.showNsfw,
+            sortMode = state.sortMode,
+            onToggleNsfw = { onEvent(ExtensionsEvent.ToggleNsfw(it)) },
+            onSetSortMode = { onEvent(ExtensionsEvent.SetSortMode(it)) }
+        )
+
+        // Update All button (only in Updates tab, visible whenever updates exist)
+        if (selectedTab == 2 && state.updateCount > 0) {
+            UpdateAllButton(
+                updateCount = state.updateCount,
+                isUpdating = state.isUpdatingAll,
+                onUpdateAll = { onEvent(ExtensionsEvent.UpdateAllExtensions) }
+            )
+        }
+
+        RepositoryManager(
+            repositories = state.repositories,
+            onAdd = { onEvent(ExtensionsEvent.AddRepository(it)) },
+            onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) },
+            onOpenFullManager = onNavigateToRepositories,
+        )
+
+        // Tabs
+        TabRow(selectedTabIndex = selectedTab) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { onEvent(ExtensionsEvent.SelectTab(index)) },
+                    text = {
+                        when (index) {
+                            2 -> if (state.updateCount > 0) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(title)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.error
+                                    ) {
+                                        Text(
+                                            text = state.updateCount.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onError,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            } else Text(title)
+                            else -> Text(title)
+                        }
+                    }
+                )
+            }
+        }
+
+        when (selectedTab) {
+            0 -> ExtensionsList(
+                extensions = state.installedExtensions,
+                isLoading = state.isLoading,
+                error = state.error,
+                signerMismatchedPackages = state.signerMismatchedPackages,
+                blockedPackages = state.blockedPackages,
+                onInstall = { /* Already installed */ },
+                onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
+                onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
+                onToggleEnabled = { ext, enabled ->
+                    onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
+                },
+                onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
+            )
+            1 -> Column {
+                if (state.hasUnverifiedExtensions) {
+                    TrustBanner(visible = true)
+                }
+                ExtensionsList(
+                    extensions = state.availableExtensions,
+                    isLoading = state.isLoading,
+                    error = state.error,
+                    signerMismatchedPackages = emptySet(),
+                    blockedPackages = state.blockedPackages,
+                    onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
+                    onUninstall = { /* Not installed */ },
+                    onUpdate = { /* No update */ },
+                    onToggleEnabled = { _, _ -> },
+                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
+                )
+            }
+            2 -> ExtensionsList(
+                extensions = state.extensionsWithUpdates,
+                isLoading = state.isLoading,
+                error = state.error,
+                signerMismatchedPackages = state.signerMismatchedPackages,
+                blockedPackages = state.blockedPackages,
+                onInstall = { /* Already installed */ },
+                onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
+                onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
+                onToggleEnabled = { ext, enabled ->
+                    onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
+                },
+                onRefresh = { onEvent(ExtensionsEvent.Refresh) },
+                onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
+            )
+        }
+
+        // Unverified install confirmation dialog
+        if (state.showUnverifiedInstallDialog) {
+            UnverifiedInstallDialog(
+                extension = state.pendingUnverifiedExtension,
+                onDismiss = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
+                onConfirm = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExtensionsContent(
@@ -137,9 +286,6 @@ private fun ExtensionsContent(
     onNavigateToRepositories: () -> Unit = {},
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
-    val selectedTab = state.selectedTab
-    val tabs = listOf("Installed", "Available", "Updates")
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -161,138 +307,53 @@ private fun ExtensionsContent(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        ExtensionsBody(
+            state = state,
+            onEvent = onEvent,
+            onNavigateToRepositories = onNavigateToRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Search bar
-            TextField(
-                value = state.searchQuery,
-                onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
-                placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.extensions_search_cd)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+                .padding(paddingValues),
+        )
+    }
+}
 
-            // Filter & Sort controls
-            FilterAndSortRow(
-                showNsfw = state.showNsfw,
-                sortMode = state.sortMode,
-                onToggleNsfw = { onEvent(ExtensionsEvent.ToggleNsfw(it)) },
-                onSetSortMode = { onEvent(ExtensionsEvent.SetSortMode(it)) }
-            )
+/**
+ * Scaffold-free Extensions content for embedding in Browse's Extensions tab.
+ * Manages its own [ExtensionsViewModel] and snackbar; no TopAppBar.
+ */
+@Composable
+internal fun ExtensionsTabBody(
+    onNavigateToRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
+    modifier: Modifier = Modifier,
+    viewModel: ExtensionsViewModel = hiltViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-            // Update All button (only in Updates tab, visible whenever updates exist)
-            if (selectedTab == 2 && state.updateCount > 0) {
-                UpdateAllButton(
-                    updateCount = state.updateCount,
-                    isUpdating = state.isUpdatingAll,
-                    onUpdateAll = { onEvent(ExtensionsEvent.UpdateAllExtensions) }
-                )
-            }
-
-            RepositoryManager(
-                repositories = state.repositories,
-                onAdd = { onEvent(ExtensionsEvent.AddRepository(it)) },
-                onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) },
-                onOpenFullManager = onNavigateToRepositories,
-            )
-
-            // Tabs
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { onEvent(ExtensionsEvent.SelectTab(index)) },
-                        text = {
-                            when (index) {
-                                2 -> if (state.updateCount > 0) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(title)
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.error
-                                        ) {
-                                            Text(
-                                                text = state.updateCount.toString(),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onError,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                            )
-                                        }
-                                    }
-                                } else Text(title)
-                                else -> Text(title)
-                            }
-                        }
-                    )
-                }
-            }
-
-            when (selectedTab) {
-                0 -> ExtensionsList(
-                    extensions = state.installedExtensions,
-                    isLoading = state.isLoading,
-                    error = state.error,
-                    signerMismatchedPackages = state.signerMismatchedPackages,
-                    blockedPackages = state.blockedPackages,
-                    onInstall = { /* Already installed */ },
-                    onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
-                    onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
-                    onToggleEnabled = { ext, enabled ->
-                        onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
-                    },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
-                )
-                1 -> Column {
-                    if (state.hasUnverifiedExtensions) {
-                        TrustBanner(visible = true)
-                    }
-                    ExtensionsList(
-                        extensions = state.availableExtensions,
-                        isLoading = state.isLoading,
-                        error = state.error,
-                        signerMismatchedPackages = emptySet(),
-                        blockedPackages = state.blockedPackages,
-                        onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
-                        onUninstall = { /* Not installed */ },
-                        onUpdate = { /* No update */ },
-                        onToggleEnabled = { _, _ -> },
-                        onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                        onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
-                    )
-                }
-                2 -> ExtensionsList(
-                    extensions = state.extensionsWithUpdates,
-                    isLoading = state.isLoading,
-                    error = state.error,
-                    signerMismatchedPackages = state.signerMismatchedPackages,
-                    blockedPackages = state.blockedPackages,
-                    onInstall = { /* Already installed */ },
-                    onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
-                    onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
-                    onToggleEnabled = { ext, enabled ->
-                        onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
-                    },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
-                )
-            }
-
-            // Unverified install confirmation dialog
-            if (state.showUnverifiedInstallDialog) {
-                UnverifiedInstallDialog(
-                    extension = state.pendingUnverifiedExtension,
-                    onDismiss = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
-                    onConfirm = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }
-                )
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is ExtensionsEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
             }
         }
+    }
+
+    Box(modifier = modifier) {
+        ExtensionsBody(
+            state = state,
+            onEvent = viewModel::onEvent,
+            onNavigateToRepositories = onNavigateToRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
+            modifier = Modifier.fillMaxSize(),
+        )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
