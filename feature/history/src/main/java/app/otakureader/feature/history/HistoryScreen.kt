@@ -19,8 +19,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.background
@@ -43,13 +45,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -80,6 +86,8 @@ fun HistoryScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    var showClearConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -124,7 +132,7 @@ fun HistoryScreen(
                             IconButton(onClick = { viewModel.onEvent(HistoryEvent.SelectAll) }) {
                                 Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.history_select_all))
                             }
-                            TextButton(onClick = { viewModel.onEvent(HistoryEvent.ClearHistory) }) {
+                            TextButton(onClick = { showClearConfirm = true }) {
                                 Text(stringResource(R.string.history_clear_all))
                             }
                         }
@@ -172,10 +180,27 @@ fun HistoryScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = if (state.searchQuery.isBlank()) stringResource(R.string.history_empty)
-                        else stringResource(R.string.history_no_results, state.searchQuery)
-                    )
+                    if (state.searchQuery.isBlank()) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.history_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        Text(text = stringResource(R.string.history_no_results, state.searchQuery))
+                    }
                 }
                 else -> HistoryList(
                     history = state.history,
@@ -186,6 +211,7 @@ fun HistoryScreen(
                         )
                     },
                     onItemLongClick = { entry ->
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.onEvent(HistoryEvent.OnChapterLongClick(entry.chapter.id))
                     },
                     onRemoveClick = { entry ->
@@ -194,6 +220,27 @@ fun HistoryScreen(
                 )
             }
         }
+    }
+
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(stringResource(R.string.history_clear_all_confirm_title)) },
+            text = { Text(stringResource(R.string.history_clear_all_confirm_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showClearConfirm = false
+                    viewModel.onEvent(HistoryEvent.ClearHistory)
+                }) {
+                    Text(stringResource(R.string.history_clear_all_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(stringResource(R.string.history_clear_all_cancel))
+                }
+            },
+        )
     }
 }
 
