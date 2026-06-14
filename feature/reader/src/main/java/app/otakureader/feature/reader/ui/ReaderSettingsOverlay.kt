@@ -1,5 +1,6 @@
 package app.otakureader.feature.reader.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -167,15 +168,22 @@ private fun ReaderToggleRow(
     checked: Boolean,
     onToggle: () -> Unit,
 ) {
+    // Whole row is clickable with vertical padding so the touch target meets the
+    // 48dp accessibility minimum; the Switch is driven by the row (onCheckedChange = null).
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle() }
+            .padding(vertical = ToggleRowVerticalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyMedium)
-        Switch(checked = checked, onCheckedChange = { onToggle() })
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
+
+private val ToggleRowVerticalPadding = 8.dp
 
 @Composable
 private fun ReaderMode.toLabel(): String = when (this) {
