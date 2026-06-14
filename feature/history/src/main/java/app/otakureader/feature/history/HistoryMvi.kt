@@ -11,8 +11,6 @@ data class HistoryState(
     val searchQuery: String = "",
     val error: String? = null,
     val selectedItems: Set<Long> = emptySet(),
-    /** Chapter ID buffered for swipe-delete undo; null when no deletion is pending. */
-    val pendingDeleteChapterId: Long? = null,
 ) : UiState
 
 sealed interface HistoryEvent : UiEvent {
@@ -23,10 +21,8 @@ sealed interface HistoryEvent : UiEvent {
     data object SelectAll : HistoryEvent
     data class OnSearchQueryChange(val query: String) : HistoryEvent
     data class RemoveFromHistory(val chapterId: Long) : HistoryEvent
-    /** Commit the pending swipe-delete — called when the undo snackbar is dismissed. */
-    data object ConfirmRemoveFromHistory : HistoryEvent
-    /** Cancel the pending swipe-delete — called when the user taps Undo. */
-    data object UndoRemoveFromHistory : HistoryEvent
+    /** Cancel the pending swipe-delete; carries chapterId so the ViewModel knows which timer to cancel. */
+    data class UndoRemoveFromHistory(val chapterId: Long) : HistoryEvent
     data object RemoveSelectedFromHistory : HistoryEvent
     data object MarkSelectedAsRead : HistoryEvent
 }
@@ -34,6 +30,10 @@ sealed interface HistoryEvent : UiEvent {
 sealed interface HistoryEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : HistoryEffect
     data class ShowSnackbar(val messageRes: Int, val formatArgs: List<Any> = emptyList()) : HistoryEffect
-    /** Snackbar with an Undo action for swipe-delete. Awaited inline by the screen. */
-    data class ShowUndoSnackbar(val messageRes: Int) : HistoryEffect
+    /**
+     * Snackbar with an Undo action for swipe-delete. Carries the chapterId so the screen can
+     * pass it back in [HistoryEvent.UndoRemoveFromHistory] without keeping extra UI state.
+     * The ViewModel auto-commits after [HistoryViewModel.UNDO_TIMEOUT_MS] regardless of UI state.
+     */
+    data class ShowUndoSnackbar(val messageRes: Int, val chapterId: Long) : HistoryEffect
 }

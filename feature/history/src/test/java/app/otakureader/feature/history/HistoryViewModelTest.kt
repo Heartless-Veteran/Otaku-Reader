@@ -255,45 +255,52 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun onEvent_RemoveFromHistory_setsPendingDeleteAndEmitsUndoEffect() = runTest {
+    fun onEvent_RemoveFromHistory_hidesItemAndEmitsUndoEffect() = runTest {
         every { getHistoryUseCase() } returns flowOf(sampleHistory)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(3, viewModel.state.value.history.size)
 
         viewModel.effect.test {
             viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
-            testDispatcher.scheduler.advanceUntilIdle()
+            // runCurrent() processes tasks at t=0 (combine re-emit + effect send)
+            // without advancing through delay(UNDO_TIMEOUT_MS) at t=4000.
+            testDispatcher.scheduler.runCurrent()
 
-            assertEquals(1L, viewModel.state.value.pendingDeleteChapterId)
+            // Chapter is hidden from the list while the undo timer is running
+            assertEquals(2, viewModel.state.value.history.size)
+
             val effect = awaitItem()
             assertTrue(effect is HistoryEffect.ShowUndoSnackbar)
+            assertEquals(1L, (effect as HistoryEffect.ShowUndoSnackbar).chapterId)
+
+            cancelAndIgnoreRemainingEvents()
         }
-        // Repo must NOT be called yet — deletion is buffered until confirmed
+        // Repo must NOT be called yet — deletion auto-commits after UNDO_TIMEOUT_MS
         coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
     }
 
     @Test
-    fun onEvent_ConfirmRemoveFromHistory_callsRepositoryAndClearsPending() = runTest {
+    fun onEvent_RemoveFromHistory_autoCommitsAfterTimeout() = runTest {
         every { getHistoryUseCase() } returns flowOf(sampleHistory)
         coEvery { chapterRepository.removeFromHistory(any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Stage a deletion
         viewModel.effect.test {
             viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
-            testDispatcher.scheduler.advanceUntilIdle()
+            testDispatcher.scheduler.runCurrent()  // send effect, suspend at delay
             awaitItem() // consume ShowUndoSnackbar
+
+            // Advance the virtual clock past the auto-commit delay
+            testDispatcher.scheduler.advanceTimeBy(HistoryViewModel.UNDO_TIMEOUT_MS + 1)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { chapterRepository.removeFromHistory(1L) }
+            cancelAndIgnoreRemainingEvents()
         }
-        assertEquals(1L, viewModel.state.value.pendingDeleteChapterId)
-
-        viewModel.onEvent(HistoryEvent.ConfirmRemoveFromHistory)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        assertNull(viewModel.state.value.pendingDeleteChapterId)
-        coVerify(exactly = 1) { chapterRepository.removeFromHistory(1L) }
     }
 
     @Test
@@ -305,15 +312,19 @@ class HistoryViewModelTest {
 
         viewModel.effect.test {
             viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 2L))
+            testDispatcher.scheduler.runCurrent()  // send effect, suspend at delay
+            awaitItem() // consume ShowUndoSnackbar
+
+            // Undo cancels the pending job; the delay coroutine is now cancelled.
+            viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory(chapterId = 2L))
+
+            // Advance past where auto-commit would have fired — nothing happens.
+            testDispatcher.scheduler.advanceTimeBy(HistoryViewModel.UNDO_TIMEOUT_MS + 1)
             testDispatcher.scheduler.advanceUntilIdle()
-            awaitItem()
+
+            coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+            cancelAndIgnoreRemainingEvents()
         }
-        assertEquals(2L, viewModel.state.value.pendingDeleteChapterId)
-
-        viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory)
-
-        assertNull(viewModel.state.value.pendingDeleteChapterId)
-        coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
     }
 
     @Test

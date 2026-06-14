@@ -102,9 +102,9 @@ fun UpdatesScreen(
                 is UpdatesEffect.ShowSnackbar -> scope.launch {
                     snackbarHostState.showSnackbar(effect.message)
                 }
-                // Inline await — collectLatest cancels this if another swipe fires, which is
-                // correct since the chapter is already marked read at that point.
-                is UpdatesEffect.ShowUndoSnackbar -> {
+                // Launch independently so collectLatest cancelling on the next swipe
+                // does not cut this snackbar short; each mark-as-read is independently undoable.
+                is UpdatesEffect.ShowUndoSnackbar -> scope.launch {
                     val result = snackbarHostState.showSnackbar(
                         message = effect.message,
                         actionLabel = context.getString(R.string.updates_undo_action),

@@ -276,12 +276,20 @@ class UpdatesViewModel @Inject constructor(
 
     /** Start a manual library update; shows a brief pull-to-refresh indicator. */
     private fun startLibraryUpdate() {
+        if (_state.value.isRefreshing) return
         _state.update { it.copy(isRefreshing = true, showPendingUpdates = false) }
         viewModelScope.launch {
-            libraryUpdateScheduler.enqueueNow()
-            _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
-            delay(1_500L)
-            _state.update { it.copy(isRefreshing = false) }
+            try {
+                libraryUpdateScheduler.enqueueNow()
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
+                delay(REFRESH_INDICATOR_DURATION_MS)
+            } finally {
+                _state.update { it.copy(isRefreshing = false) }
+            }
         }
+    }
+
+    companion object {
+        const val REFRESH_INDICATOR_DURATION_MS = 1_500L
     }
 }

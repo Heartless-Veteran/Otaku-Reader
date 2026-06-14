@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +29,10 @@ class HistoryViewModel @Inject constructor(
     private val chapterRepository: ChapterRepository
 ) : ViewModel() {
 
+    companion object {
+        const val UNDO_TIMEOUT_MS = 4_000L
+    }
+
     private val _state = MutableStateFlow(HistoryState())
     val state: StateFlow<HistoryState> = _state.asStateFlow()
 
@@ -35,15 +41,19 @@ class HistoryViewModel @Inject constructor(
 
     private val searchQuery = MutableStateFlow("")
 
-    /** Chapter ID currently staged for swipe-delete; filtered from the displayed list. */
-    private val pendingDeleteId = MutableStateFlow<Long?>(null)
+    /** Chapters currently staged for swipe-delete; filtered from the displayed list. */
+    private val pendingDeleteIds = MutableStateFlow<Set<Long>>(emptySet())
+
+    /** The one chapter whose undo timer is currently running. */
+    private var pendingDeleteJob: Job? = null
+    private var pendingDeleteJobChapterId: Long? = null
 
     init {
         _state.update { it.copy(isLoading = true) }
-        combine(getHistoryUseCase(), searchQuery, pendingDeleteId) { allEntries, query, pendingId ->
+        combine(getHistoryUseCase(), searchQuery, pendingDeleteIds) { allEntries, query, pendingIds ->
             val filtered = if (query.isBlank()) allEntries
             else allEntries.filter { it.chapter.name.contains(query, ignoreCase = true) }
-            if (pendingId != null) filtered.filter { it.chapter.id != pendingId } else filtered
+            if (pendingIds.isEmpty()) filtered else filtered.filter { it.chapter.id !in pendingIds }
         }
             .onEach { filtered ->
                 _state.update { it.copy(isLoading = false, history = filtered, error = null) }
@@ -66,8 +76,7 @@ class HistoryViewModel @Inject constructor(
                 _state.update { it.copy(searchQuery = event.query) }
             }
             is HistoryEvent.RemoveFromHistory -> scheduleRemoveFromHistory(event.chapterId)
-            is HistoryEvent.UndoRemoveFromHistory -> undoRemoveFromHistory()
-            is HistoryEvent.ConfirmRemoveFromHistory -> confirmRemoveFromHistory()
+            is HistoryEvent.UndoRemoveFromHistory -> undoRemoveFromHistory(event.chapterId)
             is HistoryEvent.RemoveSelectedFromHistory -> removeSelectedFromHistory()
             is HistoryEvent.MarkSelectedAsRead -> markSelectedAsRead()
         }
@@ -105,40 +114,57 @@ class HistoryViewModel @Inject constructor(
     }
 
     /**
-     * Buffer the chapter for deletion. If another chapter was already pending,
-     * it is committed first so only one undo is active at a time.
+     * Buffer the chapter for deletion. If a different chapter was already pending,
+     * commit it immediately so only one undo timer is active at a time.
+     * The auto-commit fires after [UNDO_TIMEOUT_MS] unless the user taps Undo first.
      */
     private fun scheduleRemoveFromHistory(chapterId: Long) {
-        val previousPending = pendingDeleteId.value
-        if (previousPending != null && previousPending != chapterId) {
+        val previousId = pendingDeleteJobChapterId
+        if (previousId != null && previousId != chapterId) {
+            pendingDeleteJob?.cancel()
             viewModelScope.launch {
-                try { chapterRepository.removeFromHistory(previousPending) } catch (_: Exception) { }
+                try { chapterRepository.removeFromHistory(previousId) } catch (_: Exception) {}
+                pendingDeleteIds.update { it - previousId }
             }
         }
-        pendingDeleteId.value = chapterId
-        _state.update { it.copy(pendingDeleteChapterId = chapterId) }
-        viewModelScope.launch {
-            _effect.send(HistoryEffect.ShowUndoSnackbar(R.string.history_removed_undo))
+        pendingDeleteIds.update { it + chapterId }
+        pendingDeleteJobChapterId = chapterId
+        pendingDeleteJob = viewModelScope.launch {
+            _effect.send(HistoryEffect.ShowUndoSnackbar(R.string.history_removed_undo, chapterId))
+            delay(UNDO_TIMEOUT_MS)
+            doRemoveFromHistory(chapterId)
         }
     }
 
-    private fun undoRemoveFromHistory() {
-        pendingDeleteId.value = null
-        _state.update { it.copy(pendingDeleteChapterId = null) }
+    private fun undoRemoveFromHistory(chapterId: Long) {
+        if (pendingDeleteJobChapterId != chapterId) return
+        pendingDeleteJob?.cancel()
+        pendingDeleteJob = null
+        pendingDeleteJobChapterId = null
+        pendingDeleteIds.update { it - chapterId }
     }
 
-    private fun confirmRemoveFromHistory() {
-        val chapterId = _state.value.pendingDeleteChapterId ?: return
-        pendingDeleteId.value = null
-        _state.update { it.copy(pendingDeleteChapterId = null) }
+    private suspend fun doRemoveFromHistory(chapterId: Long) {
+        try {
+            chapterRepository.removeFromHistory(chapterId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            pendingDeleteIds.update { it - chapterId }
+            _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
+            return
+        }
+        pendingDeleteIds.update { it - chapterId }
+        if (pendingDeleteJobChapterId == chapterId) pendingDeleteJobChapterId = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        val chapterId = pendingDeleteJobChapterId ?: return
+        pendingDeleteJobChapterId = null
         viewModelScope.launch {
-            try {
-                chapterRepository.removeFromHistory(chapterId)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
-            }
+            try { chapterRepository.removeFromHistory(chapterId) } catch (_: Exception) {}
+            pendingDeleteIds.update { it - chapterId }
         }
     }
 
@@ -153,7 +179,7 @@ class HistoryViewModel @Inject constructor(
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_marked_read_count, listOf(count)))
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_mark_read_failed))
             }
         }
@@ -177,7 +203,7 @@ class HistoryViewModel @Inject constructor(
                 }
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
             }
         }
@@ -196,7 +222,7 @@ class HistoryViewModel @Inject constructor(
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_cleared))
             } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _effect.send(HistoryEffect.ShowSnackbar(R.string.history_clear_failed))
             }
         }

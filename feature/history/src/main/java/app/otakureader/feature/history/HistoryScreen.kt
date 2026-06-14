@@ -112,18 +112,19 @@ fun HistoryScreen(
                     }
                     snackbarHostState.showSnackbar(msg)
                 }
-                // Inline await so collectLatest cancels it if a new swipe fires (which is correct —
-                // the ViewModel commits the previous pending item automatically on a new swipe).
-                is HistoryEffect.ShowUndoSnackbar -> {
+                // Launch in a separate coroutine so collectLatest cancelling on the next swipe
+                // does not cut the snackbar short. The ViewModel owns the auto-commit timer;
+                // the screen only needs to signal Undo if the user taps the action.
+                is HistoryEffect.ShowUndoSnackbar -> scope.launch {
                     val result = snackbarHostState.showSnackbar(
                         message = context.getString(effect.messageRes),
                         actionLabel = context.getString(R.string.history_undo_action),
                         duration = SnackbarDuration.Short,
                     )
-                    when (result) {
-                        SnackbarResult.ActionPerformed -> viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory)
-                        SnackbarResult.Dismissed -> viewModel.onEvent(HistoryEvent.ConfirmRemoveFromHistory)
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory(effect.chapterId))
                     }
+                    // Dismissed → VM auto-commits after UNDO_TIMEOUT_MS; no UI action needed.
                 }
             }
         }
