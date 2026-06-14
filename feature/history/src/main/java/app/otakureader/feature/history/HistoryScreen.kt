@@ -74,6 +74,13 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/** Spacing/sizing for the History empty state. */
+private object HistoryEmptyStateDefaults {
+    val Padding = 32.dp
+    val IconSize = 64.dp
+    val Spacing = 16.dp
+}
+
 /** History screen showing recently read chapters. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,15 +196,15 @@ fun HistoryScreen(
                     if (state.searchQuery.isBlank()) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(32.dp),
+                            modifier = Modifier.padding(HistoryEmptyStateDefaults.Padding),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.History,
                                 contentDescription = null,
-                                modifier = Modifier.size(64.dp),
+                                modifier = Modifier.size(HistoryEmptyStateDefaults.IconSize),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(HistoryEmptyStateDefaults.Spacing))
                             Text(
                                 text = stringResource(R.string.history_empty),
                                 style = MaterialTheme.typography.bodyMedium,

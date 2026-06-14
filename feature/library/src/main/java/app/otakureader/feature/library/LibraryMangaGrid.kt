@@ -64,6 +64,17 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import coil3.compose.AsyncImage
 
+/** Layout constants for the compact list-mode row. */
+private object LibraryListRowDefaults {
+    val HorizontalPadding = 12.dp
+    val VerticalPadding = 6.dp
+    val ItemSpacing = 12.dp
+    val ThumbnailWidth = 40.dp
+    val ThumbnailCornerRadius = 4.dp
+    const val ThumbnailAspectRatio = 3f / 4f
+    const val TitleMaxLines = 2
+}
+
 /** Returns true when a manga item belongs to the manhwa/webtoon content type. */
 internal fun isManhwa(manga: LibraryMangaItem): Boolean {
     val src = manga.sourceId.toString().lowercase()
@@ -88,10 +99,20 @@ internal fun MangaGrid(
     )
 
     // Long-press always enters selection mode; fire a haptic tick so the gesture is felt (#L7).
+    // remember keeps the lambda reference stable so item composables can skip recomposition.
     val haptic = LocalHapticFeedback.current
-    val onMangaLongClick: (Long) -> Unit = { mangaId ->
-        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        onEvent(LibraryEvent.OnMangaLongClick(mangaId))
+    val onMangaLongClick: (Long) -> Unit = remember(haptic, onEvent) {
+        { mangaId ->
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onEvent(LibraryEvent.OnMangaLongClick(mangaId))
+        }
+    }
+    // Taps open the detail pane only in two-pane mode with no active selection; otherwise route
+    // through OnMangaClick so taps toggle selection while selection mode is active (and navigate
+    // in single-pane). Without the selection guard, two-pane taps could never toggle items.
+    val onMangaTap: (LibraryMangaItem) -> Unit = { manga ->
+        if (onMangaSelect != null && state.selectedManga.isEmpty()) onMangaSelect(manga)
+        else onEvent(LibraryEvent.OnMangaClick(manga.id))
     }
 
     val displayedManga by remember(state.mangaList, selectedContentFilter) {
@@ -206,10 +227,7 @@ internal fun MangaGrid(
                     isSelected = manga.id in state.selectedManga,
                     unreadCount = if (state.showBadges) manga.unreadCount else 0,
                     downloadCount = if (state.showDownloadBadge) downloadCount else 0,
-                    onClick = {
-                        if (onMangaSelect != null) onMangaSelect(manga)
-                        else onEvent(LibraryEvent.OnMangaClick(manga.id))
-                    },
+                    onClick = { onMangaTap(manga) },
                     onLongClick = { onMangaLongClick(manga.id) },
                 )
             }
@@ -240,10 +258,7 @@ internal fun MangaGrid(
                             coverUrl = manga.thumbnailUrl ?: "",
                             title = manga.title,
                             unreadCount = if (state.showBadges) manga.unreadCount else 0,
-                            onClick = {
-                                if (onMangaSelect != null) onMangaSelect(manga)
-                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
-                            },
+                            onClick = { onMangaTap(manga) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
@@ -257,10 +272,7 @@ internal fun MangaGrid(
                         MangaCard(
                             title = manga.title,
                             coverUrl = manga.thumbnailUrl,
-                            onClick = {
-                                if (onMangaSelect != null) onMangaSelect(manga)
-                                else onEvent(LibraryEvent.OnMangaClick(manga.id))
-                            },
+                            onClick = { onMangaTap(manga) },
                             onLongClick = { onMangaLongClick(manga.id) },
                             isSelected = manga.id in state.selectedManga,
                             readProgress = readProgress,
@@ -338,11 +350,8 @@ internal fun MangaGrid(
                     MangaCard(
                         title = manga.title,
                         coverUrl = manga.thumbnailUrl,
-                        onClick = {
-                            if (onMangaSelect != null) onMangaSelect(manga)
-                            else onEvent(LibraryEvent.OnMangaClick(manga.id))
-                        },
-                        onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                        onClick = { onMangaTap(manga) },
+                        onLongClick = { onMangaLongClick(manga.id) },
                         isSelected = manga.id in state.selectedManga,
                         readProgress = readProgress,
                         continueReading = continueReading,
@@ -415,23 +424,28 @@ private fun LibraryListRow(
                 if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(
+                horizontal = LibraryListRowDefaults.HorizontalPadding,
+                vertical = LibraryListRowDefaults.VerticalPadding,
+            ),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(LibraryListRowDefaults.ItemSpacing),
     ) {
         AsyncImage(
+            // Decorative: the title is shown as text right beside it, so a description
+            // would make screen readers announce the title twice.
             model = manga.thumbnailUrl,
-            contentDescription = manga.title,
+            contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
-                .width(40.dp)
-                .aspectRatio(3f / 4f)
-                .clip(RoundedCornerShape(4.dp)),
+                .width(LibraryListRowDefaults.ThumbnailWidth)
+                .aspectRatio(LibraryListRowDefaults.ThumbnailAspectRatio)
+                .clip(RoundedCornerShape(LibraryListRowDefaults.ThumbnailCornerRadius)),
         )
         Text(
             text = manga.title,
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
+            maxLines = LibraryListRowDefaults.TitleMaxLines,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )

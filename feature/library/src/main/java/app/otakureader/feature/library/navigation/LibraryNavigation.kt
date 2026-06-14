@@ -16,7 +16,7 @@ fun NavGraphBuilder.libraryScreen(
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToMaintenance: () -> Unit = {},
-    onBrowseClick: () -> Unit = {},
+    onBrowseClick: (() -> Unit)? = null,
 ) {
     composable<Route.Library> {
         LibraryScreen(

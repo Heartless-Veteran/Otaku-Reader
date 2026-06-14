@@ -95,7 +95,7 @@ fun LibraryScreen(
     onNavigateToShareLibrary: () -> Unit = {},
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToMaintenance: () -> Unit = {},
-    onBrowseClick: () -> Unit = {},
+    onBrowseClick: (() -> Unit)? = null,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -446,7 +446,7 @@ fun LibraryScreen(
 private fun LibraryContent(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
-    onBrowseClick: () -> Unit = {},
+    onBrowseClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val widthSizeClass = rememberWindowWidthSizeClass()
