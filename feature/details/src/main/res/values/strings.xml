@@ -105,9 +105,12 @@
 
     <!-- Chapter list accessibility -->
     <string name="details_clear_selection">Clear selection</string>
+    <string name="details_selected_count">%1$d selected</string>
     <string name="details_download_selected">Download selected</string>
     <string name="details_mark_as_read">Mark as read</string>
+    <string name="details_mark_as_unread">Mark as unread</string>
     <string name="details_bookmark_selected">Bookmark selected</string>
+    <string name="details_delete_selected">Delete selected</string>
     <string name="details_select_all">Select all</string>
     <string name="details_sort_chapters">Sort chapters</string>
 
