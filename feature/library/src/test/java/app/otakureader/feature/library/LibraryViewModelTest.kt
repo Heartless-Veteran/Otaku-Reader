@@ -103,6 +103,7 @@ class LibraryViewModelTest {
             every { libraryFilterMode } returns flowOf(0)
             every { libraryFilterSourceId } returns flowOf(null)
             every { isStaggeredGrid } returns flowOf(false)
+            every { libraryDisplayMode } returns flowOf(0)
             every { showRecommendations } returns flowOf(false)
             every { dismissedRecommendations } returns flowOf(emptySet())
             every { groupByCategory } returns flowOf(false)

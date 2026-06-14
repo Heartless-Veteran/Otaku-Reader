@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import app.otakureader.core.navigation.Route
@@ -170,6 +171,13 @@ fun OtakuReaderNavHost(
             },
             onNavigateToScanLibrary = {
                 navController.navigate(Route.ScanLibrary)
+            },
+            onBrowseClick = {
+                navController.navigate(Route.Browse) {
+                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
             },
         )
 

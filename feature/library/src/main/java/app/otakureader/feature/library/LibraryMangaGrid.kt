@@ -7,16 +7,21 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items as columnItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -40,8 +45,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.components.CompletedBadge
 import app.otakureader.core.ui.components.DownloadBadge
@@ -52,6 +62,7 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import coil3.compose.AsyncImage
 
 /** Returns true when a manga item belongs to the manhwa/webtoon content type. */
 internal fun isManhwa(manga: LibraryMangaItem): Boolean {
@@ -70,7 +81,18 @@ internal fun MangaGrid(
     modifier: Modifier = Modifier
 ) {
     var selectedContentFilter by remember { mutableIntStateOf(0) }
-    val contentTabs = listOf("All", "Manga", "Manhwa")
+    val contentTabs = listOf(
+        stringResource(R.string.library_content_tab_all),
+        stringResource(R.string.library_content_tab_manga),
+        stringResource(R.string.library_content_tab_manhwa),
+    )
+
+    // Long-press always enters selection mode; fire a haptic tick so the gesture is felt (#L7).
+    val haptic = LocalHapticFeedback.current
+    val onMangaLongClick: (Long) -> Unit = { mangaId ->
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        onEvent(LibraryEvent.OnMangaLongClick(mangaId))
+    }
 
     val displayedManga by remember(state.mangaList, selectedContentFilter) {
         derivedStateOf {
@@ -166,6 +188,35 @@ internal fun MangaGrid(
         }
     }
 
+    if (state.displayMode == LibraryDisplayMode.LIST) {
+        LazyColumn(
+            contentPadding = PaddingValues(vertical = 8.dp),
+            modifier = modifier.fillMaxSize(),
+        ) {
+            item(contentType = "header_section") { headerContent() }
+
+            columnItems(
+                items = displayedManga,
+                key = { it.id },
+                contentType = { "manga_row" },
+            ) { manga ->
+                val downloadCount = state.downloadCountByManga[manga.id] ?: 0
+                LibraryListRow(
+                    manga = manga,
+                    isSelected = manga.id in state.selectedManga,
+                    unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                    downloadCount = if (state.showDownloadBadge) downloadCount else 0,
+                    onClick = {
+                        if (onMangaSelect != null) onMangaSelect(manga)
+                        else onEvent(LibraryEvent.OnMangaClick(manga.id))
+                    },
+                    onLongClick = { onMangaLongClick(manga.id) },
+                )
+            }
+        }
+        return
+    }
+
     if (state.isStaggeredGrid) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
@@ -210,7 +261,7 @@ internal fun MangaGrid(
                                 if (onMangaSelect != null) onMangaSelect(manga)
                                 else onEvent(LibraryEvent.OnMangaClick(manga.id))
                             },
-                            onLongClick = { onEvent(LibraryEvent.OnMangaLongClick(manga.id)) },
+                            onLongClick = { onMangaLongClick(manga.id) },
                             isSelected = manga.id in state.selectedManga,
                             readProgress = readProgress,
                             continueReading = continueReading,
@@ -335,6 +386,60 @@ internal fun MangaGrid(
                     cardContent()
                 }
             }
+        }
+    }
+}
+
+/**
+ * Compact single-row representation of a library entry, used when
+ * [LibraryState.displayMode] is [LibraryDisplayMode.LIST].
+ *
+ * Mirrors the grid card's interaction contract: tap opens (or toggles selection when a
+ * selection is active), long-press enters selection mode. The whole row tints with the
+ * selection container colour while selected.
+ */
+@Composable
+private fun LibraryListRow(
+    manga: LibraryMangaItem,
+    isSelected: Boolean,
+    unreadCount: Int,
+    downloadCount: Int,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+            )
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        AsyncImage(
+            model = manga.thumbnailUrl,
+            contentDescription = manga.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .width(40.dp)
+                .aspectRatio(3f / 4f)
+                .clip(RoundedCornerShape(4.dp)),
+        )
+        Text(
+            text = manga.title,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        if (downloadCount > 0) {
+            DownloadBadge(count = downloadCount)
+        }
+        if (unreadCount > 0) {
+            UnreadBadge(count = unreadCount)
         }
     }
 }

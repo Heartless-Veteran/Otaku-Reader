@@ -30,6 +30,20 @@ enum class LibraryBottomSheetTab {
     GROUP
 }
 
+/**
+ * Top-level layout for the library grid.
+ *
+ * - [GRID]: cover-centric grid (the [LibraryState.isStaggeredGrid] flag further selects
+ *   uniform vs. waterfall columns).
+ * - [LIST]: compact single-column rows with a small cover thumbnail, title, and badges.
+ *
+ * Persisted as an ordinal via `LibraryPreferences.libraryDisplayMode`.
+ */
+enum class LibraryDisplayMode {
+    GRID,
+    LIST,
+}
+
 data class LibraryState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -46,6 +60,7 @@ data class LibraryState(
     val showDownloadBadge: Boolean = true,
     val downloadCountByManga: Map<Long, Int> = emptyMap(),
     val isStaggeredGrid: Boolean = false,
+    val displayMode: LibraryDisplayMode = LibraryDisplayMode.GRID,
     val visualEffectsEnabled: Boolean = true,
     val filterHasNotes: Boolean = false,
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
@@ -156,6 +171,7 @@ sealed class LibraryEvent {
     data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
     data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
     data class SetStaggeredGrid(val enabled: Boolean) : LibraryEvent()
+    data class SetDisplayMode(val mode: LibraryDisplayMode) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
     data object ToggleAdvancedSearch : LibraryEvent()

@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,7 +25,8 @@ import app.otakureader.core.ui.theme.OtakuReaderTheme
 
 @Composable
 internal fun EmptyLibraryMessage(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBrowseClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.padding(32.dp),
@@ -45,6 +49,18 @@ internal fun EmptyLibraryMessage(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        if (onBrowseClick != null) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(onClick = onBrowseClick) {
+                Icon(
+                    imageVector = Icons.Default.Explore,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.library_empty_browse_cta))
+            }
+        }
     }
 }
 
