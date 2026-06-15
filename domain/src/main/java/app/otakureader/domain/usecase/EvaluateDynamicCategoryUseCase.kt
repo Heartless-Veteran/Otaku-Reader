@@ -37,5 +37,19 @@ class EvaluateDynamicCategoryUseCase @Inject constructor() {
         is DynamicCategoryRule.Ongoing -> manga.status == MangaStatus.ONGOING
         is DynamicCategoryRule.RecentlyAdded ->
             manga.dateAdded in 1..now && now - manga.dateAdded <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+        is DynamicCategoryRule.FromSource -> manga.sourceId == rule.sourceId
+        is DynamicCategoryRule.UserDropped -> manga.userDropped
+        is DynamicCategoryRule.UserCompleted -> manga.userCompleted
+        is DynamicCategoryRule.CurrentlyReading -> manga.lastRead != null && manga.lastRead > 0
+        is DynamicCategoryRule.InactiveForDays -> {
+            val lastReadTime = manga.lastRead ?: 0
+            if (lastReadTime <= 0) {
+                // Never read, check if added more than [days] ago
+                manga.dateAdded in 1..now && now - manga.dateAdded >= TimeUnit.DAYS.toMillis(rule.days.toLong())
+            } else {
+                // Has been read, check if inactive for [days]
+                now - lastReadTime >= TimeUnit.DAYS.toMillis(rule.days.toLong())
+            }
+        }
     }
 }

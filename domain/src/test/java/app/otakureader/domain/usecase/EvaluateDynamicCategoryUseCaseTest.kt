@@ -76,4 +76,76 @@ class EvaluateDynamicCategoryUseCaseTest {
         val rules = listOf(DynamicCategoryRule.UnreadAtLeast(3), DynamicCategoryRule.GenreContains("action"))
         assertEquals(setOf(1L), useCase(rules, library, now))
     }
+
+    @Test
+    fun `from source filters by sourceId`() {
+        val library = listOf(
+            manga(1).copy(sourceId = 1),
+            manga(2).copy(sourceId = 2),
+            manga(3).copy(sourceId = 1),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.FromSource(1)), library, now)
+        assertEquals(setOf(1L, 3L), result)
+    }
+
+    @Test
+    fun `user dropped rule filters dropped manga`() {
+        val library = listOf(
+            manga(1).copy(userDropped = true),
+            manga(2).copy(userDropped = false),
+            manga(3).copy(userDropped = true),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.UserDropped), library, now)
+        assertEquals(setOf(1L, 3L), result)
+    }
+
+    @Test
+    fun `user completed rule filters user completed manga`() {
+        val library = listOf(
+            manga(1).copy(userCompleted = true),
+            manga(2).copy(userCompleted = false),
+            manga(3).copy(userCompleted = true),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.UserCompleted), library, now)
+        assertEquals(setOf(1L, 3L), result)
+    }
+
+    @Test
+    fun `currently reading filters manga with last read activity`() {
+        val library = listOf(
+            manga(1).copy(lastRead = now - TimeUnit.HOURS.toMillis(2)),
+            manga(2).copy(lastRead = null),
+            manga(3).copy(lastRead = now - TimeUnit.DAYS.toMillis(5)),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.CurrentlyReading), library, now)
+        assertEquals(setOf(1L, 3L), result)
+    }
+
+    @Test
+    fun `inactive for days filters never-read manga older than threshold`() {
+        val library = listOf(
+            manga(1, dateAdded = now - TimeUnit.DAYS.toMillis(20)).copy(lastRead = null),
+            manga(2, dateAdded = now - TimeUnit.DAYS.toMillis(5)).copy(lastRead = null),
+            manga(3, dateAdded = now - TimeUnit.DAYS.toMillis(20)).copy(lastRead = now - TimeUnit.DAYS.toMillis(25)),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.InactiveForDays(14)), library, now)
+        // manga(1): added >14 days ago, never read -> matches
+        // manga(2): added <14 days ago -> doesn't match
+        // manga(3): last read >14 days ago -> matches
+        assertEquals(setOf(1L, 3L), result)
+    }
+
+    @Test
+    fun `inactive for days filters recently read manga correctly`() {
+        val library = listOf(
+            manga(1).copy(lastRead = now - TimeUnit.DAYS.toMillis(5)),  // Active
+            manga(2).copy(lastRead = now - TimeUnit.DAYS.toMillis(20)), // Inactive
+            manga(3).copy(lastRead = now - TimeUnit.DAYS.toMillis(14)), // Exactly at boundary
+        )
+        val result = useCase(listOf(DynamicCategoryRule.InactiveForDays(14)), library, now)
+        // manga(1): read 5 days ago, not inactive -> doesn't match
+        // manga(2): read 20 days ago, inactive -> matches
+        // manga(3): read exactly 14 days ago, inactive -> matches
+        assertEquals(setOf(2L, 3L), result)
+    }
 }

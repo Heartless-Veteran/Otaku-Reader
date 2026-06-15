@@ -40,6 +40,13 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
         DynamicCategoryRule.TYPE_ONGOING -> DynamicCategoryRule.Ongoing
         DynamicCategoryRule.TYPE_RECENTLY_ADDED ->
             DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_FROM_SOURCE ->
+            DynamicCategoryRule.FromSource(ruleParamsJson.toLongOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_USER_DROPPED -> DynamicCategoryRule.UserDropped
+        DynamicCategoryRule.TYPE_USER_COMPLETED -> DynamicCategoryRule.UserCompleted
+        DynamicCategoryRule.TYPE_CURRENTLY_READING -> DynamicCategoryRule.CurrentlyReading
+        DynamicCategoryRule.TYPE_INACTIVE_FOR_DAYS ->
+            DynamicCategoryRule.InactiveForDays(ruleParamsJson.toIntOrNull() ?: return null)
         else -> null
     }
 
@@ -52,6 +59,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> DynamicCategoryRule.TYPE_COMPLETED
             is DynamicCategoryRule.Ongoing -> DynamicCategoryRule.TYPE_ONGOING
             is DynamicCategoryRule.RecentlyAdded -> DynamicCategoryRule.TYPE_RECENTLY_ADDED
+            is DynamicCategoryRule.FromSource -> DynamicCategoryRule.TYPE_FROM_SOURCE
+            is DynamicCategoryRule.UserDropped -> DynamicCategoryRule.TYPE_USER_DROPPED
+            is DynamicCategoryRule.UserCompleted -> DynamicCategoryRule.TYPE_USER_COMPLETED
+            is DynamicCategoryRule.CurrentlyReading -> DynamicCategoryRule.TYPE_CURRENTLY_READING
+            is DynamicCategoryRule.InactiveForDays -> DynamicCategoryRule.TYPE_INACTIVE_FOR_DAYS
         },
         ruleParamsJson = when (this) {
             is DynamicCategoryRule.UnreadAtLeast -> count.toString()
@@ -60,6 +72,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> ""
             is DynamicCategoryRule.Ongoing -> ""
             is DynamicCategoryRule.RecentlyAdded -> withinDays.toString()
+            is DynamicCategoryRule.FromSource -> sourceId.toString()
+            is DynamicCategoryRule.UserDropped -> ""
+            is DynamicCategoryRule.UserCompleted -> ""
+            is DynamicCategoryRule.CurrentlyReading -> ""
+            is DynamicCategoryRule.InactiveForDays -> days.toString()
         }
     )
 }

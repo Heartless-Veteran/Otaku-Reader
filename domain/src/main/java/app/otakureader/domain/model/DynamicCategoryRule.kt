@@ -32,6 +32,23 @@ sealed class DynamicCategoryRule {
         init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
     }
 
+    /** Manga from a specific source by [sourceId]. */
+    data class FromSource(val sourceId: Long) : DynamicCategoryRule()
+
+    /** Manga that user has marked as dropped. */
+    data object UserDropped : DynamicCategoryRule()
+
+    /** Manga that user has marked as completed (userCompleted = true). */
+    data object UserCompleted : DynamicCategoryRule()
+
+    /** Manga with at least one chapter read (currently reading). */
+    data object CurrentlyReading : DynamicCategoryRule()
+
+    /** Manga with no activity (last read) for [days] or more. */
+    data class InactiveForDays(val days: Int) : DynamicCategoryRule() {
+        init { require(days >= 0) { "days must be non-negative, was $days" } }
+    }
+
     companion object {
         const val TYPE_UNREAD_AT_LEAST = "unread_at_least"
         const val TYPE_RECENTLY_UPDATED = "recently_updated"
@@ -39,5 +56,10 @@ sealed class DynamicCategoryRule {
         const val TYPE_COMPLETED = "completed"
         const val TYPE_ONGOING = "ongoing"
         const val TYPE_RECENTLY_ADDED = "recently_added"
+        const val TYPE_FROM_SOURCE = "from_source"
+        const val TYPE_USER_DROPPED = "user_dropped"
+        const val TYPE_USER_COMPLETED = "user_completed"
+        const val TYPE_CURRENTLY_READING = "currently_reading"
+        const val TYPE_INACTIVE_FOR_DAYS = "inactive_for_days"
     }
 }
