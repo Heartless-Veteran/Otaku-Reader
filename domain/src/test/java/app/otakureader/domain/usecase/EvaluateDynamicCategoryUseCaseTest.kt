@@ -148,4 +148,30 @@ class EvaluateDynamicCategoryUseCaseTest {
         // manga(3): read exactly 14 days ago, inactive -> matches
         assertEquals(setOf(2L, 3L), result)
     }
+
+    @Test
+    fun `minimum chapters filters by total chapter count`() {
+        val library = listOf(
+            manga(1).copy(totalChapters = 5),
+            manga(2).copy(totalChapters = 50),
+            manga(3).copy(totalChapters = 100),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.MinimumChapters(50)), library, now)
+        assertEquals(setOf(2L, 3L), result)
+    }
+
+    @Test
+    fun `minimum chapters works with other rules`() {
+        val library = listOf(
+            manga(1, status = MangaStatus.COMPLETED).copy(totalChapters = 25),
+            manga(2, status = MangaStatus.COMPLETED).copy(totalChapters = 50),
+            manga(3, status = MangaStatus.ONGOING).copy(totalChapters = 50),
+        )
+        val rules = listOf(
+            DynamicCategoryRule.Completed,
+            DynamicCategoryRule.MinimumChapters(50),
+        )
+        val result = useCase(rules, library, now)
+        assertEquals(setOf(2L), result)
+    }
 }

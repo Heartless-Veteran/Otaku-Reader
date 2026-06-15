@@ -51,5 +51,6 @@ class EvaluateDynamicCategoryUseCase @Inject constructor() {
                 now - lastReadTime >= TimeUnit.DAYS.toMillis(rule.days.toLong())
             }
         }
+        is DynamicCategoryRule.MinimumChapters -> manga.totalChapters >= rule.chapterCount
     }
 }

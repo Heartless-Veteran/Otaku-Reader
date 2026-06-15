@@ -49,6 +49,11 @@ sealed class DynamicCategoryRule {
         init { require(days >= 0) { "days must be non-negative, was $days" } }
     }
 
+    /** Manga with at least [chapterCount] total chapters (for "Binge Ready" scenarios). */
+    data class MinimumChapters(val chapterCount: Int) : DynamicCategoryRule() {
+        init { require(chapterCount >= 0) { "chapterCount must be non-negative, was $chapterCount" } }
+    }
+
     companion object {
         const val TYPE_UNREAD_AT_LEAST = "unread_at_least"
         const val TYPE_RECENTLY_UPDATED = "recently_updated"
@@ -61,5 +66,6 @@ sealed class DynamicCategoryRule {
         const val TYPE_USER_COMPLETED = "user_completed"
         const val TYPE_CURRENTLY_READING = "currently_reading"
         const val TYPE_INACTIVE_FOR_DAYS = "inactive_for_days"
+        const val TYPE_MINIMUM_CHAPTERS = "minimum_chapters"
     }
 }

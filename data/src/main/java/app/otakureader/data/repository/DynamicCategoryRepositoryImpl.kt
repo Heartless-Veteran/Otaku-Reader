@@ -47,6 +47,8 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
         DynamicCategoryRule.TYPE_CURRENTLY_READING -> DynamicCategoryRule.CurrentlyReading
         DynamicCategoryRule.TYPE_INACTIVE_FOR_DAYS ->
             DynamicCategoryRule.InactiveForDays(ruleParamsJson.toIntOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_MINIMUM_CHAPTERS ->
+            DynamicCategoryRule.MinimumChapters(ruleParamsJson.toIntOrNull() ?: return null)
         else -> null
     }
 
@@ -64,6 +66,7 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.UserCompleted -> DynamicCategoryRule.TYPE_USER_COMPLETED
             is DynamicCategoryRule.CurrentlyReading -> DynamicCategoryRule.TYPE_CURRENTLY_READING
             is DynamicCategoryRule.InactiveForDays -> DynamicCategoryRule.TYPE_INACTIVE_FOR_DAYS
+            is DynamicCategoryRule.MinimumChapters -> DynamicCategoryRule.TYPE_MINIMUM_CHAPTERS
         },
         ruleParamsJson = when (this) {
             is DynamicCategoryRule.UnreadAtLeast -> count.toString()
@@ -77,6 +80,7 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.UserCompleted -> ""
             is DynamicCategoryRule.CurrentlyReading -> ""
             is DynamicCategoryRule.InactiveForDays -> days.toString()
+            is DynamicCategoryRule.MinimumChapters -> chapterCount.toString()
         }
     )
 }
