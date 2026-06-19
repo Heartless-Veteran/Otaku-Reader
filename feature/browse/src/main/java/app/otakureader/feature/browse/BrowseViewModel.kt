@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -69,16 +70,17 @@ class BrowseViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
-        // Collect sources and filter by NSFW preference
+        // Collect sources and filter by NSFW preference; also mirror showNsfw into state
+        // so the Browse overflow menu can display the current toggle state.
         viewModelScope.launch {
             combine(
                 getSourcesUseCase(),
                 generalPreferences.showNsfwContent
             ) { sources, showNsfw ->
-                if (showNsfw) sources else sources.filter { !it.isNsfw }
-            }.collect { filteredSources ->
+                Pair(if (showNsfw) sources else sources.filter { !it.isNsfw }, showNsfw)
+            }.collect { (filteredSources, showNsfw) ->
                 _sources.value = filteredSources
-                _state.update { it.copy(sources = filteredSources) }
+                _state.update { it.copy(sources = filteredSources, showNsfw = showNsfw) }
             }
         }
         observeSavedSearches()
@@ -233,6 +235,15 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ConfirmSaveSearch -> confirmSaveNamedSearch()
             is BrowseEvent.ApplyNamedSavedSearch -> applyNamedSavedSearch(event.search)
             is BrowseEvent.DeleteNamedSavedSearch -> deleteNamedSavedSearch(event.id)
+            is BrowseEvent.ToggleNsfwFilter -> {
+                // Read the current preference value, flip it, then persist.
+                // The init-block's combine() will reactively propagate the new value into
+                // state.showNsfw, so we don't need a manual _state.update here.
+                viewModelScope.launch {
+                    val current = generalPreferences.showNsfwContent.first()
+                    generalPreferences.setShowNsfwContent(!current)
+                }
+            }
         }
     }
 
