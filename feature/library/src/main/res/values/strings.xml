@@ -302,4 +302,10 @@
     <string name="library_context_menu_share">Share</string>
     <string name="library_context_menu_migrate">Migrate</string>
     <string name="library_context_menu_select">Select</string>
+    <!-- Bulk delete undo snackbar -->
+    <string name="library_undo_action">Undo</string>
+    <plurals name="library_removed_count_undo">
+        <item quantity="one">Removed %1$d manga from library</item>
+        <item quantity="other">Removed %1$d manga from library</item>
+    </plurals>
 </resources>

@@ -61,7 +61,7 @@ class Downloader @Inject constructor(
                     }
                 }
             }
-            Result.failure(lastError!!)
+            Result.failure(lastError ?: Exception("Download failed"))
         }
 
     private companion object {

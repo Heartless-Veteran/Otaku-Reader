@@ -265,16 +265,17 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_twice_deselectsManga() = runTest {
+    fun onEvent_OnMangaLongClick_twice_opensMenuBothTimes() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
+        viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
 
-        assertFalse(viewModel.state.value.selectedManga.contains(1L))
+        // Second long-click on a different manga replaces the context menu target
+        assertEquals(2L, viewModel.state.value.contextMenuMangaId)
     }
 
     @Test
@@ -284,8 +285,8 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(1L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(2L))
         viewModel.onEvent(LibraryEvent.ClearSelection)
 
         assertTrue(viewModel.state.value.selectedManga.isEmpty())

@@ -143,7 +143,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
-            is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
+            is LibraryEvent.ViewSelectedManga, is LibraryEvent.UndoLibraryDelete -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
             is LibraryEvent.SyncEhFavorites,
@@ -248,6 +248,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsDropped -> markSelectedAsDropped()
             is LibraryEvent.ShareSelectedManga -> shareSelectedManga()
             is LibraryEvent.ViewSelectedManga -> viewSelectedManga()
+            is LibraryEvent.UndoLibraryDelete -> undoLibraryDelete(event.mangaIds)
             else -> Unit
         }
     }
@@ -685,10 +686,15 @@ class LibraryViewModel @Inject constructor(
     private fun removeSelectedFromLibrary() {
         val ids = selection.snapshotAndClear()
         if (ids.isEmpty()) return
-        val count = ids.size
         viewModelScope.launch {
-            ids.forEach { mangaId -> toggleFavoriteManga(mangaId) }
-            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_removed_count, listOf(count)))
+            ids.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
+            _effect.send(LibraryEffect.ShowUndoLibraryDelete(count = ids.size, mangaIds = ids))
+        }
+    }
+
+    private fun undoLibraryDelete(mangaIds: Set<Long>) {
+        viewModelScope.launch {
+            mangaIds.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
         }
     }
 
@@ -966,4 +972,5 @@ class LibraryViewModel @Inject constructor(
         _state.update { it.copy(showAdvancedSearch = false, searchQuery = newQuery) }
         onSearchQueryChange(newQuery)
     }
+
 }

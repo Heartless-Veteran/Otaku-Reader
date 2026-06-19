@@ -29,6 +29,7 @@ sealed interface HistoryEvent : UiEvent {
     /** Cancel the pending swipe-delete; carries chapterId so the ViewModel knows which timer to cancel. */
     data class UndoRemoveFromHistory(val chapterId: Long) : HistoryEvent
     data object RemoveSelectedFromHistory : HistoryEvent
+    data class UndoBatchRemoveFromHistory(val chapterIds: Set<Long>) : HistoryEvent
     data object MarkSelectedAsRead : HistoryEvent
     /** Apply an explicit date range filter. Pass null for either bound to leave it open-ended. */
     data class SetDateFilter(val start: Long?, val end: Long?) : HistoryEvent
@@ -47,4 +48,5 @@ sealed interface HistoryEffect : UiEffect {
      * The ViewModel auto-commits after [HistoryViewModel.UNDO_TIMEOUT_MS] regardless of UI state.
      */
     data class ShowUndoSnackbar(val messageRes: Int, val chapterId: Long) : HistoryEffect
+    data class ShowUndoBatchSnackbar(val messageRes: Int, val count: Int, val chapterIds: Set<Long>) : HistoryEffect
 }

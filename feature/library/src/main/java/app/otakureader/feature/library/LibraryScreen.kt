@@ -39,8 +39,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -142,6 +144,19 @@ fun LibraryScreen(
                         )
                     }.onFailure {
                         scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_share_error)) }
+                    }
+                }
+                is LibraryEffect.ShowUndoLibraryDelete -> scope.launch {
+                    val msg = context.resources.getQuantityString(
+                        R.plurals.library_removed_count_undo, effect.count, effect.count
+                    )
+                    val result = snackbarHostState.showSnackbar(
+                        message = msg,
+                        actionLabel = context.getString(R.string.library_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(LibraryEvent.UndoLibraryDelete(effect.mangaIds))
                     }
                 }
             }

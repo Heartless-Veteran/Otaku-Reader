@@ -77,6 +77,8 @@ sealed interface UpdatesEvent : UiEvent {
     data object StartLibraryUpdate : UpdatesEvent
     /** Revert a swipe-to-mark-read action. */
     data class UnmarkChapterAsRead(val chapterId: Long) : UpdatesEvent
+    /** Revert a bulk mark-as-read action. */
+    data class UnmarkSelectedAsRead(val chapterIds: Set<Long>) : UpdatesEvent
     /** Apply a date range filter. Pass null for either bound to leave it open-ended. */
     data class SetDateFilter(val start: Long?, val end: Long?) : UpdatesEvent
     /** Remove the active date range filter and show all update entries. */
@@ -88,4 +90,6 @@ sealed interface UpdatesEffect : UiEffect {
     data class ShowSnackbar(val message: String) : UpdatesEffect
     /** Snackbar with an Undo action after swipe-to-mark-read. Awaited inline by the screen. */
     data class ShowUndoSnackbar(val message: String, val chapterId: Long) : UpdatesEffect
+    /** Snackbar with an Undo action after bulk mark-as-read. */
+    data class ShowUndoBulkReadSnackbar(val message: String, val chapterIds: Set<Long>) : UpdatesEffect
 }

@@ -839,16 +839,9 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-    @Suppress("UnusedParameter")
     private fun setDeleteAfterReadOverride(mode: DeleteAfterReadMode) {
-        // Delete-after-reading feature has been removed.
-        // Provide explicit feedback so the user is aware this action is no longer supported.
         viewModelScope.launch {
-            _effect.send(
-                DetailsContract.Effect.ShowSnackbar(
-                    "Delete-after-read is no longer supported."
-                )
-            )
+            downloadPreferences.setOverride(mangaId, mode)
         }
     }
 

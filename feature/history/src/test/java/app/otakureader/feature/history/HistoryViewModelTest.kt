@@ -369,8 +369,8 @@ class HistoryViewModelTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             val effect = awaitItem()
-            assertTrue(effect is HistoryEffect.ShowSnackbar)
-            assertTrue((effect as HistoryEffect.ShowSnackbar).formatArgs.contains(2))
+            assertTrue(effect is HistoryEffect.ShowUndoBatchSnackbar)
+            assertEquals(2, (effect as HistoryEffect.ShowUndoBatchSnackbar).count)
         }
 
         assertTrue(viewModel.state.value.selectedItems.isEmpty())
