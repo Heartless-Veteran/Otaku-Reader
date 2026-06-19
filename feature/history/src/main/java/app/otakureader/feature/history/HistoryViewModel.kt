@@ -49,6 +49,7 @@ class HistoryViewModel @Inject constructor(
     private var pendingDeleteJobChapterId: Long? = null
     /** Batch delete job — separate from the single-swipe timer. */
     private var pendingBatchDeleteJob: Job? = null
+    private var pendingBatchDeleteIds: Set<Long>? = null
 
     /** Active date filter: (start, end) epoch-ms. Null means unset (open-ended). */
     private val dateFilter = MutableStateFlow(Pair<Long?, Long?>(null, null))
@@ -212,7 +213,20 @@ class HistoryViewModel @Inject constructor(
         val selectedIds = _state.value.selectedItems
         if (selectedIds.isEmpty()) return
         clearSelection()
-        pendingBatchDeleteJob?.cancel()
+
+        // Commit any previous pending batch immediately before starting a new one
+        val previousIds = pendingBatchDeleteIds
+        if (previousIds != null) {
+            pendingBatchDeleteJob?.cancel()
+            viewModelScope.launch {
+                previousIds.forEach { chapterId ->
+                    try { chapterRepository.removeFromHistory(chapterId) } catch (_: Exception) { }
+                }
+                pendingDeleteIds.update { it - previousIds }
+            }
+        }
+
+        pendingBatchDeleteIds = selectedIds
         pendingDeleteIds.update { it + selectedIds }
         pendingBatchDeleteJob = viewModelScope.launch {
             _effect.send(HistoryEffect.ShowUndoBatchSnackbar(
@@ -225,14 +239,21 @@ class HistoryViewModel @Inject constructor(
                 try { chapterRepository.removeFromHistory(chapterId) }
                 catch (e: CancellationException) { throw e }
                 catch (_: Exception) { }
-                pendingDeleteIds.update { it - chapterId }
+            }
+            pendingDeleteIds.update { it - selectedIds }
+            if (pendingBatchDeleteIds == selectedIds) {
+                pendingBatchDeleteIds = null
+                pendingBatchDeleteJob = null
             }
         }
     }
 
     private fun undoBatchRemoveFromHistory(chapterIds: Set<Long>) {
+        // Only undo the active batch — ignore stale snackbar actions
+        if (pendingBatchDeleteIds != chapterIds) return
         pendingBatchDeleteJob?.cancel()
         pendingBatchDeleteJob = null
+        pendingBatchDeleteIds = null
         pendingDeleteIds.update { it - chapterIds }
     }
 

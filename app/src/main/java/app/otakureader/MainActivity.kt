@@ -68,6 +68,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import app.otakureader.domain.repository.DownloadRepository
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 private const val CRASH_REPORT_CLIP_LABEL = "crash_report"
@@ -93,7 +94,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var navOrderPreferences: NavOrderPreferences
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var trackerSyncScheduler: TrackerSyncScheduler
-    @Inject lateinit var downloadRepository: app.otakureader.domain.repository.DownloadRepository
+    @Inject lateinit var downloadRepository: DownloadRepository
 
     // Hold deep link result across recompositions for the current Activity instance
     private var pendingDeepLinkResult by mutableStateOf<DeepLinkResult?>(null)
@@ -340,7 +341,7 @@ fun OtakuReaderApp(
     generalPreferences: GeneralPreferences,
     libraryPreferences: LibraryPreferences,
     navOrderPreferences: NavOrderPreferences,
-    downloadRepository: app.otakureader.domain.repository.DownloadRepository,
+    downloadRepository: DownloadRepository,
     onboardingCompleted: Boolean,
     deepLinkResult: DeepLinkResult? = null,
     onDeepLinkConsumed: () -> Unit = {}
@@ -352,10 +353,13 @@ fun OtakuReaderApp(
     val newUpdatesCount by libraryPreferences.newUpdatesCount
         .collectAsStateWithLifecycle(initialValue = 0)
 
-    // Observe active download count for Library nav badge
-    val activeDownloadCount by downloadRepository.observeDownloads()
-        .map { downloads -> downloads.count { it.isActive } }
-        .collectAsStateWithLifecycle(initialValue = 0)
+    // Observe active download count for Library nav badge; remembered so the flow
+    // instance is stable across recompositions and collection is not restarted.
+    val activeDownloadCount by remember(downloadRepository) {
+        downloadRepository.observeDownloads()
+            .map { downloads -> downloads.count { it.isActive } }
+            .distinctUntilChanged()
+    }.collectAsStateWithLifecycle(initialValue = 0)
 
     Scaffold(
         bottomBar = {

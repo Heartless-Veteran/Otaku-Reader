@@ -188,7 +188,7 @@ class UpdatesViewModel @Inject constructor(
         val count = selected.size
         viewModelScope.launch {
             try {
-                chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
+                chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = UNREAD_LAST_PAGE_READ)
                 _state.update { it.copy(selectedItems = it.selectedItems - selected) }
                 _effect.send(
                     UpdatesEffect.ShowUndoBulkReadSnackbar(
@@ -207,7 +207,7 @@ class UpdatesViewModel @Inject constructor(
     private fun unmarkSelectedAsRead(chapterIds: Set<Long>) {
         viewModelScope.launch {
             try {
-                chapterRepository.updateChapterProgress(chapterIds, read = false, lastPageRead = 0)
+                chapterRepository.updateChapterProgress(chapterIds, read = false, lastPageRead = UNREAD_LAST_PAGE_READ)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -219,7 +219,7 @@ class UpdatesViewModel @Inject constructor(
     private fun markSingleChapterAsRead(chapterId: Long) {
         viewModelScope.launch {
             try {
-                chapterRepository.updateChapterProgress(setOf(chapterId), read = true, lastPageRead = 0)
+                chapterRepository.updateChapterProgress(setOf(chapterId), read = true, lastPageRead = UNREAD_LAST_PAGE_READ)
                 _effect.send(
                     UpdatesEffect.ShowUndoSnackbar(
                         message = context.getString(R.string.updates_marked_as_read_single),
@@ -237,7 +237,7 @@ class UpdatesViewModel @Inject constructor(
     private fun unmarkChapterAsRead(chapterId: Long) {
         viewModelScope.launch {
             try {
-                chapterRepository.updateChapterProgress(setOf(chapterId), read = false, lastPageRead = 0)
+                chapterRepository.updateChapterProgress(setOf(chapterId), read = false, lastPageRead = UNREAD_LAST_PAGE_READ)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -325,5 +325,6 @@ class UpdatesViewModel @Inject constructor(
 
     companion object {
         const val REFRESH_INDICATOR_DURATION_MS = 1_500L
+        private const val UNREAD_LAST_PAGE_READ = 0
     }
 }
