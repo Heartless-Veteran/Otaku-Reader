@@ -283,6 +283,8 @@
     <string name="library_eh_sync_nothing_new">Library is already up to date</string>
     <string name="library_eh_sync_not_configured">No E-Hentai session found. Sign in via Browse first.</string>
     <string name="library_eh_sync_failed">EH sync failed. Check your session and try again.</string>
+    <!-- Bulk delete feedback (L8) -->
+    <string name="library_removed_count">Removed %1$d manga from library</string>
     <!-- Long-press context menu (L2/L3) -->
     <string name="library_context_menu_open">Open</string>
     <string name="library_context_menu_resume">Resume reading</string>

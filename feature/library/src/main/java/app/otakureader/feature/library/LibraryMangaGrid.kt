@@ -119,9 +119,17 @@ internal fun MangaGrid(
     // Taps open the detail pane only in two-pane mode with no active selection; otherwise route
     // through OnMangaClick so taps toggle selection while selection mode is active (and navigate
     // in single-pane). Without the selection guard, two-pane taps could never toggle items.
-    val onMangaTap: (LibraryMangaItem) -> Unit = { manga ->
-        if (onMangaSelect != null && state.selectedManga.isEmpty()) onMangaSelect(manga)
-        else onEvent(LibraryEvent.OnMangaClick(manga.id))
+    val onMangaTap: (LibraryMangaItem) -> Unit = remember(haptic, onMangaSelect, onEvent, state.selectedManga.isEmpty()) {
+        { manga ->
+            if (onMangaSelect != null && state.selectedManga.isEmpty()) {
+                onMangaSelect(manga)
+            } else {
+                if (state.selectedManga.isNotEmpty()) {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+                onEvent(LibraryEvent.OnMangaClick(manga.id))
+            }
+        }
     }
 
     val displayedManga by remember(state.mangaList, selectedContentFilter) {

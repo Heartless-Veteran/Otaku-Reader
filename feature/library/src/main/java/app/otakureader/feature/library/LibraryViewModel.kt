@@ -150,6 +150,15 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
             is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
             is LibraryEvent.ApplySavedView, is LibraryEvent.DeleteSavedView -> handleSavedViewEvent(event)
+            is LibraryEvent.ShowContextMenu, is LibraryEvent.DismissContextMenu,
+            is LibraryEvent.ResumeFromContextMenu, is LibraryEvent.MarkMangaAsReadFromMenu,
+            is LibraryEvent.ShareMangaFromMenu, is LibraryEvent.MigrateMangaFromMenu,
+            is LibraryEvent.SelectMangaFromMenu -> handleContextMenuEvent(event)
+        }
+    }
+
+    private fun handleContextMenuEvent(event: LibraryEvent) {
+        when (event) {
             is LibraryEvent.ShowContextMenu ->
                 _state.update { it.copy(contextMenuMangaId = event.mangaId) }
             is LibraryEvent.DismissContextMenu ->
@@ -162,6 +171,7 @@ class LibraryViewModel @Inject constructor(
                 selection.toggle(event.mangaId)
                 _state.update { it.copy(contextMenuMangaId = null) }
             }
+            else -> Unit
         }
     }
 
@@ -674,8 +684,10 @@ class LibraryViewModel @Inject constructor(
     private fun removeSelectedFromLibrary() {
         val ids = selection.snapshotAndClear()
         if (ids.isEmpty()) return
+        val count = ids.size
         viewModelScope.launch {
             ids.forEach { mangaId -> toggleFavoriteManga(mangaId) }
+            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_removed_count, listOf(count)))
         }
     }
 

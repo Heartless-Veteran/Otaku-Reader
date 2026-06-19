@@ -60,7 +60,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -102,6 +104,7 @@ fun LibraryScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
     var showMenu by remember { mutableStateOf(false) }
     var pendingBulkAction: LibraryEvent? by remember { mutableStateOf(null) }
 
@@ -165,6 +168,7 @@ fun LibraryScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     viewModel.onEvent(action)
                     pendingBulkAction = null
                 }) {
