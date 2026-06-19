@@ -79,6 +79,7 @@ fun DualPageReader(
     currentPage: Int,
     onPageChange: (Int) -> Unit,
     onTap: (androidx.compose.ui.geometry.Offset) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     isRtl: Boolean = false,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
@@ -145,6 +146,7 @@ fun DualPageReader(
                         imageQuality = imageQuality,
                         dataSaverEnabled = dataSaverEnabled,
                         onTap = onTap,
+                        onLongPress = onLongPress,
                         onImageSizeKnown = { w, h ->
                             if (w > 0 && h > 0) {
                                 detectedSpreads[page.index] = w.toFloat() / h > SPREAD_ASPECT_RATIO_THRESHOLD
@@ -176,6 +178,7 @@ fun DualPageReader(
                                 imageQuality = imageQuality,
                                 dataSaverEnabled = dataSaverEnabled,
                                 onTap = onTap,
+                                onLongPress = onLongPress,
                                 onImageSizeKnown = { w, h ->
                                     if (w > 0 && h > 0) {
                                         detectedSpreads[leftPage.index] = w.toFloat() / h > SPREAD_ASPECT_RATIO_THRESHOLD
@@ -205,6 +208,7 @@ fun DualPageReader(
                                 imageQuality = imageQuality,
                                 dataSaverEnabled = dataSaverEnabled,
                                 onTap = onTap,
+                                onLongPress = onLongPress,
                                 onImageSizeKnown = { w, h ->
                                     if (w > 0 && h > 0) {
                                         detectedSpreads[rightPage.index] = w.toFloat() / h > SPREAD_ASPECT_RATIO_THRESHOLD

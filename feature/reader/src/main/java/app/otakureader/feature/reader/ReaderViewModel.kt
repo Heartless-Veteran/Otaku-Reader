@@ -1,6 +1,10 @@
 package app.otakureader.feature.reader
 
+import android.content.ContentValues
+import android.content.Context
+import android.os.Build
 import android.os.SystemClock
+import android.provider.MediaStore
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -32,7 +36,13 @@ import app.otakureader.feature.reader.viewmodel.delegate.ReaderDownloadAheadDele
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderHistoryDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderPrefetchDelegate
 import app.otakureader.feature.reader.viewmodel.delegate.ReaderSettingsLoaderDelegate
+import app.otakureader.feature.reader.R
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.toBitmap
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -79,6 +89,7 @@ import javax.inject.Inject
 @HiltViewModel
 @Suppress("LargeClass")
 class ReaderViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
     private val pageBookmarkRepository: PageBookmarkRepository,
@@ -559,6 +570,14 @@ class ReaderViewModel @Inject constructor(
                 readerPreferences.applyPreset(event.preset)
                 loadSettings()
             }
+            is ReaderEvent.OnPageLongPress -> _state.update {
+                it.copy(isPageContextMenuVisible = true, contextMenuPageUrl = event.pageUrl)
+            }
+            ReaderEvent.DismissPageContextMenu -> _state.update {
+                it.copy(isPageContextMenuVisible = false, contextMenuPageUrl = null)
+            }
+            ReaderEvent.SavePageImage -> savePageImage()
+            ReaderEvent.SetPageAsCover -> setPageAsCover()
         }
     }
 
@@ -686,8 +705,80 @@ class ReaderViewModel @Inject constructor(
      * Multiple rapid page changes will only trigger one save after the delay period.
      */
     private fun sharePage() {
+        val pageUrl = _state.value.contextMenuPageUrl ?: return
+        _state.update { it.copy(isPageContextMenuVisible = false, contextMenuPageUrl = null) }
         viewModelScope.launch {
-            _effect.send(ReaderEffect.ShowSnackbar("Share page coming soon"))
+            _effect.send(ReaderEffect.SharePage(pageUrl))
+        }
+    }
+
+    private fun savePageImage() {
+        val pageUrl = _state.value.contextMenuPageUrl ?: return
+        _state.update { it.copy(isPageContextMenuVisible = false, contextMenuPageUrl = null) }
+        viewModelScope.launch {
+            try {
+                val result = context.imageLoader.execute(
+                    ImageRequest.Builder(context).data(pageUrl).build()
+                )
+                val bitmap = (result as? SuccessResult)?.image?.toBitmap() ?: run {
+                    _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_save_failed))
+                    return@launch
+                }
+                val fileName = "otaku_reader_${System.currentTimeMillis()}.jpg"
+                val values = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/OtakuReader")
+                        put(MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                }
+                val resolver = context.contentResolver
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                if (uri == null) {
+                    _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_save_failed))
+                    return@launch
+                }
+                resolver.openOutputStream(uri)?.use { out ->
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, out)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    values.clear()
+                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                    resolver.update(uri, values, null, null)
+                }
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_saved))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_save_failed))
+            }
+        }
+    }
+
+    private fun setPageAsCover() {
+        val pageUrl = _state.value.contextMenuPageUrl ?: return
+        _state.update { it.copy(isPageContextMenuVisible = false, contextMenuPageUrl = null) }
+        viewModelScope.launch {
+            try {
+                val result = context.imageLoader.execute(
+                    ImageRequest.Builder(context).data(pageUrl).build()
+                )
+                val bitmap = (result as? SuccessResult)?.image?.toBitmap() ?: run {
+                    _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_cover_failed))
+                    return@launch
+                }
+                val tempFile = java.io.File(context.cacheDir, "cover_${System.currentTimeMillis()}.jpg")
+                tempFile.outputStream().use { out ->
+                    bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, out)
+                }
+                mangaRepository.setCustomCover(mangaId, android.net.Uri.fromFile(tempFile).toString())
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_cover_set))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_page_cover_failed))
+            }
         }
     }
 

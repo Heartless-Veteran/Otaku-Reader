@@ -183,4 +183,14 @@
     <string name="reader_page_load_failed">Page failed to load</string>
     <string name="reader_chapter_bookmarked">Bookmarked</string>
     <string name="reader_chapter_read">Read</string>
+
+    <!-- Page long-press context menu -->
+    <string name="reader_page_menu_save_image">Save image</string>
+    <string name="reader_page_menu_set_as_cover">Set as cover</string>
+    <string name="reader_page_menu_share">Share page</string>
+    <string name="reader_page_menu_title">Page options</string>
+    <string name="reader_page_saved">Image saved to gallery</string>
+    <string name="reader_page_save_failed">Failed to save image</string>
+    <string name="reader_page_cover_set">Cover updated</string>
+    <string name="reader_page_cover_failed">Failed to set cover</string>
 </resources>

@@ -189,6 +189,10 @@ data class ReaderState(
     // --- Actions ---
     /** Show actions menu on long tap */
     val showActionsOnLongTap: Boolean = true,
+    /** Whether the page long-press context menu (save/share/cover) is visible. */
+    val isPageContextMenuVisible: Boolean = false,
+    /** URL of the page that triggered the long-press context menu. */
+    val contextMenuPageUrl: String? = null,
     /** Save pages to separate folders by manga title */
     val savePagesToSeparateFolders: Boolean = false,
     /** Show thumbnail strip at bottom of reader */
@@ -608,6 +612,18 @@ sealed interface ReaderEvent {
     /** Apply a saved reader preset (mode, scale, background colour, etc.). */
     data class ApplyPreset(val preset: app.otakureader.core.preferences.ReaderPreset) : ActionEvent
 
+    /** User long-pressed a page image; opens the context menu for that page. */
+    data class OnPageLongPress(val pageUrl: String) : ActionEvent
+
+    /** Dismiss the page long-press context menu without taking any action. */
+    data object DismissPageContextMenu : ActionEvent
+
+    /** Save the context-menu page image to the device gallery. */
+    data object SavePageImage : ActionEvent
+
+    /** Set the context-menu page image as the manga cover. */
+    data object SetPageAsCover : ActionEvent
+
     // ──────────────────────────────────────────────────────────────────────────
     // Constants
     // ──────────────────────────────────────────────────────────────────────────
@@ -682,4 +698,6 @@ sealed interface ReaderEffect {
         @androidx.annotation.StringRes val messageResId: Int? = null
     ) : ReaderEffect
     data class NavigateToChapter(val chapterId: Long) : ReaderEffect
+    /** Trigger the system share sheet for a page image URL. */
+    data class SharePage(val pageUrl: String) : ReaderEffect
 }

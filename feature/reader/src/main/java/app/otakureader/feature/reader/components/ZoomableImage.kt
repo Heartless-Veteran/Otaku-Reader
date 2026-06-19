@@ -81,6 +81,7 @@ fun ZoomableImage(
     dataSaverEnabled: Boolean = false,
     onDoubleTap: ((Offset) -> Unit)? = null,
     onTap: ((Offset) -> Unit)? = null,
+    onLongPress: ((String) -> Unit)? = null,
     onZoomChange: ((Float) -> Unit)? = null,
     onImageSizeKnown: ((width: Int, height: Int) -> Unit)? = null,
     decoderFactory: Decoder.Factory? = null,
@@ -148,6 +149,10 @@ fun ZoomableImage(
             }
             .pointerInput(imageUrl, minScale, maxScale, doubleTapScale) {
                 detectTapGestures(
+                    onLongPress = { _ ->
+                        val url = imageUrl
+                        if (url != null) onLongPress?.invoke(url)
+                    },
                     onDoubleTap = { offset ->
                         scope.launch {
                             val targetScale = if (zoomState.scale >= doubleTapScale * 0.9f) {

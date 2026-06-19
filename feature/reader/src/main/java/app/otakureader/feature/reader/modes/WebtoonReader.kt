@@ -42,6 +42,7 @@ fun WebtoonReader(
     currentPage: Int,
     onPageChange: (Int) -> Unit,
     onTap: (androidx.compose.ui.geometry.Offset) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
@@ -143,6 +144,7 @@ fun WebtoonReader(
                     imageQuality = imageQuality,
                     dataSaverEnabled = dataSaverEnabled,
                     onTap = onTap,
+                    onLongPress = onLongPress,
                     decoderFactory = webtoonDecoderFactory,
                     minScale = if (disableZoomOut) 1f else 0.5f,
                     modifier = Modifier.fillMaxWidth()
