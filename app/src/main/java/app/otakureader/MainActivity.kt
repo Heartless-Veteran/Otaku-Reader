@@ -110,9 +110,13 @@ class MainActivity : FragmentActivity() {
     // Flips to false once the minimum splash time has elapsed; gates the keep-on-screen condition.
     private var keepSplashOnScreen = true
 
+    // True only on a genuine cold start (null savedInstanceState); gates the splash art overlay.
+    private var isColdStart = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // installSplashScreen() must run before super.onCreate(). Capture the handle so we can
         // hold the splash briefly; wrapped because a splash failure must never abort startup.
+        isColdStart = savedInstanceState == null
         val splashScreen = runCatching { installSplashScreen() }.getOrNull()
         splashScreen?.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
@@ -302,7 +306,7 @@ class MainActivity : FragmentActivity() {
                                 )
                             }
 
-                            SplashArtOverlay()
+                            SplashArtOverlay(show = isColdStart)
                         }
                     }
                 }
@@ -480,7 +484,8 @@ private fun CrashReportDialog(
  * Add more drawables to [SPLASH_ARTS] as new artwork arrives.
  */
 @Composable
-private fun SplashArtOverlay() {
+private fun SplashArtOverlay(show: Boolean) {
+    if (!show) return
     var visible by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         delay(SPLASH_ART_DISPLAY_MS)
