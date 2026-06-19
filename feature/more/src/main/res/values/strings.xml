@@ -76,6 +76,12 @@
     <string name="more_share_library_encode_error">Failed to encode library: %1$s</string>
     <string name="more_share_library_qr_error">Failed to generate QR code</string>
 
+    <!-- Stats summary widget -->
+    <string name="more_stats_streak">%1$d day streak</string>
+    <string name="more_stats_chapters_today">%1$d / %2$d chapters today</string>
+    <string name="more_stats_no_goal">%1$d chapters read today</string>
+    <string name="more_stats_card_cd">Reading statistics summary, tap to view details</string>
+
     <!-- Page bookmarks -->
     <string name="more_bookmarks">Bookmarks</string>
     <string name="more_bookmarks_description">Pages you\'ve bookmarked while reading</string>
