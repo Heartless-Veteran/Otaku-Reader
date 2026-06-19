@@ -281,7 +281,11 @@ internal fun MangaHeader(
                             onClick = { isOverriddenManhwa = !isOverriddenManhwa },
                             label = {
                                 Text(
-                                    if (contentType == ContentType.MANGA) "Manga" else "Manhwa",
+                                    if (contentType == ContentType.MANGA) {
+                                        stringResource(R.string.details_content_type_manga)
+                                    } else {
+                                        stringResource(R.string.details_content_type_manhwa)
+                                    },
                                     style = MaterialTheme.typography.labelSmall
                                 )
                             }
