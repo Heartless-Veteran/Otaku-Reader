@@ -264,7 +264,6 @@ class ExtensionInstaller(
                 tempFile = null
 
                 val hashToTrust = resolveAutoTrustHash(loadResult, trustedHash, repoMetadata)
-                if (hashToTrust != null) loader.trustExtension(hashToTrust)
 
                 _installationState.value = InstallationState.Installing
                 // Merge repo-index metadata the APK loader can't know about.
@@ -281,6 +280,9 @@ class ExtensionInstaller(
                 // refresh hasn't synced).
                 val result = repository.installExtension(finalExtension, destFile.absolutePath)
                 result.onSuccess { ext ->
+                    // Persist trust only after the DB write succeeds — trusting before means a
+                    // failed install leaves the signature permanently trusted in the store.
+                    if (hashToTrust != null) loader.trustExtension(hashToTrust)
                     _installationState.value = InstallationState.Success(ext)
                     ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
                 }.onFailure { error ->
