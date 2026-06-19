@@ -39,7 +39,11 @@ interface MangaDao {
     
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(manga: List<MangaEntity>)
-    
+
+    /** Insert manga that don't already exist (by primary key or unique sourceId+url). Skips conflicts. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIfNotExists(manga: List<MangaEntity>): List<Long>
+
     @Update
     suspend fun update(manga: MangaEntity)
     

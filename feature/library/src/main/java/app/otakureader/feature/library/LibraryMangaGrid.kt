@@ -72,7 +72,9 @@ import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
+import java.util.Calendar
 
 /** Layout constants for the compact list-mode row. */
 private object LibraryListRowDefaults {
@@ -144,6 +146,13 @@ internal fun MangaGrid(
 
     // Header items shared by both grid variants
     val headerContent: @Composable () -> Unit = {
+        // Greeting header
+        LibraryGreetingHeader(
+            mangaCount = state.mangaList.size,
+            unreadCount = state.mangaList.sumOf { it.unreadCount },
+            userName = state.displayName,
+        )
+
         // Daily reading goal banner
         if (state.readingGoal.dailyGoal > 0) {
             DailyGoalBanner(readingGoal = state.readingGoal)
@@ -167,18 +176,39 @@ internal fun MangaGrid(
             )
         }
 
+        // "Categories" section header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.library_section_categories),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { onEvent(LibraryEvent.ToggleBottomSheet) }) {
+                Text(
+                    text = stringResource(R.string.library_section_categories_manage),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+        }
+
         CategoryFilterChips(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
             onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 4.dp)
         )
 
         CategoryTabRow(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
             onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 4.dp)
         )
 
         // Reading list filter chips
@@ -187,7 +217,7 @@ internal fun MangaGrid(
                 readingLists = state.readingLists,
                 selectedListId = state.filterReadingListId,
                 onListSelected = { onEvent(LibraryEvent.SetFilterReadingList(it)) },
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 4.dp)
             )
         }
 
@@ -223,6 +253,21 @@ internal fun MangaGrid(
                     text = { Text(title) }
                 )
             }
+        }
+
+        // "All Titles" section header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.library_section_all_titles),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 
@@ -586,6 +631,43 @@ internal fun CategoryTabRow(
                 }
             )
         }
+    }
+}
+
+@Composable
+internal fun LibraryGreetingHeader(
+    mangaCount: Int,
+    unreadCount: Int,
+    userName: String,
+    modifier: Modifier = Modifier,
+) {
+    val greeting = remember {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        when {
+            hour < 12 -> R.string.library_greeting_morning
+            hour < 18 -> R.string.library_greeting_afternoon
+            else -> R.string.library_greeting_evening
+        }
+    }
+    val greetingText = if (userName.isBlank()) {
+        "${stringResource(greeting)} 👋"
+    } else {
+        "${stringResource(greeting)}, $userName 👋"
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        Text(
+            text = greetingText,
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Text(
+            text = stringResource(R.string.library_greeting_stats, mangaCount, unreadCount),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

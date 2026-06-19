@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.Button
@@ -44,6 +45,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +70,7 @@ import kotlinx.coroutines.launch
 /** Type of each onboarding page — drives which permission UI (if any) is shown. */
 enum class OnboardingPageType {
     WELCOME,
+    NAME,           // Display name entry
     NOTIFICATIONS,  // Android 13+ only
     BATTERY,        // Battery optimisation exclusion
     APPEARANCE,     // Theme selection (applies live)
@@ -104,6 +107,7 @@ fun OnboardingScreen(
 ) {
     val context = LocalContext.current
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val displayName by viewModel.displayName.collectAsStateWithLifecycle()
 
     // Build page list dynamically; notifications page is Android 13+ only
     val pages = remember {
@@ -114,6 +118,14 @@ fun OnboardingScreen(
                     titleRes = R.string.onboarding_title_welcome,
                     descriptionRes = R.string.onboarding_desc_welcome,
                     icon = Icons.Default.MenuBook,
+                ),
+            )
+            add(
+                OnboardingPage(
+                    type = OnboardingPageType.NAME,
+                    titleRes = R.string.onboarding_title_name,
+                    descriptionRes = R.string.onboarding_desc_name,
+                    icon = Icons.Default.Person,
                 ),
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -213,7 +225,9 @@ fun OnboardingScreen(
                 notificationsGranted = notificationsGranted,
                 batteryOptimizationIgnored = batteryOptimizationIgnored,
                 themeMode = themeMode,
+                displayName = displayName,
                 onThemeModeSelected = viewModel::setThemeMode,
+                onDisplayNameChange = viewModel::setDisplayName,
                 onRequestNotifications = {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -241,7 +255,9 @@ private fun OnboardingPageContent(
     notificationsGranted: Boolean,
     batteryOptimizationIgnored: Boolean,
     themeMode: Int,
+    displayName: String,
     onThemeModeSelected: (Int) -> Unit,
+    onDisplayNameChange: (String) -> Unit,
     onRequestNotifications: () -> Unit,
     onRequestBatteryOptimization: () -> Unit,
     modifier: Modifier = Modifier,
@@ -304,6 +320,18 @@ private fun OnboardingPageContent(
         )
 
         // ── Per-page action buttons ───────────────────────────────────────────
+
+        if (page.type == OnboardingPageType.NAME) {
+            Spacer(modifier = Modifier.height(32.dp))
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = onDisplayNameChange,
+                label = { Text(stringResource(R.string.onboarding_name_label)) },
+                placeholder = { Text(stringResource(R.string.onboarding_name_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         if (page.type == OnboardingPageType.NOTIFICATIONS) {
             Spacer(modifier = Modifier.height(32.dp))

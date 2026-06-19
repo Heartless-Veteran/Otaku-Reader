@@ -145,7 +145,7 @@
     <string name="details_ai_summary_generating">Generating summary…</string>
 
     <!-- Source suggestions -->
-    <string name="details_source_suggestions_title">More from Source</string>
+    <string name="details_source_suggestions_title">More from Author</string>
     <string name="details_load_suggestions">Load suggestions</string>
     
     <!-- Panorama cover -->
@@ -209,4 +209,18 @@
     <!-- Content-type chip in manga header (L13) -->
     <string name="details_content_type_manga">Manga</string>
     <string name="details_content_type_manhwa">Manhwa</string>
+
+    <!-- Tab layout (#1112 UI overhaul) -->
+    <string name="details_tab_info">Info</string>
+    <string name="details_tab_chapters">Chapters</string>
+    <string name="details_tab_tracker">Tracker</string>
+    <string name="details_tab_related">Related</string>
+    <string name="details_tab_placeholder">Coming soon</string>
+    <!-- Stats row -->
+    <string name="details_stats_chapters">Chapters</string>
+    <string name="details_stats_unread">Unread</string>
+    <string name="details_stats_progress">Progress</string>
+    <!-- Inline continue reading row -->
+    <string name="details_continue_with">Continue · %1$s</string>
+    <string name="details_inline_download">Download next</string>
 </resources>
