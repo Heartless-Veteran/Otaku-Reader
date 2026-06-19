@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -27,10 +30,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.foundation.background
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -99,6 +106,8 @@ fun HistoryScreen(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var showClearConfirm by remember { mutableStateOf(false) }
+    var showDateRangePicker by remember { mutableStateOf(false) }
+    val dateRangePickerState = rememberDateRangePickerState()
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -161,6 +170,9 @@ fun HistoryScreen(
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.history_delete_selected))
                         }
                     } else {
+                        IconButton(onClick = { showDateRangePicker = true }) {
+                            Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.history_filter_calendar))
+                        }
                         if (state.history.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onEvent(HistoryEvent.SelectAll) }) {
                                 Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.history_select_all))
@@ -192,6 +204,56 @@ fun HistoryScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
+
+            // Date filter chips (H1 + H4)
+            val hasDateFilter = state.dateFilterStart != null || state.dateFilterEnd != null
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 4.dp)
+            ) {
+                val now = System.currentTimeMillis()
+                // Quick chip: last 7 days
+                FilterChip(
+                    selected = state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 && state.dateFilterEnd == null,
+                    onClick = {
+                        if (state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 && state.dateFilterEnd == null) {
+                            viewModel.onEvent(HistoryEvent.ClearDateFilter)
+                        } else {
+                            viewModel.onEvent(HistoryEvent.SetDateFilter(now - 7L * 24 * 60 * 60 * 1000, null))
+                        }
+                    },
+                    label = { Text(stringResource(R.string.history_filter_last_7_days)) },
+                )
+                // Quick chip: last 30 days
+                FilterChip(
+                    selected = state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 && state.dateFilterEnd == null,
+                    onClick = {
+                        if (state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 && state.dateFilterEnd == null) {
+                            viewModel.onEvent(HistoryEvent.ClearDateFilter)
+                        } else {
+                            viewModel.onEvent(HistoryEvent.SetDateFilter(now - 30L * 24 * 60 * 60 * 1000, null))
+                        }
+                    },
+                    label = { Text(stringResource(R.string.history_filter_last_30_days)) },
+                )
+                // Active custom date range chip (shown when a range picker result is set)
+                val filterStart = state.dateFilterStart
+                val filterEnd = state.dateFilterEnd
+                if (hasDateFilter && filterStart != null && filterEnd != null) {
+                    val fmt = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
+                    val startLabel = Instant.ofEpochMilli(filterStart).atZone(ZoneId.systemDefault()).toLocalDate().format(fmt)
+                    val endLabel = Instant.ofEpochMilli(filterEnd).atZone(ZoneId.systemDefault()).toLocalDate().format(fmt)
+                    FilterChip(
+                        selected = true,
+                        onClick = { viewModel.onEvent(HistoryEvent.ClearDateFilter) },
+                        label = { Text(stringResource(R.string.history_filter_active, startLabel, endLabel)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.history_filter_clear), modifier = Modifier.size(16.dp)) },
+                    )
+                }
+            }
 
             when {
                 state.isLoading -> Box(
@@ -274,6 +336,32 @@ fun HistoryScreen(
                 }
             },
         )
+    }
+
+    if (showDateRangePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDateRangePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val start = dateRangePickerState.selectedStartDateMillis
+                    val end = dateRangePickerState.selectedEndDateMillis?.let { it + 24 * 60 * 60 * 1000 - 1 }
+                    viewModel.onEvent(HistoryEvent.SetDateFilter(start, end))
+                    showDateRangePicker = false
+                }) {
+                    Text(stringResource(R.string.history_filter_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDateRangePicker = false }) {
+                    Text(stringResource(R.string.history_filter_cancel))
+                }
+            },
+        ) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

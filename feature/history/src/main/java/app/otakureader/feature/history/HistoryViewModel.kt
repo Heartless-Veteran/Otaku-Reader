@@ -48,11 +48,16 @@ class HistoryViewModel @Inject constructor(
     private var pendingDeleteJob: Job? = null
     private var pendingDeleteJobChapterId: Long? = null
 
+    /** Active date filter: (start, end) epoch-ms. Null means unset (open-ended). */
+    private val dateFilter = MutableStateFlow(Pair<Long?, Long?>(null, null))
+
     init {
         _state.update { it.copy(isLoading = true) }
-        combine(getHistoryUseCase(), searchQuery, pendingDeleteIds) { allEntries, query, pendingIds ->
-            val filtered = if (query.isBlank()) allEntries
+        combine(getHistoryUseCase(), searchQuery, pendingDeleteIds, dateFilter) { allEntries, query, pendingIds, (start, end) ->
+            var filtered = if (query.isBlank()) allEntries
             else allEntries.filter { it.chapter.name.contains(query, ignoreCase = true) }
+            if (start != null) filtered = filtered.filter { it.readAt >= start }
+            if (end != null) filtered = filtered.filter { it.readAt <= end }
             if (pendingIds.isEmpty()) filtered else filtered.filter { it.chapter.id !in pendingIds }
         }
             .onEach { filtered ->
@@ -79,6 +84,14 @@ class HistoryViewModel @Inject constructor(
             is HistoryEvent.UndoRemoveFromHistory -> undoRemoveFromHistory(event.chapterId)
             is HistoryEvent.RemoveSelectedFromHistory -> removeSelectedFromHistory()
             is HistoryEvent.MarkSelectedAsRead -> markSelectedAsRead()
+            is HistoryEvent.SetDateFilter -> {
+                dateFilter.value = Pair(event.start, event.end)
+                _state.update { it.copy(dateFilterStart = event.start, dateFilterEnd = event.end) }
+            }
+            HistoryEvent.ClearDateFilter -> {
+                dateFilter.value = Pair(null, null)
+                _state.update { it.copy(dateFilterStart = null, dateFilterEnd = null) }
+            }
         }
     }
 

@@ -31,6 +31,16 @@
     <!-- Swipe-delete undo -->
     <string name="history_removed_undo">Removed from history</string>
     <string name="history_undo_action">Undo</string>
+    <!-- Date filter -->
+    <string name="history_filter_date_range">Date range</string>
+    <string name="history_filter_last_7_days">Last 7 days</string>
+    <string name="history_filter_last_30_days">Last 30 days</string>
+    <string name="history_filter_active">%1$s – %2$s</string>
+    <string name="history_filter_clear">Clear date filter</string>
+    <string name="history_filter_calendar">Select date range</string>
+    <string name="history_filter_confirm">OK</string>
+    <string name="history_filter_cancel">Cancel</string>
+
     <!-- Date group headers -->
     <string name="history_date_today">Today</string>
     <string name="history_date_yesterday">Yesterday</string>
