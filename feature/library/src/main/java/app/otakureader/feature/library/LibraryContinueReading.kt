@@ -23,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,22 +39,21 @@ import coil3.compose.AsyncImage
 internal fun ContinueReadingSection(
     items: List<app.otakureader.domain.model.ContinueReadingItem>,
     onItemClick: (mangaId: Long, chapterId: Long) -> Unit,
+    onSeeAll: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
+                .padding(start = 16.dp, end = 4.dp, top = 16.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .size(18.dp)
-                    .padding(end = 4.dp)
+                modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
@@ -61,6 +61,12 @@ internal fun ContinueReadingSection(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
             )
+            TextButton(onClick = onSeeAll) {
+                Text(
+                    text = stringResource(R.string.library_continue_reading_see_all),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
 
         LazyRow(
@@ -90,7 +96,7 @@ internal fun ContinueReadingCard(
 ) {
     Card(
         modifier = modifier
-            .width(130.dp)
+            .width(140.dp)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {

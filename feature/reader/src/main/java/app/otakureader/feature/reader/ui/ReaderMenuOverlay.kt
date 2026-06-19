@@ -73,7 +73,7 @@ import app.otakureader.feature.reader.TapZone
 private const val DEFAULT_CUSTOM_TINT_COLOR = 0x4000AAFFL
 
 /**
- * Main reader menu overlay with controls and settings.
+ * Reader menu overlay with floating top bar and bottom settings panel.
  * Appears when user taps the center of the screen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,164 +110,140 @@ fun ReaderMenuOverlay(
     onApplyPreset: (ReaderPreset) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn() + slideInVertically { -it },
-        exit = fadeOut() + slideOutVertically { -it },
-        modifier = modifier
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f),
-            tonalElevation = 4.dp,
-            modifier = Modifier.fillMaxSize()
+    Box(modifier = modifier.fillMaxSize()) {
+        // ── Top floating bar ──────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn() + slideInVertically { -it },
+            exit = fadeOut() + slideOutVertically { -it },
+            modifier = Modifier.align(Alignment.TopCenter),
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // Top bar
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                text = chapterTitle,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = stringResource(R.string.reader_page_indicator, currentPage, totalPages),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.reader_back)
-                            )
-                        }
-                    },
-                    actions = {
-                        if (onToggleChapterFilter != null) {
-                            IconButton(onClick = onToggleChapterFilter) {
-                                Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
-                            }
-                        }
-                        if (onToggleChapterList != null) {
-                            IconButton(onClick = onToggleChapterList) {
-                                Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.reader_chapter_list_title))
-                            }
-                        }
-                        if (onToggleComments != null) {
-                            IconButton(onClick = onToggleComments) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.Comment,
-                                    contentDescription = stringResource(R.string.reader_comments_title)
-                                )
-                            }
-                        }
-                        IconButton(onClick = onToggleFullscreen) {
-                            Icon(Icons.Default.Fullscreen, contentDescription = stringResource(R.string.reader_fullscreen))
-                        }
-                        IconButton(onClick = onToggleGallery) {
-                            Icon(Icons.Default.GridView, contentDescription = stringResource(R.string.reader_gallery))
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                    )
-                )
-                
-                HorizontalDivider()
-
-                if (presets.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text(
-                            text = stringResource(R.string.reader_presets_quick),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                tonalElevation = 4.dp,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                    bottomStart = 16.dp, bottomEnd = 16.dp
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.reader_back),
                         )
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = chapterTitle,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = stringResource(R.string.reader_page_indicator, currentPage, totalPages),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (onToggleChapterFilter != null) {
+                        IconButton(onClick = onToggleChapterFilter) {
+                            Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.reader_chapter_filter_title))
+                        }
+                    }
+                    if (onToggleChapterList != null) {
+                        IconButton(onClick = onToggleChapterList) {
+                            Icon(Icons.Default.MenuBook, contentDescription = stringResource(R.string.reader_chapter_list_title))
+                        }
+                    }
+                    if (onToggleComments != null) {
+                        IconButton(onClick = onToggleComments) {
+                            Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = stringResource(R.string.reader_comments_title))
+                        }
+                    }
+                    IconButton(onClick = onToggleFullscreen) {
+                        Icon(Icons.Default.Fullscreen, contentDescription = stringResource(R.string.reader_fullscreen))
+                    }
+                    IconButton(onClick = onToggleGallery) {
+                        Icon(Icons.Default.GridView, contentDescription = stringResource(R.string.reader_gallery))
+                    }
+                }
+            }
+        }
+
+        // ── Bottom floating settings panel ────────────────────────────────────
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = fadeIn() + slideInVertically { it },
+            exit = fadeOut() + slideOutVertically { it },
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                tonalElevation = 4.dp,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(
+                    topStart = 16.dp, topEnd = 16.dp
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    if (presets.isNotEmpty()) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(bottom = 8.dp),
+                        ) {
                             items(presets, key = { it.id }) { preset ->
                                 FilterChip(
                                     selected = false,
                                     onClick = { onApplyPreset(preset) },
-                                    label = { Text(preset.name) }
+                                    label = { Text(preset.name) },
                                 )
                             }
                         }
                     }
-                    HorizontalDivider()
+                    // Brightness slider
+                    BrightnessControl(
+                        brightness = brightness,
+                        onBrightnessChange = onBrightnessChange,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Reading mode selector
+                    ReaderModeSelector(currentMode = currentMode, onModeChange = onModeChange)
+                    // Quick action row: zoom, rotate, color filter, background
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                    ) {
+                        IconButton(onClick = onZoomIn) {
+                            Icon(Icons.Default.ZoomIn, contentDescription = stringResource(R.string.reader_zoom_in))
+                        }
+                        IconButton(onClick = onZoomOut) {
+                            Icon(Icons.Default.ZoomOut, contentDescription = stringResource(R.string.reader_zoom_out))
+                        }
+                        IconButton(onClick = onRotateCW) {
+                            Icon(Icons.Default.RotateRight, contentDescription = stringResource(R.string.reader_rotate_cw))
+                        }
+                        IconButton(onClick = { onColorFilterChange(
+                            if (colorFilterMode == ColorFilterMode.NONE) ColorFilterMode.SEPIA else ColorFilterMode.NONE
+                        ) }) {
+                            Icon(
+                                Icons.Default.FitScreen,
+                                contentDescription = stringResource(R.string.reader_color_filter),
+                            )
+                        }
+                    }
                 }
-
-                // Mode selector
-                ReaderModeSelector(
-                    currentMode = currentMode,
-                    onModeChange = onModeChange,
-                    modifier = Modifier.padding(16.dp)
-                )
-                
-                HorizontalDivider()
-                
-                // Zoom controls
-                ZoomControls(
-                    zoomLevel = zoomLevel,
-                    onZoomIn = onZoomIn,
-                    onZoomOut = onZoomOut,
-                    onResetZoom = onResetZoom,
-                    modifier = Modifier.padding(16.dp)
-                )
-                
-                HorizontalDivider()
-
-                // Rotation controls
-                RotationControl(
-                    currentRotation = pageRotation,
-                    onRotateCW = onRotateCW,
-                    onResetRotation = onResetRotation,
-                    modifier = Modifier.padding(16.dp)
-                )
-                
-                HorizontalDivider()
-                
-                // Brightness slider
-                BrightnessControl(
-                    brightness = brightness,
-                    onBrightnessChange = onBrightnessChange,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                HorizontalDivider()
-
-                // Color filter selector
-                ColorFilterControl(
-                    currentMode = colorFilterMode,
-                    customTintColor = customTintColor,
-                    onModeChange = onColorFilterChange,
-                    onCustomTintColorChange = onCustomTintColorChange,
-                    modifier = Modifier.padding(16.dp)
-                )
-
-                HorizontalDivider()
-
-                // Per-manga reader background color
-                ReaderBackgroundColorControl(
-                    currentColor = readerBackgroundColor,
-                    onColorChange = onReaderBackgroundColorChange,
-                    modifier = Modifier.padding(16.dp)
-                )
-                
-                Spacer(modifier = Modifier.weight(1f))
-                
-                // Hint text
-                Text(
-                    text = stringResource(R.string.reader_tap_to_hide),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                )
             }
         }
     }

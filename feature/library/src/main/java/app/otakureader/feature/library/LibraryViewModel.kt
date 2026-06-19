@@ -114,6 +114,7 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         observeRecommendations()
         observeSavedViews()
+        observeDisplayName()
     }
 
     fun onEvent(event: LibraryEvent) {
@@ -927,6 +928,12 @@ class LibraryViewModel @Inject constructor(
                 }
         }
             .onEach { items -> _state.update { it.copy(recommendations = items) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeDisplayName() {
+        generalPreferences.displayName
+            .onEach { name -> _state.update { it.copy(displayName = name) } }
             .launchIn(viewModelScope)
     }
 
