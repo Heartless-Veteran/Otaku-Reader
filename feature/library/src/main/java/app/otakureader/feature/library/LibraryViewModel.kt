@@ -687,14 +687,28 @@ class LibraryViewModel @Inject constructor(
         val ids = selection.snapshotAndClear()
         if (ids.isEmpty()) return
         viewModelScope.launch {
-            ids.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
-            _effect.send(LibraryEffect.ShowUndoLibraryDelete(count = ids.size, mangaIds = ids))
+            val deletedIds = mutableSetOf<Long>()
+            ids.forEach { mangaId ->
+                try {
+                    toggleFavoriteManga(mangaId)
+                    deletedIds.add(mangaId)
+                }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (_: Exception) { }
+            }
+            if (deletedIds.isNotEmpty()) {
+                _effect.send(LibraryEffect.ShowUndoLibraryDelete(count = deletedIds.size, mangaIds = deletedIds))
+            }
         }
     }
 
     private fun undoLibraryDelete(mangaIds: Set<Long>) {
         viewModelScope.launch {
-            mangaIds.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
+            mangaIds.forEach { mangaId ->
+                try { toggleFavoriteManga(mangaId) }
+                catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                catch (_: Exception) { }
+            }
         }
     }
 

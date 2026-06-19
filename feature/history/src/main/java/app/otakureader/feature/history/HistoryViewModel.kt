@@ -184,11 +184,22 @@ class HistoryViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        val chapterId = pendingDeleteJobChapterId ?: return
+        val chapterId = pendingDeleteJobChapterId
         pendingDeleteJobChapterId = null
+        val batchIds = pendingBatchDeleteIds
+        pendingBatchDeleteJob?.cancel()
+        pendingBatchDeleteIds = null
         viewModelScope.launch {
-            try { chapterRepository.removeFromHistory(chapterId) } catch (_: Exception) {}
-            pendingDeleteIds.update { it - chapterId }
+            if (chapterId != null) {
+                try { chapterRepository.removeFromHistory(chapterId) } catch (_: Exception) {}
+                pendingDeleteIds.update { it - chapterId }
+            }
+            batchIds?.forEach { id ->
+                try { chapterRepository.removeFromHistory(id) }
+                catch (e: CancellationException) { throw e }
+                catch (_: Exception) {}
+            }
+            if (batchIds != null) pendingDeleteIds.update { it - batchIds }
         }
     }
 
@@ -220,7 +231,9 @@ class HistoryViewModel @Inject constructor(
             pendingBatchDeleteJob?.cancel()
             viewModelScope.launch {
                 previousIds.forEach { chapterId ->
-                    try { chapterRepository.removeFromHistory(chapterId) } catch (_: Exception) { }
+                    try { chapterRepository.removeFromHistory(chapterId) }
+                    catch (e: CancellationException) { throw e }
+                    catch (_: Exception) { }
                 }
                 pendingDeleteIds.update { it - previousIds }
             }
