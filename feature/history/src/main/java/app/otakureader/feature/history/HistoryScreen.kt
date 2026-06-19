@@ -250,7 +250,13 @@ fun HistoryScreen(
                         selected = true,
                         onClick = { viewModel.onEvent(HistoryEvent.ClearDateFilter) },
                         label = { Text(stringResource(R.string.history_filter_active, startLabel, endLabel)) },
-                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.history_filter_clear), modifier = Modifier.size(16.dp)) },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.history_filter_clear),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        },
                     )
                 }
             }
