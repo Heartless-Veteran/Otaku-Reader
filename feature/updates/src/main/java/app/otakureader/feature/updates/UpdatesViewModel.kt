@@ -65,21 +65,6 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
-
-            // Update Error Screen events
-            UpdatesEvent.ShowUpdateErrors -> _state.update { it.copy(showUpdateErrors = true) }
-            UpdatesEvent.HideUpdateErrors -> _state.update { it.copy(showUpdateErrors = false) }
-            is UpdatesEvent.ClearUpdateError -> _state.update { state ->
-                state.copy(updateErrors = state.updateErrors.filter { it.mangaId != event.mangaId })
-            }
-            UpdatesEvent.ClearAllUpdateErrors -> _state.update { it.copy(updateErrors = emptyList()) }
-
-            // To-Be-Updated Screen events
-            UpdatesEvent.ShowPendingUpdates -> {
-                _state.update { it.copy(showPendingUpdates = true) }
-                loadPendingUpdates()
-            }
-            UpdatesEvent.HidePendingUpdates -> _state.update { it.copy(showPendingUpdates = false) }
             UpdatesEvent.StartLibraryUpdate -> startLibraryUpdate()
             is UpdatesEvent.SetDateFilter -> _state.update {
                 it.copy(dateFilterStart = event.start, dateFilterEnd = event.end)
@@ -87,6 +72,29 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.ClearDateFilter -> _state.update {
                 it.copy(dateFilterStart = null, dateFilterEnd = null)
             }
+            UpdatesEvent.ShowUpdateErrors,
+            UpdatesEvent.HideUpdateErrors,
+            UpdatesEvent.ClearAllUpdateErrors,
+            UpdatesEvent.ShowPendingUpdates,
+            UpdatesEvent.HidePendingUpdates -> handleOverlayEvent(event)
+            is UpdatesEvent.ClearUpdateError -> handleOverlayEvent(event)
+        }
+    }
+
+    private fun handleOverlayEvent(event: UpdatesEvent) {
+        when (event) {
+            UpdatesEvent.ShowUpdateErrors -> _state.update { it.copy(showUpdateErrors = true) }
+            UpdatesEvent.HideUpdateErrors -> _state.update { it.copy(showUpdateErrors = false) }
+            is UpdatesEvent.ClearUpdateError -> _state.update { state ->
+                state.copy(updateErrors = state.updateErrors.filter { it.mangaId != event.mangaId })
+            }
+            UpdatesEvent.ClearAllUpdateErrors -> _state.update { it.copy(updateErrors = emptyList()) }
+            UpdatesEvent.ShowPendingUpdates -> {
+                _state.update { it.copy(showPendingUpdates = true) }
+                loadPendingUpdates()
+            }
+            UpdatesEvent.HidePendingUpdates -> _state.update { it.copy(showPendingUpdates = false) }
+            else -> Unit
         }
     }
 
