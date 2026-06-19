@@ -223,4 +223,7 @@
     <!-- Inline continue reading row -->
     <string name="details_continue_with">Continue · %1$s</string>
     <string name="details_inline_download">Download next</string>
+    <!-- Tracker tab content -->
+    <string name="details_tracker_tab_description">Track your reading progress across AniList, MyAnimeList, and more.</string>
+    <string name="details_tracker_tab_manage_button">Manage Tracking</string>
 </resources>

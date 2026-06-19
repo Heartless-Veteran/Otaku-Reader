@@ -525,32 +525,21 @@ private fun DetailsContent(
                 0 -> detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
                 1 -> detailsChapterItems(state = state, onEvent = onEvent)
                 2 -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.details_tab_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    TrackerTabContent(
+                        onManageTracking = { onEvent(DetailsContract.Event.OpenTracking) }
+                    )
                 }
                 3 -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.details_tab_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    SourceSuggestionsSection(
+                        suggestions = state.sourceSuggestions,
+                        isLoading = state.isLoadingSourceSuggestions,
+                        error = state.sourceSuggestionsError,
+                        onSuggestionClick = { suggestion ->
+                            onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
+                        },
+                        onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
                 }
             }
         }
@@ -892,6 +881,40 @@ private fun MangaDescription(
     }
 }
 
+
+/**
+ * Tracker tab content: an informational card prompting the user to manage their tracking
+ * entries via the tracking feature. Tapping the button fires [OpenTracking] which the
+ * ViewModel converts into a [NavigateToTracking] effect.
+ */
+@Composable
+private fun TrackerTabContent(
+    onManageTracking: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Default.QueryStats,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(R.string.details_tracker_tab_description),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Button(onClick = onManageTracking) {
+            Text(stringResource(R.string.details_tracker_tab_manage_button))
+        }
+    }
+}
 
 @Preview(showBackground = true, backgroundColor = 0xFF12121A)
 @Composable
