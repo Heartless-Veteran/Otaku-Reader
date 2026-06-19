@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ZoomIn
@@ -49,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -218,28 +220,62 @@ fun ReaderMenuOverlay(
                     Spacer(modifier = Modifier.height(4.dp))
                     // Reading mode selector
                     ReaderModeSelector(currentMode = currentMode, onModeChange = onModeChange)
-                    // Quick action row: zoom, rotate, color filter, background
+                    // Quick action row: zoom (with level + reset), rotate (with reset), color filter
                     Row(
                         horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                     ) {
-                        IconButton(onClick = onZoomIn) {
-                            Icon(Icons.Default.ZoomIn, contentDescription = stringResource(R.string.reader_zoom_in))
-                        }
                         IconButton(onClick = onZoomOut) {
                             Icon(Icons.Default.ZoomOut, contentDescription = stringResource(R.string.reader_zoom_out))
                         }
-                        IconButton(onClick = onRotateCW) {
-                            Icon(Icons.Default.RotateRight, contentDescription = stringResource(R.string.reader_rotate_cw))
+                        androidx.compose.material3.TextButton(
+                            onClick = onResetZoom,
+                            modifier = Modifier.width(56.dp),
+                        ) {
+                            Text(
+                                text = stringResource(R.string.reader_zoom_percentage, (zoomLevel * 100).toInt()),
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         }
-                        IconButton(onClick = { onColorFilterChange(
-                            if (colorFilterMode == ColorFilterMode.NONE) ColorFilterMode.SEPIA else ColorFilterMode.NONE
-                        ) }) {
+                        IconButton(onClick = onZoomIn) {
+                            Icon(Icons.Default.ZoomIn, contentDescription = stringResource(R.string.reader_zoom_in))
+                        }
+                        IconButton(onClick = onRotateCW) {
+                            Icon(
+                                Icons.Default.RotateRight,
+                                contentDescription = stringResource(R.string.reader_rotate_cw),
+                                tint = if (pageRotation != PageRotation.NONE) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    LocalContentColor.current
+                                },
+                            )
+                        }
+                        IconButton(onClick = onResetRotation, enabled = pageRotation != PageRotation.NONE) {
+                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.reader_reset_rotation))
+                        }
+                        IconButton(onClick = {
+                            when (colorFilterMode) {
+                                ColorFilterMode.NONE -> onColorFilterChange(ColorFilterMode.SEPIA)
+                                ColorFilterMode.CUSTOM_TINT -> {
+                                    onCustomTintColorChange(customTintColor)
+                                    onReaderBackgroundColorChange(readerBackgroundColor)
+                                    onColorFilterChange(ColorFilterMode.NONE)
+                                }
+                                else -> onColorFilterChange(ColorFilterMode.NONE)
+                            }
+                        }) {
                             Icon(
                                 Icons.Default.FitScreen,
                                 contentDescription = stringResource(R.string.reader_color_filter),
+                                tint = if (colorFilterMode != ColorFilterMode.NONE) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    LocalContentColor.current
+                                },
                             )
                         }
                     }

@@ -1142,14 +1142,13 @@ class DetailsViewModel @Inject constructor(
     private fun loadSourceSuggestions() {
         viewModelScope.launch {
             val manga = _state.value.manga ?: return@launch
-            
+
             _state.update { it.copy(isLoadingSourceSuggestions = true, sourceSuggestionsError = null) }
-            
+
             try {
-                // Fetch related manga from the source
                 val source = sourceRepository.getSource(manga.sourceId.toString())
                 if (source == null) {
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             isLoadingSourceSuggestions = false,
                             sourceSuggestionsError = "Source not available"
@@ -1157,35 +1156,45 @@ class DetailsViewModel @Inject constructor(
                     }
                     return@launch
                 }
-                
-                // Try to fetch related manga - this requires the source to support it
-                // For now, we'll simulate with popular manga from the same source
-                // In a real implementation, the source API would have a getRelatedManga() method
-                val result = sourceRepository.getPopularManga(source.id, page = 1)
-                
+
+                // Search by author name — the same strategy Komikku uses to surface
+                // related titles without needing a dedicated getRelatedManga() API.
+                // Falls back to title keywords when author is unknown.
+                val author = manga.author?.takeIf { it.isNotBlank() }
+                val query = author ?: manga.title
+                val reason = if (author != null) "Same author" else "From ${source.name}"
+
+                val result = sourceRepository.searchManga(
+                    sourceId = manga.sourceId.toString(),
+                    query = query,
+                    page = 1,
+                )
+
                 result.onSuccess { mangaPage ->
-                    val suggestions = mangaPage.mangas.take(6).map { sourceManga ->
-                        SourceSuggestion(
-                            title = sourceManga.title,
-                            thumbnailUrl = sourceManga.thumbnailUrl,
-                            mangaUrl = sourceManga.url,
-                            sourceId = source.id,
-                            sourceName = source.name,
-                            reason = "From ${source.name}"
-                        )
-                    }
-                    
+                    val suggestions = mangaPage.mangas
+                        .filter { it.url != manga.url }
+                        .take(6)
+                        .map { sourceManga ->
+                            SourceSuggestion(
+                                title = sourceManga.title,
+                                thumbnailUrl = sourceManga.thumbnailUrl,
+                                mangaUrl = sourceManga.url,
+                                sourceId = source.id,
+                                sourceName = source.name,
+                                reason = reason,
+                            )
+                        }
                     _state.update {
                         it.copy(
                             sourceSuggestions = suggestions,
-                            isLoadingSourceSuggestions = false
+                            isLoadingSourceSuggestions = false,
                         )
                     }
                 }.onFailure { error ->
                     _state.update {
                         it.copy(
                             isLoadingSourceSuggestions = false,
-                            sourceSuggestionsError = error.message ?: "Failed to load suggestions"
+                            sourceSuggestionsError = error.message ?: "Failed to load suggestions",
                         )
                     }
                 }
@@ -1195,7 +1204,7 @@ class DetailsViewModel @Inject constructor(
                 _state.update {
                     it.copy(
                         isLoadingSourceSuggestions = false,
-                        sourceSuggestionsError = e.message ?: "Failed to load suggestions"
+                        sourceSuggestionsError = e.message ?: "Failed to load suggestions",
                     )
                 }
             }
