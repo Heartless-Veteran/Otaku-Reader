@@ -91,6 +91,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
+private const val UNSET_FETCH_DATE = 0L
+
 /** Updates screen showing newly discovered chapters for library manga. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -370,7 +372,7 @@ fun UpdatesScreen(
                         }
                         if (state.displayMode == UpdatesDisplayMode.GROUPED_BY_MANGA) {
                             // Compute the filtered manga groups from the flat filtered list
-                            val filteredGroups = remember(state.groupedByManga, state.dateFilterStart, state.dateFilterEnd) {
+                            val filteredGroups = remember(state.groupedByManga, filteredUpdates) {
                                 val filteredIds = filteredUpdates.map { it.chapter.id }.toSet()
                                 state.groupedByManga
                                     .map { group ->
@@ -596,7 +598,7 @@ private fun GroupedChapterItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            if (update.chapter.dateFetch > 0L) {
+            if (update.chapter.dateFetch > UNSET_FETCH_DATE) {
                 Text(
                     text = formatFetchDate(update.chapter.dateFetch),
                     style = MaterialTheme.typography.bodySmall,
@@ -835,7 +837,7 @@ private fun UpdateItem(
             )
         }
         if (!isSelected) {
-            if (update.chapter.dateFetch > 0L) {
+            if (update.chapter.dateFetch > UNSET_FETCH_DATE) {
                 Text(
                     text = formatFetchDate(update.chapter.dateFetch),
                     style = MaterialTheme.typography.labelSmall,

@@ -95,7 +95,7 @@ fun ExtensionsBottomSheet(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
@@ -341,7 +341,7 @@ fun ExtensionsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
@@ -375,7 +375,7 @@ internal fun ExtensionsTabBody(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)

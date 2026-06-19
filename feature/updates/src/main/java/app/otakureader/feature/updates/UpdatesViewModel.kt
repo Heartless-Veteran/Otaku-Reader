@@ -26,7 +26,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
@@ -261,18 +263,20 @@ class UpdatesViewModel @Inject constructor(
                 // Build the manga-grouped view. Group by manga ID, preserve ordering from
                 // the flat list (newest chapter first), then sort groups so the one with
                 // the most-recent chapter comes first.
-                val groups = updates
-                    .groupBy { it.manga.id }
-                    .values
-                    .map { chapterList ->
-                        MangaUpdateGroup(
-                            manga = chapterList.first().manga,
-                            chapters = chapterList,
-                        )
-                    }
-                    .sortedByDescending { group ->
-                        group.chapters.maxOf { it.chapter.dateFetch }
-                    }
+                val groups = withContext(Dispatchers.Default) {
+                    updates
+                        .groupBy { it.manga.id }
+                        .values
+                        .map { chapterList ->
+                            MangaUpdateGroup(
+                                manga = chapterList.first().manga,
+                                chapters = chapterList,
+                            )
+                        }
+                        .sortedByDescending { group ->
+                            group.chapters.maxOf { it.chapter.dateFetch }
+                        }
+                }
                 _state.update { it.copy(isLoading = false, updates = updates, groupedByManga = groups) }
             }
             .catch { error ->

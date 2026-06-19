@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -35,6 +34,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -68,6 +69,9 @@ class BrowseViewModel @Inject constructor(
 
     private val _effect = Channel<BrowseEffect>()
     val effect = _effect.receiveAsFlow()
+
+    /** Serializes NSFW toggle writes so rapid double-taps cannot race. */
+    private val nsfwToggleMutex = Mutex()
 
     init {
         // Collect sources and filter by NSFW preference; also mirror showNsfw into state
@@ -236,12 +240,12 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ApplyNamedSavedSearch -> applyNamedSavedSearch(event.search)
             is BrowseEvent.DeleteNamedSavedSearch -> deleteNamedSavedSearch(event.id)
             is BrowseEvent.ToggleNsfwFilter -> {
-                // Read the current preference value, flip it, then persist.
-                // The init-block's combine() will reactively propagate the new value into
-                // state.showNsfw, so we don't need a manual _state.update here.
+                // Mutex serializes rapid taps: the second tap waits until the first write
+                // has been queued, so both reads see different values and the toggle is correct.
                 viewModelScope.launch {
-                    val current = generalPreferences.showNsfwContent.first()
-                    generalPreferences.setShowNsfwContent(!current)
+                    nsfwToggleMutex.withLock {
+                        generalPreferences.setShowNsfwContent(!state.value.showNsfw)
+                    }
                 }
             }
         }

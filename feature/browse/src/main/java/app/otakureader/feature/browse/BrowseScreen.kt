@@ -186,38 +186,40 @@ fun BrowseScreen(
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
                         }
-                        Box {
-                            IconButton(onClick = { overflowExpanded = true }) {
-                                Icon(
-                                    Icons.Default.MoreVert,
-                                    contentDescription = stringResource(R.string.browse_more_options)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = overflowExpanded,
-                                onDismissRequest = { overflowExpanded = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (state.showNsfw) {
-                                                stringResource(R.string.browse_hide_nsfw)
-                                            } else {
-                                                stringResource(R.string.browse_show_nsfw)
-                                            }
-                                        )
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.onEvent(BrowseEvent.ToggleNsfwFilter)
-                                        overflowExpanded = false
-                                    }
-                                )
+                        if (state.selectedTab == BrowseTab.SOURCES || state.selectedTab == BrowseTab.EXTENSIONS) {
+                            Box {
+                                IconButton(onClick = { overflowExpanded = true }) {
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.browse_more_options)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = overflowExpanded,
+                                    onDismissRequest = { overflowExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (state.showNsfw) {
+                                                    stringResource(R.string.browse_hide_nsfw)
+                                                } else {
+                                                    stringResource(R.string.browse_show_nsfw)
+                                                }
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.onEvent(BrowseEvent.ToggleNsfwFilter)
+                                            overflowExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     },

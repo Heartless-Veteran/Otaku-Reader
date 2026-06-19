@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import app.otakureader.domain.repository.StatisticsRepository
@@ -47,6 +48,7 @@ class MoreViewModel @Inject constructor(
             readingGoalPreferences.dailyChapterGoal,
             readingGoalPreferences.weeklyChapterGoal,
         ) { daily, weekly -> Pair(daily, weekly) }
+            .distinctUntilChanged()  // prevent inner flow restarts from unrelated DataStore edits
             .flatMapLatest { (dailyGoal, weeklyGoal) ->
                 combine(
                     getReadingStatsUseCase(),
