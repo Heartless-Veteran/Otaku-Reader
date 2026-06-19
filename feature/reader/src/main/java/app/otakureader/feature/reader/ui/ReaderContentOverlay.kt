@@ -26,7 +26,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
+import androidx.compose.material.icons.filled.LinearScale
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,16 +36,20 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.stringResource
-import app.otakureader.feature.reader.R
 import app.otakureader.core.ui.components.GlassmorphismSheet
 import app.otakureader.core.ui.components.GlowButton
 import app.otakureader.core.ui.components.InkButton
@@ -51,15 +57,18 @@ import app.otakureader.core.ui.components.InkSlider
 import app.otakureader.core.ui.components.NeonSlider
 import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.core.ui.theme.LocalOtakuColors
-import app.otakureader.core.ui.theme.manhwaAccent
-import androidx.compose.ui.tooling.preview.Preview
 import app.otakureader.core.ui.theme.OtakuReaderTheme
+import app.otakureader.core.ui.theme.manhwaAccent
+import app.otakureader.feature.reader.R
 
 /**
  * Content-type-aware reader overlay showing the top controls, filmstrip, and page slider.
  *
  * Manga variant uses an ink/panel aesthetic; Manhwa variant uses neon/glassmorphism.
  * When [visualEffectsEnabled] is false both variants fall back to plain Material 3 widgets.
+ *
+ * The filmstrip and slider are mutually exclusive — a toggle icon button next to the page
+ * counter lets the user switch between them.
  *
  * @param title         Manga series title displayed in the top bar.
  * @param chapterTitle  Current chapter title displayed below the series title.
@@ -149,6 +158,8 @@ private fun MangaReaderOverlayContent(
     onPageSliderChange: (Float) -> Unit,
     onThumbnailClick: (Int) -> Unit
 ) {
+    var showFilmstrip by rememberSaveable { mutableStateOf(true) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -191,97 +202,112 @@ private fun MangaReaderOverlayContent(
             }
         }
 
-        // Filmstrip thumbnail row
-        val filmstripCount = totalPages.coerceAtMost(50)
-        LazyRow(
+        // Page counter + filmstrip/slider toggle
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(70.dp)
-                .background(Color(0xFF12121A)),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(count = filmstripCount, key = { it + 1 }) { idx ->
-                val page = idx + 1
-                val isSelected = page == currentPage
-                Box(
-                    modifier = Modifier
-                        .width(50.dp)
-                        .fillMaxHeight()
-                        .border(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) {
-                                LocalOtakuColors.current.selectedPageIndicator
-                            } else {
-                                LocalOtakuColors.current.unselectedPageIndicator
-                            },
-                            shape = RoundedCornerShape(2.dp)
-                        )
-                        .clickable { onThumbnailClick(page) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$page",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator
-                                else LocalOtakuColors.current.unselectedPageIndicator,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-
-        // Controls panel
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 "Page $currentPage / $totalPages",
                 style = MaterialTheme.typography.labelMedium,
-                color = LocalOtakuColors.current.unselectedPageIndicator
+                color = LocalOtakuColors.current.unselectedPageIndicator,
+                modifier = Modifier.weight(1f)
             )
-            val sliderValue = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
-            if (visualEffectsEnabled) {
-                InkSlider(
-                    value = sliderValue,
-                    onValueChange = onPageSliderChange
-                )
-            } else {
-                Slider(
-                    value = sliderValue,
-                    onValueChange = onPageSliderChange
+            IconButton(onClick = { showFilmstrip = !showFilmstrip }) {
+                Icon(
+                    imageVector = if (showFilmstrip) Icons.Default.LinearScale else Icons.Default.ViewModule,
+                    contentDescription = if (showFilmstrip) {
+                        stringResource(R.string.reader_switch_to_slider)
+                    } else {
+                        stringResource(R.string.reader_switch_to_filmstrip)
+                    },
+                    tint = LocalOtakuColors.current.unselectedPageIndicator
                 )
             }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+        }
+
+        // Filmstrip OR slider — never both
+        if (showFilmstrip) {
+            val filmstripCount = totalPages.coerceAtMost(50)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(70.dp)
+                    .background(Color(0xFF12121A)),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (visualEffectsEnabled) {
-                    InkButton(onClick = onPrevChapter) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.reader_previous_chapter),
-                            modifier = Modifier.size(16.dp)
+                items(count = filmstripCount, key = { it + 1 }) { idx ->
+                    val page = idx + 1
+                    val isSelected = page == currentPage
+                    Box(
+                        modifier = Modifier
+                            .width(50.dp)
+                            .fillMaxHeight()
+                            .border(
+                                width = if (isSelected) 2.dp else 1.dp,
+                                color = if (isSelected) {
+                                    LocalOtakuColors.current.selectedPageIndicator
+                                } else {
+                                    LocalOtakuColors.current.unselectedPageIndicator
+                                },
+                                shape = RoundedCornerShape(2.dp)
+                            )
+                            .clickable { onThumbnailClick(page) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "$page",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) LocalOtakuColors.current.selectedPageIndicator
+                                    else LocalOtakuColors.current.unselectedPageIndicator,
+                            textAlign = TextAlign.Center
                         )
-                        Spacer(Modifier.width(4.dp))
-                        Text("PREV", style = MaterialTheme.typography.labelMedium)
                     }
-                    InkButton(onClick = onNextChapter) {
-                        Text("NEXT", style = MaterialTheme.typography.labelMedium)
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = stringResource(R.string.reader_next_chapter),
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                } else {
-                    OutlinedButton(onClick = onPrevChapter) { Text("← Prev") }
-                    OutlinedButton(onClick = onNextChapter) { Text("Next →") }
                 }
+            }
+        } else {
+            val sliderValue = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                if (visualEffectsEnabled) {
+                    InkSlider(value = sliderValue, onValueChange = onPageSliderChange)
+                } else {
+                    Slider(value = sliderValue, onValueChange = onPageSliderChange)
+                }
+            }
+        }
+
+        // Chapter navigation buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            if (visualEffectsEnabled) {
+                InkButton(onClick = onPrevChapter) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.reader_previous_chapter),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("PREV", style = MaterialTheme.typography.labelMedium)
+                }
+                InkButton(onClick = onNextChapter) {
+                    Text("NEXT", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = stringResource(R.string.reader_next_chapter),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            } else {
+                OutlinedButton(onClick = onPrevChapter) { Text("← Prev") }
+                OutlinedButton(onClick = onNextChapter) { Text("Next →") }
             }
         }
     }
@@ -306,6 +332,7 @@ private fun ManhwaReaderOverlayContent(
     onThumbnailClick: (Int) -> Unit
 ) {
     val accentColor = ContentType.MANHWA.manhwaAccent()
+    var showFilmstrip by rememberSaveable { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -365,114 +392,129 @@ private fun ManhwaReaderOverlayContent(
             }
         }
 
-        // Episode thumbnail strip
-        val filmstripCount = totalPages.coerceAtMost(50)
-        LazyRow(
+        // Page counter + filmstrip/slider toggle
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(80.dp)
-                .background(Color(0xFF16161F).copy(alpha = 0.6f))
-                .border(
-                    width = 1.dp,
-                    color = accentColor.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(12.dp)
-                ),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(count = filmstripCount, key = { it + 1 }) { idx ->
-                val page = idx + 1
-                val isSelected = page == currentPage
-                Box(
-                    modifier = Modifier
-                        .width(44.dp)
-                        .fillMaxHeight()
-                        .background(
-                            color = if (isSelected) accentColor.copy(alpha = 0.2f)
-                            else Color(0xFF1E1E2A),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .border(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) accentColor else Color(0xFF3A3A4A),
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .clickable { onThumbnailClick(page) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "$page",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        ),
-                        color = if (isSelected) accentColor else LocalOtakuColors.current.unselectedPageIndicator,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            Text(
+                "Page $currentPage / $totalPages",
+                style = MaterialTheme.typography.labelMedium,
+                color = LocalOtakuColors.current.unselectedPageIndicator,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = { showFilmstrip = !showFilmstrip }) {
+                Icon(
+                    imageVector = if (showFilmstrip) Icons.Default.LinearScale else Icons.Default.ViewModule,
+                    contentDescription = if (showFilmstrip) {
+                        stringResource(R.string.reader_switch_to_slider)
+                    } else {
+                        stringResource(R.string.reader_switch_to_filmstrip)
+                    },
+                    tint = if (showFilmstrip) accentColor else LocalOtakuColors.current.unselectedPageIndicator
+                )
             }
         }
 
-        // Controls — glassmorphism sheet when effects on, plain column otherwise
-        val sliderValue = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
-        if (visualEffectsEnabled) {
-            GlassmorphismSheet(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                Text(
-                    "Page $currentPage / $totalPages",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = LocalOtakuColors.current.unselectedPageIndicator
-                )
-                NeonSlider(
-                    value = sliderValue,
-                    onValueChange = onPageSliderChange,
-                    glowColor = accentColor
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    GlowButton(onClick = onPrevChapter, glowColor = accentColor) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.reader_previous_chapter),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text("PREV", style = MaterialTheme.typography.labelMedium)
-                    }
-                    GlowButton(onClick = onNextChapter, glowColor = Color(0xFF00D2D3)) {
-                        Text("NEXT", style = MaterialTheme.typography.labelMedium)
-                        Spacer(Modifier.width(4.dp))
-                        Icon(
-                            Icons.AutoMirrored.Filled.NavigateNext,
-                            contentDescription = stringResource(R.string.reader_next_chapter),
-                            modifier = Modifier.size(16.dp)
+        // Episode thumbnail strip OR slider — never both
+        if (showFilmstrip) {
+            val filmstripCount = totalPages.coerceAtMost(50)
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .background(Color(0xFF16161F).copy(alpha = 0.6f))
+                    .border(
+                        width = 1.dp,
+                        color = accentColor.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(12.dp)
+                    ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(count = filmstripCount, key = { it + 1 }) { idx ->
+                    val page = idx + 1
+                    val isSelected = page == currentPage
+                    Box(
+                        modifier = Modifier
+                            .width(44.dp)
+                            .fillMaxHeight()
+                            .background(
+                                color = if (isSelected) accentColor.copy(alpha = 0.2f)
+                                else Color(0xFF1E1E2A),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .border(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) accentColor else Color(0xFF3A3A4A),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .clickable { onThumbnailClick(page) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "$page",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            ),
+                            color = if (isSelected) accentColor else LocalOtakuColors.current.unselectedPageIndicator,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    "Page $currentPage / $totalPages",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = LocalOtakuColors.current.unselectedPageIndicator
-                )
-                Slider(
-                    value = sliderValue,
-                    onValueChange = onPageSliderChange
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+            val sliderValue = if (totalPages > 0) currentPage.toFloat() / totalPages else 0f
+            if (visualEffectsEnabled) {
+                GlassmorphismSheet(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    OutlinedButton(onClick = onPrevChapter) { Text("← Prev") }
-                    OutlinedButton(onClick = onNextChapter) { Text("Next →") }
+                    NeonSlider(
+                        value = sliderValue,
+                        onValueChange = onPageSliderChange,
+                        glowColor = accentColor
+                    )
                 }
+            } else {
+                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    Slider(value = sliderValue, onValueChange = onPageSliderChange)
+                }
+            }
+        }
+
+        // Chapter navigation buttons
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            if (visualEffectsEnabled) {
+                GlowButton(onClick = onPrevChapter, glowColor = accentColor) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.reader_previous_chapter),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("PREV", style = MaterialTheme.typography.labelMedium)
+                }
+                GlowButton(onClick = onNextChapter, glowColor = Color(0xFF00D2D3)) {
+                    Text("NEXT", style = MaterialTheme.typography.labelMedium)
+                    Spacer(Modifier.width(4.dp))
+                    Icon(
+                        Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = stringResource(R.string.reader_next_chapter),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            } else {
+                OutlinedButton(onClick = onPrevChapter) { Text("← Prev") }
+                OutlinedButton(onClick = onNextChapter) { Text("Next →") }
             }
         }
     }
