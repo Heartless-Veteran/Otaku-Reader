@@ -313,7 +313,7 @@ internal fun MangaGrid(
             modifier = modifier.fillMaxSize()
         ) {
             item(span = StaggeredGridItemSpan.FullLine) {
-                headerContent()
+                Column { headerContent() }
             }
 
             staggeredItems(
@@ -409,7 +409,7 @@ internal fun MangaGrid(
                 span = { GridItemSpan(maxLineSpan) },
                 contentType = "header_section"
             ) {
-                headerContent()
+                Column { headerContent() }
             }
 
             gridItems(

@@ -350,7 +350,10 @@ class ExtensionsViewModel @Inject constructor(
             }
             return
         }
-        if (extension.signatureHash == null) {
+        // Show the unverified dialog only for sideloaded APKs (repoUrl == null).
+        // Extensions from a configured repository are trusted implicitly — the user chose to
+        // add that repo, so an extra per-extension confirmation screen is unnecessary friction.
+        if (extension.signatureHash == null && extension.repoUrl == null) {
             _state.update {
                 it.copy(
                     showUnverifiedInstallDialog = true,

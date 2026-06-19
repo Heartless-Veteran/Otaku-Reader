@@ -263,18 +263,14 @@ class ExtensionInstaller(
                 }
                 tempFile = null
 
-                // Auto-trust only when the repo provided a matching expected hash.
-                // Repos using the minified index.min.json format (e.g. Keiyoushi) don't
-                // include a signing-cert hash, so trustedHash is null — in that case the
-                // user must trust the extension manually via the detail screen.
-                if (trustedHash != null && extension.signatureHash == trustedHash) {
-                    loader.trustExtension(trustedHash)
-                }
+                val hashToTrust = resolveAutoTrustHash(loadResult, trustedHash, repoMetadata)
 
                 _installationState.value = InstallationState.Installing
                 // Merge repo-index metadata the APK loader can't know about.
+                // Also restore signatureHash so Extension.isTrusted = true when auto-trusted.
                 val finalExtension = extension.copy(
                     apkPath = destFile.absolutePath,
+                    signatureHash = hashToTrust ?: extension.signatureHash,
                     repoUrl = extension.repoUrl ?: repoMetadata?.repoUrl,
                     apkUrl = extension.apkUrl ?: repoMetadata?.apkUrl,
                     iconUrl = extension.iconUrl ?: repoMetadata?.iconUrl,
@@ -284,6 +280,9 @@ class ExtensionInstaller(
                 // refresh hasn't synced).
                 val result = repository.installExtension(finalExtension, destFile.absolutePath)
                 result.onSuccess { ext ->
+                    // Persist trust only after the DB write succeeds — trusting before means a
+                    // failed install leaves the signature permanently trusted in the store.
+                    if (hashToTrust != null) loader.trustExtension(hashToTrust)
                     _installationState.value = InstallationState.Success(ext)
                     ExtensionInstallReceiver.notifyAdded(context, finalExtension.pkgName)
                 }.onFailure { error ->
@@ -300,6 +299,34 @@ class ExtensionInstaller(
                 if (apkFile.exists() && apkFile.parentFile == downloadsDir) apkFile.delete()
             }
         }
+
+    /**
+     * Determines which signature hash (if any) to auto-trust after installation.
+     *
+     * Auto-trusts when:
+     * (a) the repo provided a hash that matches the installed APK, or
+     * (b) the install came from a configured repository (repoMetadata != null) with no
+     *     repo-provided hash (e.g. Keiyoushi/Komikku minified index.min.json). Users
+     *     explicitly add repos they trust; requiring a per-extension second trust screen
+     *     is unnecessary friction. Sideloaded APKs (repoMetadata == null) still require
+     *     manual trust via ExtensionDetailScreen.
+     */
+    private fun resolveAutoTrustHash(
+        loadResult: ExtensionLoadResult,
+        trustedHash: String?,
+        repoMetadata: Extension?,
+    ): String? {
+        val actualHash: String? = when (loadResult) {
+            is ExtensionLoadResult.Success -> loadResult.extension.signatureHash
+            is ExtensionLoadResult.Untrusted -> loadResult.extension.signatureHash
+            else -> null
+        }
+        return when {
+            trustedHash != null && trustedHash == actualHash -> trustedHash
+            trustedHash == null && repoMetadata != null && actualHash != null -> actualHash
+            else -> null
+        }
+    }
 
     private fun resolveLoadResult(
         loadResult: ExtensionLoadResult,

@@ -6,9 +6,9 @@ This file is the AI assistant reference for the Otaku Reader codebase. Read it b
 
 ## What This Project Is
 
-Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is feature-complete for beta: all 35 parity issues plus the hardening batch have shipped, and the current phase is **beta APK validation**.
+Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is feature-complete: all 35 parity issues, the hardening batch, and the post-beta polish pass have shipped.
 
-**Status:** Alpha shipped 2026-05-25. Beta feature parity (#926–#958) and the 2026-06 hardening batch (#1090–#1099) are merged. Project website: https://heartless-veteran.github.io/Otaku-Reader/
+**Status:** Alpha shipped 2026-05-25. Beta feature parity (#926–#958), the 2026-06 hardening batch (#1090–#1099), and the P3 post-beta polish (PR #1114, 2026-06-19) are merged. **Current phase: production release preparation.** Project website: https://heartless-veteran.github.io/Otaku-Reader/
 
 **The developer is newer to Kotlin. Always explain what was wrong and why a fix works — never drop solutions without context.**
 
@@ -28,7 +28,7 @@ Otaku-Reader/
 ├── build-logic/            # Gradle convention plugins
 ├── core/
 │   ├── common/             # Shared utilities, Palette API, coroutine helpers
-│   ├── database/           # Room entities, DAOs, migrations
+│   ├── database/           # Room entities, DAOs, migrations (current schema v37)
 │   ├── network/            # OkHttp + Retrofit + Kotlinx Serialization setup
 │   ├── preferences/        # DataStore preferences, encrypted credential storage
 │   ├── ui/                 # Shared Compose components, Material 3 theme, Coil integration
@@ -64,7 +64,7 @@ Otaku-Reader/
 UI (Jetpack Compose)
   └─ collectAsStateWithLifecycle()
        └─ ViewModel (@HiltViewModel)
-            └─ StateFlow<UiState> + SharedFlow<Effect>
+            └─ StateFlow<UiState> + Channel<Effect>
                  └─ UseCases (Domain layer)
                       └─ Repository interfaces (Domain layer)
                            └─ Repository implementations (Data layer)
@@ -76,8 +76,8 @@ UI (Jetpack Compose)
 Every screen follows Model-View-Intent:
 
 - **State**: Immutable data class, exposed as `StateFlow<UiState>` from the ViewModel.
-- **Intent**: Sealed class representing user actions. All UI changes go through an Intent → Reducer cycle.
-- **Effect**: One-shot events (navigation, toasts) via a separate `SharedFlow<Effect>` or `Channel`.
+- **Event**: Sealed class representing user actions. All UI changes go through an Event → Reducer cycle.
+- **Effect**: One-shot events (navigation, toasts) via a `Channel<Effect>` (consumed exactly once).
 
 Rules:
 - Never mutate state directly.
@@ -89,9 +89,9 @@ Rules:
 
 **Pattern example** (every feature looks like this):
 ```
-LibraryMvi.kt      — sealed class LibraryState, LibraryIntent, LibraryEffect
+LibraryMvi.kt       — sealed class LibraryState, LibraryEvent, LibraryEffect
 LibraryViewModel.kt — @HiltViewModel, produces StateFlow<LibraryState>
-LibraryScreen.kt   — stateless composable consuming state
+LibraryScreen.kt    — stateless composable consuming state
 ```
 
 ### Clean Architecture Layer Rules
@@ -121,6 +121,7 @@ LibraryScreen.kt   — stateless composable consuming state
 - Migrations must be explicit. **Never use `fallbackToDestructiveMigration()` in production.**
 - Entities are separate from domain models. Always write and use mapper functions.
 - For tests, use in-memory Room databases — no `MigrationTestHelper`.
+- Current schema version: **v37** (added reader comments in PR #1098).
 
 ---
 
@@ -163,16 +164,16 @@ Extensions load dynamically as APKs with classloader isolation. The interfaces i
 | JVM target | 17 |
 | Compose BOM | 2026.04.01 |
 
-### Product Flavors
+### Build Commands
 
-The build is now a **single flat artifact** — no product flavors. Use `./gradlew assembleDebug` or `./gradlew assembleRelease` directly.
+The build is a **single flat artifact** — no product flavors.
 
-| Build Command | Output |
-|---------------|--------|
+| Command | Output |
+|---------|--------|
 | `./gradlew :app:assembleDebug` | Debug APK (fastest, development) |
 | `./gradlew :app:assembleRelease` | Signed release APK (requires keystore) |
 
-**Note:** The `full`/`foss` flavor dimension was removed. AI features are planned for a future phase but are not in the core repo. See [Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI) (planned separate repo).
+**Note:** The `full`/`foss` flavor dimension was removed. AI features are planned for a separate repo. See [Otaku-Reader-AI](https://github.com/Heartless-Veteran/Otaku-Reader-AI).
 
 ---
 
@@ -192,9 +193,9 @@ The build is now a **single flat artifact** — no product flavors. Use `./gradl
 | Paging | Paging 3 (3.4.2) |
 | Background work | WorkManager 2.11.2 |
 | Widgets | Glance 1.1.1 |
-| Widgets | Glance 1.1.1 |
 | Self-hosted server | Ktor 3.4.2 |
 | Static analysis | Detekt 1.23.8 |
+| Screenshot tests | Roborazzi |
 
 ---
 
@@ -208,18 +209,23 @@ The build is now a **single flat artifact** — no product flavors. Use `./gradl
 | MockK 1.14.9 | Kotlin mocking DSL |
 | Turbine 1.2.1 | Flow assertion (`.test { awaitItem() }`) |
 | Robolectric 4.16.1 | Android environment simulation for unit tests |
+| Roborazzi | Compose screenshot regression tests |
 | `androidx-test` | AndroidX testing utilities |
 
 ### Patterns
 
 ```kotlin
 @Test
-fun `library state updates when intent received`() = runTest {
-    val viewModel = LibraryViewModel(mockUseCase, testDispatcher)
-    viewModel.uiState.test {
-        viewModel.onIntent(LibraryIntent.LoadLibrary)
-        val state = awaitItem()
-        assertThat(state.manga).isNotEmpty()
+fun `removeSelectedFromHistory emits ShowUndoBatchSnackbar`() = runTest {
+    val viewModel = HistoryViewModel(mockRepository, testDispatcher)
+    viewModel.effect.test {
+        viewModel.onEvent(HistoryEvent.RemoveSelectedFromHistory)
+        val effect = awaitItem()
+        assertTrue(effect is HistoryEffect.ShowUndoBatchSnackbar)
+        assertEquals(2, (effect as HistoryEffect.ShowUndoBatchSnackbar).count)
+        // advanceUntilIdle() runs through the delay so DB calls fire
+        advanceUntilIdle()
+        coVerify { mockRepository.removeFromHistory(any()) }
     }
 }
 ```
@@ -229,6 +235,103 @@ fun `library state updates when intent received`() = runTest {
 - Mock all external dependencies with MockK (`mockk { }` or `every { }`).
 - Use in-memory Room databases for DAO tests.
 - Modules that need Android resources set `unitTests.isIncludeAndroidResources = true`.
+- When a ViewModel emits an Effect inside a delayed coroutine, call `advanceUntilIdle()` before asserting DB calls — this runs through any `delay()` in the pending job.
+
+---
+
+## Proven Patterns (learned building this app)
+
+### Undo Snackbar — Pattern A: Immediate-delete + Re-add (Library bulk delete)
+
+Delete from DB immediately, show Undo snackbar. On undo, call the same toggle function again to re-add. Works when the underlying operation is a boolean toggle (favorite/unfavorite).
+
+```kotlin
+private fun removeSelectedFromLibrary() {
+    val ids = selection.snapshotAndClear()
+    if (ids.isEmpty()) return
+    viewModelScope.launch {
+        ids.forEach { runCatching { toggleFavoriteManga(it) } }   // delete immediately
+        _effect.send(LibraryEffect.ShowUndoLibraryDelete(count = ids.size, mangaIds = ids))
+    }
+}
+
+private fun undoLibraryDelete(mangaIds: Set<Long>) {
+    viewModelScope.launch {
+        mangaIds.forEach { runCatching { toggleFavoriteManga(it) } }  // re-add via same toggle
+    }
+}
+```
+
+### Undo Snackbar — Pattern B: Delayed-delete + Pending Filter (History batch delete)
+
+Add IDs to `pendingDeleteIds` immediately so the UI filters them out (items visually disappear). Start a 4-second delay job, then delete from DB. On undo, cancel the job and remove from pending (items reappear). Track `pendingBatchDeleteIds` to guard against a stale snackbar's undo cancelling the wrong batch.
+
+```kotlin
+private var pendingBatchDeleteJob: Job? = null
+private var pendingBatchDeleteIds: Set<Long>? = null
+private val pendingDeleteIds = MutableStateFlow<Set<Long>>(emptySet())
+
+private fun removeSelectedFromHistory() {
+    val selectedIds = _state.value.selectedItems
+    if (selectedIds.isEmpty()) return
+    clearSelection()
+    // Commit any previous pending batch first
+    val previousIds = pendingBatchDeleteIds
+    if (previousIds != null) {
+        pendingBatchDeleteJob?.cancel()
+        viewModelScope.launch {
+            previousIds.forEach { chapterRepository.removeFromHistory(it) }
+            pendingDeleteIds.update { it - previousIds }
+        }
+    }
+    pendingBatchDeleteIds = selectedIds
+    pendingDeleteIds.update { it + selectedIds }          // hide from UI immediately
+    pendingBatchDeleteJob = viewModelScope.launch {
+        _effect.send(HistoryEffect.ShowUndoBatchSnackbar(...))
+        delay(UNDO_TIMEOUT_MS)
+        selectedIds.forEach { chapterRepository.removeFromHistory(it) }
+        pendingDeleteIds.update { it - selectedIds }
+        pendingBatchDeleteIds = null
+    }
+}
+
+private fun undoBatchRemoveFromHistory(chapterIds: Set<Long>) {
+    if (pendingBatchDeleteIds != chapterIds) return       // stale undo guard
+    pendingBatchDeleteJob?.cancel()
+    pendingBatchDeleteIds = null
+    pendingDeleteIds.update { it - chapterIds }           // restore items to UI
+}
+```
+
+### Stable Flow in Compose
+
+Wrap a flow derived inside a composable with `remember(key)` to prevent a new flow instance on every recomposition:
+
+```kotlin
+// Good — stable, only recreates when repository instance changes
+val activeDownloadCount by remember(downloadRepository) {
+    downloadRepository.observeDownloads()
+        .map { downloads -> downloads.count { it.isActive } }
+        .distinctUntilChanged()
+}.collectAsStateWithLifecycle(initialValue = 0)
+
+// Bad — new flow instance on every recomposition → excessive resubscription
+val activeDownloadCount by downloadRepository.observeDownloads()
+    .map { it.count { d -> d.isActive } }
+    .collectAsStateWithLifecycle(0)
+```
+
+### Bottom Nav Badge Pattern
+
+To add a badge to a nav tab, follow the Updates tab in `OtakuReaderBottomBar.kt`:
+1. Add `count: Int = 0` parameter to `OtakuReaderBottomBar()`.
+2. Wrap the tab icon in `BadgedBox { Badge { Text(...) }; Icon(...) }` when `count > 0`.
+3. Use `stringResource(R.string.badge_count_overflow)` for values > 99 — never hardcode "99+".
+4. Collect the count in `OtakuReaderApp()` using `remember(repository) { flow }.collectAsStateWithLifecycle(0)`.
+
+### Never Stub Live UI
+
+If a UI element exists (preference, button, tab), wire it to the real implementation. Never send a "not supported" snackbar for a feature that has a working backing implementation. The `setDeleteAfterReadOverride` stub (fixed in PR #1114) is the canonical example of what not to do.
 
 ---
 
@@ -241,16 +344,18 @@ fun `library state updates when intent received`() = runTest {
 5. **Gradle dependency conflicts** — Version mismatches between Compose BOM, Kotlin, Hilt, or KSP. Check `libs.versions.toml` first.
 6. **Navigation crashes** — Missing destination, wrong argument type in NavGraph, or missing `@Serializable` on route class.
 7. **Coroutine scope leaks** — `GlobalScope` used instead of `viewModelScope` or `lifecycleScope`. Always use structured concurrency.
+8. **Stale undo from concurrent batches** — Guard the undo handler: `if (pendingBatchIds != incomingIds) return`.
+9. **Flow recreated on recomposition** — Wrap with `remember(key) { flow }` when derived from a `@Singleton` injected dependency.
 
 ---
 
 ## Code Style Conventions
 
 - Prefer extension functions over utility classes.
-- Use `sealed class` for UI state, intent, and effect modeling.
+- Use `sealed class` for UI state, event, and effect modeling.
 - Keep ViewModels thin — business logic belongs in UseCases.
 - No hardcoded strings — use `strings.xml` resources.
-- No magic numbers — use named constants.
+- No magic numbers — use named constants in `companion object`.
 - No XML layouts — this is a pure Jetpack Compose project.
 - No `GlobalScope`.
 - No `LiveData`.
@@ -260,13 +365,15 @@ fun `library state updates when intent received`() = runTest {
 ## What NOT To Do
 
 - **Do not break Tachiyomi extension compatibility** — this is the most critical constraint.
-- **Do not implement AI features in core** — AI features are planned for a separate repo, not the core app.
+- **Do not implement AI features in core** — AI features belong in the separate Otaku-Reader-AI repo.
 - **Do not add Firebase analytics or crash tooling** unless explicitly requested.
 - **Do not use `fallbackToDestructiveMigration()`** in Room database setup.
 - **Do not use `GlobalScope`** — use `viewModelScope`, `lifecycleScope`, or a provided `CoroutineScope`.
 - **Do not use `LiveData`** — StateFlow only.
 - **Do not write XML layouts** — Compose only.
-- **Do not mutate ViewModel state directly** — all changes through Intent → Reducer.
+- **Do not mutate ViewModel state directly** — all changes through Event → Reducer.
+- **Do not stub UI features** — if a UI element exists, wire it up. Never send a "not supported" snackbar when a real implementation exists.
+- **Do not skip undo on destructive bulk actions** — Library bulk delete, History batch delete, and Updates bulk mark-as-read all have undo snackbars; keep that standard going forward.
 
 ---
 
@@ -274,13 +381,19 @@ fun `library state updates when intent received`() = runTest {
 
 | Workflow | Trigger | What It Does |
 |----------|---------|--------------|
-| `android-ci.yml` | Push/PR to `main`, `develop` | Detekt, unit tests, debug APK |
-| `ci.yml` | Push/PR/dispatch to `main`, `develop` | Debug builds, unit tests |
+| `ci.yml` | Push/PR to `main`, `develop` | Detekt, ktlint, unit tests, coverage gate, screenshot tests, assembleDebug |
+| `build.yml` | Push/PR | Debug APK build |
 | `release.yml` | Tag push (`v*`) | Signed release APK, GitHub release |
 | `benchmark.yml` | Manual | Baseline profile generation |
 | `build_preview.yml` | PR trigger | Preview APK build |
+| `cert-pin-check.yml` | Push/PR | Certificate pinning verification |
+| `extension-smoke-test.yml` | Push/PR | Extension loading smoke tests |
+| `pages.yml` | Push to `main` | Deploy VitePress website to GitHub Pages |
+| `label.yml` | PR events | Auto-label PRs by changed file paths |
 
 CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches are managed with `actions/cache@v4`.
+
+**Known CI flake:** `Analyze (java-kotlin)` (CodeQL) occasionally fails with "CodeQL could not process any code written in Java/Kotlin" — this is an intermittent GitHub infra issue unrelated to code correctness. The Gradle build itself succeeds; only the CodeQL database finalization fails. GitHub typically retries the workflow automatically and the second run succeeds. If the concurrent successful `Analyze (java-kotlin)` check is green, the stale failure is safe to ignore. All other checks (Unit Tests, Detekt, Ktlint, Assemble, Coverage Gate, Screenshot Tests) must be green before merging.
 
 ---
 
@@ -288,7 +401,7 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 
 - Solo developer, veteran background, newer to Kotlin — explain fixes, don't just drop code.
 - Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
-- **Current priority: beta APK validation and release.** Feature parity and hardening are merged.
+- **Current priority: production release.** Beta parity, hardening, and post-beta polish are all merged and on `main`.
 
 ---
 
@@ -296,7 +409,7 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 
 The full-systems audit from 2026-05-24 has been completed and its artifacts archived in `.github/audit-archive/`. The audit validated alpha readiness (all gates green) and informed the beta feature parity backlog.
 
-**Current workflow:** Beta features are tracked as individual GitHub issues (#926–#958) rather than monolithic audit documents. See [ROADMAP.md](ROADMAP.md) for the full beta plan.
+**Current workflow:** Features are tracked as individual GitHub issues. See [ROADMAP.md](ROADMAP.md) for the full release history.
 
 **Legacy audit files (reference only):**
 - `.github/audit-archive/AUDIT_MASTER.md`
@@ -311,4 +424,4 @@ The full-systems audit from 2026-05-24 has been completed and its artifacts arch
 
 ---
 
-*CLAUDE.md maintained by the core team. For beta feature questions, see [ROADMAP.md](ROADMAP.md) and GitHub issues #926–#958.*
+*CLAUDE.md maintained by the core team. For release planning, see [ROADMAP.md](ROADMAP.md).*

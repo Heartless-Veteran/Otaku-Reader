@@ -129,9 +129,9 @@ fun OtakuReaderBottomBar(
 private fun NavTab.label(): String = when (this) {
     NavTab.LIBRARY -> stringResource(R.string.nav_library)
     NavTab.UPDATES -> stringResource(R.string.nav_updates)
-    NavTab.BROWSE -> stringResource(R.string.nav_discover)
-    NavTab.HISTORY -> stringResource(R.string.nav_activity)
-    NavTab.MORE -> stringResource(R.string.nav_profile)
+    NavTab.BROWSE -> stringResource(R.string.nav_browse)
+    NavTab.HISTORY -> stringResource(R.string.nav_history)
+    NavTab.MORE -> stringResource(R.string.nav_more)
 }
 
 @Suppress("UnusedReceiverParameter")
@@ -140,5 +140,5 @@ private fun NavTab.icon() = when (this) {
     NavTab.UPDATES -> Icons.Default.NewReleases
     NavTab.BROWSE -> Icons.Default.Explore
     NavTab.HISTORY -> Icons.Default.History
-    NavTab.MORE -> Icons.Default.Person
+    NavTab.MORE -> Icons.Default.MoreHoriz
 }
