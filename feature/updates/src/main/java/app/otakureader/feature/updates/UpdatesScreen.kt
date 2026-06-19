@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -68,6 +69,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.MangaUpdate
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -244,6 +247,7 @@ fun UpdatesScreen(
                 else -> UpdatesList(
                     updates = state.updates,
                     selectedItems = state.selectedItems,
+                    activeDownloads = state.activeDownloads,
                     lastRunSummary = state.lastRunSummary,
                     onChapterClick = { update ->
                         viewModel.onEvent(
@@ -330,6 +334,7 @@ private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
 private fun UpdatesList(
     updates: List<MangaUpdate>,
     selectedItems: Set<Long>,
+    activeDownloads: Map<Long, DownloadItem>,
     lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
@@ -401,6 +406,7 @@ private fun UpdatesList(
                         UpdateItem(
                             update = item.update,
                             isSelected = selectedItems.contains(item.update.chapter.id),
+                            activeDownload = activeDownloads[item.update.chapter.id],
                             onClick = { onChapterClick(item.update) },
                             onLongClick = { onChapterLongClick(item.update) },
                             onDownloadClick = { onDownloadClick(item.update) }
@@ -430,6 +436,7 @@ private fun UpdatesDateHeader(label: String, modifier: Modifier = Modifier) {
 private fun UpdateItem(
     update: MangaUpdate,
     isSelected: Boolean,
+    activeDownload: DownloadItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDownloadClick: () -> Unit,
@@ -499,13 +506,29 @@ private fun UpdateItem(
                     modifier = Modifier.widthIn(max = 72.dp)
                 )
             }
-            // Per-item download button
-            IconButton(onClick = onDownloadClick) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = stringResource(R.string.updates_download_chapter),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // Per-item download button / progress indicator
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(48.dp)
+            ) {
+                when (activeDownload?.status) {
+                    DownloadStatus.DOWNLOADING -> CircularProgressIndicator(
+                        progress = { (activeDownload.progress / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    DownloadStatus.QUEUED, DownloadStatus.PAUSED -> CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    else -> IconButton(onClick = onDownloadClick) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = stringResource(R.string.updates_download_chapter),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

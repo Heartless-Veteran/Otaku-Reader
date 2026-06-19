@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
+import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.model.UpdateRunSummary
 
@@ -45,6 +46,8 @@ data class UpdatesState(
     val showPendingUpdates: Boolean = false,
     /** Diagnostics card: summary of the last completed library update run (#1041). */
     val lastRunSummary: UpdateRunSummary? = null,
+    /** Active/queued downloads keyed by chapterId, for per-row progress indicators. */
+    val activeDownloads: Map<Long, DownloadItem> = emptyMap(),
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {

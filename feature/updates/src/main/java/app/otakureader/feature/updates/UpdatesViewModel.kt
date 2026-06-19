@@ -50,6 +50,7 @@ class UpdatesViewModel @Inject constructor(
         loadUpdates()
         loadLastRunSummary()
         markUpdatesViewed()
+        observeActiveDownloads()
     }
 
     fun onEvent(event: UpdatesEvent) {
@@ -241,6 +242,16 @@ class UpdatesViewModel @Inject constructor(
                 _state.update { it.copy(lastRunSummary = summary) }
             }
             .catch { /* diagnostics failure should not affect the main updates list */ }
+            .launchIn(viewModelScope)
+    }
+
+    /** Observe the download queue and surface active/queued items for per-row progress UI. */
+    private fun observeActiveDownloads() {
+        downloadRepository.observeDownloads()
+            .onEach { items ->
+                _state.update { it.copy(activeDownloads = items.filter { d -> d.isActive }.associateBy { d -> d.chapterId }) }
+            }
+            .catch { /* download progress failure should not affect the main updates list */ }
             .launchIn(viewModelScope)
     }
 
