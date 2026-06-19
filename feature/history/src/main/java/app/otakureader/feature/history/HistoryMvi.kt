@@ -15,6 +15,7 @@ data class HistoryState(
     val dateFilterStart: Long? = null,
     /** End of the active date filter (epoch-ms, inclusive), or null if no filter set. */
     val dateFilterEnd: Long? = null,
+    val isPullRefreshing: Boolean = false,
 ) : UiState
 
 sealed interface HistoryEvent : UiEvent {
@@ -33,6 +34,8 @@ sealed interface HistoryEvent : UiEvent {
     data class SetDateFilter(val start: Long?, val end: Long?) : HistoryEvent
     /** Remove the active date range filter and show all history entries. */
     data object ClearDateFilter : HistoryEvent
+    /** Triggered by pull-to-refresh; re-exposes current history after a brief spinner. */
+    data object RefreshHistory : HistoryEvent
 }
 
 sealed interface HistoryEffect : UiEffect {

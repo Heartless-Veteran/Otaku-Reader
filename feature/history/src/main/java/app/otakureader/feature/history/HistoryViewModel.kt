@@ -92,6 +92,13 @@ class HistoryViewModel @Inject constructor(
                 dateFilter.value = Pair(null, null)
                 _state.update { it.copy(dateFilterStart = null, dateFilterEnd = null) }
             }
+            HistoryEvent.RefreshHistory -> {
+                _state.update { it.copy(isPullRefreshing = true) }
+                viewModelScope.launch {
+                    delay(1_000L)
+                    _state.update { it.copy(isPullRefreshing = false) }
+                }
+            }
         }
     }
 

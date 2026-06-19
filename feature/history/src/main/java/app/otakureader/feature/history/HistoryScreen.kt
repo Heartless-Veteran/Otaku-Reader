@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -261,64 +262,70 @@ fun HistoryScreen(
                 }
             }
 
-            when {
-                state.isLoading -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-                state.error != null -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.error ?: stringResource(R.string.history_unknown_error),
-                        color = MaterialTheme.colorScheme.error
+            PullToRefreshBox(
+                isRefreshing = state.isPullRefreshing,
+                onRefresh = { viewModel.onEvent(HistoryEvent.RefreshHistory) },
+                modifier = Modifier.weight(1f),
+            ) {
+                when {
+                    state.isLoading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                    state.error != null -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = state.error ?: stringResource(R.string.history_unknown_error),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    state.history.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (state.searchQuery.isBlank()) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(HistoryEmptyStateDefaults.Padding),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(HistoryEmptyStateDefaults.IconSize),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.height(HistoryEmptyStateDefaults.Spacing))
+                                Text(
+                                    text = stringResource(R.string.history_empty),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        } else {
+                            Text(text = stringResource(R.string.history_no_results, state.searchQuery))
+                        }
+                    }
+                    else -> HistoryList(
+                        history = state.history,
+                        selectedItems = state.selectedItems,
+                        onItemClick = { entry ->
+                            viewModel.onEvent(
+                                HistoryEvent.OnChapterClick(entry.chapter.mangaId, entry.chapter.id)
+                            )
+                        },
+                        onItemLongClick = { entry ->
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.onEvent(HistoryEvent.OnChapterLongClick(entry.chapter.id))
+                        },
+                        onRemoveClick = { entry ->
+                            viewModel.onEvent(HistoryEvent.RemoveFromHistory(entry.chapter.id))
+                        }
                     )
                 }
-                state.history.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (state.searchQuery.isBlank()) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(HistoryEmptyStateDefaults.Padding),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.History,
-                                contentDescription = null,
-                                modifier = Modifier.size(HistoryEmptyStateDefaults.IconSize),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(modifier = Modifier.height(HistoryEmptyStateDefaults.Spacing))
-                            Text(
-                                text = stringResource(R.string.history_empty),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    } else {
-                        Text(text = stringResource(R.string.history_no_results, state.searchQuery))
-                    }
-                }
-                else -> HistoryList(
-                    history = state.history,
-                    selectedItems = state.selectedItems,
-                    onItemClick = { entry ->
-                        viewModel.onEvent(
-                            HistoryEvent.OnChapterClick(entry.chapter.mangaId, entry.chapter.id)
-                        )
-                    },
-                    onItemLongClick = { entry ->
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.onEvent(HistoryEvent.OnChapterLongClick(entry.chapter.id))
-                    },
-                    onRemoveClick = { entry ->
-                        viewModel.onEvent(HistoryEvent.RemoveFromHistory(entry.chapter.id))
-                    }
-                )
             }
         }
     }
