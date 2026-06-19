@@ -38,7 +38,7 @@ internal fun CategoryFilterChips(
             key = { it.id }
         ) { category ->
             OtakuChip(
-                label = category.name,
+                label = "${category.name} (${category.count})",
                 selected = selectedCategory == category.id,
                 onClick = { onCategorySelected(category.id) },
             )
@@ -71,7 +71,7 @@ internal fun ReadingListFilterChips(
             key = { it.id }
         ) { list ->
             OtakuChip(
-                label = list.name,
+                label = "${list.name} (${list.count})",
                 selected = selectedListId == list.id,
                 onClick = { onListSelected(list.id) },
             )

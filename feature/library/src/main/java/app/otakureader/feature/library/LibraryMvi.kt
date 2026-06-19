@@ -96,6 +96,7 @@ data class LibraryState(
     val saveViewName: String = "",
     // L2/L3: long-press context menu — holds the id of the manga whose popup is open
     val contextMenuMangaId: Long? = null,
+    val displayName: String = "",
 )
 
 data class LibraryMangaItem(

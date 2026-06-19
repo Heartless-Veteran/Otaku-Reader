@@ -50,6 +50,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -321,7 +322,20 @@ fun LibraryScreen(
                     }
                 )
                 else -> TopAppBar(
-                    title = { Text(stringResource(R.string.library_title_with_count, state.mangaList.size)) },
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Otaku",
+                                color = MaterialTheme.colorScheme.primary,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            )
+                            Text(
+                                text = "Reader",
+                                color = MaterialTheme.colorScheme.onBackground,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            )
+                        }
+                    },
                     actions = {
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleIncognito) }) {
                             Icon(

@@ -2,10 +2,12 @@ package app.otakureader.data.repository
 
 import app.otakureader.core.database.dao.MangaDao
 import app.otakureader.core.database.dao.RecommendationDao
+import app.otakureader.core.database.entity.MangaEntity
 import app.otakureader.core.database.entity.RecommendationEntity
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.Recommendation
 import app.otakureader.domain.repository.RecommendationRepository
+import app.otakureader.domain.repository.SourceRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
@@ -18,6 +20,7 @@ import kotlin.math.sqrt
 class RecommendationRepositoryImpl @Inject constructor(
     private val recommendationDao: RecommendationDao,
     private val mangaDao: MangaDao,
+    private val sourceRepository: SourceRepository,
 ) : RecommendationRepository {
 
     override fun getRecommendations(): Flow<List<Recommendation>> =
@@ -31,9 +34,10 @@ class RecommendationRepositoryImpl @Inject constructor(
         val profile = buildGenreProfile(libraryManga)
         if (profile.isEmpty()) return
 
-        // Candidates are browsed-but-not-favorited manga from the local manga table —
-        // these are sources the user has at least glanced at, which keeps recommendations
-        // grounded in their actual extension ecosystem rather than blind catalog crawls.
+        // Seed the candidate pool with popular manga from the user's own sources so
+        // recommendations work even before the user has manually browsed anything.
+        seedCandidatesFromSources(libraryManga)
+
         val libraryIds = libraryManga.mapTo(mutableSetOf()) { it.id }
         val now = System.currentTimeMillis()
 
@@ -71,6 +75,33 @@ class RecommendationRepositoryImpl @Inject constructor(
         recommendationDao.deleteById(mangaId)
     }
 
+    private suspend fun seedCandidatesFromSources(libraryManga: List<Manga>) {
+        val sourceIds = libraryManga.map { it.sourceId.toString() }.distinct().take(MAX_SOURCES_TO_SEED)
+        val now = System.currentTimeMillis()
+        val toInsert = mutableListOf<MangaEntity>()
+        for (sourceIdStr in sourceIds) {
+            val sourceId = sourceIdStr.toLongOrNull() ?: continue
+            sourceRepository.getPopularManga(sourceIdStr, page = 1)
+                .getOrNull()
+                ?.mangas
+                ?.filter { !it.genre.isNullOrBlank() }
+                ?.mapTo(toInsert) { sm ->
+                    MangaEntity(
+                        id = 0,
+                        sourceId = sourceId,
+                        url = sm.url,
+                        title = sm.title,
+                        thumbnailUrl = sm.thumbnailUrl,
+                        author = sm.author,
+                        genre = sm.genre,
+                        favorite = false,
+                        dateAdded = now,
+                    )
+                }
+        }
+        if (toInsert.isNotEmpty()) mangaDao.insertIfNotExists(toInsert)
+    }
+
     private fun buildGenreProfile(manga: List<Manga>): Map<String, Float> {
         val profile = mutableMapOf<String, Float>()
         manga.forEach { m ->
@@ -104,5 +135,6 @@ class RecommendationRepositoryImpl @Inject constructor(
         private const val MIN_LIBRARY_SIZE = 5
         private const val MAX_RECOMMENDATIONS = 20
         private const val CANDIDATE_POOL_LIMIT = 500
+        private const val MAX_SOURCES_TO_SEED = 5
     }
 }

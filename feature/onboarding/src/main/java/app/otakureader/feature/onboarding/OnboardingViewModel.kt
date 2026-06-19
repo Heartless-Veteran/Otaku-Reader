@@ -28,4 +28,12 @@ class OnboardingViewModel @Inject constructor(
     fun setThemeMode(mode: Int) {
         viewModelScope.launch { generalPreferences.setThemeMode(mode) }
     }
+
+    /** Display name entered by the user on the Name onboarding page. */
+    val displayName: StateFlow<String> = generalPreferences.displayName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    fun setDisplayName(name: String) {
+        viewModelScope.launch { generalPreferences.setDisplayName(name) }
+    }
 }

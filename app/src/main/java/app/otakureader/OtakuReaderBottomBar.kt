@@ -9,12 +9,16 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -58,7 +62,10 @@ fun OtakuReaderBottomBar(
     val tabOrder = tabOrderEntries.filter { it.isVisible }.map { it.tab }
     if (tabOrder.isEmpty()) return
 
-    NavigationBar(modifier = modifier) {
+    NavigationBar(
+        modifier = modifier.clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+        containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceContainer,
+    ) {
         tabOrder.forEach { tab ->
             val selected = when (tab) {
                 NavTab.LIBRARY -> currentDestination?.hasRoute(Route.Library::class) == true
@@ -122,9 +129,9 @@ fun OtakuReaderBottomBar(
 private fun NavTab.label(): String = when (this) {
     NavTab.LIBRARY -> stringResource(R.string.nav_library)
     NavTab.UPDATES -> stringResource(R.string.nav_updates)
-    NavTab.BROWSE -> stringResource(R.string.nav_browse)
-    NavTab.HISTORY -> stringResource(R.string.nav_history)
-    NavTab.MORE -> stringResource(R.string.nav_more)
+    NavTab.BROWSE -> stringResource(R.string.nav_discover)
+    NavTab.HISTORY -> stringResource(R.string.nav_activity)
+    NavTab.MORE -> stringResource(R.string.nav_profile)
 }
 
 @Suppress("UnusedReceiverParameter")
@@ -133,5 +140,5 @@ private fun NavTab.icon() = when (this) {
     NavTab.UPDATES -> Icons.Default.NewReleases
     NavTab.BROWSE -> Icons.Default.Explore
     NavTab.HISTORY -> Icons.Default.History
-    NavTab.MORE -> Icons.Default.MoreHoriz
+    NavTab.MORE -> Icons.Default.Person
 }

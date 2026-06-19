@@ -8,6 +8,10 @@
     <string name="nav_browse">Browse</string>
     <string name="nav_history">History</string>
     <string name="nav_more">More</string>
+    <!-- Renamed tabs for UI overhaul (#1112) -->
+    <string name="nav_discover">Discover</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_profile">Profile</string>
 
     <!-- App icon shortcuts -->
     <string name="shortcut_library_short">Library</string>

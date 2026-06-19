@@ -114,6 +114,7 @@ class LibraryViewModelTest {
             every { showNsfwContent } returns flowOf(true)
             every { lastUpdatesViewedAt } returns flowOf(0L)
             every { visualEffectsEnabled } returns flowOf(true)
+            every { displayName } returns flowOf("")
         }
         chapterRepository = mockk { every { countNewUpdatesSince(any()) } returns flowOf(0) }
         mangaRepository = mockk(relaxed = true)
@@ -259,6 +260,7 @@ class LibraryViewModelTest {
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         testDispatcher.scheduler.advanceUntilIdle()
 
+        // Long-press now opens the context menu popup, not direct selection (L2 feature).
         assertEquals(1L, viewModel.state.value.contextMenuMangaId)
     }
 
@@ -313,6 +315,7 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
+        // Select via the context-menu "Select" action (long-press now opens a menu, not direct selection).
         viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(1L))
         viewModel.onEvent(LibraryEvent.InvertSelection)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -342,7 +345,7 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Enter selection mode via context menu
+        // Enter selection mode via the context-menu "Select" action (long-press now opens menu first).
         viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(2L))
         testDispatcher.scheduler.advanceUntilIdle()
         // Then click another item — should add to selection

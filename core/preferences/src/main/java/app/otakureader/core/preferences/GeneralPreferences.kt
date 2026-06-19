@@ -99,6 +99,10 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val onboardingCompleted: Flow<Boolean> = dataStore.data.map { it[Keys.ONBOARDING_COMPLETED] ?: false }
     suspend fun setOnboardingCompleted(value: Boolean) = dataStore.edit { it[Keys.ONBOARDING_COMPLETED] = value }
 
+    /** Display name the user entered during onboarding, used for the Library greeting header. */
+    val displayName: Flow<String> = dataStore.data.map { it[Keys.DISPLAY_NAME] ?: "" }
+    suspend fun setDisplayName(value: String) = dataStore.edit { it[Keys.DISPLAY_NAME] = value.trim() }
+
     // --- Auto Theme Color ---
 
     /**
@@ -453,6 +457,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SHOW_NSFW_CONTENT = booleanPreferencesKey("show_nsfw_content")
         val DISCORD_RPC_ENABLED = booleanPreferencesKey("discord_rpc_enabled")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val DISPLAY_NAME = stringPreferencesKey("display_name")
         val AUTO_THEME_COLOR = booleanPreferencesKey("auto_theme_color")
         val VISUAL_EFFECTS_ENABLED = booleanPreferencesKey("visual_effects_enabled")
         val MANHWA_OVERRIDE_IDS = stringSetPreferencesKey("manhwa_override_ids")

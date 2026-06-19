@@ -13,11 +13,20 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -65,7 +74,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import app.otakureader.domain.repository.DownloadRepository
@@ -105,9 +113,13 @@ class MainActivity : FragmentActivity() {
     // Flips to false once the minimum splash time has elapsed; gates the keep-on-screen condition.
     private var keepSplashOnScreen = true
 
+    // True only on a genuine cold start (null savedInstanceState); gates the splash art overlay.
+    private var isColdStart = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // installSplashScreen() must run before super.onCreate(). Capture the handle so we can
         // hold the splash briefly; wrapped because a splash failure must never abort startup.
+        isColdStart = savedInstanceState == null
         val splashScreen = runCatching { installSplashScreen() }.getOrNull()
         splashScreen?.setKeepOnScreenCondition { keepSplashOnScreen }
         super.onCreate(savedInstanceState)
@@ -277,24 +289,28 @@ class MainActivity : FragmentActivity() {
                         endHour = biometricLockEndHour,
                         activeDays = biometricLockActiveDays,
                     ) {
-                        OtakuReaderApp(
-                            generalPreferences = generalPreferences,
-                            libraryPreferences = libraryPreferences,
-                            navOrderPreferences = navOrderPreferences,
-                            downloadRepository = downloadRepository,
-                            onboardingCompleted = onboardingCompleted,
-                            deepLinkResult = pendingDeepLinkResult,
-                            onDeepLinkConsumed = { pendingDeepLinkResult = null }
-                        )
-
-                        // Show crash report from previous run as an overlay dialog.
-                        // The report is already removed from SharedPreferences at this point;
-                        // dismissing just hides the dialog for this session.
-                        pendingCrashReport?.let { report ->
-                            CrashReportDialog(
-                                report = report,
-                                onDismiss = { pendingCrashReport = null }
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            OtakuReaderApp(
+                                generalPreferences = generalPreferences,
+                                libraryPreferences = libraryPreferences,
+                                navOrderPreferences = navOrderPreferences,
+                                downloadRepository = downloadRepository,
+                                onboardingCompleted = onboardingCompleted,
+                                deepLinkResult = pendingDeepLinkResult,
+                                onDeepLinkConsumed = { pendingDeepLinkResult = null }
                             )
+
+                            // Show crash report from previous run as an overlay dialog.
+                            // The report is already removed from SharedPreferences at this point;
+                            // dismissing just hides the dialog for this session.
+                            pendingCrashReport?.let { report ->
+                                CrashReportDialog(
+                                    report = report,
+                                    onDismiss = { pendingCrashReport = null }
+                                )
+                            }
+
+                            SplashArtOverlay(show = isColdStart)
                         }
                     }
                 }
@@ -475,6 +491,48 @@ private fun CrashReportDialog(
         },
     )
 }
+
+/**
+ * Full-screen overlay shown briefly on each cold start, fading away once the app is ready.
+ * Picks one splash art randomly from the available assets so each launch feels fresh.
+ * Add more drawables to [SPLASH_ARTS] as new artwork arrives.
+ */
+@Composable
+private fun SplashArtOverlay(show: Boolean) {
+    if (!show) return
+    var visible by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(SPLASH_ART_DISPLAY_MS)
+        visible = false
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        exit = fadeOut(animationSpec = tween(durationMillis = SPLASH_ART_FADE_MS)),
+    ) {
+        val artRes = remember { SPLASH_ARTS.random() }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF2B2F3A)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(artRes),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth(0.75f),
+                contentScale = ContentScale.Fit,
+            )
+        }
+    }
+}
+
+private val SPLASH_ARTS = listOf(
+    R.drawable.splash_art_1,
+)
+
+private const val SPLASH_ART_DISPLAY_MS = 1_400L
+private const val SPLASH_ART_FADE_MS = 500
 
 /**
  * Last-resort screen shown when [MainActivity.startApp] throws during startup.

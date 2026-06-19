@@ -123,6 +123,16 @@
     <string name="library_continue_reading_title">Continue Reading</string>
     <string name="library_continue_reading_cover">Cover for %1$s</string>
     <string name="library_continue_reading_chapter">Ch. %.1f</string>
+    <string name="library_continue_reading_see_all">See all</string>
+
+    <!-- Library section headers (UI overhaul #1112) -->
+    <string name="library_section_categories">Categories</string>
+    <string name="library_section_categories_manage">Manage</string>
+    <string name="library_section_all_titles">All Titles</string>
+    <string name="library_greeting_morning">Good morning</string>
+    <string name="library_greeting_afternoon">Good afternoon</string>
+    <string name="library_greeting_evening">Good evening</string>
+    <string name="library_greeting_stats">%1$d titles · %2$d unread</string>
 
     <!-- Detail panel (tablet two-pane) -->
     <string name="library_detail_panel_hint">Tap a manga to view details</string>
