@@ -222,4 +222,36 @@ class UpdatesViewModelTest {
         assertFalse(viewModel.state.value.isRefreshing)
         coVerify(exactly = 1) { libraryUpdateScheduler.enqueueNow() }
     }
+
+    @Test
+    fun onEvent_SetDateFilter_updatesDateFilterState() = runTest {
+        every { getRecentUpdatesUseCase() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val start = 1_000_000L
+        val end = 2_000_000L
+        viewModel.onEvent(UpdatesEvent.SetDateFilter(start = start, end = end))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(start, viewModel.state.value.dateFilterStart)
+        assertEquals(end, viewModel.state.value.dateFilterEnd)
+    }
+
+    @Test
+    fun onEvent_ClearDateFilter_removesDateFilterState() = runTest {
+        every { getRecentUpdatesUseCase() } returns flowOf(emptyList())
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(UpdatesEvent.SetDateFilter(start = 1_000_000L, end = 2_000_000L))
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onEvent(UpdatesEvent.ClearDateFilter)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.dateFilterStart)
+        assertNull(viewModel.state.value.dateFilterEnd)
+    }
 }

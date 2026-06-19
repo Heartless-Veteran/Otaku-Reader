@@ -391,4 +391,48 @@ class HistoryViewModelTest {
 
         coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
     }
+
+    @Test
+    fun onEvent_SetDateFilter_updatesDateFilterState() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.SetDateFilter(start = 1_000L, end = 3_000L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1_000L, viewModel.state.value.dateFilterStart)
+        assertEquals(3_000L, viewModel.state.value.dateFilterEnd)
+    }
+
+    @Test
+    fun onEvent_ClearDateFilter_removesDateFilterState() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.SetDateFilter(start = 1_000L, end = 3_000L))
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onEvent(HistoryEvent.ClearDateFilter)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.dateFilterStart)
+        assertNull(viewModel.state.value.dateFilterEnd)
+    }
+
+    @Test
+    fun onEvent_RefreshHistory_setsPullRefreshingThenClearsIt() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.RefreshHistory)
+        assertTrue(viewModel.state.value.isPullRefreshing)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.state.value.isPullRefreshing)
+    }
 }
