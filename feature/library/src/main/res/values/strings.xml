@@ -283,4 +283,11 @@
     <string name="library_eh_sync_nothing_new">Library is already up to date</string>
     <string name="library_eh_sync_not_configured">No E-Hentai session found. Sign in via Browse first.</string>
     <string name="library_eh_sync_failed">EH sync failed. Check your session and try again.</string>
+    <!-- Long-press context menu (L2/L3) -->
+    <string name="library_context_menu_open">Open</string>
+    <string name="library_context_menu_resume">Resume reading</string>
+    <string name="library_context_menu_mark_read">Mark as read</string>
+    <string name="library_context_menu_share">Share</string>
+    <string name="library_context_menu_migrate">Migrate</string>
+    <string name="library_context_menu_select">Select</string>
 </resources>
