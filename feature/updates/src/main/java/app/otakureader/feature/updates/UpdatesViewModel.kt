@@ -81,6 +81,12 @@ class UpdatesViewModel @Inject constructor(
             }
             UpdatesEvent.HidePendingUpdates -> _state.update { it.copy(showPendingUpdates = false) }
             UpdatesEvent.StartLibraryUpdate -> startLibraryUpdate()
+            is UpdatesEvent.SetDateFilter -> _state.update {
+                it.copy(dateFilterStart = event.start, dateFilterEnd = event.end)
+            }
+            UpdatesEvent.ClearDateFilter -> _state.update {
+                it.copy(dateFilterStart = null, dateFilterEnd = null)
+            }
         }
     }
 

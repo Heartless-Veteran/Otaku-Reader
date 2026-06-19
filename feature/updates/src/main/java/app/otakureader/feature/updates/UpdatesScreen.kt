@@ -27,9 +27,12 @@ import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -196,82 +199,138 @@ fun UpdatesScreen(
             }
         }
     ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = state.isRefreshing,
-            onRefresh = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) },
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
         ) {
-            when {
-                state.isLoading -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+            if (state.selectedItems.isEmpty()) {
+                val now = System.currentTimeMillis()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    CircularProgressIndicator()
-                }
-
-                state.error != null -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.error ?: stringResource(R.string.updates_unknown_error),
-                        color = MaterialTheme.colorScheme.error
+                    FilterChip(
+                        selected = state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
+                            state.dateFilterEnd == null,
+                        onClick = {
+                            if (state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
+                                state.dateFilterEnd == null
+                            ) {
+                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
+                            } else {
+                                viewModel.onEvent(
+                                    UpdatesEvent.SetDateFilter(now - 7L * 24 * 60 * 60 * 1000, null)
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.updates_filter_last_7_days)) },
+                    )
+                    FilterChip(
+                        selected = state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
+                            state.dateFilterEnd == null,
+                        onClick = {
+                            if (state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
+                                state.dateFilterEnd == null
+                            ) {
+                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
+                            } else {
+                                viewModel.onEvent(
+                                    UpdatesEvent.SetDateFilter(now - 30L * 24 * 60 * 60 * 1000, null)
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.updates_filter_last_30_days)) },
                     )
                 }
+            }
 
-                state.updates.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(horizontal = 32.dp)
+            val filteredUpdates = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
+                var result = state.updates
+                state.dateFilterStart?.let { start -> result = result.filter { it.chapter.dateFetch >= start } }
+                state.dateFilterEnd?.let { end -> result = result.filter { it.chapter.dateFetch <= end } }
+                result
+            }
+
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) },
+                modifier = Modifier.weight(1f),
+            ) {
+                when {
+                    state.isLoading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.NewReleases,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        CircularProgressIndicator()
+                    }
+
+                    state.error != null -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
-                            text = stringResource(R.string.updates_empty),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = state.error ?: stringResource(R.string.updates_unknown_error),
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
 
-                else -> UpdatesList(
-                    updates = state.updates,
-                    selectedItems = state.selectedItems,
-                    activeDownloads = state.activeDownloads,
-                    lastRunSummary = state.lastRunSummary,
-                    onChapterClick = { update ->
-                        viewModel.onEvent(
-                            UpdatesEvent.OnChapterClick(
-                                mangaId = update.manga.id,
-                                chapterId = update.chapter.id
+                    filteredUpdates.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NewReleases,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        )
-                    },
-                    onChapterLongClick = { update ->
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
-                    },
-                    onDownloadClick = { update ->
-                        viewModel.onEvent(
-                            UpdatesEvent.OnDownloadChapter(
-                                mangaId = update.manga.id,
-                                chapterId = update.chapter.id
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.updates_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        )
-                    },
-                    onMarkAsRead = { chapterId -> viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId)) },
-                    modifier = Modifier.fillMaxSize()
-                )
+                        }
+                    }
+
+                    else -> UpdatesList(
+                        updates = filteredUpdates,
+                        selectedItems = state.selectedItems,
+                        activeDownloads = state.activeDownloads,
+                        lastRunSummary = state.lastRunSummary,
+                        onChapterClick = { update ->
+                            viewModel.onEvent(
+                                UpdatesEvent.OnChapterClick(
+                                    mangaId = update.manga.id,
+                                    chapterId = update.chapter.id
+                                )
+                            )
+                        },
+                        onChapterLongClick = { update ->
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
+                        },
+                        onDownloadClick = { update ->
+                            viewModel.onEvent(
+                                UpdatesEvent.OnDownloadChapter(
+                                    mangaId = update.manga.id,
+                                    chapterId = update.chapter.id
+                                )
+                            )
+                        },
+                        onMarkAsRead = { chapterId ->
+                            viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId))
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
 

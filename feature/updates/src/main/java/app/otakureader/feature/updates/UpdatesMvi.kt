@@ -48,6 +48,10 @@ data class UpdatesState(
     val lastRunSummary: UpdateRunSummary? = null,
     /** Active/queued downloads keyed by chapterId, for per-row progress indicators. */
     val activeDownloads: Map<Long, DownloadItem> = emptyMap(),
+    /** Start of the active date filter (epoch-ms, inclusive), or null if no filter set. */
+    val dateFilterStart: Long? = null,
+    /** End of the active date filter (epoch-ms, inclusive), or null if no filter set. */
+    val dateFilterEnd: Long? = null,
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {
@@ -73,6 +77,10 @@ sealed interface UpdatesEvent : UiEvent {
     data object StartLibraryUpdate : UpdatesEvent
     /** Revert a swipe-to-mark-read action. */
     data class UnmarkChapterAsRead(val chapterId: Long) : UpdatesEvent
+    /** Apply a date range filter. Pass null for either bound to leave it open-ended. */
+    data class SetDateFilter(val start: Long?, val end: Long?) : UpdatesEvent
+    /** Remove the active date range filter and show all update entries. */
+    data object ClearDateFilter : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {
