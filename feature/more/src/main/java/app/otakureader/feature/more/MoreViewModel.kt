@@ -26,6 +26,10 @@ class MoreViewModel @Inject constructor(
     private val readingGoalPreferences: ReadingGoalPreferences,
 ) : ViewModel() {
 
+    companion object {
+        private const val SUBSCRIBE_STOP_TIMEOUT_MS = 5_000L
+    }
+
     /**
      * Combines:
      *  - [GetReadingStatsUseCase] → provides [currentStreak] (all-time, no date filter)
@@ -57,7 +61,7 @@ class MoreViewModel @Inject constructor(
             }
             .stateIn(
                 scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
+                started = SharingStarted.WhileSubscribed(SUBSCRIBE_STOP_TIMEOUT_MS),
                 initialValue = MoreState(),
             )
 }
