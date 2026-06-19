@@ -62,6 +62,16 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import coil3.compose.AsyncImage
 
 /** Layout constants for the compact list-mode row. */
@@ -98,21 +108,28 @@ internal fun MangaGrid(
         stringResource(R.string.library_content_tab_manhwa),
     )
 
-    // Long-press always enters selection mode; fire a haptic tick so the gesture is felt (#L7).
-    // remember keeps the lambda reference stable so item composables can skip recomposition.
+    // Long-press opens the quick context menu. Fire haptic so the gesture is felt (#L7).
     val haptic = LocalHapticFeedback.current
     val onMangaLongClick: (Long) -> Unit = remember(haptic, onEvent) {
         { mangaId ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onEvent(LibraryEvent.OnMangaLongClick(mangaId))
+            onEvent(LibraryEvent.ShowContextMenu(mangaId))
         }
     }
     // Taps open the detail pane only in two-pane mode with no active selection; otherwise route
     // through OnMangaClick so taps toggle selection while selection mode is active (and navigate
     // in single-pane). Without the selection guard, two-pane taps could never toggle items.
-    val onMangaTap: (LibraryMangaItem) -> Unit = { manga ->
-        if (onMangaSelect != null && state.selectedManga.isEmpty()) onMangaSelect(manga)
-        else onEvent(LibraryEvent.OnMangaClick(manga.id))
+    val onMangaTap: (LibraryMangaItem) -> Unit = remember(haptic, onMangaSelect, onEvent, state.selectedManga.isEmpty()) {
+        { manga ->
+            if (onMangaSelect != null && state.selectedManga.isEmpty()) {
+                onMangaSelect(manga)
+            } else {
+                if (state.selectedManga.isNotEmpty()) {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+                onEvent(LibraryEvent.OnMangaClick(manga.id))
+            }
+        }
     }
 
     val displayedManga by remember(state.mangaList, selectedContentFilter) {
@@ -222,14 +239,21 @@ internal fun MangaGrid(
                 contentType = { "manga_row" },
             ) { manga ->
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                LibraryListRow(
-                    manga = manga,
-                    isSelected = manga.id in state.selectedManga,
-                    unreadCount = if (state.showBadges) manga.unreadCount else 0,
-                    downloadCount = if (state.showDownloadBadge) downloadCount else 0,
-                    onClick = { onMangaTap(manga) },
-                    onLongClick = { onMangaLongClick(manga.id) },
-                )
+                Box {
+                    LibraryListRow(
+                        manga = manga,
+                        isSelected = manga.id in state.selectedManga,
+                        unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                        downloadCount = if (state.showDownloadBadge) downloadCount else 0,
+                        onClick = { onMangaTap(manga) },
+                        onLongClick = { onMangaLongClick(manga.id) },
+                    )
+                    MangaContextMenu(
+                        expanded = state.contextMenuMangaId == manga.id,
+                        mangaId = manga.id,
+                        onEvent = onEvent,
+                    )
+                }
             }
         }
         return
@@ -259,6 +283,7 @@ internal fun MangaGrid(
                             title = manga.title,
                             unreadCount = if (state.showBadges) manga.unreadCount else 0,
                             onClick = { onMangaTap(manga) },
+                            onLongClick = { onMangaLongClick(manga.id) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     } else {
@@ -279,7 +304,8 @@ internal fun MangaGrid(
                             continueReading = continueReading,
                             isNew = manga.unreadCount > 0,
                             badge = when {
-                                state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
+                                state.showBadges && manga.unreadCount > 0 &&
+                                    state.showDownloadBadge && downloadCount > 0 -> {
                                     {
                                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                             UnreadBadge(count = manga.unreadCount)
@@ -304,18 +330,25 @@ internal fun MangaGrid(
                         )
                     }
                 }
-                if (state.visualEffectsEnabled) {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(tween(300)) + scaleIn(
-                            initialScale = 0.92f,
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                        )
-                    ) {
+                Box {
+                    if (state.visualEffectsEnabled) {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(tween(300)) + scaleIn(
+                                initialScale = 0.92f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                            )
+                        ) {
+                            cardContent()
+                        }
+                    } else {
                         cardContent()
                     }
-                } else {
-                    cardContent()
+                    MangaContextMenu(
+                        expanded = state.contextMenuMangaId == manga.id,
+                        mangaId = manga.id,
+                        onEvent = onEvent,
+                    )
                 }
             }
         }
@@ -357,7 +390,8 @@ internal fun MangaGrid(
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
                         badge = when {
-                            state.showBadges && manga.unreadCount > 0 && state.showDownloadBadge && downloadCount > 0 -> {
+                            state.showBadges && manga.unreadCount > 0 &&
+                                state.showDownloadBadge && downloadCount > 0 -> {
                                 {
                                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         UnreadBadge(count = manga.unreadCount)
@@ -381,18 +415,25 @@ internal fun MangaGrid(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                if (state.visualEffectsEnabled) {
-                    AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn(tween(300)) + scaleIn(
-                            initialScale = 0.92f,
-                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
-                        )
-                    ) {
+                Box {
+                    if (state.visualEffectsEnabled) {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(tween(300)) + scaleIn(
+                                initialScale = 0.92f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                            )
+                        ) {
+                            cardContent()
+                        }
+                    } else {
                         cardContent()
                     }
-                } else {
-                    cardContent()
+                    MangaContextMenu(
+                        expanded = state.contextMenuMangaId == manga.id,
+                        mangaId = manga.id,
+                        onEvent = onEvent,
+                    )
                 }
             }
         }
@@ -455,6 +496,54 @@ private fun LibraryListRow(
         if (unreadCount > 0) {
             UnreadBadge(count = unreadCount)
         }
+    }
+}
+
+@Composable
+private fun MangaContextMenu(
+    expanded: Boolean,
+    mangaId: Long,
+    onEvent: (LibraryEvent) -> Unit,
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = { onEvent(LibraryEvent.DismissContextMenu) },
+    ) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_open)) },
+            leadingIcon = {
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
+            },
+            onClick = {
+                onEvent(LibraryEvent.DismissContextMenu)
+                onEvent(LibraryEvent.OnMangaClick(mangaId))
+            },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_resume)) },
+            leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+            onClick = { onEvent(LibraryEvent.ResumeFromContextMenu(mangaId)) },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_mark_read)) },
+            leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
+            onClick = { onEvent(LibraryEvent.MarkMangaAsReadFromMenu(mangaId)) },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_share)) },
+            leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+            onClick = { onEvent(LibraryEvent.ShareMangaFromMenu(mangaId)) },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_migrate)) },
+            leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) },
+            onClick = { onEvent(LibraryEvent.MigrateMangaFromMenu(mangaId)) },
+        )
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.library_context_menu_select)) },
+            leadingIcon = { Icon(Icons.Default.TouchApp, contentDescription = null) },
+            onClick = { onEvent(LibraryEvent.SelectMangaFromMenu(mangaId)) },
+        )
     }
 }
 

@@ -255,17 +255,101 @@ class HistoryViewModelTest {
     }
 
     @Test
-    fun onEvent_RemoveFromHistory_invokesRepository() = runTest {
+    fun onEvent_RemoveFromHistory_hidesItemAndEmitsUndoEffect() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals(3, viewModel.state.value.history.size)
+
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+            // runCurrent() processes tasks at t=0 (combine re-emit + effect send)
+            // without advancing through delay(UNDO_TIMEOUT_MS) at t=4000.
+            testDispatcher.scheduler.runCurrent()
+
+            // Chapter is hidden from the list while the undo timer is running
+            assertEquals(2, viewModel.state.value.history.size)
+
+            val effect = awaitItem()
+            assertTrue(effect is HistoryEffect.ShowUndoSnackbar)
+            assertEquals(1L, (effect as HistoryEffect.ShowUndoSnackbar).chapterId)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+        // Repo must NOT be called yet — deletion auto-commits after UNDO_TIMEOUT_MS
+        coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+    }
+
+    @Test
+    fun onEvent_RemoveFromHistory_autoCommitsAfterTimeout() = runTest {
         every { getHistoryUseCase() } returns flowOf(sampleHistory)
         coEvery { chapterRepository.removeFromHistory(any()) } returns Unit
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 1L))
+            testDispatcher.scheduler.runCurrent()  // send effect, suspend at delay
+            awaitItem() // consume ShowUndoSnackbar
+
+            // Advance the virtual clock past the auto-commit delay
+            testDispatcher.scheduler.advanceTimeBy(HistoryViewModel.UNDO_TIMEOUT_MS + 1)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) { chapterRepository.removeFromHistory(1L) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun onEvent_UndoRemoveFromHistory_clearsPendingWithoutDeletion() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify(exactly = 1) { chapterRepository.removeFromHistory(1L) }
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.RemoveFromHistory(chapterId = 2L))
+            testDispatcher.scheduler.runCurrent()  // send effect, suspend at delay
+            awaitItem() // consume ShowUndoSnackbar
+
+            // Undo cancels the pending job; the delay coroutine is now cancelled.
+            viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory(chapterId = 2L))
+
+            // Advance past where auto-commit would have fired — nothing happens.
+            testDispatcher.scheduler.advanceTimeBy(HistoryViewModel.UNDO_TIMEOUT_MS + 1)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun onEvent_MarkSelectedAsRead_callsRepositoryAndClearsSelection() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+        coEvery { chapterRepository.updateChapterProgress(any<Collection<Long>>(), any(), any()) } returns Unit
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.OnChapterLongClick(1L))
+        viewModel.onEvent(HistoryEvent.OnChapterLongClick(2L))
+        assertEquals(2, viewModel.state.value.selectedItems.size)
+
+        viewModel.effect.test {
+            viewModel.onEvent(HistoryEvent.MarkSelectedAsRead)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is HistoryEffect.ShowSnackbar)
+            assertTrue((effect as HistoryEffect.ShowSnackbar).formatArgs.contains(2))
+        }
+
+        assertTrue(viewModel.state.value.selectedItems.isEmpty())
+        coVerify(exactly = 1) { chapterRepository.updateChapterProgress(match<Collection<Long>> { it.containsAll(listOf(1L, 2L)) }, true, 0) }
     }
 
     @Test
@@ -306,5 +390,49 @@ class HistoryViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 0) { chapterRepository.removeFromHistory(any()) }
+    }
+
+    @Test
+    fun onEvent_SetDateFilter_updatesDateFilterState() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.SetDateFilter(start = 1_000L, end = 3_000L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(1_000L, viewModel.state.value.dateFilterStart)
+        assertEquals(3_000L, viewModel.state.value.dateFilterEnd)
+    }
+
+    @Test
+    fun onEvent_ClearDateFilter_removesDateFilterState() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.SetDateFilter(start = 1_000L, end = 3_000L))
+        testDispatcher.scheduler.advanceUntilIdle()
+        viewModel.onEvent(HistoryEvent.ClearDateFilter)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(viewModel.state.value.dateFilterStart)
+        assertNull(viewModel.state.value.dateFilterEnd)
+    }
+
+    @Test
+    fun onEvent_RefreshHistory_setsPullRefreshingThenClearsIt() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.RefreshHistory)
+        assertTrue(viewModel.state.value.isPullRefreshing)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.state.value.isPullRefreshing)
     }
 }

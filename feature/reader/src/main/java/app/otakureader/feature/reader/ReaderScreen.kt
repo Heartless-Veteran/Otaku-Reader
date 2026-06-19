@@ -1,10 +1,12 @@
 package app.otakureader.feature.reader
 
 import android.app.Activity
+import android.content.Intent
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,8 +15,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -126,6 +138,15 @@ fun ReaderScreen(
                 is ReaderEffect.NavigateToChapter -> {
                     // Handle chapter navigation
                     snackbarHostState.showSnackbar(context.getString(R.string.reader_navigating_to_chapter))
+                }
+                is ReaderEffect.SharePage -> {
+                    scope.launch {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, effect.pageUrl)
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, null))
+                    }
                 }
             }
         }
@@ -265,6 +286,9 @@ fun ReaderScreen(
                     },
                     onZoomChange = { zoom ->
                         viewModel.onEvent(ReaderEvent.OnZoomChange(zoom))
+                    },
+                    onLongPress = { pageUrl ->
+                        viewModel.onEvent(ReaderEvent.OnPageLongPress(pageUrl))
                     }
                 )
             }
@@ -467,6 +491,16 @@ fun ReaderScreen(
             },
             onDismiss = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
         )
+
+        // Page long-press context menu
+        if (state.isPageContextMenuVisible) {
+            PageContextMenuBottomSheet(
+                onSaveImage = { viewModel.onEvent(ReaderEvent.SavePageImage) },
+                onSetAsCover = { viewModel.onEvent(ReaderEvent.SetPageAsCover) },
+                onShare = { viewModel.onEvent(ReaderEvent.SharePage) },
+                onDismiss = { viewModel.onEvent(ReaderEvent.DismissPageContextMenu) },
+            )
+        }
     }
 }
 
@@ -477,7 +511,8 @@ private fun ReaderContent(
     onPanelChange: (Int) -> Unit,
     onTap: (Offset) -> Unit,
     onDoubleTap: (Offset) -> Unit,
-    onZoomChange: (Float) -> Unit
+    onZoomChange: (Float) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
 ) {
     // Use the per-manga background color if set, otherwise default to black
     val backgroundColor = if (state.readerBackgroundColor != null) {
@@ -511,6 +546,7 @@ private fun ReaderContent(
                     onTap = onTap,
                     onDoubleTap = onDoubleTap,
                     onZoomChange = onZoomChange,
+                    onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     rotation = state.pageRotation.degrees,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
@@ -525,6 +561,7 @@ private fun ReaderContent(
                     currentPage = state.currentPage,
                     onPageChange = onPageChange,
                     onTap = onTap,
+                    onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL,
                     rotation = state.pageRotation.degrees,
                     cropBordersEnabled = state.cropBordersEnabled,
@@ -540,6 +577,7 @@ private fun ReaderContent(
                     currentPage = state.currentPage,
                     onPageChange = onPageChange,
                     onTap = onTap,
+                    onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     rotation = state.pageRotation.degrees,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
@@ -558,6 +596,7 @@ private fun ReaderContent(
                     onPageChange = onPageChange,
                     onPanelChange = onPanelChange,
                     onTap = onTap,
+                    onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     rotation = state.pageRotation.degrees,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
@@ -587,4 +626,39 @@ private fun ReaderContent(
     }
 }
 
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PageContextMenuBottomSheet(
+    onSaveImage: () -> Unit,
+    onSetAsCover: () -> Unit,
+    onShare: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+        ) {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.reader_page_menu_save_image)) },
+                leadingContent = { Icon(Icons.Default.Download, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onSaveImage)
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.reader_page_menu_set_as_cover)) },
+                leadingContent = { Icon(Icons.Default.Image, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onSetAsCover)
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.reader_page_menu_share)) },
+                leadingContent = { Icon(Icons.Default.Share, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onShare)
+            )
+        }
+    }
+}

@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,9 +27,12 @@ import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,10 +50,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,12 +65,15 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.DownloadStatus
 import app.otakureader.domain.model.MangaUpdate
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -85,14 +96,30 @@ fun UpdatesScreen(
     viewModel: UpdatesViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = androidx.compose.material3.SnackbarHostState()
+    val snackbarHostState = remember { androidx.compose.material3.SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
             when (effect) {
                 is UpdatesEffect.NavigateToReader -> onMangaClick(effect.mangaId)
-                is UpdatesEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is UpdatesEffect.ShowSnackbar -> scope.launch {
+                    snackbarHostState.showSnackbar(effect.message)
+                }
+                // Launch independently so collectLatest cancelling on the next swipe
+                // does not cut this snackbar short; each mark-as-read is independently undoable.
+                is UpdatesEffect.ShowUndoSnackbar -> scope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = context.getString(R.string.updates_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(UpdatesEvent.UnmarkChapterAsRead(effect.chapterId))
+                    }
+                }
             }
         }
     }
@@ -172,80 +199,139 @@ fun UpdatesScreen(
             }
         }
     ) { paddingValues ->
-        when {
-            state.isLoading -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-
-            state.error != null -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = state.error ?: stringResource(R.string.updates_unknown_error),
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            state.updates.isEmpty() -> Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 32.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            if (state.selectedItems.isEmpty()) {
+                val now = System.currentTimeMillis()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.NewReleases,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    FilterChip(
+                        selected = state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
+                            state.dateFilterEnd == null,
+                        onClick = {
+                            if (state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
+                                state.dateFilterEnd == null
+                            ) {
+                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
+                            } else {
+                                viewModel.onEvent(
+                                    UpdatesEvent.SetDateFilter(now - 7L * 24 * 60 * 60 * 1000, null)
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.updates_filter_last_7_days)) },
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.updates_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    FilterChip(
+                        selected = state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
+                            state.dateFilterEnd == null,
+                        onClick = {
+                            if (state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
+                                state.dateFilterEnd == null
+                            ) {
+                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
+                            } else {
+                                viewModel.onEvent(
+                                    UpdatesEvent.SetDateFilter(now - 30L * 24 * 60 * 60 * 1000, null)
+                                )
+                            }
+                        },
+                        label = { Text(stringResource(R.string.updates_filter_last_30_days)) },
                     )
                 }
             }
 
-            else -> UpdatesList(
-                updates = state.updates,
-                selectedItems = state.selectedItems,
-                lastRunSummary = state.lastRunSummary,
-                onChapterClick = { update ->
-                    viewModel.onEvent(
-                        UpdatesEvent.OnChapterClick(
-                            mangaId = update.manga.id,
-                            chapterId = update.chapter.id
+            val filteredUpdates = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
+                var result = state.updates
+                state.dateFilterStart?.let { start -> result = result.filter { it.chapter.dateFetch >= start } }
+                state.dateFilterEnd?.let { end -> result = result.filter { it.chapter.dateFetch <= end } }
+                result
+            }
+
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) },
+                modifier = Modifier.weight(1f),
+            ) {
+                when {
+                    state.isLoading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+
+                    state.error != null -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = state.error ?: stringResource(R.string.updates_unknown_error),
+                            color = MaterialTheme.colorScheme.error
                         )
+                    }
+
+                    filteredUpdates.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NewReleases,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.updates_empty),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    else -> UpdatesList(
+                        updates = filteredUpdates,
+                        selectedItems = state.selectedItems,
+                        activeDownloads = state.activeDownloads,
+                        lastRunSummary = state.lastRunSummary,
+                        onChapterClick = { update ->
+                            viewModel.onEvent(
+                                UpdatesEvent.OnChapterClick(
+                                    mangaId = update.manga.id,
+                                    chapterId = update.chapter.id
+                                )
+                            )
+                        },
+                        onChapterLongClick = { update ->
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
+                        },
+                        onDownloadClick = { update ->
+                            viewModel.onEvent(
+                                UpdatesEvent.OnDownloadChapter(
+                                    mangaId = update.manga.id,
+                                    chapterId = update.chapter.id
+                                )
+                            )
+                        },
+                        onMarkAsRead = { chapterId ->
+                            viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId))
+                        },
+                        modifier = Modifier.fillMaxSize()
                     )
-                },
-                onChapterLongClick = { update ->
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
-                },
-                onDownloadClick = { update ->
-                    viewModel.onEvent(
-                        UpdatesEvent.OnDownloadChapter(
-                            mangaId = update.manga.id,
-                            chapterId = update.chapter.id
-                        )
-                    )
-                },
-                onMarkAsRead = { chapterId -> viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId)) },
-                modifier = Modifier.padding(paddingValues)
-            )
+                }
+            }
         }
 
         // Update Error Dialog
@@ -307,6 +393,7 @@ private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
 private fun UpdatesList(
     updates: List<MangaUpdate>,
     selectedItems: Set<Long>,
+    activeDownloads: Map<Long, DownloadItem>,
     lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
@@ -378,6 +465,7 @@ private fun UpdatesList(
                         UpdateItem(
                             update = item.update,
                             isSelected = selectedItems.contains(item.update.chapter.id),
+                            activeDownload = activeDownloads[item.update.chapter.id],
                             onClick = { onChapterClick(item.update) },
                             onLongClick = { onChapterLongClick(item.update) },
                             onDownloadClick = { onDownloadClick(item.update) }
@@ -407,6 +495,7 @@ private fun UpdatesDateHeader(label: String, modifier: Modifier = Modifier) {
 private fun UpdateItem(
     update: MangaUpdate,
     isSelected: Boolean,
+    activeDownload: DownloadItem?,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onDownloadClick: () -> Unit,
@@ -476,13 +565,29 @@ private fun UpdateItem(
                     modifier = Modifier.widthIn(max = 72.dp)
                 )
             }
-            // Per-item download button
-            IconButton(onClick = onDownloadClick) {
-                Icon(
-                    imageVector = Icons.Default.Download,
-                    contentDescription = stringResource(R.string.updates_download_chapter),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            // Per-item download button / progress indicator
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(48.dp)
+            ) {
+                when (activeDownload?.status) {
+                    DownloadStatus.DOWNLOADING -> CircularProgressIndicator(
+                        progress = { (activeDownload.progress / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    DownloadStatus.QUEUED, DownloadStatus.PAUSED -> CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    else -> IconButton(onClick = onDownloadClick) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = stringResource(R.string.updates_download_chapter),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

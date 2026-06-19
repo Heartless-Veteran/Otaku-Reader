@@ -206,4 +206,7 @@
     <string name="details_more_options">More options</string>
     <string name="details_download_all_chapters">Download all chapters</string>
     <string name="details_download_unread_chapters">Download unread chapters</string>
+    <!-- Content-type chip in manga header (L13) -->
+    <string name="details_content_type_manga">Manga</string>
+    <string name="details_content_type_manhwa">Manhwa</string>
 </resources>

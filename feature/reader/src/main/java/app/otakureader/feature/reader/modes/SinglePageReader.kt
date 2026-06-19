@@ -33,6 +33,7 @@ fun SinglePageReader(
     onTap: (androidx.compose.ui.geometry.Offset) -> Unit,
     onDoubleTap: (androidx.compose.ui.geometry.Offset) -> Unit,
     onZoomChange: (Float) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
@@ -88,6 +89,7 @@ fun SinglePageReader(
                 dataSaverEnabled = dataSaverEnabled,
                 onTap = onTap,
                 onDoubleTap = onDoubleTap,
+                onLongPress = onLongPress,
                 onZoomChange = onZoomChange,
                 modifier = Modifier.fillMaxSize()
             )

@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 
 @HiltViewModel
 class UpdatesViewModel @Inject constructor(
@@ -42,13 +43,14 @@ class UpdatesViewModel @Inject constructor(
     private val _state = MutableStateFlow(UpdatesState())
     val state: StateFlow<UpdatesState> = _state.asStateFlow()
 
-    private val _effect = Channel<UpdatesEffect>()
+    private val _effect = Channel<UpdatesEffect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
 
     init {
         loadUpdates()
         loadLastRunSummary()
         markUpdatesViewed()
+        observeActiveDownloads()
     }
 
     fun onEvent(event: UpdatesEvent) {
@@ -62,22 +64,37 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.DownloadSelected -> downloadSelected()
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
+            is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
+            UpdatesEvent.StartLibraryUpdate -> startLibraryUpdate()
+            is UpdatesEvent.SetDateFilter -> _state.update {
+                it.copy(dateFilterStart = event.start, dateFilterEnd = event.end)
+            }
+            UpdatesEvent.ClearDateFilter -> _state.update {
+                it.copy(dateFilterStart = null, dateFilterEnd = null)
+            }
+            UpdatesEvent.ShowUpdateErrors,
+            UpdatesEvent.HideUpdateErrors,
+            UpdatesEvent.ClearAllUpdateErrors,
+            UpdatesEvent.ShowPendingUpdates,
+            UpdatesEvent.HidePendingUpdates -> handleOverlayEvent(event)
+            is UpdatesEvent.ClearUpdateError -> handleOverlayEvent(event)
+        }
+    }
 
-            // Update Error Screen events
+    private fun handleOverlayEvent(event: UpdatesEvent) {
+        when (event) {
             UpdatesEvent.ShowUpdateErrors -> _state.update { it.copy(showUpdateErrors = true) }
             UpdatesEvent.HideUpdateErrors -> _state.update { it.copy(showUpdateErrors = false) }
             is UpdatesEvent.ClearUpdateError -> _state.update { state ->
                 state.copy(updateErrors = state.updateErrors.filter { it.mangaId != event.mangaId })
             }
             UpdatesEvent.ClearAllUpdateErrors -> _state.update { it.copy(updateErrors = emptyList()) }
-
-            // To-Be-Updated Screen events
             UpdatesEvent.ShowPendingUpdates -> {
                 _state.update { it.copy(showPendingUpdates = true) }
                 loadPendingUpdates()
             }
             UpdatesEvent.HidePendingUpdates -> _state.update { it.copy(showPendingUpdates = false) }
-            UpdatesEvent.StartLibraryUpdate -> startLibraryUpdate()
+            else -> Unit
         }
     }
 
@@ -194,10 +211,28 @@ class UpdatesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 chapterRepository.updateChapterProgress(setOf(chapterId), read = true, lastPageRead = 0)
+                _effect.send(
+                    UpdatesEffect.ShowUndoSnackbar(
+                        message = context.getString(R.string.updates_marked_as_read_single),
+                        chapterId = chapterId,
+                    )
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    private fun unmarkChapterAsRead(chapterId: Long) {
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(setOf(chapterId), read = false, lastPageRead = 0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_unmark_as_read_failed)))
             }
         }
     }
@@ -221,6 +256,16 @@ class UpdatesViewModel @Inject constructor(
                 _state.update { it.copy(lastRunSummary = summary) }
             }
             .catch { /* diagnostics failure should not affect the main updates list */ }
+            .launchIn(viewModelScope)
+    }
+
+    /** Observe the download queue and surface active/queued items for per-row progress UI. */
+    private fun observeActiveDownloads() {
+        downloadRepository.observeDownloads()
+            .onEach { items ->
+                _state.update { it.copy(activeDownloads = items.filter { d -> d.isActive }.associateBy { d -> d.chapterId }) }
+            }
+            .catch { /* download progress failure should not affect the main updates list */ }
             .launchIn(viewModelScope)
     }
 
@@ -254,12 +299,22 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
-    /** Start a manual library update. */
+    /** Start a manual library update; shows a brief pull-to-refresh indicator. */
     private fun startLibraryUpdate() {
+        if (_state.value.isRefreshing) return
+        _state.update { it.copy(isRefreshing = true, showPendingUpdates = false) }
         viewModelScope.launch {
-            libraryUpdateScheduler.enqueueNow()
-            _state.update { it.copy(showPendingUpdates = false) }
-            _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
+            try {
+                libraryUpdateScheduler.enqueueNow()
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_library_update_started)))
+                delay(REFRESH_INDICATOR_DURATION_MS)
+            } finally {
+                _state.update { it.copy(isRefreshing = false) }
+            }
         }
+    }
+
+    companion object {
+        const val REFRESH_INDICATOR_DURATION_MS = 1_500L
     }
 }

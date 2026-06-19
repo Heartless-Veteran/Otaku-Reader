@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
+import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.model.UpdateRunSummary
 
@@ -30,6 +31,7 @@ data class PendingUpdateManga(
 
 data class UpdatesState(
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val updates: List<MangaUpdate> = emptyList(),
     val error: String? = null,
     /** Selected chapter IDs for bulk operations. */
@@ -44,6 +46,12 @@ data class UpdatesState(
     val showPendingUpdates: Boolean = false,
     /** Diagnostics card: summary of the last completed library update run (#1041). */
     val lastRunSummary: UpdateRunSummary? = null,
+    /** Active/queued downloads keyed by chapterId, for per-row progress indicators. */
+    val activeDownloads: Map<Long, DownloadItem> = emptyMap(),
+    /** Start of the active date filter (epoch-ms, inclusive), or null if no filter set. */
+    val dateFilterStart: Long? = null,
+    /** End of the active date filter (epoch-ms, inclusive), or null if no filter set. */
+    val dateFilterEnd: Long? = null,
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {
@@ -67,9 +75,17 @@ sealed interface UpdatesEvent : UiEvent {
     data object ShowPendingUpdates : UpdatesEvent
     data object HidePendingUpdates : UpdatesEvent
     data object StartLibraryUpdate : UpdatesEvent
+    /** Revert a swipe-to-mark-read action. */
+    data class UnmarkChapterAsRead(val chapterId: Long) : UpdatesEvent
+    /** Apply a date range filter. Pass null for either bound to leave it open-ended. */
+    data class SetDateFilter(val start: Long?, val end: Long?) : UpdatesEvent
+    /** Remove the active date range filter and show all update entries. */
+    data object ClearDateFilter : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : UpdatesEffect
     data class ShowSnackbar(val message: String) : UpdatesEffect
+    /** Snackbar with an Undo action after swipe-to-mark-read. Awaited inline by the screen. */
+    data class ShowUndoSnackbar(val message: String, val chapterId: Long) : UpdatesEffect
 }

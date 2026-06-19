@@ -48,6 +48,7 @@ fun PanelNavigationView(
     totalPanels: Int,
     onPanelChange: (Int) -> Unit,
     onTap: (Offset) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
     dataSaverEnabled: Boolean = false,
@@ -121,6 +122,7 @@ fun PanelNavigationView(
                     onTap(offset)
                 }
             },
+            onLongPress = onLongPress,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {

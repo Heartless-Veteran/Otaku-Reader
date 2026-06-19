@@ -35,6 +35,7 @@ fun SmartPanelsReader(
     onPageChange: (Int) -> Unit,
     onPanelChange: (Int) -> Unit,
     onTap: (androidx.compose.ui.geometry.Offset) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
@@ -85,6 +86,7 @@ fun SmartPanelsReader(
                     currentPanel = if (pageIndex == currentPage) currentPanel else 0,
                     onPanelChange = onPanelChange,
                     onTap = onTap,
+                    onLongPress = onLongPress,
                     rotation = rotation,
                     cropBordersEnabled = cropBordersEnabled,
                     imageQuality = imageQuality,
@@ -102,6 +104,7 @@ fun SmartPanelsReader(
                     imageQuality = imageQuality,
                     dataSaverEnabled = dataSaverEnabled,
                     onTap = onTap,
+                    onLongPress = onLongPress,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -116,6 +119,7 @@ private fun SmartPanelView(
     currentPanel: Int,
     onPanelChange: (Int) -> Unit,
     onTap: (androidx.compose.ui.geometry.Offset) -> Unit,
+    onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
@@ -134,6 +138,7 @@ private fun SmartPanelView(
             cropBordersEnabled = cropBordersEnabled,
             dataSaverEnabled = dataSaverEnabled,
             onTap = onTap,
+            onLongPress = onLongPress,
             modifier = modifier
         )
         return
@@ -149,6 +154,7 @@ private fun SmartPanelView(
         totalPanels = panels.size,
         onPanelChange = onPanelChange,
         onTap = onTap,
+        onLongPress = onLongPress,
         rotation = rotation,
         cropBordersEnabled = cropBordersEnabled,
         dataSaverEnabled = dataSaverEnabled,

@@ -6,7 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
@@ -46,7 +46,8 @@ fun ManhwaCard(
     title: String,
     unreadCount: Int,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -72,10 +73,11 @@ fun ManhwaCard(
                 scaleY = scale
                 shadowElevation = if (isHovered) 24f else 8f
             }
-            .clickable(
+            .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongClick,
             ),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
