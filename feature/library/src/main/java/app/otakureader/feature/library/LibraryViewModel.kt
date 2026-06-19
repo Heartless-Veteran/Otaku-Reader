@@ -96,6 +96,7 @@ class LibraryViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var syncEhJob: Job? = null
     private var syncJob: Job? = null
+    private var pendingLibraryDeleteJob: Job? = null
 
     init {
         loadLibrary()
@@ -142,7 +143,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
-            is LibraryEvent.ViewSelectedManga -> handleActionEvent(event)
+            is LibraryEvent.ViewSelectedManga, is LibraryEvent.UndoLibraryDelete -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
             is LibraryEvent.SyncEhFavorites,
@@ -247,6 +248,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsDropped -> markSelectedAsDropped()
             is LibraryEvent.ShareSelectedManga -> shareSelectedManga()
             is LibraryEvent.ViewSelectedManga -> viewSelectedManga()
+            is LibraryEvent.UndoLibraryDelete -> undoLibraryDelete(event.mangaIds)
             else -> Unit
         }
     }
@@ -684,10 +686,19 @@ class LibraryViewModel @Inject constructor(
     private fun removeSelectedFromLibrary() {
         val ids = selection.snapshotAndClear()
         if (ids.isEmpty()) return
-        val count = ids.size
+        pendingLibraryDeleteJob?.cancel()
+        pendingLibraryDeleteJob = viewModelScope.launch {
+            _effect.send(LibraryEffect.ShowUndoLibraryDelete(count = ids.size, mangaIds = ids))
+            delay(LIBRARY_DELETE_UNDO_TIMEOUT_MS)
+            ids.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
+        }
+    }
+
+    private fun undoLibraryDelete(mangaIds: Set<Long>) {
+        pendingLibraryDeleteJob?.cancel()
+        pendingLibraryDeleteJob = null
         viewModelScope.launch {
-            ids.forEach { mangaId -> toggleFavoriteManga(mangaId) }
-            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_removed_count, listOf(count)))
+            mangaIds.forEach { mangaId -> runCatching { toggleFavoriteManga(mangaId) } }
         }
     }
 
@@ -958,5 +969,9 @@ class LibraryViewModel @Inject constructor(
         val newQuery = listOf(baseQuery).plus(parts).filter { it.isNotBlank() }.joinToString(" ").trim()
         _state.update { it.copy(showAdvancedSearch = false, searchQuery = newQuery) }
         onSearchQueryChange(newQuery)
+    }
+
+    companion object {
+        private const val LIBRARY_DELETE_UNDO_TIMEOUT_MS = 4_000L
     }
 }

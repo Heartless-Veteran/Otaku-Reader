@@ -200,6 +200,7 @@ sealed class LibraryEvent {
     data class ShareMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class MigrateMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class SelectMangaFromMenu(val mangaId: Long) : LibraryEvent()
+    data class UndoLibraryDelete(val mangaIds: Set<Long>) : LibraryEvent()
 }
 
 sealed class LibraryEffect {
@@ -209,4 +210,5 @@ sealed class LibraryEffect {
     data class ShowSnackbar(val messageRes: Int, val formatArgs: List<Any> = emptyList()) : LibraryEffect()
     data class NavigateToMigration(val selectedMangaIds: List<Long>) : LibraryEffect()
     data class ShareManga(val title: String, val url: String) : LibraryEffect()
+    data class ShowUndoLibraryDelete(val count: Int, val mangaIds: Set<Long>) : LibraryEffect()
 }

@@ -64,6 +64,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -92,6 +93,7 @@ class MainActivity : FragmentActivity() {
     @Inject lateinit var navOrderPreferences: NavOrderPreferences
     @Inject lateinit var libraryUpdateScheduler: LibraryUpdateScheduler
     @Inject lateinit var trackerSyncScheduler: TrackerSyncScheduler
+    @Inject lateinit var downloadRepository: app.otakureader.domain.repository.DownloadRepository
 
     // Hold deep link result across recompositions for the current Activity instance
     private var pendingDeepLinkResult by mutableStateOf<DeepLinkResult?>(null)
@@ -278,6 +280,7 @@ class MainActivity : FragmentActivity() {
                             generalPreferences = generalPreferences,
                             libraryPreferences = libraryPreferences,
                             navOrderPreferences = navOrderPreferences,
+                            downloadRepository = downloadRepository,
                             onboardingCompleted = onboardingCompleted,
                             deepLinkResult = pendingDeepLinkResult,
                             onDeepLinkConsumed = { pendingDeepLinkResult = null }
@@ -337,15 +340,21 @@ fun OtakuReaderApp(
     generalPreferences: GeneralPreferences,
     libraryPreferences: LibraryPreferences,
     navOrderPreferences: NavOrderPreferences,
+    downloadRepository: app.otakureader.domain.repository.DownloadRepository,
     onboardingCompleted: Boolean,
     deepLinkResult: DeepLinkResult? = null,
     onDeepLinkConsumed: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val coroutineScope = rememberCoroutineScope()
-    
+
     // Observe new updates count for badge
     val newUpdatesCount by libraryPreferences.newUpdatesCount
+        .collectAsStateWithLifecycle(initialValue = 0)
+
+    // Observe active download count for Library nav badge
+    val activeDownloadCount by downloadRepository.observeDownloads()
+        .map { downloads -> downloads.count { it.isActive } }
         .collectAsStateWithLifecycle(initialValue = 0)
 
     Scaffold(
@@ -354,6 +363,7 @@ fun OtakuReaderApp(
                 navController = navController,
                 navOrderPreferences = navOrderPreferences,
                 newUpdatesCount = newUpdatesCount,
+                activeDownloadCount = activeDownloadCount,
             )
         }
     ) { padding ->

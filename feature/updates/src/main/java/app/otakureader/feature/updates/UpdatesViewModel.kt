@@ -65,6 +65,7 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
+            is UpdatesEvent.UnmarkSelectedAsRead -> unmarkSelectedAsRead(event.chapterIds)
             UpdatesEvent.StartLibraryUpdate -> startLibraryUpdate()
             is UpdatesEvent.SetDateFilter -> _state.update {
                 it.copy(dateFilterStart = event.start, dateFilterEnd = event.end)
@@ -186,23 +187,31 @@ class UpdatesViewModel @Inject constructor(
         if (selected.isEmpty()) return
         val count = selected.size
         viewModelScope.launch {
-            // try/catch with explicit CancellationException rethrow — coroutine cancellation
-            // (e.g. ViewModel cleared mid-update) shouldn't surface as "Failed to mark as read".
             try {
                 chapterRepository.updateChapterProgress(selected, read = true, lastPageRead = 0)
-                // Subtract only the IDs we actually processed from the current selection.
-                // Clearing wholesale would also wipe any new selections the user made while
-                // the DB write was in flight — losing UI state they expect to keep.
                 _state.update { it.copy(selectedItems = it.selectedItems - selected) }
                 _effect.send(
-                    UpdatesEffect.ShowSnackbar(
-                        context.resources.getQuantityString(R.plurals.updates_marked_as_read, count, count)
+                    UpdatesEffect.ShowUndoBulkReadSnackbar(
+                        message = context.resources.getQuantityString(R.plurals.updates_marked_as_read, count, count),
+                        chapterIds = selected,
                     )
                 )
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    private fun unmarkSelectedAsRead(chapterIds: Set<Long>) {
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(chapterIds, read = false, lastPageRead = 0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_unmark_as_read_failed)))
             }
         }
     }

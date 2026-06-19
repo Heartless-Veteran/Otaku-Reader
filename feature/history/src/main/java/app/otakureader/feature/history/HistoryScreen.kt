@@ -134,7 +134,17 @@ fun HistoryScreen(
                     if (result == SnackbarResult.ActionPerformed) {
                         viewModel.onEvent(HistoryEvent.UndoRemoveFromHistory(effect.chapterId))
                     }
-                    // Dismissed → VM auto-commits after UNDO_TIMEOUT_MS; no UI action needed.
+                }
+                is HistoryEffect.ShowUndoBatchSnackbar -> scope.launch {
+                    val msg = context.getString(effect.messageRes, effect.count)
+                    val result = snackbarHostState.showSnackbar(
+                        message = msg,
+                        actionLabel = context.getString(R.string.history_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(HistoryEvent.UndoBatchRemoveFromHistory(effect.chapterIds))
+                    }
                 }
             }
         }

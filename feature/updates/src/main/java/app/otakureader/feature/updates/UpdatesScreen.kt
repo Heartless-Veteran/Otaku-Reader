@@ -120,6 +120,16 @@ fun UpdatesScreen(
                         viewModel.onEvent(UpdatesEvent.UnmarkChapterAsRead(effect.chapterId))
                     }
                 }
+                is UpdatesEffect.ShowUndoBulkReadSnackbar -> scope.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        actionLabel = context.getString(R.string.updates_undo_action),
+                        duration = SnackbarDuration.Short,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        viewModel.onEvent(UpdatesEvent.UnmarkSelectedAsRead(effect.chapterIds))
+                    }
+                }
             }
         }
     }

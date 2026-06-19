@@ -38,6 +38,7 @@ fun OtakuReaderBottomBar(
     navController: NavController,
     navOrderPreferences: NavOrderPreferences,
     newUpdatesCount: Int = 0,
+    activeDownloadCount: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -99,6 +100,13 @@ fun OtakuReaderBottomBar(
                             }
                         }) {
                             Icon(Icons.Default.NewReleases, contentDescription = null, modifier = Modifier.scale(scale))
+                        }
+                        NavTab.LIBRARY -> BadgedBox(badge = {
+                            if (activeDownloadCount > 0) {
+                                Badge { Text(if (activeDownloadCount > 99) "99+" else activeDownloadCount.toString()) }
+                            }
+                        }) {
+                            Icon(Icons.Default.CollectionsBookmark, contentDescription = null, modifier = Modifier.scale(scale))
                         }
                         else -> Icon(tab.icon(), contentDescription = null, modifier = Modifier.scale(scale))
                     }

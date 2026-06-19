@@ -47,6 +47,8 @@ class HistoryViewModel @Inject constructor(
     /** The one chapter whose undo timer is currently running. */
     private var pendingDeleteJob: Job? = null
     private var pendingDeleteJobChapterId: Long? = null
+    /** Batch delete job — separate from the single-swipe timer. */
+    private var pendingBatchDeleteJob: Job? = null
 
     /** Active date filter: (start, end) epoch-ms. Null means unset (open-ended). */
     private val dateFilter = MutableStateFlow(Pair<Long?, Long?>(null, null))
@@ -83,6 +85,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryEvent.RemoveFromHistory -> scheduleRemoveFromHistory(event.chapterId)
             is HistoryEvent.UndoRemoveFromHistory -> undoRemoveFromHistory(event.chapterId)
             is HistoryEvent.RemoveSelectedFromHistory -> removeSelectedFromHistory()
+            is HistoryEvent.UndoBatchRemoveFromHistory -> undoBatchRemoveFromHistory(event.chapterIds)
             is HistoryEvent.MarkSelectedAsRead -> markSelectedAsRead()
             is HistoryEvent.SetDateFilter -> {
                 dateFilter.value = Pair(event.start, event.end)
@@ -206,27 +209,31 @@ class HistoryViewModel @Inject constructor(
     }
 
     private fun removeSelectedFromHistory() {
-        viewModelScope.launch {
-            try {
-                val selectedIds = _state.value.selectedItems
-                if (selectedIds.isNotEmpty()) {
-                    selectedIds.forEach { chapterId ->
-                        chapterRepository.removeFromHistory(chapterId)
-                    }
-                    clearSelection()
-                    _effect.send(
-                        HistoryEffect.ShowSnackbar(
-                            R.string.history_removed_count,
-                            formatArgs = listOf(selectedIds.size),
-                        )
-                    )
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                _effect.send(HistoryEffect.ShowSnackbar(R.string.history_remove_failed))
+        val selectedIds = _state.value.selectedItems
+        if (selectedIds.isEmpty()) return
+        clearSelection()
+        pendingBatchDeleteJob?.cancel()
+        pendingDeleteIds.update { it + selectedIds }
+        pendingBatchDeleteJob = viewModelScope.launch {
+            _effect.send(HistoryEffect.ShowUndoBatchSnackbar(
+                messageRes = R.string.history_removed_count,
+                count = selectedIds.size,
+                chapterIds = selectedIds,
+            ))
+            delay(UNDO_TIMEOUT_MS)
+            selectedIds.forEach { chapterId ->
+                try { chapterRepository.removeFromHistory(chapterId) }
+                catch (e: CancellationException) { throw e }
+                catch (_: Exception) { }
+                pendingDeleteIds.update { it - chapterId }
             }
         }
+    }
+
+    private fun undoBatchRemoveFromHistory(chapterIds: Set<Long>) {
+        pendingBatchDeleteJob?.cancel()
+        pendingBatchDeleteJob = null
+        pendingDeleteIds.update { it - chapterIds }
     }
 
     private fun navigateToReader(mangaId: Long, chapterId: Long) {

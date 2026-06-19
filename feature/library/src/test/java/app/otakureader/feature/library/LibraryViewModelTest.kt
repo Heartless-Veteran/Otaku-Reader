@@ -250,7 +250,7 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_selectsManga() = runTest {
+    fun onEvent_OnMangaLongClick_opensContextMenu() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
@@ -259,20 +259,21 @@ class LibraryViewModelTest {
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(viewModel.state.value.selectedManga.contains(1L))
+        assertEquals(1L, viewModel.state.value.contextMenuMangaId)
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_twice_deselectsManga() = runTest {
+    fun onEvent_OnMangaLongClick_twice_opensMenuBothTimes() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
+        viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
 
-        assertFalse(viewModel.state.value.selectedManga.contains(1L))
+        // Second long-click on a different manga replaces the context menu target
+        assertEquals(2L, viewModel.state.value.contextMenuMangaId)
     }
 
     @Test
@@ -282,8 +283,8 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(1L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(2L))
         viewModel.onEvent(LibraryEvent.ClearSelection)
 
         assertTrue(viewModel.state.value.selectedManga.isEmpty())
@@ -312,7 +313,7 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(1L))
         viewModel.onEvent(LibraryEvent.InvertSelection)
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -341,8 +342,8 @@ class LibraryViewModelTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // First long-click to start selection mode
-        viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        // Enter selection mode via context menu
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(2L))
         testDispatcher.scheduler.advanceUntilIdle()
         // Then click another item — should add to selection
         viewModel.onEvent(LibraryEvent.OnMangaClick(1L))
