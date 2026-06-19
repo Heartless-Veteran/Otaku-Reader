@@ -221,6 +221,7 @@ class ReaderViewModelTest {
             imageLoader = imageLoader,
         )
         return ReaderViewModel(
+            context = context,
             mangaRepository = mangaRepository,
             chapterRepository = chapterRepository,
             pageBookmarkRepository = pageBookmarkRepository,
