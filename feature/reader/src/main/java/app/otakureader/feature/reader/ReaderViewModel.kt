@@ -369,9 +369,14 @@ class ReaderViewModel @Inject constructor(
                     }
 
                     // Update download badge so the overlay can show/hide the download button.
-                    val isDownloaded = runCatching {
+                    val isDownloaded = try {
                         downloadAheadDelegate.isChapterDownloaded(result.manga, result.chapter)
-                    }.getOrDefault(false)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        false
+                    }
+                    if (chapterId != _state.value.currentChapterId) return@launch
                     _state.update { it.copy(isCurrentChapterDownloaded = isDownloaded) }
 
                     // Record history now that the chapter is confirmed to exist.
@@ -592,7 +597,13 @@ class ReaderViewModel @Inject constructor(
         val manga = currentManga ?: return
         val chapter = currentChapter ?: return
         viewModelScope.launch {
-            val enqueued = downloadAheadDelegate.enqueueCurrentChapter(manga, chapter)
+            val enqueued = try {
+                downloadAheadDelegate.enqueueCurrentChapter(manga, chapter)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
             if (enqueued) {
                 _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_chapter_download_queued))
             }

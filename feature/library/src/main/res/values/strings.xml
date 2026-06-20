@@ -105,6 +105,7 @@
     <string name="library_download_selected">Download selected</string>
     <string name="library_move_to_category">Move to category</string>
     <string name="library_moved_to_category">Moved to category</string>
+    <string name="library_move_to_category_error">Some items could not be moved</string>
     <string name="library_remove_selected">Remove from library</string>
     <string name="library_more_actions">More actions</string>
     <string name="library_select_all">Select all</string>

@@ -31,8 +31,7 @@ class ReaderDownloadAheadDelegate @Inject constructor(
         val existingDownloads = downloadRepository.observeDownloads().first()
         if (existingDownloads.any { it.chapterId == chapter.id }) return false
         if (downloadRepository.isChapterDownloaded(sourceName, manga.title, chapter.name)) return false
-        tryEnqueueChapter(manga, chapter, sourceName, existingDownloads)
-        return true
+        return tryEnqueueChapter(manga, chapter, sourceName, existingDownloads)
     }
 
     suspend fun isChapterDownloaded(manga: Manga, chapter: Chapter): Boolean =
@@ -77,9 +76,9 @@ class ReaderDownloadAheadDelegate @Inject constructor(
         chapter: Chapter,
         sourceName: String,
         existingDownloads: List<DownloadItem>,
-    ) {
-        if (existingDownloads.any { it.chapterId == chapter.id }) return
-        if (downloadRepository.isChapterDownloaded(sourceName, manga.title, chapter.name)) return
+    ): Boolean {
+        if (existingDownloads.any { it.chapterId == chapter.id }) return false
+        if (downloadRepository.isChapterDownloaded(sourceName, manga.title, chapter.name)) return false
 
         val sourceChapter = SourceChapter(
             url = chapter.url,
@@ -99,7 +98,7 @@ class ReaderDownloadAheadDelegate @Inject constructor(
         val pageUrls = pageListResult.getOrNull()
             ?.mapNotNull { page -> page.effectiveUrl() }
             .orEmpty()
-        if (pageUrls.isEmpty()) return
+        if (pageUrls.isEmpty()) return false
 
         downloadRepository.enqueueChapter(
             mangaId = manga.id,
@@ -109,6 +108,7 @@ class ReaderDownloadAheadDelegate @Inject constructor(
             chapterTitle = chapter.name,
             pageUrls = pageUrls,
         )
+        return true
     }
 
     private fun isOnWifi(): Boolean {

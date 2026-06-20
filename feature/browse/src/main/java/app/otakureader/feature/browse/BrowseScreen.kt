@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,6 +80,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -418,6 +420,10 @@ fun BrowseScreen(
 // Language filter dialog — multi-select chips for source language filtering
 // ────────────────────────────────────────────────────────────────────────────────
 
+private val LANGUAGE_DIALOG_ROW_VERTICAL_PADDING = 4.dp
+private val LANGUAGE_DIALOG_ICON_SIZE = 20.dp
+private val LANGUAGE_DIALOG_ICON_TEXT_SPACING = 12.dp
+
 @Composable
 private fun LanguageFilterDialog(
     availableLanguages: List<String>,
@@ -440,10 +446,14 @@ private fun LanguageFilterDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable {
-                                    selected = if (checked) selected - lang else selected + lang
-                                }
-                                .padding(vertical = 4.dp),
+                                .toggleable(
+                                    value = checked,
+                                    role = Role.Checkbox,
+                                    onValueChange = {
+                                        selected = if (checked) selected - lang else selected + lang
+                                    },
+                                )
+                                .padding(vertical = LANGUAGE_DIALOG_ROW_VERTICAL_PADDING),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             if (checked) {
@@ -451,12 +461,12 @@ private fun LanguageFilterDialog(
                                     Icons.Default.Done,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(LANGUAGE_DIALOG_ICON_SIZE),
                                 )
                             } else {
-                                Spacer(Modifier.size(20.dp))
+                                Spacer(Modifier.size(LANGUAGE_DIALOG_ICON_SIZE))
                             }
-                            Spacer(Modifier.width(12.dp))
+                            Spacer(Modifier.width(LANGUAGE_DIALOG_ICON_TEXT_SPACING))
                             Text(lang.uppercase(), style = MaterialTheme.typography.bodyMedium)
                         }
                     }

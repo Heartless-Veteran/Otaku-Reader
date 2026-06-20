@@ -111,6 +111,13 @@ import kotlinx.coroutines.launch
 
 private const val VOLUME_HOLD_SKIP_PAGES = 5
 private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
+private val DIRECTION_INDICATOR_BOTTOM_PADDING = 80.dp
+private val DIRECTION_INDICATOR_CORNER_RADIUS = 8.dp
+private val DIRECTION_INDICATOR_HORIZONTAL_PADDING = 12.dp
+private val DIRECTION_INDICATOR_VERTICAL_PADDING = 8.dp
+private val DIRECTION_INDICATOR_ICON_SIZE = 18.dp
+private val DIRECTION_INDICATOR_ICON_SPACING = 6.dp
+private const val DIRECTION_INDICATOR_SCRIM_ALPHA = 0.7f
 
 @Composable
 @Suppress("UnusedParameter")
@@ -483,7 +490,7 @@ fun ReaderScreen(
             isVisible = showDirectionIndicator && !state.isMenuVisible,
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 16.dp, bottom = 80.dp)
+                .padding(start = 16.dp, bottom = DIRECTION_INDICATOR_BOTTOM_PADDING)
         )
 
         // Snackbar host
@@ -679,11 +686,17 @@ private fun ReadingDirectionIndicator(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(8.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .background(
+                    Color.Black.copy(alpha = DIRECTION_INDICATOR_SCRIM_ALPHA),
+                    RoundedCornerShape(DIRECTION_INDICATOR_CORNER_RADIUS),
+                )
+                .padding(
+                    horizontal = DIRECTION_INDICATOR_HORIZONTAL_PADDING,
+                    vertical = DIRECTION_INDICATOR_VERTICAL_PADDING,
+                )
         ) {
-            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.width(6.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(DIRECTION_INDICATOR_ICON_SIZE))
+            Spacer(Modifier.width(DIRECTION_INDICATOR_ICON_SPACING))
             Text(label, color = Color.White, style = MaterialTheme.typography.labelMedium)
         }
     }

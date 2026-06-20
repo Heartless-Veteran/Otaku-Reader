@@ -269,15 +269,20 @@ class LibraryViewModel @Inject constructor(
 
     private fun moveMangaToCategory(mangaIds: Set<Long>, categoryId: Long) {
         viewModelScope.launch {
-            coroutineScope {
+            val results = coroutineScope {
                 mangaIds.map { mangaId ->
                     async { runCatching { categoryRepository.addMangaToCategory(mangaId, categoryId) } }
                 }.awaitAll()
             }
+            val allSucceeded = results.all { it.isSuccess }
             _state.update { it.copy(showMoveToCategoryDialog = false, moveToCategoryMangaIds = emptySet()) }
-            selection.clear()
-            _state.update { it.copy(selectedManga = emptySet()) }
-            _effect.send(LibraryEffect.ShowSnackbar(R.string.library_moved_to_category))
+            if (allSucceeded) {
+                selection.clear()
+                _state.update { it.copy(selectedManga = emptySet()) }
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_moved_to_category))
+            } else {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_move_to_category_error))
+            }
         }
     }
 
