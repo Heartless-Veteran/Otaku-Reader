@@ -682,7 +682,7 @@ class ReaderViewModelTest {
     }
 
     @Test
-    fun `switching to SINGLE_PAGE does not trigger panel detection`() = runTest {
+    fun `switching to SINGLE_PAGE updates mode state`() = runTest {
         coEvery { settingsRepository.setReaderMode(any()) } just runs
 
         val vm = createViewModel()
