@@ -652,7 +652,8 @@ private fun ParameterizedRuleAdder(onAddRule: (DynamicCategoryRule) -> Unit) {
             OutlinedTextField(
                 value = value,
                 onValueChange = { input ->
-                    value = if (selected.isGenre) input else input.filter { it.isDigit() }
+                    val filtered = if (selected.isGenre) input else input.filter { it.isDigit() }
+                    value = if (selected.isGenre) filtered else filtered.take(9)
                 },
                 label = { Text(stringResource(R.string.category_rule_value_hint)) },
                 singleLine = true,

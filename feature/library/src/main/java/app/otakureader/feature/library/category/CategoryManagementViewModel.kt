@@ -89,7 +89,9 @@ class CategoryManagementViewModel @Inject constructor(
                 _state.update { it.copy(ruleEditor = null) }
             is CategoryEvent.AddRule -> _state.update { st ->
                 st.ruleEditor?.let { editor ->
-                    st.copy(ruleEditor = editor.copy(rules = editor.rules + event.rule))
+                    if (editor.rules.contains(event.rule)) st else {
+                        st.copy(ruleEditor = editor.copy(rules = editor.rules + event.rule))
+                    }
                 } ?: st
             }
             is CategoryEvent.RemoveRule -> _state.update { st ->
@@ -101,7 +103,13 @@ class CategoryManagementViewModel @Inject constructor(
                     )
                 } ?: st
             }
-            is CategoryEvent.SaveRules -> saveRules()
+            is CategoryEvent.SaveRules -> {
+                val editor = _state.value.ruleEditor
+                if (editor != null) {
+                    _state.update { it.copy(ruleEditor = null) }
+                    saveRules(editor)
+                }
+            }
             is CategoryEvent.SetHiddenRevealed ->
                 _state.value = _state.value.copy(hiddenRevealed = event.revealed)
         }
@@ -200,8 +208,7 @@ class CategoryManagementViewModel @Inject constructor(
         }
     }
 
-    private fun saveRules() {
-        val editor = _state.value.ruleEditor ?: return
+    private fun saveRules(editor: RuleEditorUiState) {
         viewModelScope.launch {
             try {
                 dynamicCategoryRepository.setRules(editor.categoryId, editor.rules)
@@ -209,7 +216,6 @@ class CategoryManagementViewModel @Inject constructor(
                 // re-emit on rule changes alone.
                 _state.update { st ->
                     st.copy(
-                        ruleEditor = null,
                         categories = st.categories.map {
                             if (it.id == editor.categoryId) {
                                 it.copy(isDynamic = editor.rules.isNotEmpty())

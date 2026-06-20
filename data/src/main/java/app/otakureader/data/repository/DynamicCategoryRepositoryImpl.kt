@@ -31,20 +31,20 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
 
     private fun DynamicCategoryRuleEntity.toDomain(): DynamicCategoryRule? = when (ruleType) {
         DynamicCategoryRule.TYPE_UNREAD_AT_LEAST ->
-            DynamicCategoryRule.UnreadAtLeast(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.UnreadAtLeast(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_RECENTLY_UPDATED ->
-            DynamicCategoryRule.RecentlyUpdated(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.RecentlyUpdated(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_GENRE_CONTAINS ->
             DynamicCategoryRule.GenreContains(ruleParamsJson)
         DynamicCategoryRule.TYPE_COMPLETED -> DynamicCategoryRule.Completed
         DynamicCategoryRule.TYPE_ONGOING -> DynamicCategoryRule.Ongoing
         DynamicCategoryRule.TYPE_RECENTLY_ADDED ->
-            DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_NEVER_STARTED -> DynamicCategoryRule.NeverStarted
         DynamicCategoryRule.TYPE_READ_WITHIN_DAYS ->
-            DynamicCategoryRule.ReadWithinDays(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.ReadWithinDays(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_NOT_READ_IN_DAYS ->
-            DynamicCategoryRule.NotReadInDays(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.NotReadInDays(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_MARKED_COMPLETED -> DynamicCategoryRule.MarkedCompleted
         DynamicCategoryRule.TYPE_MARKED_DROPPED -> DynamicCategoryRule.MarkedDropped
         else -> null
