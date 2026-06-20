@@ -197,14 +197,14 @@ Mihon/Komikku parity improvements and reader enhancements shipped alongside the 
 | Bookmark share stub removed | `shareSelected()` now emits `BookmarksEffect.ShareSelected` → Screen launches `Intent.ACTION_SEND` with formatted text lines. No more "coming soon" snackbar. |
 | Category timestamp encoding fixed | Replaced fragile comma-CSV `"id:timestamp,id:timestamp"` with per-category `DataStore<Long>` keys (`category_last_update_ms_<id>`). Legacy key migrated transparently on first write. |
 | Dead string removed | `library_reindex_not_available` removed from `feature/library/strings.xml` (unreferenced). |
+| ComicInfo.xml wired (#1134) | `CbzCreator.createCbz()` now receives `ComicInfoMetadata` at both call sites — auto-download path fetches chapter number from DB; manual export path uses title/series strings. |
+| LibraryUpdateFilter extracted (#1136) | Smart-skip and per-category frequency logic moved out of `LibraryUpdateWorker` into a dedicated `@Singleton` class. Worker injects and delegates to `filter.apply(manga, now)`. |
 
 **Deferred to v1.1 (issues created #1132–#1137):**
 - #1132 — Bookmark image export via MediaStore (Coil disk cache → gallery)
 - #1133 — Bookmark share via images (FileProvider + ACTION\_SEND\_MULTIPLE)
-- #1134 — ComicInfo.xml metadata in CBZ downloads
-- #1135 — Local manga source (read CBZ/CBR/folders from device)
-- #1136 — Extract LibraryUpdateWorker filter logic into LibraryUpdateFilter
-- #1137 — Clean up extension compat shim (ext-lib 1.5 migration tracking)
+- #1135 — Local manga source directory picker UI (backend already complete)
+- #1137 — Clean up extension compat shim (blocked: ext-lib 1.5 community migration)
 
 ---
 

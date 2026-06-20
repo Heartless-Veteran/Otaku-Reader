@@ -109,11 +109,13 @@ fun BookmarksScreen(
                         context.getString(R.string.bookmarks_export_complete, effect.savedCount)
                     )
                 is BookmarksEffect.ShareSelected -> {
+                    val unknownManga = context.getString(R.string.bookmarks_unknown_manga)
+                    val chapterFallback = context.getString(R.string.bookmarks_chapter_fallback)
                     val text = effect.items.joinToString("\n") { bm ->
                         context.getString(
                             R.string.bookmarks_share_text_line,
-                            bm.mangaTitle,
-                            bm.chapterName,
+                            bm.mangaTitle.ifBlank { unknownManga },
+                            bm.chapterName.ifBlank { chapterFallback },
                             bm.pageIndex + 1,
                         )
                     }

@@ -77,14 +77,20 @@ class LibraryUpdateFilter @Inject constructor(
                 val elapsed = now - (categoryLastUpdate[catId] ?: 0L)
                 when (freq) {
                     CategoryUpdateFrequency.NEVER -> false
-                    CategoryUpdateFrequency.DAILY -> elapsed >= TimeUnit.DAYS.toMillis(1)
-                    CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= TimeUnit.DAYS.toMillis(3)
-                    CategoryUpdateFrequency.WEEKLY -> elapsed >= TimeUnit.DAYS.toMillis(7)
+                    CategoryUpdateFrequency.DAILY -> elapsed >= DAILY_MS
+                    CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= EVERY_3_DAYS_MS
+                    CategoryUpdateFrequency.WEEKLY -> elapsed >= WEEKLY_MS
                 }
             }
             updatedCategoryIds.addAll(dueCatIds)
             dueCatIds.isNotEmpty()
         }
         return filtered to updatedCategoryIds
+    }
+
+    companion object {
+        private val DAILY_MS = TimeUnit.DAYS.toMillis(1)
+        private val EVERY_3_DAYS_MS = TimeUnit.DAYS.toMillis(3)
+        private val WEEKLY_MS = TimeUnit.DAYS.toMillis(7)
     }
 }

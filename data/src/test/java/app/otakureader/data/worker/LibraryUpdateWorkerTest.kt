@@ -146,7 +146,14 @@ class LibraryUpdateWorkerTest {
         coEvery { categoryRepository.getCategories() } returns flowOf(emptyList())
         coEvery { libraryPreferences.setCategoryLastUpdateMs(any()) } just runs
 
-        libraryUpdateFilter = LibraryUpdateFilter(libraryPreferences, categoryRepository)
+        libraryUpdateFilter = mockk()
+        coEvery { libraryUpdateFilter.apply(any(), any()) } answers {
+            LibraryUpdateFilter.Result(
+                filtered = firstArg(),
+                skipped = emptyList(),
+                updatedCategoryIds = emptySet(),
+            )
+        }
 
         // Mock connectivity
         every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
