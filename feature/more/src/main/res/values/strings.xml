@@ -121,6 +121,7 @@
     <string name="bookmarks_share_text_line">%1$s · %2$s · Page %3$d</string>
 
     <!-- Bookmark error messages (#1128) -->
+    <string name="bookmarks_share_error">Unable to open share sheet</string>
     <string name="bookmarks_error_delete_bookmark">Failed to delete bookmark</string>
     <string name="bookmarks_error_create_collection">Failed to create collection</string>
     <string name="bookmarks_error_rename_collection">Failed to rename collection</string>

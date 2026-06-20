@@ -121,7 +121,13 @@ fun BookmarksScreen(
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, text)
                     }
-                    context.startActivity(Intent.createChooser(intent, null))
+                    runCatching {
+                        context.startActivity(Intent.createChooser(intent, null))
+                    }.onFailure {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.bookmarks_share_error)
+                        )
+                    }
                 }
             }
         }
