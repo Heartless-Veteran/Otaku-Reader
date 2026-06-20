@@ -168,6 +168,15 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setCategoryLastUpdateMs(map: Map<Long, Long>) {
         dataStore.edit { prefs ->
             prefs.remove(Keys.CATEGORY_LAST_UPDATE_MS)  // Remove legacy string key on first write
+            // Remove per-category keys for categories no longer in the map (e.g. deleted categories)
+            val staleIds = prefs.asMap().keys.mapNotNull { key ->
+                key.name
+                    .takeIf { it.startsWith("category_last_update_ms_") }
+                    ?.removePrefix("category_last_update_ms_")
+                    ?.toLongOrNull()
+                    ?.takeIf { it !in map }
+            }
+            staleIds.forEach { id -> prefs.remove(longPreferencesKey("category_last_update_ms_$id")) }
             map.forEach { (id, ts) -> prefs[longPreferencesKey("category_last_update_ms_$id")] = ts }
         }
     }
