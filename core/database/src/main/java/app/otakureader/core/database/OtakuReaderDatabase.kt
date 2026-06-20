@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import app.otakureader.core.database.dao.AchievementDao
+import app.otakureader.core.database.dao.BookmarkCollectionDao
 import app.otakureader.core.database.dao.CategoryDao
 import app.otakureader.core.database.dao.ChapterDao
 import app.otakureader.core.database.dao.DataUsageDao
@@ -25,6 +26,7 @@ import app.otakureader.core.database.dao.TrackerSyncDao
 import app.otakureader.core.database.dao.UpdateRunSummaryDao
 import app.otakureader.core.database.dao.MangaAlternativeSourceDao
 import app.otakureader.core.database.entity.AchievementEntity
+import app.otakureader.core.database.entity.BookmarkCollectionEntity
 import app.otakureader.core.database.entity.MangaAlternativeSourceEntity
 import app.otakureader.core.database.entity.CategoryEntity
 import app.otakureader.core.database.entity.ChapterEntity
@@ -94,8 +96,10 @@ import app.otakureader.core.database.entity.UpdateRunSummaryEntity
         MangaAlternativeSourceEntity::class,
         // Local reader comments (chapter + book scoped)
         ReaderCommentEntity::class,
+        // Bookmark collections (#1128)
+        BookmarkCollectionEntity::class,
     ],
-    version = 37,
+    version = 39,
     exportSchema = true
 )
 @TypeConverters(DatabaseConverters::class)
@@ -123,6 +127,7 @@ abstract class OtakuReaderDatabase : RoomDatabase() {
     abstract fun updateRunSummaryDao(): UpdateRunSummaryDao
     abstract fun mangaAlternativeSourceDao(): MangaAlternativeSourceDao
     abstract fun readerCommentDao(): ReaderCommentDao
+    abstract fun bookmarkCollectionDao(): BookmarkCollectionDao
 
     companion object {
         const val DATABASE_NAME = "otakureader.db"

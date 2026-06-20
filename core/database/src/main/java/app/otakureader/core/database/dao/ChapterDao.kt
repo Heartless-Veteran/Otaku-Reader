@@ -49,9 +49,6 @@ interface ChapterDao {
     @Query("UPDATE chapters SET read = :read, lastPageRead = :lastPageRead WHERE id IN (:chapterIds)")
     suspend fun updateChapterProgress(chapterIds: Collection<Long>, read: Boolean, lastPageRead: Int)
 
-    @Query("UPDATE chapters SET bookmark = :bookmark WHERE id = :chapterId")
-    suspend fun updateBookmark(chapterId: Long, bookmark: Boolean)
-    
     @Query("UPDATE chapters SET userNotes = :notes WHERE id = :chapterId")
     suspend fun updateChapterNotes(chapterId: Long, notes: String?)
     

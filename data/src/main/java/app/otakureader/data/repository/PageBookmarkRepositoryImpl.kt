@@ -56,13 +56,20 @@ class PageBookmarkRepositoryImpl @Inject constructor(
         return pageBookmarkDao.getBookmarkCountForManga(mangaId)
     }
 
+    override fun getBookmarksByCollection(collectionId: Long): Flow<List<PageBookmark>> {
+        return pageBookmarkDao.getBookmarksByCollection(collectionId).map { list ->
+            list.map { it.toDomain() }
+        }
+    }
+
     private fun PageBookmarkEntity.toDomain() = PageBookmark(
         id = id,
         mangaId = mangaId,
         chapterId = chapterId,
         pageIndex = pageIndex,
         note = note,
-        createdAt = createdAt
+        createdAt = createdAt,
+        collectionId = collectionId
     )
 
     private fun PageBookmark.toEntity() = PageBookmarkEntity(
@@ -71,6 +78,7 @@ class PageBookmarkRepositoryImpl @Inject constructor(
         chapterId = chapterId,
         pageIndex = pageIndex,
         note = note,
-        createdAt = createdAt
+        createdAt = createdAt,
+        collectionId = collectionId
     )
 }

@@ -1,26 +1,40 @@
 package app.otakureader.feature.more.bookmarks
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.SelectAll
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,16 +48,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,17 +70,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import app.otakureader.core.navigation.Route
+import app.otakureader.domain.model.BookmarkCollection
 import app.otakureader.feature.more.R
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 
-/**
- * Centralized list of every page bookmark in the library.
- *
- * Bookmarks are grouped by manga then by chapter. Each manga group can be expanded or
- * collapsed by tapping the header. A search bar filters the list by manga title, chapter
- * name, or note. Individual rows can be deleted with the delete button or by swiping left.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarksScreen(
@@ -73,6 +85,7 @@ fun BookmarksScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.effect.collectLatest { effect ->
@@ -81,24 +94,55 @@ fun BookmarksScreen(
                     onOpenBookmark(effect.mangaId, effect.chapterId)
                 is BookmarksEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
+                is BookmarksEffect.ExportComplete ->
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.bookmarks_export_complete, effect.savedCount)
+                    )
             }
         }
+    }
+
+    if (state.isManageCollectionsVisible) {
+        ManageCollectionsDialog(
+            collections = state.collections,
+            onCreateCollection = { name -> viewModel.onIntent(BookmarksIntent.CreateCollection(name)) },
+            onRenameCollection = { id, name -> viewModel.onIntent(BookmarksIntent.RenameCollection(id, name)) },
+            onDeleteCollection = { id -> viewModel.onIntent(BookmarksIntent.DeleteCollection(id)) },
+            onDismiss = { viewModel.onIntent(BookmarksIntent.HideManageCollections) },
+        )
     }
 
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.bookmarks_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.bookmarks_back),
-                        )
-                    }
-                },
-            )
+            if (state.isSelectionMode) {
+                SelectionTopBar(
+                    selectedCount = state.selectedBookmarkIds.size,
+                    onClearSelection = { viewModel.onIntent(BookmarksIntent.ClearSelection) },
+                    onSelectAll = { viewModel.onIntent(BookmarksIntent.SelectAllBookmarks) },
+                    onExport = { viewModel.onIntent(BookmarksIntent.ExportSelected) },
+                    onShare = { viewModel.onIntent(BookmarksIntent.ShareSelected) },
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.bookmarks_title)) },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.bookmarks_back),
+                            )
+                        }
+                    },
+                    actions = {
+                        if (state.collections.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.onIntent(BookmarksIntent.ShowManageCollections) }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.bookmarks_manage_collections))
+                            }
+                        }
+                    },
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -107,7 +151,6 @@ fun BookmarksScreen(
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            // Search bar — filters by manga title, chapter name, or note text.
             OutlinedTextField(
                 value = state.searchQuery,
                 onValueChange = { viewModel.onIntent(BookmarksIntent.SearchQueryChanged(it)) },
@@ -135,6 +178,29 @@ fun BookmarksScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             )
 
+            // Collection filter chips — only shown when collections exist.
+            if (state.collections.isNotEmpty()) {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    item {
+                        FilterChip(
+                            selected = state.selectedCollectionId == null,
+                            onClick = { viewModel.onIntent(BookmarksIntent.SelectCollection(null)) },
+                            label = { Text(stringResource(R.string.bookmarks_collection_all)) },
+                        )
+                    }
+                    items(state.collections, key = { it.id }) { collection ->
+                        FilterChip(
+                            selected = state.selectedCollectionId == collection.id,
+                            onClick = { viewModel.onIntent(BookmarksIntent.SelectCollection(collection.id)) },
+                            label = { Text(collection.name) },
+                        )
+                    }
+                }
+            }
+
             when {
                 state.isLoading -> Box(
                     modifier = Modifier.fillMaxSize(),
@@ -147,6 +213,8 @@ fun BookmarksScreen(
 
                 else -> BookmarkGroupedList(
                     groups = state.grouped,
+                    selectedBookmarkIds = state.selectedBookmarkIds,
+                    isSelectionMode = state.isSelectionMode,
                     onToggleExpand = { mangaId ->
                         viewModel.onIntent(BookmarksIntent.ToggleMangaExpanded(mangaId))
                     },
@@ -156,10 +224,48 @@ fun BookmarksScreen(
                     onDeleteBookmark = { item ->
                         viewModel.onIntent(BookmarksIntent.DeleteBookmark(item))
                     },
+                    onToggleSelection = { id ->
+                        viewModel.onIntent(BookmarksIntent.ToggleBookmarkSelection(id))
+                    },
+                    onLongPressBookmark = { id ->
+                        viewModel.onIntent(BookmarksIntent.ToggleBookmarkSelection(id))
+                    },
                 )
             }
         }
     }
+}
+
+// ─── Selection top bar ────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelectionTopBar(
+    selectedCount: Int,
+    onClearSelection: () -> Unit,
+    onSelectAll: () -> Unit,
+    onExport: () -> Unit,
+    onShare: () -> Unit,
+) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.bookmarks_selected_count, selectedCount)) },
+        navigationIcon = {
+            IconButton(onClick = onClearSelection) {
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.bookmarks_clear_selection))
+            }
+        },
+        actions = {
+            IconButton(onClick = onSelectAll) {
+                Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.bookmarks_select_all))
+            }
+            IconButton(onClick = onExport) {
+                Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.bookmarks_export))
+            }
+            IconButton(onClick = onShare) {
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.bookmarks_share))
+            }
+        },
+    )
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
@@ -190,14 +296,17 @@ private fun EmptyBookmarksState(
 @Composable
 private fun BookmarkGroupedList(
     groups: List<BookmarkGroup>,
+    selectedBookmarkIds: Set<Long>,
+    isSelectionMode: Boolean,
     onToggleExpand: (mangaId: Long) -> Unit,
     onOpenBookmark: (mangaId: Long, chapterId: Long) -> Unit,
     onDeleteBookmark: (BookmarkItem) -> Unit,
+    onToggleSelection: (id: Long) -> Unit,
+    onLongPressBookmark: (id: Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
         groups.forEach { group ->
-            // Manga header row — tap to expand/collapse the group.
             item(key = "header_${group.mangaId}") {
                 MangaGroupHeader(
                     group = group,
@@ -205,7 +314,6 @@ private fun BookmarkGroupedList(
                 )
             }
 
-            // Only show chapter / bookmark rows when the group is expanded.
             if (group.isExpanded) {
                 group.chapters.forEach { chapterGroup ->
                     item(key = "chapter_${chapterGroup.chapterId}") {
@@ -216,11 +324,20 @@ private fun BookmarkGroupedList(
                         items = chapterGroup.bookmarks,
                         key = { bm -> "bookmark_${bm.id}" },
                     ) { bookmark ->
-                        SwipeToDismissBookmarkRow(
-                            bookmark = bookmark,
-                            onOpen = { onOpenBookmark(bookmark.mangaId, bookmark.chapterId) },
-                            onDelete = { onDeleteBookmark(bookmark) },
-                        )
+                        if (isSelectionMode) {
+                            SelectableBookmarkRow(
+                                bookmark = bookmark,
+                                isSelected = bookmark.id in selectedBookmarkIds,
+                                onToggleSelection = { onToggleSelection(bookmark.id) },
+                            )
+                        } else {
+                            SwipeToDismissBookmarkRow(
+                                bookmark = bookmark,
+                                onOpen = { onOpenBookmark(bookmark.mangaId, bookmark.chapterId) },
+                                onDelete = { onDeleteBookmark(bookmark) },
+                                onLongPress = { onLongPressBookmark(bookmark.id) },
+                            )
+                        }
                         HorizontalDivider(modifier = Modifier.padding(start = 72.dp))
                     }
                 }
@@ -249,7 +366,6 @@ private fun MangaGroupHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Manga cover thumbnail (40×56 dp, portrait aspect ratio).
         Surface(
             shape = MaterialTheme.shapes.small,
             modifier = Modifier.size(width = 40.dp, height = 56.dp),
@@ -316,37 +432,49 @@ private fun ChapterSubHeader(
     )
 }
 
+// ─── Selectable row (multi-select mode) ──────────────────────────────────────
+
+@Composable
+private fun SelectableBookmarkRow(
+    bookmark: BookmarkItem,
+    isSelected: Boolean,
+    onToggleSelection: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        modifier = modifier.clickable(onClick = onToggleSelection),
+        headlineContent = {
+            Text(stringResource(R.string.bookmarks_page, bookmark.pageIndex + 1))
+        },
+        supportingContent = if (!bookmark.note.isNullOrBlank()) {
+            { Text(bookmark.note, maxLines = 2) }
+        } else null,
+        trailingContent = {
+            Checkbox(checked = isSelected, onCheckedChange = { onToggleSelection() })
+        },
+    )
+}
+
 // ─── Swipe-to-dismiss bookmark row ───────────────────────────────────────────
 
-/**
- * Wraps [BookmarkRow] in a [SwipeToDismissBox] so the user can swipe left to delete.
- *
- * [SwipeToDismissBox] is the Material3 replacement for the old M2 SwipeToDismiss composable.
- * Swiping toward [SwipeToDismissBoxValue.EndToStart] (right-to-left) reveals a red delete
- * icon in the background. Once the drag exceeds the positional threshold the delete is
- * confirmed via [confirmValueChange] and [onDelete] is called.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeToDismissBookmarkRow(
     bookmark: BookmarkItem,
     onOpen: () -> Unit,
     onDelete: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
                 onDelete()
-                // Return false: the row stays until Room emits a new list without it.
-                // This avoids the UI/data race where the row disappears before the DB
-                // delete completes — if deletion fails the row never disappears at all.
                 false
             } else {
                 false
             }
         },
-        // Require 40 % drag distance before confirming — reduces accidental swipes.
         positionalThreshold = { totalDistance -> totalDistance * 0.4f },
     )
 
@@ -374,6 +502,7 @@ private fun SwipeToDismissBookmarkRow(
             bookmark = bookmark,
             onOpen = onOpen,
             onDelete = onDelete,
+            onLongPress = onLongPress,
         )
     }
 }
@@ -385,10 +514,14 @@ private fun BookmarkRow(
     bookmark: BookmarkItem,
     onOpen: () -> Unit,
     onDelete: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     ListItem(
-        modifier = modifier.clickable(onClick = onOpen),
+        modifier = modifier.combinedClickable(
+            onClick = onOpen,
+            onLongClick = onLongPress,
+        ),
         headlineContent = {
             Text(stringResource(R.string.bookmarks_page, bookmark.pageIndex + 1))
         },
@@ -404,6 +537,105 @@ private fun BookmarkRow(
                     contentDescription = stringResource(R.string.bookmarks_delete),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        },
+    )
+}
+
+// ─── Manage Collections dialog ────────────────────────────────────────────────
+
+@Composable
+private fun ManageCollectionsDialog(
+    collections: List<BookmarkCollection>,
+    onCreateCollection: (String) -> Unit,
+    onRenameCollection: (Long, String) -> Unit,
+    onDeleteCollection: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var newCollectionName by remember { mutableStateOf("") }
+    var renamingId by remember { mutableStateOf<Long?>(null) }
+    var renameText by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.bookmarks_manage_collections)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Create new collection
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedTextField(
+                        value = newCollectionName,
+                        onValueChange = { newCollectionName = it },
+                        placeholder = { Text(stringResource(R.string.bookmarks_new_collection_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = {
+                            if (newCollectionName.isNotBlank()) {
+                                onCreateCollection(newCollectionName.trim())
+                                newCollectionName = ""
+                            }
+                        },
+                    ) { Text(stringResource(R.string.bookmarks_collection_create)) }
+                }
+
+                if (collections.isNotEmpty()) {
+                    HorizontalDivider()
+                    collections.forEach { collection ->
+                        if (renamingId == collection.id) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                OutlinedTextField(
+                                    value = renameText,
+                                    onValueChange = { renameText = it },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(onClick = {
+                                    if (renameText.isNotBlank()) {
+                                        onRenameCollection(collection.id, renameText.trim())
+                                        renamingId = null
+                                    }
+                                }) { Text(stringResource(R.string.bookmarks_collection_rename_save)) }
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = collection.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                IconButton(onClick = {
+                                    renamingId = collection.id
+                                    renameText = collection.name
+                                }) {
+                                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.bookmarks_collection_rename))
+                                }
+                                IconButton(onClick = { onDeleteCollection(collection.id) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.bookmarks_collection_delete),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.bookmarks_collection_done))
             }
         },
     )

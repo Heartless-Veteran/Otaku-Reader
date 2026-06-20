@@ -22,7 +22,6 @@ class ChapterTest {
         assertEquals("Chapter 1", chapter.name)
         assertEquals(1f, chapter.chapterNumber)
         assertFalse(chapter.read) // Default should be false
-        assertFalse(chapter.bookmark) // Default should be false
     }
 
     @Test

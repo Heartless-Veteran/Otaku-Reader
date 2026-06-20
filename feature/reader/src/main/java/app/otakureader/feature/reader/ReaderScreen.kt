@@ -345,6 +345,8 @@ fun ReaderScreen(
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
+            onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
+            isCurrentPageBookmarked = state.isCurrentPageBookmarked,
             onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
             onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
             onPageSliderChange = { fraction ->

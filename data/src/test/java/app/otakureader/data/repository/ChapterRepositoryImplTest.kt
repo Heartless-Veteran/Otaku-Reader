@@ -164,17 +164,6 @@ class ChapterRepositoryImplTest {
         coVerify(exactly = 2) { chapterDao.updateChapterProgress(any<List<Long>>(), any(), any()) }
     }
 
-    // ---- updateBookmark ----
-
-    @Test
-    fun updateBookmark_callsDaoWithCorrectArgs() = runTest {
-        coEvery { chapterDao.updateBookmark(any(), any()) } returns Unit
-
-        repository.updateBookmark(chapterId = 2L, bookmark = true)
-
-        coVerify { chapterDao.updateBookmark(2L, true) }
-    }
-
     // ---- insertChapters ----
 
     @Test
@@ -280,7 +269,6 @@ class ChapterRepositoryImplTest {
             name = "Chapter 99",
             scanlator = "Team Scan",
             read = true,
-            bookmark = true,
             lastPageRead = 15,
             chapterNumber = 99.5f,
             dateUpload = 12345L
@@ -295,7 +283,6 @@ class ChapterRepositoryImplTest {
             assertEquals(entity.name, chapter.name)
             assertEquals(entity.scanlator, chapter.scanlator)
             assertEquals(entity.read, chapter.read)
-            assertEquals(entity.bookmark, chapter.bookmark)
             assertEquals(entity.lastPageRead, chapter.lastPageRead)
             assertEquals(entity.chapterNumber, chapter.chapterNumber)
             assertEquals(entity.dateUpload, chapter.dateUpload)

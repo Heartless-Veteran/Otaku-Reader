@@ -149,7 +149,6 @@ class TachiyomiBackupImporter @Inject constructor(
                 url = chapter.url,
                 name = chapter.name,
                 read = chapter.read,
-                bookmark = chapter.bookmark,
                 lastPageRead = chapter.lastPageRead,
                 chapterNumber = chapter.chapterNumber ?: -1f,
                 sourceOrder = chapter.sourceOrder,

@@ -2,6 +2,7 @@ package app.otakureader.feature.more.bookmarks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.otakureader.domain.repository.BookmarkCollectionRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
@@ -25,46 +26,32 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel for the Bookmarks screen.
- *
- * Exposes a [StateFlow<BookmarksState>] built reactively from the repository flow.
- * All user actions arrive through [onIntent] and are reduced synchronously (search/expand)
- * or launched as suspend operations (delete/navigate).
- *
- * Why [combine] + [mapLatest]?
- * - [pageBookmarkRepository.getAllBookmarks()] is a Room Flow that re-emits whenever the DB
- *   changes (e.g. the user just deleted a bookmark from inside the reader).
- * - [searchQuery] is a local StateFlow updated by the search bar.
- * - Combining them means the list automatically re-filters whenever either changes, with no
- *   manual "reload" calls needed.
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class BookmarksViewModel @Inject constructor(
     private val pageBookmarkRepository: PageBookmarkRepository,
+    private val bookmarkCollectionRepository: BookmarkCollectionRepository,
     private val mangaRepository: MangaRepository,
     private val chapterRepository: ChapterRepository,
 ) : ViewModel() {
 
-    // One-shot navigation / snackbar events delivered to the screen.
     private val _effect = Channel<BookmarksEffect>(Channel.BUFFERED)
     val effect: Flow<BookmarksEffect> = _effect.receiveAsFlow()
 
-    // Local UI state not derived from the DB (collapse flags).
     private val _collapsedManga = MutableStateFlow<Set<Long>>(emptySet())
+    private val _searchQuery = MutableStateFlow("")
+    private val _selectedCollectionId = MutableStateFlow<Long?>(null)
+    private val _isManageCollectionsVisible = MutableStateFlow(false)
+    private val _selectedBookmarkIds = MutableStateFlow<Set<Long>>(emptySet())
 
-    /** Enriched item list derived reactively from the repository. */
     private val enrichedBookmarks = pageBookmarkRepository.getAllBookmarks()
         .mapLatest { bookmarks ->
             if (bookmarks.isEmpty()) return@mapLatest emptyList()
 
-            // Fetch all parent manga in a single batch call, then build a lookup map.
             val mangaMap = mangaRepository
                 .getMangaByIds(bookmarks.map { it.mangaId }.distinct())
                 .associate { manga -> manga.id to manga }
 
-            // Fetch all chapters in parallel to avoid N+1 sequential DB queries.
             val chapterMap = coroutineScope {
                 bookmarks.map { it.chapterId }.distinct()
                     .map { id -> async { id to chapterRepository.getChapterById(id) } }
@@ -83,30 +70,30 @@ class BookmarksViewModel @Inject constructor(
                     mangaTitle = manga?.title.orEmpty(),
                     chapterName = chapterMap[bm.chapterId]?.name.orEmpty(),
                     mangaCoverUrl = manga?.thumbnailUrl,
+                    collectionId = bm.collectionId,
                 )
             }
         }
         .catch { emit(emptyList()) }
 
-    /** The mutable search query from the search bar. */
-    private val _searchQuery = MutableStateFlow("")
-
-    /**
-     * UI state combining:
-     * 1. The enriched bookmark list from Room.
-     * 2. The current search query.
-     * 3. Which manga groups are collapsed.
-     */
     val state: StateFlow<BookmarksState> = combine(
         enrichedBookmarks,
         _searchQuery,
         _collapsedManga,
-    ) { items, query, collapsed ->
+        bookmarkCollectionRepository.getAllCollections(),
+        combine(_selectedCollectionId, _isManageCollectionsVisible, _selectedBookmarkIds) { colId, mgmt, sel ->
+            Triple(colId, mgmt, sel)
+        },
+    ) { items, query, collapsed, collections, (selectedColId, managingCollections, selectedIds) ->
         BookmarksState(
             isLoading = false,
             bookmarks = items,
             searchQuery = query,
             collapsedManga = collapsed,
+            collections = collections,
+            selectedCollectionId = selectedColId,
+            isManageCollectionsVisible = managingCollections,
+            selectedBookmarkIds = selectedIds,
         )
     }
         .catch { emit(BookmarksState(isLoading = false)) }
@@ -116,7 +103,6 @@ class BookmarksViewModel @Inject constructor(
             initialValue = BookmarksState(),
         )
 
-    /** Single entry-point for all user actions. */
     fun onIntent(intent: BookmarksIntent) {
         when (intent) {
             is BookmarksIntent.SearchQueryChanged -> _searchQuery.value = intent.query
@@ -129,10 +115,27 @@ class BookmarksViewModel @Inject constructor(
             is BookmarksIntent.DeleteBookmark -> deleteBookmark(intent.item)
 
             is BookmarksIntent.OpenBookmark -> viewModelScope.launch {
-                _effect.send(
-                    BookmarksEffect.NavigateToReader(intent.mangaId, intent.chapterId)
-                )
+                _effect.send(BookmarksEffect.NavigateToReader(intent.mangaId, intent.chapterId))
             }
+
+            // Collections
+            is BookmarksIntent.SelectCollection -> _selectedCollectionId.value = intent.collectionId
+            is BookmarksIntent.CreateCollection -> createCollection(intent.name)
+            is BookmarksIntent.RenameCollection -> renameCollection(intent.id, intent.name)
+            is BookmarksIntent.DeleteCollection -> deleteCollection(intent.id)
+            is BookmarksIntent.ShowManageCollections -> _isManageCollectionsVisible.value = true
+            is BookmarksIntent.HideManageCollections -> _isManageCollectionsVisible.value = false
+
+            // Multi-select
+            is BookmarksIntent.ToggleBookmarkSelection -> _selectedBookmarkIds.update { current ->
+                if (intent.id in current) current - intent.id else current + intent.id
+            }
+            is BookmarksIntent.SelectAllBookmarks -> _selectedBookmarkIds.update {
+                state.value.filteredBookmarks.map { it.id }.toSet()
+            }
+            is BookmarksIntent.ClearSelection -> _selectedBookmarkIds.value = emptySet()
+            is BookmarksIntent.ExportSelected -> exportSelected(state.value.selectedBookmarkIds)
+            is BookmarksIntent.ShareSelected -> shareSelected(state.value.selectedBookmarkIds)
         }
     }
 
@@ -145,6 +148,68 @@ class BookmarksViewModel @Inject constructor(
             } catch (_: Exception) {
                 _effect.send(BookmarksEffect.ShowSnackbar("Failed to delete bookmark"))
             }
+        }
+    }
+
+    private fun createCollection(name: String) {
+        viewModelScope.launch {
+            try {
+                bookmarkCollectionRepository.addCollection(name)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BookmarksEffect.ShowSnackbar("Failed to create collection"))
+            }
+        }
+    }
+
+    private fun renameCollection(id: Long, name: String) {
+        viewModelScope.launch {
+            try {
+                bookmarkCollectionRepository.renameCollection(id, name)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BookmarksEffect.ShowSnackbar("Failed to rename collection"))
+            }
+        }
+    }
+
+    private fun deleteCollection(id: Long) {
+        viewModelScope.launch {
+            try {
+                bookmarkCollectionRepository.deleteCollection(id)
+                // Clear selection if we deleted the selected collection
+                if (_selectedCollectionId.value == id) _selectedCollectionId.value = null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BookmarksEffect.ShowSnackbar("Failed to delete collection"))
+            }
+        }
+    }
+
+    private fun exportSelected(bookmarkIds: Set<Long>) {
+        if (bookmarkIds.isEmpty()) return
+        viewModelScope.launch {
+            try {
+                // Export is handled by the screen via ExportComplete effect.
+                // The screen triggers the system share/save flow.
+                _effect.send(BookmarksEffect.ExportComplete(bookmarkIds.size))
+                _selectedBookmarkIds.value = emptySet()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(BookmarksEffect.ShowSnackbar("Export failed"))
+            }
+        }
+    }
+
+    private fun shareSelected(bookmarkIds: Set<Long>) {
+        if (bookmarkIds.isEmpty()) return
+        viewModelScope.launch {
+            _effect.send(BookmarksEffect.ShowSnackbar("Sharing ${bookmarkIds.size} bookmark(s) — feature coming soon"))
+            _selectedBookmarkIds.value = emptySet()
         }
     }
 }

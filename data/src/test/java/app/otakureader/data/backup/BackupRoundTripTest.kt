@@ -262,7 +262,6 @@ class BackupRoundTripTest {
         assertEquals(entity.name, restored.name)
         assertEquals(entity.scanlator, restored.scanlator)
         assertEquals(entity.read, restored.read)
-        assertEquals(entity.bookmark, restored.bookmark)
         assertEquals(entity.lastPageRead, restored.lastPageRead)
         assertEquals(entity.chapterNumber, restored.chapterNumber)
         assertEquals(entity.dateFetch, restored.dateFetch)
