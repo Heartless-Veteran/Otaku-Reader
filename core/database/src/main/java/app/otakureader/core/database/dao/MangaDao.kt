@@ -160,12 +160,23 @@ interface MangaDao {
     @Query("SELECT * FROM manga WHERE favorite = 0 AND genre IS NOT NULL AND genre != '' LIMIT :limit")
     suspend fun getRecommendationCandidates(limit: Int = 500): List<MangaEntity>
 
+    // Correlated subqueries (rather than a LEFT JOIN + GROUP BY on chapters) keep this O(N log M)
+    // for N favorites over M chapters, so library loading stays fast for large libraries.
     @Query("""
-        SELECT m.*, COALESCE(SUM(CASE WHEN c.read = 0 THEN 1 ELSE 0 END), 0) as unreadCount
+        SELECT m.*,
+            (
+                SELECT COUNT(*)
+                FROM chapters c
+                WHERE c.mangaId = m.id AND c.read = 0
+            ) as unreadCount,
+            (
+                SELECT MAX(rh.read_at)
+                FROM reading_history rh
+                INNER JOIN chapters rc ON rh.chapter_id = rc.id
+                WHERE rc.mangaId = m.id
+            ) as lastRead
         FROM manga m
-        LEFT JOIN chapters c ON m.id = c.mangaId
         WHERE m.favorite = 1
-        GROUP BY m.id
         ORDER BY m.title ASC
     """)
     fun getFavoriteMangaWithUnreadCount(): Flow<List<MangaWithUnreadCount>>

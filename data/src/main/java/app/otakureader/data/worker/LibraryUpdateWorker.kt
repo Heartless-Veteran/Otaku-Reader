@@ -91,9 +91,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
                     when {
                         skipWithUnread && manga.unreadCount > 0 -> { skippedManga += manga; false }
                         skipCompleted && manga.status == MangaStatus.COMPLETED -> { skippedManga += manga; false }
-                        // lastRead is null when the Manga domain model is created without reading
-                        // history (current mapping). The 0L guard covers any future join that
-                        // returns epoch-zero instead of null for unread manga.
+                        // lastRead is the max read_at across the manga's chapters (populated by
+                        // getFavoriteMangaWithUnreadCount). Null/0L means the user has never opened
+                        // any chapter, so "skip never started" excludes it from the update.
                         skipNeverStarted && (manga.lastRead == null || manga.lastRead == 0L) -> { skippedManga += manga; false }
                         else -> true
                     }

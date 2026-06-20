@@ -644,7 +644,7 @@ private fun formatChapterName(chapter: DetailsContract.ChapterItem, chapterForma
     return when {
         chapter.chapterNumber >= 0 -> {
             val suffix = if (chapter.name.contains(":")) chapter.name.substringAfter(":") else ""
-            String.format(chapterFormat, chapter.chapterNumber.toInt(), suffix).trim()
+            String.format(Locale.US, chapterFormat, chapter.chapterNumber.toInt(), suffix).trim()
         }
         else -> chapter.name
     }
