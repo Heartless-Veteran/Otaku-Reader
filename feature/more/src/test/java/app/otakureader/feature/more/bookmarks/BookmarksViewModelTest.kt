@@ -1,7 +1,9 @@
 package app.otakureader.feature.more.bookmarks
 
+import android.content.Context
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.PageBookmark
+import app.otakureader.domain.repository.BookmarkCollectionRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
@@ -38,13 +40,17 @@ class BookmarksViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
+    private val context: Context = mockk(relaxed = true)
     private val pageBookmarkRepository: PageBookmarkRepository = mockk(relaxed = true)
+    private val bookmarkCollectionRepository: BookmarkCollectionRepository = mockk()
     private val mangaRepository: MangaRepository = mockk(relaxed = true)
     private val chapterRepository: ChapterRepository = mockk(relaxed = true)
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        // getAllCollections must emit so the combine() in the ViewModel can produce state.
+        every { bookmarkCollectionRepository.getAllCollections() } returns flowOf(emptyList())
     }
 
     @After
@@ -75,7 +81,9 @@ class BookmarksViewModelTest {
         Chapter(id = id, mangaId = mangaId, url = "/ch/$id", name = name)
 
     private fun createViewModel() = BookmarksViewModel(
+        context = context,
         pageBookmarkRepository = pageBookmarkRepository,
+        bookmarkCollectionRepository = bookmarkCollectionRepository,
         mangaRepository = mangaRepository,
         chapterRepository = chapterRepository,
     )
