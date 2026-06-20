@@ -80,6 +80,7 @@ class BrowseViewModelTest {
         // Default stubs — applied before ViewModel creation
         every { sourceRepository.getSources() } returns flowOf(emptyList())
         every { generalPreferences.showNsfwContent } returns flowOf(false)
+        every { generalPreferences.enabledSourceLanguages } returns flowOf(emptySet())
         every { generalPreferences.browseSearchHistory } returns flowOf(emptyList())
         coEvery { generalPreferences.addBrowseSearchHistory(any()) } returns mockk(relaxed = true)
         coEvery { generalPreferences.getBrowseFilterState(any()) } returns null
