@@ -92,8 +92,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         it[Keys.ENABLED_SOURCE_LANGUAGES] ?: setOf("en")
     }
     suspend fun setEnabledSourceLanguages(languages: Set<String>) = dataStore.edit {
-        if (languages.isEmpty()) it.remove(Keys.ENABLED_SOURCE_LANGUAGES)
-        else it[Keys.ENABLED_SOURCE_LANGUAGES] = languages
+        it[Keys.ENABLED_SOURCE_LANGUAGES] = languages
     }
 
     // --- Discord Rich Presence ---

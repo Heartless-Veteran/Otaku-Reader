@@ -229,7 +229,10 @@ fun LibraryScreen(
                         }
                         if (state.categories.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onEvent(LibraryEvent.OpenMoveToCategoryDialog) }) {
-                                Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = stringResource(R.string.library_move_to_category))
+                                Icon(
+                                    Icons.AutoMirrored.Filled.DriveFileMove,
+                                    contentDescription = stringResource(R.string.library_move_to_category),
+                                )
                             }
                         }
                         IconButton(onClick = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary }) {
@@ -499,7 +502,6 @@ fun LibraryScreen(
     if (state.showMoveToCategoryDialog) {
         MoveToCategoryDialog(
             categories = state.categories,
-            mangaIds = state.moveToCategoryMangaIds,
             onConfirm = { categoryId ->
                 viewModel.onEvent(LibraryEvent.MoveToCategory(state.moveToCategoryMangaIds, categoryId))
             },
@@ -810,7 +812,6 @@ private fun SaveViewDialog(
 @Composable
 private fun MoveToCategoryDialog(
     categories: List<CategoryItem>,
-    mangaIds: Set<Long>,
     onConfirm: (Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
