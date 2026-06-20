@@ -162,7 +162,9 @@ internal fun MangaGrid(
         onEvent(LibraryEvent.OnCategorySelected(id))
     }
     // Chip / tab tap → scroll pager to matching page
+    // Guard against fighting an in-progress user swipe gesture
     LaunchedEffect(state.selectedCategory) {
+        if (pagerState.isScrollInProgress) return@LaunchedEffect
         val target = categoryPages.indexOf(state.selectedCategory).coerceAtLeast(0)
         if (pagerState.currentPage != target) {
             pagerState.animateScrollToPage(target)

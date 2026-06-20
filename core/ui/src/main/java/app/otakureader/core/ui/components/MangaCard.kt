@@ -58,6 +58,13 @@ import app.otakureader.core.ui.modifiers.bottomGradientScrim
  * @param isNew When true, shows a "NEW" badge in the top-left corner
  * @param sourceIcon Optional composable for a small source favicon watermark (bottom-right corner)
  */
+private object MangaCardDefaults {
+    const val SCRIM_HEIGHT_PERCENT = 0.45f
+    const val SCRIM_START_ALPHA = 0.0f
+    const val SCRIM_END_ALPHA = 0.85f
+    const val TITLE_MAX_LINES = 2
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaCard(
@@ -127,9 +134,9 @@ fun MangaCard(
                         .fillMaxWidth()
                         .aspectRatio(2f / 3f)
                         .bottomGradientScrim(
-                            heightPercent = 0.45f,
-                            startAlpha = 0.0f,
-                            endAlpha = 0.85f
+                            heightPercent = MangaCardDefaults.SCRIM_HEIGHT_PERCENT,
+                            startAlpha = MangaCardDefaults.SCRIM_START_ALPHA,
+                            endAlpha = MangaCardDefaults.SCRIM_END_ALPHA
                         )
                 )
 
@@ -138,7 +145,7 @@ fun MangaCard(
                     text = title,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White,
-                    maxLines = 2,
+                    maxLines = MangaCardDefaults.TITLE_MAX_LINES,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .align(Alignment.BottomStart)

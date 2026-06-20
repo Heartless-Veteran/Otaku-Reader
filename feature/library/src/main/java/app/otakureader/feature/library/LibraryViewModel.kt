@@ -269,8 +269,10 @@ class LibraryViewModel @Inject constructor(
 
     private fun moveMangaToCategory(mangaIds: Set<Long>, categoryId: Long) {
         viewModelScope.launch {
-            mangaIds.forEach { mangaId ->
-                runCatching { categoryRepository.addMangaToCategory(mangaId, categoryId) }
+            coroutineScope {
+                mangaIds.map { mangaId ->
+                    async { runCatching { categoryRepository.addMangaToCategory(mangaId, categoryId) } }
+                }.awaitAll()
             }
             _state.update { it.copy(showMoveToCategoryDialog = false, moveToCategoryMangaIds = emptySet()) }
             selection.clear()

@@ -22,6 +22,7 @@ import app.otakureader.sourceapi.SourceManga
 import app.otakureader.sourceapi.toSourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -88,7 +90,7 @@ class BrowseViewModel @Inject constructor(
                 val langFiltered = if (enabledLangs.isEmpty()) nsfwFiltered
                     else nsfwFiltered.filter { it.lang in enabledLangs }
                 Triple(langFiltered to availableLangs, showNsfw, enabledLangs)
-            }.collect { (sourcesAndLangs, showNsfw, enabledLangs) ->
+            }.flowOn(Dispatchers.Default).collect { (sourcesAndLangs, showNsfw, enabledLangs) ->
                 val (filteredSources, availableLangs) = sourcesAndLangs
                 _sources.value = filteredSources
                 _state.update {

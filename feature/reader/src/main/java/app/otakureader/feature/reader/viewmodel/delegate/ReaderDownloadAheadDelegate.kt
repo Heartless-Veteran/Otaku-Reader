@@ -26,16 +26,13 @@ class ReaderDownloadAheadDelegate @Inject constructor(
     private val chapterRepository: ChapterRepository,
     private val mangaRepository: MangaRepository,
 ) {
-    fun enqueueCurrentChapter(
-        scope: CoroutineScope,
-        manga: Manga,
-        chapter: Chapter,
-    ) {
-        scope.launch {
-            val sourceName = manga.sourceId.toString()
-            val existingDownloads = downloadRepository.observeDownloads().first()
-            tryEnqueueChapter(manga, chapter, sourceName, existingDownloads)
-        }
+    suspend fun enqueueCurrentChapter(manga: Manga, chapter: Chapter): Boolean {
+        val sourceName = manga.sourceId.toString()
+        val existingDownloads = downloadRepository.observeDownloads().first()
+        if (existingDownloads.any { it.chapterId == chapter.id }) return false
+        if (downloadRepository.isChapterDownloaded(sourceName, manga.title, chapter.name)) return false
+        tryEnqueueChapter(manga, chapter, sourceName, existingDownloads)
+        return true
     }
 
     suspend fun isChapterDownloaded(manga: Manga, chapter: Chapter): Boolean =

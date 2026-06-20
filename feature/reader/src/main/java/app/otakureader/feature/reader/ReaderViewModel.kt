@@ -591,9 +591,11 @@ class ReaderViewModel @Inject constructor(
     private fun downloadCurrentChapter() {
         val manga = currentManga ?: return
         val chapter = currentChapter ?: return
-        downloadAheadDelegate.enqueueCurrentChapter(viewModelScope, manga, chapter)
         viewModelScope.launch {
-            _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_chapter_download_queued))
+            val enqueued = downloadAheadDelegate.enqueueCurrentChapter(manga, chapter)
+            if (enqueued) {
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_chapter_download_queued))
+            }
         }
     }
 

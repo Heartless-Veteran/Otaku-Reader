@@ -425,7 +425,7 @@ private fun LanguageFilterDialog(
     onConfirm: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var selected by remember(enabledLanguages) { mutableStateOf(enabledLanguages.toMutableSet()) }
+    var selected by remember(enabledLanguages) { mutableStateOf(enabledLanguages) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -441,9 +441,7 @@ private fun LanguageFilterDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    selected = selected.toMutableSet().also {
-                                        if (checked) it.remove(lang) else it.add(lang)
-                                    }
+                                    selected = if (checked) selected - lang else selected + lang
                                 }
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -466,7 +464,7 @@ private fun LanguageFilterDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(selected.toSet()) }) {
+            TextButton(onClick = { onConfirm(selected) }) {
                 Text(stringResource(android.R.string.ok))
             }
         },

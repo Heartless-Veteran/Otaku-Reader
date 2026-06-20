@@ -110,6 +110,7 @@ import kotlinx.coroutines.launch
  */
 
 private const val VOLUME_HOLD_SKIP_PAGES = 5
+private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
 
 @Composable
 @Suppress("UnusedParameter")
@@ -190,7 +191,7 @@ fun ReaderScreen(
     // Reading direction indicator — brief arrow overlay on direction change
     LaunchedEffect(state.readingDirection) {
         showDirectionIndicator = true
-        delay(2_000)
+        delay(DIRECTION_INDICATOR_DURATION_MS)
         showDirectionIndicator = false
     }
 
