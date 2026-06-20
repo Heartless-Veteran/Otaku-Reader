@@ -40,6 +40,13 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
         DynamicCategoryRule.TYPE_ONGOING -> DynamicCategoryRule.Ongoing
         DynamicCategoryRule.TYPE_RECENTLY_ADDED ->
             DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_NEVER_STARTED -> DynamicCategoryRule.NeverStarted
+        DynamicCategoryRule.TYPE_READ_WITHIN_DAYS ->
+            DynamicCategoryRule.ReadWithinDays(ruleParamsJson.toIntOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_NOT_READ_IN_DAYS ->
+            DynamicCategoryRule.NotReadInDays(ruleParamsJson.toIntOrNull() ?: return null)
+        DynamicCategoryRule.TYPE_MARKED_COMPLETED -> DynamicCategoryRule.MarkedCompleted
+        DynamicCategoryRule.TYPE_MARKED_DROPPED -> DynamicCategoryRule.MarkedDropped
         else -> null
     }
 
@@ -52,6 +59,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> DynamicCategoryRule.TYPE_COMPLETED
             is DynamicCategoryRule.Ongoing -> DynamicCategoryRule.TYPE_ONGOING
             is DynamicCategoryRule.RecentlyAdded -> DynamicCategoryRule.TYPE_RECENTLY_ADDED
+            is DynamicCategoryRule.NeverStarted -> DynamicCategoryRule.TYPE_NEVER_STARTED
+            is DynamicCategoryRule.ReadWithinDays -> DynamicCategoryRule.TYPE_READ_WITHIN_DAYS
+            is DynamicCategoryRule.NotReadInDays -> DynamicCategoryRule.TYPE_NOT_READ_IN_DAYS
+            is DynamicCategoryRule.MarkedCompleted -> DynamicCategoryRule.TYPE_MARKED_COMPLETED
+            is DynamicCategoryRule.MarkedDropped -> DynamicCategoryRule.TYPE_MARKED_DROPPED
         },
         ruleParamsJson = when (this) {
             is DynamicCategoryRule.UnreadAtLeast -> count.toString()
@@ -60,6 +72,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> ""
             is DynamicCategoryRule.Ongoing -> ""
             is DynamicCategoryRule.RecentlyAdded -> withinDays.toString()
+            is DynamicCategoryRule.NeverStarted -> ""
+            is DynamicCategoryRule.ReadWithinDays -> withinDays.toString()
+            is DynamicCategoryRule.NotReadInDays -> withinDays.toString()
+            is DynamicCategoryRule.MarkedCompleted -> ""
+            is DynamicCategoryRule.MarkedDropped -> ""
         }
     )
 }

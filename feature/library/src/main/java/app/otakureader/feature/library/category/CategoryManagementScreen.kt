@@ -1,7 +1,10 @@
 package app.otakureader.feature.library.category
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -23,15 +29,21 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -44,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import app.otakureader.domain.model.CategoryUpdateFrequency
+import app.otakureader.domain.model.DynamicCategoryRule
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +67,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -173,8 +187,8 @@ fun CategoryManagementScreen(
                             onToggleLocked = {
                                 viewModel.onEvent(CategoryEvent.ToggleLocked(category.id))
                             },
-                            onToggleDynamic = {
-                                viewModel.onEvent(CategoryEvent.SetDynamic(category.id, !category.isDynamic))
+                            onEditRules = {
+                                viewModel.onEvent(CategoryEvent.OpenRuleEditor(category.id))
                             },
                         )
                     }
@@ -225,6 +239,17 @@ fun CategoryManagementScreen(
             }
         )
     }
+
+    // Smart-rule editor
+    state.ruleEditor?.let { editor ->
+        RuleEditorDialog(
+            editor = editor,
+            onAddRule = { viewModel.onEvent(CategoryEvent.AddRule(it)) },
+            onRemoveRule = { viewModel.onEvent(CategoryEvent.RemoveRule(it)) },
+            onSave = { viewModel.onEvent(CategoryEvent.SaveRules) },
+            onDismiss = { viewModel.onEvent(CategoryEvent.CloseRuleEditor) },
+        )
+    }
 }
 
 @Composable
@@ -243,7 +268,7 @@ private fun CategoryListItem(
     onToggleHidden: () -> Unit,
     onToggleNsfw: () -> Unit,
     onToggleLocked: () -> Unit,
-    onToggleDynamic: () -> Unit,
+    onEditRules: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -364,16 +389,9 @@ private fun CategoryListItem(
                             }
                         )
                         DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (category.isDynamic)
-                                        stringResource(R.string.category_remove_dynamic)
-                                    else
-                                        stringResource(R.string.category_make_dynamic)
-                                )
-                            },
+                            text = { Text(stringResource(R.string.category_edit_smart_rules)) },
                             onClick = {
-                                onToggleDynamic()
+                                onEditRules()
                                 showMenu = false
                             },
                             leadingIcon = {
@@ -457,6 +475,203 @@ private fun CategoryDialog(
             }
         },
     )
+}
+
+/** Human-readable label for a rule, used in the editor's current-rules list. */
+@Composable
+private fun DynamicCategoryRule.label(): String = when (this) {
+    is DynamicCategoryRule.UnreadAtLeast -> stringResource(R.string.rule_label_unread_at_least, count)
+    is DynamicCategoryRule.RecentlyUpdated -> stringResource(R.string.rule_label_recently_updated, withinDays)
+    is DynamicCategoryRule.GenreContains -> stringResource(R.string.rule_label_genre_contains, genre)
+    DynamicCategoryRule.Completed -> stringResource(R.string.rule_label_completed)
+    DynamicCategoryRule.Ongoing -> stringResource(R.string.rule_label_ongoing)
+    is DynamicCategoryRule.RecentlyAdded -> stringResource(R.string.rule_label_recently_added, withinDays)
+    DynamicCategoryRule.NeverStarted -> stringResource(R.string.rule_label_never_started)
+    is DynamicCategoryRule.ReadWithinDays -> stringResource(R.string.rule_label_read_within_days, withinDays)
+    is DynamicCategoryRule.NotReadInDays -> stringResource(R.string.rule_label_not_read_in_days, withinDays)
+    DynamicCategoryRule.MarkedCompleted -> stringResource(R.string.rule_label_marked_completed)
+    DynamicCategoryRule.MarkedDropped -> stringResource(R.string.rule_label_marked_dropped)
+}
+
+/** Parameterized rule kinds offered in the editor's advanced adder. */
+private enum class ParamRuleType(@StringRes val labelRes: Int, val isGenre: Boolean) {
+    UNREAD_AT_LEAST(R.string.rule_type_unread_at_least, false),
+    READ_WITHIN_DAYS(R.string.rule_type_read_within_days, false),
+    NOT_READ_IN_DAYS(R.string.rule_type_not_read_in_days, false),
+    RECENTLY_ADDED(R.string.rule_type_recently_added, false),
+    RECENTLY_UPDATED(R.string.rule_type_recently_updated, false),
+    GENRE_CONTAINS(R.string.rule_type_genre_contains, true),
+}
+
+private fun buildParamRule(type: ParamRuleType, value: String): DynamicCategoryRule? = when (type) {
+    ParamRuleType.GENRE_CONTAINS ->
+        value.trim().takeIf { it.isNotEmpty() }?.let { DynamicCategoryRule.GenreContains(it) }
+    else -> value.toIntOrNull()?.takeIf { it >= 0 }?.let { n ->
+        when (type) {
+            ParamRuleType.UNREAD_AT_LEAST -> DynamicCategoryRule.UnreadAtLeast(n)
+            ParamRuleType.READ_WITHIN_DAYS -> DynamicCategoryRule.ReadWithinDays(n)
+            ParamRuleType.NOT_READ_IN_DAYS -> DynamicCategoryRule.NotReadInDays(n)
+            ParamRuleType.RECENTLY_ADDED -> DynamicCategoryRule.RecentlyAdded(n)
+            ParamRuleType.RECENTLY_UPDATED -> DynamicCategoryRule.RecentlyUpdated(n)
+            ParamRuleType.GENRE_CONTAINS -> null
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun RuleEditorDialog(
+    editor: RuleEditorUiState,
+    onAddRule: (DynamicCategoryRule) -> Unit,
+    onRemoveRule: (Int) -> Unit,
+    onSave: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.category_smart_rules_title, editor.categoryName)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.category_smart_rules_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Text(
+                    text = stringResource(R.string.category_smart_rules_current),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                if (editor.rules.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.category_smart_rules_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    editor.rules.forEachIndexed { index, rule ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = rule.label(),
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            IconButton(onClick = { onRemoveRule(index) }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.category_rule_remove),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider()
+
+                Text(
+                    text = stringResource(R.string.category_smart_rules_add),
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = { onAddRule(DynamicCategoryRule.Completed) },
+                        label = { Text(stringResource(R.string.rule_label_completed)) },
+                    )
+                    AssistChip(
+                        onClick = { onAddRule(DynamicCategoryRule.Ongoing) },
+                        label = { Text(stringResource(R.string.rule_label_ongoing)) },
+                    )
+                    AssistChip(
+                        onClick = { onAddRule(DynamicCategoryRule.NeverStarted) },
+                        label = { Text(stringResource(R.string.rule_label_never_started)) },
+                    )
+                    AssistChip(
+                        onClick = { onAddRule(DynamicCategoryRule.MarkedCompleted) },
+                        label = { Text(stringResource(R.string.rule_label_marked_completed)) },
+                    )
+                    AssistChip(
+                        onClick = { onAddRule(DynamicCategoryRule.MarkedDropped) },
+                        label = { Text(stringResource(R.string.rule_label_marked_dropped)) },
+                    )
+                }
+
+                ParameterizedRuleAdder(onAddRule = onAddRule)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onSave) { Text(stringResource(R.string.category_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.category_cancel)) }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ParameterizedRuleAdder(onAddRule: (DynamicCategoryRule) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(ParamRuleType.UNREAD_AT_LEAST) }
+    var value by remember { mutableStateOf("") }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            OutlinedTextField(
+                value = stringResource(selected.labelRes),
+                onValueChange = {},
+                readOnly = true,
+                singleLine = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    .fillMaxWidth(),
+            )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                ParamRuleType.entries.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(type.labelRes)) },
+                        onClick = {
+                            selected = type
+                            value = ""
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = { input ->
+                    value = if (selected.isGenre) input else input.filter { it.isDigit() }
+                },
+                label = { Text(stringResource(R.string.category_rule_value_hint)) },
+                singleLine = true,
+                keyboardOptions = if (selected.isGenre) {
+                    KeyboardOptions.Default
+                } else {
+                    KeyboardOptions(keyboardType = KeyboardType.Number)
+                },
+                modifier = Modifier.weight(1f),
+            )
+            val rule = buildParamRule(selected, value)
+            OutlinedButton(
+                onClick = { rule?.let { onAddRule(it); value = "" } },
+                enabled = rule != null,
+            ) {
+                Text(stringResource(R.string.category_rule_add_button))
+            }
+        }
+    }
 }
 
 @Composable
