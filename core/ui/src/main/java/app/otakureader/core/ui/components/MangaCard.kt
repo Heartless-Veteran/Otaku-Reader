@@ -74,6 +74,7 @@ fun MangaCard(
     continueReading: Boolean = false,
     isNew: Boolean = false,
     sourceIcon: @Composable (() -> Unit)? = null,
+    showTitle: Boolean = true,
 ) {
     val context = LocalContext.current
 
@@ -119,30 +120,32 @@ fun MangaCard(
                     )
             )
 
-            // Gradient scrim for title readability
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2f / 3f)
-                    .bottomGradientScrim(
-                        heightPercent = 0.45f,
-                        startAlpha = 0.0f,
-                        endAlpha = 0.85f
-                    )
-            )
+            if (showTitle) {
+                // Gradient scrim for title readability
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(2f / 3f)
+                        .bottomGradientScrim(
+                            heightPercent = 0.45f,
+                            startAlpha = 0.0f,
+                            endAlpha = 0.85f
+                        )
+                )
 
-            // Title overlaid at bottom
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(start = 8.dp, end = 8.dp, bottom = if (readProgress != null) 10.dp else 8.dp)
-                    .fillMaxWidth(),
-            )
+                // Title overlaid at bottom
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 8.dp, end = 8.dp, bottom = if (readProgress != null) 10.dp else 8.dp)
+                        .fillMaxWidth(),
+                )
+            }
 
             // Unread / custom badge
             badge?.let {

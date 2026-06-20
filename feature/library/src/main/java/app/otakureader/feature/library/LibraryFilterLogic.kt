@@ -56,6 +56,8 @@ internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode,
         LibrarySortMode.DATE_ADDED -> items.sortedByDescending { it.dateAdded }
         LibrarySortMode.UNREAD_COUNT -> items.sortedByDescending { it.unreadCount }
         LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
+        LibrarySortMode.LAST_UPDATED -> items.sortedByDescending { it.lastUpdate }
+        LibrarySortMode.TOTAL_CHAPTERS -> items.sortedByDescending { it.totalChapterCount }
     }
     return if (ascending) sorted else sorted.reversed()
 }
@@ -78,6 +80,7 @@ internal fun Manga.toLibraryItem(
     dateAdded = dateAdded,
     status = status,
     totalChapterCount = totalChapters,
+    lastUpdate = lastUpdate,
     userCompleted = userCompleted,
     userDropped = userDropped,
     genres = genre,

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
@@ -27,9 +28,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -223,6 +226,11 @@ fun LibraryScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.DownloadSelected) }) {
                             Icon(Icons.Default.Download, contentDescription = stringResource(R.string.library_download_selected))
+                        }
+                        if (state.categories.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.onEvent(LibraryEvent.OpenMoveToCategoryDialog) }) {
+                                Icon(Icons.AutoMirrored.Filled.DriveFileMove, contentDescription = stringResource(R.string.library_move_to_category))
+                            }
                         }
                         IconButton(onClick = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary }) {
                             Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.library_remove_selected))
@@ -485,6 +493,17 @@ fun LibraryScreen(
             onNameChange = { viewModel.onEvent(LibraryEvent.UpdateSaveViewName(it)) },
             onConfirm = { viewModel.onEvent(LibraryEvent.ConfirmSaveView) },
             onDismiss = { viewModel.onEvent(LibraryEvent.HideSaveViewDialog) },
+        )
+    }
+
+    if (state.showMoveToCategoryDialog) {
+        MoveToCategoryDialog(
+            categories = state.categories,
+            mangaIds = state.moveToCategoryMangaIds,
+            onConfirm = { categoryId ->
+                viewModel.onEvent(LibraryEvent.MoveToCategory(state.moveToCategoryMangaIds, categoryId))
+            },
+            onDismiss = { viewModel.onEvent(LibraryEvent.DismissMoveToCategoryDialog) },
         )
     }
 }
@@ -778,6 +797,59 @@ private fun SaveViewDialog(
                 enabled = name.isNotBlank(),
             ) {
                 Text(stringResource(R.string.library_save_view_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun MoveToCategoryDialog(
+    categories: List<CategoryItem>,
+    mangaIds: Set<Long>,
+    onConfirm: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.library_move_to_category)) },
+        text = {
+            Column {
+                categories.forEach { category ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selectedCategoryId == category.id,
+                                onClick = { selectedCategoryId = category.id },
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = selectedCategoryId == category.id,
+                            onClick = { selectedCategoryId = category.id },
+                        )
+                        Text(
+                            text = category.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { selectedCategoryId?.let { onConfirm(it) } },
+                enabled = selectedCategoryId != null,
+            ) {
+                Text(stringResource(android.R.string.ok))
             }
         },
         dismissButton = {

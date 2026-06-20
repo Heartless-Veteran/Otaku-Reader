@@ -34,6 +34,8 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LibraryAdd
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
@@ -185,6 +187,14 @@ fun BrowseScreen(
                         }
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                        }
+                        if (state.selectedTab == BrowseTab.SOURCES) {
+                            IconButton(onClick = { viewModel.onEvent(BrowseEvent.ShowLanguageDialog) }) {
+                                Icon(
+                                    Icons.Default.FilterList,
+                                    contentDescription = stringResource(R.string.browse_language_filter)
+                                )
+                            }
                         }
                         if (state.selectedTab == BrowseTab.SOURCES || state.selectedTab == BrowseTab.EXTENSIONS) {
                             Box {
@@ -366,6 +376,16 @@ fun BrowseScreen(
         )
     }
 
+    // Language filter dialog
+    if (state.showLanguageDialog) {
+        LanguageFilterDialog(
+            availableLanguages = state.availableLanguages,
+            enabledLanguages = state.enabledLanguages,
+            onConfirm = { selected -> viewModel.onEvent(BrowseEvent.SetEnabledLanguages(selected)) },
+            onDismiss = { viewModel.onEvent(BrowseEvent.DismissLanguageDialog) },
+        )
+    }
+
     // Save search dialog
     if (state.showSaveSearchDialog) {
         AlertDialog(
@@ -392,6 +412,70 @@ fun BrowseScreen(
             },
         )
     }
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Language filter dialog — multi-select chips for source language filtering
+// ────────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun LanguageFilterDialog(
+    availableLanguages: List<String>,
+    enabledLanguages: Set<String>,
+    onConfirm: (Set<String>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember(enabledLanguages) { mutableStateOf(enabledLanguages.toMutableSet()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.browse_language_filter)) },
+        text = {
+            Column {
+                if (availableLanguages.isEmpty()) {
+                    Text(stringResource(R.string.browse_no_languages))
+                } else {
+                    availableLanguages.forEach { lang ->
+                        val checked = lang in selected
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selected = selected.toMutableSet().also {
+                                        if (checked) it.remove(lang) else it.add(lang)
+                                    }
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (checked) {
+                                Icon(
+                                    Icons.Default.Done,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            } else {
+                                Spacer(Modifier.size(20.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Text(lang.uppercase(), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected.toSet()) }) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }
 
 // ────────────────────────────────────────────────────────────────────────────────

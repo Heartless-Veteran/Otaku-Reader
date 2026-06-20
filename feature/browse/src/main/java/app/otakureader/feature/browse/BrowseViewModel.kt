@@ -74,17 +74,31 @@ class BrowseViewModel @Inject constructor(
     private val nsfwToggleMutex = Mutex()
 
     init {
-        // Collect sources and filter by NSFW preference; also mirror showNsfw into state
-        // so the Browse overflow menu can display the current toggle state.
+        // Collect sources and filter by NSFW preference and enabled languages.
+        // Also mirrors showNsfw + enabledLanguages into state for the Browse UI.
         viewModelScope.launch {
             combine(
                 getSourcesUseCase(),
-                generalPreferences.showNsfwContent
-            ) { sources, showNsfw ->
-                Pair(if (showNsfw) sources else sources.filter { !it.isNsfw }, showNsfw)
-            }.collect { (filteredSources, showNsfw) ->
+                generalPreferences.showNsfwContent,
+                generalPreferences.enabledSourceLanguages,
+            ) { sources, showNsfw, enabledLangs ->
+                val nsfwFiltered = if (showNsfw) sources else sources.filter { !it.isNsfw }
+                // availableLanguages = all langs from NSFW-filtered set (before language filter)
+                val availableLangs = nsfwFiltered.map { it.lang }.distinct().sorted()
+                val langFiltered = if (enabledLangs.isEmpty()) nsfwFiltered
+                    else nsfwFiltered.filter { it.lang in enabledLangs }
+                Triple(langFiltered to availableLangs, showNsfw, enabledLangs)
+            }.collect { (sourcesAndLangs, showNsfw, enabledLangs) ->
+                val (filteredSources, availableLangs) = sourcesAndLangs
                 _sources.value = filteredSources
-                _state.update { it.copy(sources = filteredSources, showNsfw = showNsfw) }
+                _state.update {
+                    it.copy(
+                        sources = filteredSources,
+                        showNsfw = showNsfw,
+                        enabledLanguages = enabledLangs,
+                        availableLanguages = availableLangs,
+                    )
+                }
             }
         }
         observeSavedSearches()
@@ -246,6 +260,14 @@ class BrowseViewModel @Inject constructor(
                     nsfwToggleMutex.withLock {
                         generalPreferences.setShowNsfwContent(!state.value.showNsfw)
                     }
+                }
+            }
+            is BrowseEvent.ShowLanguageDialog -> _state.update { it.copy(showLanguageDialog = true) }
+            is BrowseEvent.DismissLanguageDialog -> _state.update { it.copy(showLanguageDialog = false) }
+            is BrowseEvent.SetEnabledLanguages -> {
+                viewModelScope.launch {
+                    generalPreferences.setEnabledSourceLanguages(event.languages)
+                    _state.update { it.copy(showLanguageDialog = false) }
                 }
             }
         }
