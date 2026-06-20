@@ -15,6 +15,11 @@ import javax.inject.Inject
  */
 class EvaluateDynamicCategoryUseCase @Inject constructor() {
 
+    companion object {
+        private const val NEVER_READ_TIMESTAMP = 0L
+        private const val MIN_VALID_TIMESTAMP = 1L
+    }
+
     /** @return the ids of [manga] that satisfy all [rules]. Empty [rules] matches nothing. */
     operator fun invoke(
         rules: List<DynamicCategoryRule>,
@@ -30,12 +35,26 @@ class EvaluateDynamicCategoryUseCase @Inject constructor() {
     private fun matches(manga: Manga, rule: DynamicCategoryRule, now: Long): Boolean = when (rule) {
         is DynamicCategoryRule.UnreadAtLeast -> manga.unreadCount >= rule.count
         is DynamicCategoryRule.RecentlyUpdated ->
-            manga.lastUpdate in 1..now && now - manga.lastUpdate <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+            manga.lastUpdate in MIN_VALID_TIMESTAMP..now && now - manga.lastUpdate <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
         is DynamicCategoryRule.GenreContains ->
             manga.genre.any { it.contains(rule.genre, ignoreCase = true) }
         is DynamicCategoryRule.Completed -> manga.status == MangaStatus.COMPLETED
         is DynamicCategoryRule.Ongoing -> manga.status == MangaStatus.ONGOING
         is DynamicCategoryRule.RecentlyAdded ->
-            manga.dateAdded in 1..now && now - manga.dateAdded <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+            manga.dateAdded in MIN_VALID_TIMESTAMP..now && now - manga.dateAdded <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+        is DynamicCategoryRule.NeverStarted -> manga.lastRead == null || manga.lastRead == NEVER_READ_TIMESTAMP
+        is DynamicCategoryRule.ReadWithinDays -> {
+            val lastRead = manga.lastRead
+            lastRead != null && lastRead in MIN_VALID_TIMESTAMP..now &&
+                now - lastRead <= TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+        }
+        is DynamicCategoryRule.NotReadInDays -> {
+            val lastRead = manga.lastRead
+            // Started (read at least once) but neglected since; never-started is excluded.
+            lastRead != null && lastRead in MIN_VALID_TIMESTAMP..now &&
+                now - lastRead > TimeUnit.DAYS.toMillis(rule.withinDays.toLong())
+        }
+        is DynamicCategoryRule.MarkedCompleted -> manga.userCompleted
+        is DynamicCategoryRule.MarkedDropped -> manga.userDropped
     }
 }

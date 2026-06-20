@@ -156,6 +156,35 @@
     <string name="category_make_dynamic">Make dynamic</string>
     <string name="category_remove_dynamic">Remove dynamic</string>
     <string name="category_unlock_prompt">Unlock to view hidden category</string>
+    <!-- Smart rules editor -->
+    <string name="category_edit_smart_rules">Smart rules…</string>
+    <string name="category_smart_rules_title">Smart rules: %1$s</string>
+    <string name="category_smart_rules_desc">Manga matching all of these rules are added to this category automatically.</string>
+    <string name="category_smart_rules_empty">No rules yet. A category with no rules stays manual.</string>
+    <string name="category_smart_rules_current">Current rules</string>
+    <string name="category_smart_rules_add">Add a rule</string>
+    <string name="category_rule_remove">Remove rule</string>
+    <string name="category_rule_add_button">Add</string>
+    <string name="category_rule_value_hint">Value</string>
+    <!-- Rule labels -->
+    <string name="rule_label_completed">Status: Completed</string>
+    <string name="rule_label_ongoing">Status: Ongoing</string>
+    <string name="rule_label_never_started">Never started (plan to read)</string>
+    <string name="rule_label_marked_completed">Marked completed</string>
+    <string name="rule_label_marked_dropped">Marked dropped</string>
+    <string name="rule_label_unread_at_least">Unread ≥ %1$d</string>
+    <string name="rule_label_read_within_days">Read within %1$d days</string>
+    <string name="rule_label_not_read_in_days">Not read in %1$d days</string>
+    <string name="rule_label_genre_contains">Genre: %1$s</string>
+    <string name="rule_label_recently_added">Added within %1$d days</string>
+    <string name="rule_label_recently_updated">Updated within %1$d days</string>
+    <!-- Rule type picker names -->
+    <string name="rule_type_unread_at_least">Unread at least</string>
+    <string name="rule_type_read_within_days">Read within (days)</string>
+    <string name="rule_type_not_read_in_days">Not read in (days)</string>
+    <string name="rule_type_genre_contains">Genre contains</string>
+    <string name="rule_type_recently_added">Added within (days)</string>
+    <string name="rule_type_recently_updated">Updated within (days)</string>
     <!-- Bottom sheet tabs -->
     <string name="display_tab">Display</string>
     <string name="sort_tab">Sort</string>
