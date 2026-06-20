@@ -108,7 +108,6 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ChapterClick -> onChapterClick(event.chapterId)
             is DetailsContract.Event.ChapterLongClick -> onChapterLongClick(event.chapterId)
             is DetailsContract.Event.ToggleChapterRead -> toggleChapterRead(event.chapterId)
-            is DetailsContract.Event.ToggleChapterBookmark -> toggleChapterBookmark(event.chapterId)
             is DetailsContract.Event.DownloadChapter -> downloadChapter(event.chapterId)
             is DetailsContract.Event.DownloadAllChapters -> downloadAllChapters(unreadOnly = false)
             is DetailsContract.Event.DownloadUnreadChapters -> downloadAllChapters(unreadOnly = true)
@@ -135,7 +134,6 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.DeleteSelectedChapters -> deleteSelectedChapters()
             is DetailsContract.Event.MarkSelectedAsRead -> markSelectedAsRead()
             is DetailsContract.Event.MarkSelectedAsUnread -> markSelectedAsUnread()
-            is DetailsContract.Event.BookmarkSelectedChapters -> bookmarkSelectedChapters()
             is DetailsContract.Event.ToggleNotifications -> toggleNotifications()
             is DetailsContract.Event.ToggleUserCompleted -> toggleUserCompleted()
             is DetailsContract.Event.ToggleUserDropped -> toggleUserDropped()
@@ -569,25 +567,6 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
-    private fun bookmarkSelectedChapters() {
-        viewModelScope.launch {
-            try {
-                val selectedIds = _state.value.selectedChapters
-                if (selectedIds.isNotEmpty()) {
-                    selectedIds.forEach { chapterId ->
-                        chapterRepository.updateBookmark(chapterId, true)
-                    }
-                    clearChapterSelection()
-                    _effect.send(DetailsContract.Effect.ShowSnackbar("Bookmarked ${selectedIds.size} chapter(s)"))
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _effect.send(DetailsContract.Effect.ShowError("Failed to bookmark chapters: ${e.message}"))
-            }
-        }
-    }
-
     private fun toggleChapterRead(chapterId: Long) {
         viewModelScope.launch {
             try {
@@ -603,21 +582,6 @@ class DetailsViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 _effect.send(DetailsContract.Effect.ShowError("Failed to update chapter: ${e.message}"))
-            }
-        }
-    }
-
-    private fun toggleChapterBookmark(chapterId: Long) {
-        viewModelScope.launch {
-            try {
-                val chapter = _state.value.chapters.find { it.id == chapterId }
-                chapter?.let {
-                    chapterRepository.updateBookmark(chapterId, !it.bookmark)
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _effect.send(DetailsContract.Effect.ShowError("Failed to update bookmark: ${e.message}"))
             }
         }
     }

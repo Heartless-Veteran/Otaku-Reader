@@ -29,7 +29,6 @@ class EntityMappersTest {
             dateUpload = 123456789L,
             chapterNumber = 1.0f,
             read = true,
-            bookmark = true,
             lastPageRead = 5
         )
 
@@ -45,7 +44,6 @@ class EntityMappersTest {
         assertEquals(entity.dateUpload, domainModel.dateUpload)
         assertEquals(entity.chapterNumber, domainModel.chapterNumber)
         assertEquals(entity.read, domainModel.read)
-        assertEquals(entity.bookmark, domainModel.bookmark)
         assertEquals(entity.lastPageRead, domainModel.lastPageRead)
     }
 
@@ -61,7 +59,6 @@ class EntityMappersTest {
             dateUpload = 123456789L,
             chapterNumber = 1.0f,
             read = true,
-            bookmark = true,
             lastPageRead = 5
         )
 
@@ -77,7 +74,6 @@ class EntityMappersTest {
         assertEquals(domainModel.dateUpload, entity.dateUpload)
         assertEquals(domainModel.chapterNumber, entity.chapterNumber)
         assertEquals(domainModel.read, entity.read)
-        assertEquals(domainModel.bookmark, entity.bookmark)
         assertEquals(domainModel.lastPageRead, entity.lastPageRead)
     }
 
@@ -227,7 +223,6 @@ class EntityMappersTest {
             name = "Chapter 99",
             scanlator = "Scan Team",
             read = true,
-            bookmark = false,
             lastPageRead = 12,
             chapterNumber = 99.5f,
             dateUpload = 9999999L
@@ -241,7 +236,6 @@ class EntityMappersTest {
         assertEquals(original.name, roundTripped.name)
         assertEquals(original.scanlator, roundTripped.scanlator)
         assertEquals(original.read, roundTripped.read)
-        assertEquals(original.bookmark, roundTripped.bookmark)
         assertEquals(original.lastPageRead, roundTripped.lastPageRead)
         assertEquals(original.chapterNumber, roundTripped.chapterNumber)
         assertEquals(original.dateUpload, roundTripped.dateUpload)

@@ -23,8 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Close
@@ -87,7 +85,6 @@ fun ChapterList(
     onChapterClick: (Long) -> Unit,
     onChapterLongClick: (Long) -> Unit,
     onToggleRead: (Long) -> Unit,
-    onToggleBookmark: (Long) -> Unit,
     onDownloadChapter: (Long) -> Unit,
     onDeleteDownload: (Long) -> Unit,
     onMarkPreviousRead: (Long) -> Unit,
@@ -100,7 +97,6 @@ fun ChapterList(
     onDeleteSelected: () -> Unit = {},
     onMarkSelectedAsRead: () -> Unit = {},
     onMarkSelectedAsUnread: () -> Unit = {},
-    onBookmarkSelected: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
@@ -118,7 +114,6 @@ fun ChapterList(
             onDeleteSelected = onDeleteSelected,
             onMarkSelectedAsRead = onMarkSelectedAsRead,
             onMarkSelectedAsUnread = onMarkSelectedAsUnread,
-            onBookmarkSelected = onBookmarkSelected
         )
 
         // Chapter list
@@ -145,7 +140,6 @@ fun ChapterList(
                         onClick = { onChapterClick(chapter.id) },
                         onLongClick = { onChapterLongClick(chapter.id) },
                         onToggleRead = { onToggleRead(chapter.id) },
-                        onToggleBookmark = { onToggleBookmark(chapter.id) },
                         onDownload = { onDownloadChapter(chapter.id) },
                         onDeleteDownload = { onDeleteDownload(chapter.id) },
                         onMarkPreviousRead = { onMarkPreviousRead(chapter.id) },
@@ -174,7 +168,6 @@ private fun ChapterListHeader(
     onDeleteSelected: () -> Unit,
     onMarkSelectedAsRead: () -> Unit,
     onMarkSelectedAsUnread: () -> Unit,
-    onBookmarkSelected: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -217,12 +210,6 @@ private fun ChapterListHeader(
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = stringResource(R.string.details_mark_as_read)
-                        )
-                    }
-                    IconButton(onClick = onBookmarkSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = stringResource(R.string.details_bookmark_selected)
                         )
                     }
                 }
@@ -307,7 +294,6 @@ fun ChapterListItem(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onToggleRead: () -> Unit = {},
-    onToggleBookmark: () -> Unit = {},
     onDownload: () -> Unit = {},
     onDeleteDownload: () -> Unit = {},
     onMarkPreviousRead: () -> Unit = {},
@@ -489,27 +475,6 @@ fun ChapterListItem(
                         )
                     }
 
-                    // Bookmark
-                    IconButton(onClick = onToggleBookmark) {
-                        Icon(
-                            imageVector = if (chapter.bookmark) {
-                                Icons.Default.Bookmark
-                            } else {
-                                Icons.Default.BookmarkBorder
-                            },
-                            contentDescription = if (chapter.bookmark) {
-                                stringResource(R.string.details_chapter_remove_bookmark)
-                            } else {
-                                stringResource(R.string.details_chapter_bookmark)
-                            },
-                            tint = if (chapter.bookmark) {
-                                MaterialTheme.colorScheme.secondary
-                            } else {
-                                MaterialTheme.colorScheme.outline
-                            }
-                        )
-                    }
-
                     // Download status
                     DownloadIcon(
                         status = chapter.downloadStatus,
@@ -534,17 +499,6 @@ fun ChapterListItem(
             },
             onClick = {
                 onToggleRead()
-                showMenu = false
-            }
-        )
-        DropdownMenuItem(
-            text = {
-                val resId = if (chapter.bookmark) R.string.details_chapter_remove_bookmark
-                    else R.string.details_chapter_bookmark
-                Text(stringResource(resId))
-            },
-            onClick = {
-                onToggleBookmark()
                 showMenu = false
             }
         )

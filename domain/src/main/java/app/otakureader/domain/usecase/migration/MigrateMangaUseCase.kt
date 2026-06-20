@@ -248,7 +248,6 @@ class MigrateMangaUseCase @Inject constructor(
                 name = targetChapter.name,
                 scanlator = targetChapter.scanlator,
                 read = sourceChapter?.read ?: false,
-                bookmark = sourceChapter?.bookmark ?: false,
                 lastPageRead = sourceChapter?.lastPageRead ?: 0,
                 chapterNumber = targetChapter.chapterNumber,
                 dateUpload = targetChapter.dateUpload

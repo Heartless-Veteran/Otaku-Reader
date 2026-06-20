@@ -87,7 +87,6 @@ class UpdateLibraryMangaUseCase @Inject constructor(
         name = name,
         scanlator = scanlator,
         read = false,
-        bookmark = false,
         lastPageRead = 0,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,

@@ -13,7 +13,6 @@ interface ChapterRepository {
     suspend fun getNextUnreadChapter(mangaId: Long): Chapter?
     suspend fun updateChapterProgress(chapterId: Long, read: Boolean, lastPageRead: Int)
     suspend fun updateChapterProgress(chapterIds: Collection<Long>, read: Boolean, lastPageRead: Int)
-    suspend fun updateBookmark(chapterId: Long, bookmark: Boolean)
     suspend fun updateChapterNotes(chapterId: Long, notes: String?)
     suspend fun insertChapters(chapters: List<Chapter>)
     fun getUnreadCountByMangaId(mangaId: Long): Flow<Int>

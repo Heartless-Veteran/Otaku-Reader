@@ -99,4 +99,31 @@
     <string name="bookmarks_expand">Expand manga bookmarks</string>
     <string name="bookmarks_collapse">Collapse manga bookmarks</string>
     <string name="bookmarks_delete_failed">Failed to delete bookmark</string>
+
+    <!-- Bookmark collections (#1128) -->
+    <string name="bookmarks_collection_all">All</string>
+    <string name="bookmarks_manage_collections">Manage collections</string>
+    <string name="bookmarks_new_collection_hint">New collection name</string>
+    <string name="bookmarks_collection_create">Create</string>
+    <string name="bookmarks_collection_rename_save">Save</string>
+    <string name="bookmarks_collection_rename">Rename</string>
+    <string name="bookmarks_collection_delete">Delete</string>
+    <string name="bookmarks_collection_done">Done</string>
+
+    <!-- Bookmark multi-select (#1128) -->
+    <string name="bookmarks_selected_count">%1$d selected</string>
+    <string name="bookmarks_clear_selection">Clear selection</string>
+    <string name="bookmarks_select_all">Select all</string>
+    <string name="bookmarks_export">Export</string>
+    <string name="bookmarks_share">Share</string>
+    <string name="bookmarks_export_complete">%1$d bookmark(s) exported to gallery</string>
+    <string name="bookmarks_export_requested">%1$d bookmark(s) queued — image export coming in v1.1</string>
+    <string name="bookmarks_share_coming_soon">Sharing %1$d bookmark(s) — feature coming soon</string>
+
+    <!-- Bookmark error messages (#1128) -->
+    <string name="bookmarks_error_delete_bookmark">Failed to delete bookmark</string>
+    <string name="bookmarks_error_create_collection">Failed to create collection</string>
+    <string name="bookmarks_error_rename_collection">Failed to rename collection</string>
+    <string name="bookmarks_error_delete_collection">Failed to delete collection</string>
+    <string name="bookmarks_error_export">Export failed</string>
 </resources>

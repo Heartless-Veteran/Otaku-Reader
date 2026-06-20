@@ -6,6 +6,7 @@ import androidx.room.Room
 import app.otakureader.core.database.BuildConfig
 import app.otakureader.core.database.OtakuReaderDatabase
 import app.otakureader.core.database.dao.AchievementDao
+import app.otakureader.core.database.dao.BookmarkCollectionDao
 import app.otakureader.core.database.dao.DataUsageDao
 import app.otakureader.core.database.dao.DownloadQueueDao
 import app.otakureader.core.database.dao.MangaAlternativeSourceDao
@@ -80,6 +81,9 @@ object DatabaseModule {
 
     @Provides
     fun providePageBookmarkDao(database: OtakuReaderDatabase) = database.pageBookmarkDao()
+
+    @Provides
+    fun provideBookmarkCollectionDao(database: OtakuReaderDatabase): BookmarkCollectionDao = database.bookmarkCollectionDao()
 
     @Provides
     fun provideDownloadQueueDao(database: OtakuReaderDatabase): DownloadQueueDao = database.downloadQueueDao()

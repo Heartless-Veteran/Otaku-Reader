@@ -40,4 +40,7 @@ interface PageBookmarkDao {
 
     @Query("SELECT COUNT(*) FROM page_bookmarks WHERE manga_id = :mangaId")
     fun getBookmarkCountForManga(mangaId: Long): Flow<Int>
+
+    @Query("SELECT * FROM page_bookmarks WHERE collection_id = :collectionId ORDER BY created_at DESC")
+    fun getBookmarksByCollection(collectionId: Long): Flow<List<PageBookmarkEntity>>
 }

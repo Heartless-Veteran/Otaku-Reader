@@ -14,4 +14,5 @@ interface PageBookmarkRepository {
     suspend fun removeBookmark(chapterId: Long, pageIndex: Int)
     suspend fun removeAllBookmarksForManga(mangaId: Long)
     fun getBookmarkCountForManga(mangaId: Long): Flow<Int>
+    fun getBookmarksByCollection(collectionId: Long): Flow<List<PageBookmark>>
 }

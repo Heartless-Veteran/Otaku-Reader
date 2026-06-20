@@ -28,6 +28,8 @@ import app.otakureader.core.database.migrations.MIGRATION_30_31
 import app.otakureader.core.database.migrations.MIGRATION_31_32
 import app.otakureader.core.database.migrations.MIGRATION_35_36
 import app.otakureader.core.database.migrations.MIGRATION_36_37
+import app.otakureader.core.database.migrations.MIGRATION_37_38
+import app.otakureader.core.database.migrations.MIGRATION_38_39
 import app.otakureader.core.database.migrations.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -37,6 +39,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 private const val TEST_DB = "migration-test"
+private const val SCHEMA_V37 = 37
+private const val SCHEMA_V39 = 39
+private const val EXPECTED_MIGRATION_COUNT = 37
 
 @RunWith(AndroidJUnit4::class)
 // One test class per migration chain: it grows by design with every schema version.
@@ -55,7 +60,7 @@ class DatabaseMigrationTest {
     fun allMigrations_formsContiguousChain() {
         val sorted = ALL_MIGRATIONS.sortedBy { it.startVersion }
         assertEquals("Migration chain must start at version 2", 2, sorted.first().startVersion)
-        assertEquals("Migration chain must end at version 37", 37, sorted.last().endVersion)
+        assertEquals("Migration chain must end at version 39", SCHEMA_V39, sorted.last().endVersion)
 
         for (i in 0 until sorted.size - 1) {
             val current = sorted[i]
@@ -82,7 +87,7 @@ class DatabaseMigrationTest {
 
     @Test
     fun allMigrations_count() {
-        assertEquals("Expected 35 migrations (v2→v37)", 35, ALL_MIGRATIONS.size)
+        assertEquals("Expected 37 migrations (v2→v39)", EXPECTED_MIGRATION_COUNT, ALL_MIGRATIONS.size)
     }
 
     // ── Migration 9 → 10 ────────────────────────────────────────────────────
@@ -721,6 +726,176 @@ class DatabaseMigrationTest {
             "index_reader_comments_chapter_id must exist",
             "index_reader_comments_chapter_id" in indexes,
         )
+        db.close()
+    }
+
+    // ── Migration 37 → 38 ───────────────────────────────────────────────────
+    // Recreates chapters table without the bookmark column (SQLite can't DROP COLUMN).
+    // Uses createDatabase(37) + direct .migrate() because 38.json is an intermediate
+    // schema that was never a stable release version.
+
+    @Test
+    fun migration37To38_removesBookmarkColumn() {
+        val db = helper.createDatabase(TEST_DB, SCHEMA_V37)
+        MIGRATION_37_38.migrate(db)
+        val cols = db.columnNames("chapters")
+        assertFalse("chapters.bookmark must NOT exist after 37→38", "bookmark" in cols)
+        assertTrue("chapters.id must still exist after 37→38", "id" in cols)
+        assertTrue("chapters.mangaId must still exist after 37→38", "mangaId" in cols)
+        assertTrue("chapters.url must still exist after 37→38", "url" in cols)
+        assertTrue("chapters.name must still exist after 37→38", "name" in cols)
+        assertTrue("chapters.read must still exist after 37→38", "read" in cols)
+        assertTrue("chapters.userNotes must still exist after 37→38", "userNotes" in cols)
+        val indexes = db.indexNames("chapters")
+        assertTrue("index_chapters_mangaId must exist after 37→38", "index_chapters_mangaId" in indexes)
+        assertTrue(
+            "index_chapters_mangaId_read_sourceOrder must exist after 37→38",
+            "index_chapters_mangaId_read_sourceOrder" in indexes,
+        )
+        assertFalse(
+            "index_chapters_bookmark must NOT exist after 37→38",
+            "index_chapters_bookmark" in indexes,
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration37To38_existingDataSurvives() {
+        val db = helper.createDatabase(TEST_DB, SCHEMA_V37)
+        // Insert manga with all NOT NULL columns as they exist in v37 schema.
+        db.execSQL(
+            "INSERT INTO manga (sourceId, url, title, status, favorite, lastUpdate, initialized, " +
+                "viewerFlags, chapterFlags, coverLastModified, dateAdded, autoDownload, " +
+                "notifyNewChapters, contentRating, userCompleted, userDropped) " +
+                "VALUES (1, '/manga/1', 'Test Manga', 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)",
+        )
+        // Insert chapter with all NOT NULL columns including bookmark (present in v37).
+        db.execSQL(
+            "INSERT INTO chapters (mangaId, url, name, read, bookmark, lastPageRead, " +
+                "chapterNumber, sourceOrder, dateFetch, dateUpload, lastModified) " +
+                "VALUES (1, '/chapter/1', 'Chapter 1', 0, 1, 5, 1.0, 0, 0, 0, 0)",
+        )
+        // Insert referential child rows (reading_history and page_bookmarks reference chapters).
+        // These must survive the table reconstruction without FK violations.
+        db.execSQL(
+            "INSERT INTO reading_history (chapter_id, read_at, read_duration_ms) VALUES (1, 123456, 1000)",
+        )
+        db.execSQL(
+            "INSERT INTO page_bookmarks (manga_id, chapter_id, page_index, note, created_at) " +
+                "VALUES (1, 1, 2, 'Note', 123456)",
+        )
+        MIGRATION_37_38.migrate(db)
+        val cursor = db.query("SELECT name, read, lastPageRead FROM chapters WHERE url = '/chapter/1'")
+        assertTrue("Row must survive migration 37→38", cursor.moveToFirst())
+        assertEquals("name must survive migration", "Chapter 1", cursor.getString(0))
+        assertEquals("read must survive migration", 0, cursor.getInt(1))
+        assertEquals("lastPageRead must survive migration", 5, cursor.getInt(2))
+        cursor.close()
+        // Verify referential child rows also survived.
+        val historyCursor = db.query("SELECT COUNT(*) FROM reading_history")
+        assertTrue(historyCursor.moveToFirst())
+        assertEquals("reading_history rows must survive migration", 1, historyCursor.getInt(0))
+        historyCursor.close()
+        val bookmarkCursor = db.query("SELECT COUNT(*) FROM page_bookmarks")
+        assertTrue(bookmarkCursor.moveToFirst())
+        assertEquals("page_bookmarks rows must survive migration", 1, bookmarkCursor.getInt(0))
+        bookmarkCursor.close()
+        db.close()
+    }
+
+    // ── Migration 38 → 39 ───────────────────────────────────────────────────
+    // Adds: bookmark_collections table + collection_id FK on page_bookmarks.
+    // Uses createDatabase(37) + direct .migrate() chain and validates final schema
+    // against the known-good 39.json export via runMigrationsAndValidate.
+
+    @Test
+    fun migration38To39_createsBookmarkCollectionsTable() {
+        val db = helper.createDatabase(TEST_DB, SCHEMA_V37)
+        MIGRATION_37_38.migrate(db)
+        assertFalse("bookmark_collections must NOT exist at v38", "bookmark_collections" in db.tableNames())
+        MIGRATION_38_39.migrate(db)
+        assertTrue("bookmark_collections must exist after 38→39", "bookmark_collections" in db.tableNames())
+        val cols = db.columnNames("bookmark_collections")
+        assertTrue("id must exist", "id" in cols)
+        assertTrue("name must exist", "name" in cols)
+        assertTrue("created_at must exist", "created_at" in cols)
+        db.close()
+    }
+
+    @Test
+    fun migration38To39_addsCollectionIdToPageBookmarks() {
+        val db = helper.createDatabase(TEST_DB, SCHEMA_V37)
+        MIGRATION_37_38.migrate(db)
+        assertFalse("collection_id must NOT exist at v38", "collection_id" in db.columnNames("page_bookmarks"))
+        MIGRATION_38_39.migrate(db)
+        assertTrue(
+            "page_bookmarks.collection_id must exist after 38→39",
+            "collection_id" in db.columnNames("page_bookmarks"),
+        )
+        assertTrue(
+            "index_page_bookmarks_collection_id must exist after 38→39",
+            "index_page_bookmarks_collection_id" in db.indexNames("page_bookmarks"),
+        )
+        // Verify the FK constraint: collection_id REFERENCES bookmark_collections(id) ON DELETE SET NULL
+        val fkCursor = db.query("PRAGMA foreign_key_list('page_bookmarks')")
+        var foundCollectionFk = false
+        while (fkCursor.moveToNext()) {
+            val table = fkCursor.getString(fkCursor.getColumnIndexOrThrow("table"))
+            val from = fkCursor.getString(fkCursor.getColumnIndexOrThrow("from"))
+            val to = fkCursor.getString(fkCursor.getColumnIndexOrThrow("to"))
+            val onDelete = fkCursor.getString(fkCursor.getColumnIndexOrThrow("on_delete"))
+            if (table == "bookmark_collections" && from == "collection_id" && to == "id" && onDelete == "SET NULL") {
+                foundCollectionFk = true
+                break
+            }
+        }
+        fkCursor.close()
+        assertTrue(
+            "collection_id FK must reference bookmark_collections(id) ON DELETE SET NULL",
+            foundCollectionFk,
+        )
+        db.close()
+    }
+
+    @Test
+    fun migration38To39_collectionIdDefaultsToNull() {
+        val db = helper.createDatabase(TEST_DB, SCHEMA_V37)
+        MIGRATION_37_38.migrate(db)
+        // Insert required parent rows before page_bookmarks to satisfy FK constraints.
+        db.execSQL(
+            "INSERT INTO manga (sourceId, url, title, status, favorite, lastUpdate, initialized, " +
+                "viewerFlags, chapterFlags, coverLastModified, dateAdded, autoDownload, " +
+                "notifyNewChapters, contentRating, userCompleted, userDropped) " +
+                "VALUES (1, '/manga/1', 'Test Manga', 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)",
+        )
+        db.execSQL(
+            "INSERT INTO chapters (mangaId, url, name, read, lastPageRead, " +
+                "chapterNumber, sourceOrder, dateFetch, dateUpload, lastModified) " +
+                "VALUES (1, '/chapter/1', 'Ch 1', 0, 0, 1.0, 0, 0, 0, 0)",
+        )
+        db.execSQL(
+            "INSERT INTO page_bookmarks (manga_id, chapter_id, page_index, note, created_at) " +
+                "VALUES (1, 1, 0, NULL, 0)",
+        )
+        MIGRATION_38_39.migrate(db)
+        val cursor = db.query("SELECT collection_id FROM page_bookmarks WHERE manga_id = 1")
+        assertTrue("Row must survive migration 38→39", cursor.moveToFirst())
+        assertTrue("collection_id must be NULL after migration", cursor.isNull(0))
+        cursor.close()
+        db.close()
+    }
+
+    @Test
+    fun migration37To39_fullChainValidatesAgainstSchema() {
+        // Validates the full 37→38→39 chain against the exported 39.json schema.
+        helper.createDatabase(TEST_DB, SCHEMA_V37).close()
+        val db = helper.runMigrationsAndValidate(TEST_DB, SCHEMA_V39, true, MIGRATION_37_38, MIGRATION_38_39)
+        assertTrue("chapters must exist and lack bookmark column after full chain",
+            "id" in db.columnNames("chapters") && "bookmark" !in db.columnNames("chapters"))
+        assertTrue("bookmark_collections must exist after full chain",
+            "bookmark_collections" in db.tableNames())
+        assertTrue("collection_id must exist in page_bookmarks after full chain",
+            "collection_id" in db.columnNames("page_bookmarks"))
         db.close()
     }
 

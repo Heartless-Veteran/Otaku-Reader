@@ -99,26 +99,20 @@ object DetailsContract {
      */
     data class ChapterFilter(
         val read: TriState = TriState.ALL,
-        val bookmarked: TriState = TriState.ALL,
         val downloaded: TriState = TriState.ALL,
         /** When non-null, only chapters from this scanlator are shown. */
         val scanlator: String? = null,
         val chapterSearchQuery: String = ""
     ) {
         val isActive: Boolean
-            get() = read != TriState.ALL || bookmarked != TriState.ALL ||
-                    downloaded != TriState.ALL || scanlator != null || chapterSearchQuery.isNotBlank()
+            get() = read != TriState.ALL || downloaded != TriState.ALL ||
+                    scanlator != null || chapterSearchQuery.isNotBlank()
 
         fun apply(chapters: List<ChapterItem>): List<ChapterItem> = chapters.filter { ch ->
             val readOk = when (read) {
                 TriState.ALL -> true
                 TriState.ONLY -> ch.read
                 TriState.EXCLUDE -> !ch.read
-            }
-            val bookmarkOk = when (bookmarked) {
-                TriState.ALL -> true
-                TriState.ONLY -> ch.bookmark
-                TriState.EXCLUDE -> !ch.bookmark
             }
             val downloadOk = when (downloaded) {
                 TriState.ALL -> true
@@ -128,7 +122,7 @@ object DetailsContract {
             val scanlatorOk = scanlator == null || ch.scanlator == scanlator
             val nameOk = chapterSearchQuery.isBlank() ||
                 ch.name.contains(chapterSearchQuery, ignoreCase = true)
-            readOk && bookmarkOk && downloadOk && scanlatorOk && nameOk
+            readOk && downloadOk && scanlatorOk && nameOk
         }
     }
 
@@ -144,7 +138,6 @@ object DetailsContract {
         val volume: String?,
         val scanlator: String?,
         val read: Boolean,
-        val bookmark: Boolean,
         val lastPageRead: Int,
         val dateUpload: Long,
         val downloadStatus: DownloadStatus = DownloadStatus.NOT_DOWNLOADED,
@@ -187,7 +180,6 @@ object DetailsContract {
         data class ChapterClick(val chapterId: Long) : Event
         data class ChapterLongClick(val chapterId: Long) : Event
         data class ToggleChapterRead(val chapterId: Long) : Event
-        data class ToggleChapterBookmark(val chapterId: Long) : Event
         data class DownloadChapter(val chapterId: Long) : Event
         data class DeleteChapterDownload(val chapterId: Long) : Event
         data class ExportChapterAsCbz(val chapterId: Long) : Event
@@ -213,7 +205,6 @@ object DetailsContract {
         data object DeleteSelectedChapters : Event
         data object MarkSelectedAsRead : Event
         data object MarkSelectedAsUnread : Event
-        data object BookmarkSelectedChapters : Event
         data object ToggleNotifications : Event
         data object OpenTracking : Event
 
@@ -298,7 +289,6 @@ fun Chapter.toChapterItem(thumbnailUrl: String? = null, totalPages: Int = 0): De
         volume = volume,
         scanlator = scanlator,
         read = read,
-        bookmark = bookmark,
         lastPageRead = lastPageRead,
         dateUpload = dateUpload,
         downloadStatus = DetailsContract.DownloadStatus.NOT_DOWNLOADED,

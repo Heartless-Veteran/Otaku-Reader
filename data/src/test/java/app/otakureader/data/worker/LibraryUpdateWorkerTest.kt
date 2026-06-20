@@ -106,7 +106,6 @@ class LibraryUpdateWorkerTest {
         scanlator = "Test Scanlator",
         dateUpload = System.currentTimeMillis(),
         read = false,
-        bookmark = false,
         lastPageRead = 0
     )
 

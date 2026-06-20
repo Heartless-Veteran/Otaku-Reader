@@ -185,12 +185,14 @@
     <string name="reader_comments_note_save">Save note</string>
     <string name="reader_comments_external_title">Discussions elsewhere</string>
     <string name="reader_page_load_failed">Page failed to load</string>
-    <string name="reader_chapter_bookmarked">Bookmarked</string>
     <string name="reader_chapter_read">Read</string>
 
     <!-- Download current chapter (GAP 9) -->
     <string name="reader_download_chapter">Download chapter</string>
     <string name="reader_chapter_download_queued">Chapter download queued</string>
+
+    <!-- Page bookmark -->
+    <string name="reader_bookmark_page">Bookmark this page</string>
 
     <!-- Page long-press context menu -->
     <string name="reader_page_menu_save_image">Save image</string>

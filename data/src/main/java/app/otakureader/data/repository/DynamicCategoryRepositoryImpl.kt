@@ -50,6 +50,7 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
         else -> null
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun DynamicCategoryRule.toEntity(categoryId: Long) = DynamicCategoryRuleEntity(
         categoryId = categoryId,
         ruleType = when (this) {
