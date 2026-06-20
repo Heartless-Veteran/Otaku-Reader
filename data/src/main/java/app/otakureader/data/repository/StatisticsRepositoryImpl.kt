@@ -91,7 +91,8 @@ class StatisticsRepositoryImpl @Inject constructor(
             dailyGoal = dailyGoal,
             dailyProgress = todayCount,
             weeklyGoal = weeklyGoal,
-            weeklyProgress = weekCount
+            weeklyProgress = weekCount,
+            currentStreak = currentStreak,
         )
     }
     
