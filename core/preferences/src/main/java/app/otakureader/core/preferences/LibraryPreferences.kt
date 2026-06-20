@@ -134,12 +134,28 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     // --- Per-Category Last Update Tracking ---
 
-    // TODO: Replace comma-separated "id:timestamp" encoding with JSON (or a separate DataStore
-    //  key per category). This is fine for typical libraries (5–20 categories) but will
-    //  produce an unbounded string and silently corrupt entries if a category id or timestamp
-    //  contains "," or ":". Refactor before supporting 100+ categories.
-    /** Serialized map of "categoryId:timestampMs" pairs for per-category frequency filtering. */
+    /**
+     * Reactive map of categoryId → last-update timestamp (ms). Uses one DataStore key per
+     * category (named `category_last_update_ms_<id>`) so the value is an unbounded Long with
+     * no delimiter-collision risk. Falls back to the legacy comma-CSV key on first read if no
+     * per-category keys exist yet; the legacy key is removed on the first write.
+     */
     val categoryLastUpdateMs: Flow<Map<Long, Long>> = dataStore.data.map { prefs ->
+        val perCategoryData = prefs.asMap()
+            .entries
+            .mapNotNull { (key, value) ->
+                val id = key.name
+                    .takeIf { it.startsWith("category_last_update_ms_") }
+                    ?.removePrefix("category_last_update_ms_")
+                    ?.toLongOrNull()
+                    ?: return@mapNotNull null
+                val ts = value as? Long ?: return@mapNotNull null
+                id to ts
+            }
+            .toMap()
+        if (perCategoryData.isNotEmpty()) return@map perCategoryData
+
+        // Legacy comma-CSV fallback (removed on first write)
         val raw = prefs[Keys.CATEGORY_LAST_UPDATE_MS] ?: ""
         if (raw.isEmpty()) emptyMap()
         else raw.split(",").mapNotNull { entry ->
@@ -151,8 +167,8 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun setCategoryLastUpdateMs(map: Map<Long, Long>) {
         dataStore.edit { prefs ->
-            prefs[Keys.CATEGORY_LAST_UPDATE_MS] =
-                if (map.isEmpty()) "" else map.entries.joinToString(",") { "${it.key}:${it.value}" }
+            prefs.remove(Keys.CATEGORY_LAST_UPDATE_MS)  // Remove legacy string key on first write
+            map.forEach { (id, ts) -> prefs[longPreferencesKey("category_last_update_ms_$id")] = ts }
         }
     }
 

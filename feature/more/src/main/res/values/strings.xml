@@ -118,7 +118,7 @@
     <string name="bookmarks_share">Share</string>
     <string name="bookmarks_export_complete">%1$d bookmark(s) exported to gallery</string>
     <string name="bookmarks_export_requested">%1$d bookmark(s) queued — image export coming in v1.1</string>
-    <string name="bookmarks_share_coming_soon">Sharing %1$d bookmark(s) — feature coming soon</string>
+    <string name="bookmarks_share_text_line">%1$s · %2$s · Page %3$d</string>
 
     <!-- Bookmark error messages (#1128) -->
     <string name="bookmarks_error_delete_bookmark">Failed to delete bookmark</string>

@@ -127,4 +127,6 @@ sealed interface BookmarksEffect : UiEffect {
     /** Signals the Screen to perform the actual MediaStore export for the given bookmark IDs. */
     data class RequestExport(val bookmarkIds: Set<Long>) : BookmarksEffect
     data class ExportComplete(val savedCount: Int) : BookmarksEffect
+    /** Signals the Screen to launch the Android Sharesheet with the resolved bookmark items. */
+    data class ShareSelected(val items: List<BookmarkItem>) : BookmarksEffect
 }

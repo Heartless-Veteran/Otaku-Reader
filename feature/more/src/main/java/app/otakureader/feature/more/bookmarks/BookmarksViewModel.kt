@@ -210,12 +210,10 @@ class BookmarksViewModel @Inject constructor(
 
     private fun shareSelected(bookmarkIds: Set<Long>) {
         if (bookmarkIds.isEmpty()) return
+        val items = state.value.bookmarks.filter { it.id in bookmarkIds }
+        if (items.isEmpty()) return
         viewModelScope.launch {
-            _effect.send(
-                BookmarksEffect.ShowSnackbar(
-                    context.getString(R.string.bookmarks_share_coming_soon, bookmarkIds.size)
-                )
-            )
+            _effect.send(BookmarksEffect.ShareSelected(items))
             _selectedBookmarkIds.value = emptySet()
         }
     }

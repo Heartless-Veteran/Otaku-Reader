@@ -1,7 +1,7 @@
 # ROADMAP.md — Otaku Reader
 
-**Status:** Beta: Feature Parity Complete + Hardening Done | **Current Phase:** Beta APK validation
-**Updated:** 2026-06-13
+**Status:** All pre-release phases complete | **Current Phase:** v1.0.0 release preparation
+**Updated:** 2026-06-20
 **Website:** https://heartless-veteran.github.io/Otaku-Reader/
 
 ---
@@ -13,7 +13,8 @@
 | Alpha | ✅ **SHIPPED** | All gates green. Build passes, tests pass, security audit clean. |
 | Beta | ✅ **FEATURE PARITY COMPLETE** | All 35 parity issues (#926–#958) plus the QoL/extension-system audit batches shipped 2026-06-06 → 2026-06-10. |
 | Beta hardening | ✅ **DONE 2026-06-13** | EH sync + pagination (#1090/#1092), custom covers + onboarding (#1093), extension repo fixes (#1094), bulk download fix (#1095), full-app bug sweep (#1097), reader comments (#1098), project website (#1099). |
-| Production | 📋 **NEXT** | Beta APK build + on-device validation, then `v*` tag for a signed release. |
+| P3 post-beta polish | ✅ **DONE 2026-06-20** | Page-level bookmark system + collections (PR #1130, schema v39). Last stub removed; share is fully wired. Category timestamp encoding fixed. |
+| v1.0.0 | 📋 **NEXT** | Push `v1.0.0` tag → `release.yml` builds signed APK → GitHub Release. |
 
 ---
 
@@ -185,6 +186,25 @@ Mihon/Komikku parity improvements and reader enhancements shipped alongside the 
 | Dark mode scheduling | Scheduled on/off times in display settings |
 | Backup encryption | Password-protected local backups |
 | Bottom nav tab reorder | Nav Order settings screen |
+
+---
+
+## ✅ P3 Post-Beta Polish (2026-06-20)
+
+| PR / Change | Detail |
+|-------------|--------|
+| PR #1130 | Page-level bookmark system: persistent per-page bookmarks, collections (named groups), multi-select, export queue, share via Sharesheet. DB v37 → v39 (two migrations). |
+| Bookmark share stub removed | `shareSelected()` now emits `BookmarksEffect.ShareSelected` → Screen launches `Intent.ACTION_SEND` with formatted text lines. No more "coming soon" snackbar. |
+| Category timestamp encoding fixed | Replaced fragile comma-CSV `"id:timestamp,id:timestamp"` with per-category `DataStore<Long>` keys (`category_last_update_ms_<id>`). Legacy key migrated transparently on first write. |
+| Dead string removed | `library_reindex_not_available` removed from `feature/library/strings.xml` (unreferenced). |
+
+**Deferred to v1.1 (issues created #1132–#1137):**
+- #1132 — Bookmark image export via MediaStore (Coil disk cache → gallery)
+- #1133 — Bookmark share via images (FileProvider + ACTION\_SEND\_MULTIPLE)
+- #1134 — ComicInfo.xml metadata in CBZ downloads
+- #1135 — Local manga source (read CBZ/CBR/folders from device)
+- #1136 — Extract LibraryUpdateWorker filter logic into LibraryUpdateFilter
+- #1137 — Clean up extension compat shim (ext-lib 1.5 migration tracking)
 
 ---
 
