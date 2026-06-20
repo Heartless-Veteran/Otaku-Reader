@@ -243,7 +243,6 @@ class BackupRoundTripTest {
             name = "Chapter 20",
             scanlator = "Group X",
             read = true,
-            bookmark = true,
             lastPageRead = 15,
             chapterNumber = 20f,
             sourceOrder = 19,

@@ -33,7 +33,6 @@ class ChapterRepositoryImplTest {
         url: String = "/c/$id",
         name: String = "Chapter $id",
         read: Boolean = false,
-        bookmark: Boolean = false,
         lastPageRead: Int = 0,
         chapterNumber: Float = id.toFloat()
     ) = ChapterEntity(
@@ -42,7 +41,6 @@ class ChapterRepositoryImplTest {
         url = url,
         name = name,
         read = read,
-        bookmark = bookmark,
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber
     )
