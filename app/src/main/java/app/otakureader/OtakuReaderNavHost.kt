@@ -28,6 +28,7 @@ import app.otakureader.feature.feed.navigation.feedScreen
 import app.otakureader.feature.history.navigation.historyScreen
 import app.otakureader.feature.library.category.navigation.categoryManagementScreen
 import app.otakureader.feature.library.navigation.libraryScreen
+import app.otakureader.feature.library.navigation.libraryMaintenanceScreen
 import app.otakureader.feature.library.navigation.mergeDuplicatesScreen
 import app.otakureader.feature.library.readinglist.navigation.readingListDetailScreen
 import app.otakureader.feature.library.readinglist.navigation.readingListsScreen
@@ -172,6 +173,9 @@ fun OtakuReaderNavHost(
             onNavigateToScanLibrary = {
                 navController.navigate(Route.ScanLibrary)
             },
+            onNavigateToMaintenance = {
+                navController.navigate(Route.LibraryMaintenance)
+            },
             onBrowseClick = {
                 navController.navigate(Route.Browse) {
                     popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -182,6 +186,11 @@ fun OtakuReaderNavHost(
         )
 
         mergeDuplicatesScreen(
+            onNavigateBack = { navController.popBackStack() }
+        )
+
+        // Library maintenance center (refresh covers/metadata, reindex downloads, orphan cleanup)
+        libraryMaintenanceScreen(
             onNavigateBack = { navController.popBackStack() }
         )
 

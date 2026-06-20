@@ -37,7 +37,7 @@ class MangaRepositoryImpl @Inject constructor(
         return mangaDao.getFavoriteMangaWithUnreadCount()
             .distinctUntilChanged()
             .map { mangaWithUnreadList ->
-                mangaWithUnreadList.map { it.manga.toDomain(it.unreadCount) }
+                mangaWithUnreadList.map { it.manga.toDomain(it.unreadCount, it.lastRead) }
             }
     }
 
@@ -300,7 +300,7 @@ class MangaRepositoryImpl @Inject constructor(
     override suspend fun getAlternativeSourceIds(mangaId: Long): List<Long> =
         altSourceDao.getAlternativeIdsForMangaSync(mangaId)
 
-    private fun MangaEntity.toDomain(unreadCount: Int = 0) = Manga(
+    private fun MangaEntity.toDomain(unreadCount: Int = 0, lastRead: Long? = null) = Manga(
         id = id,
         sourceId = sourceId,
         url = url,
@@ -320,6 +320,7 @@ class MangaRepositoryImpl @Inject constructor(
         notifyNewChapters = notifyNewChapters,
         dateAdded = dateAdded,
         lastUpdate = lastUpdate,
+        lastRead = lastRead,
         // Per-manga reader settings (#260)
         readerDirection = readerDirection,
         readerMode = readerMode,

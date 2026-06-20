@@ -161,7 +161,14 @@ interface MangaDao {
     suspend fun getRecommendationCandidates(limit: Int = 500): List<MangaEntity>
 
     @Query("""
-        SELECT m.*, COALESCE(SUM(CASE WHEN c.read = 0 THEN 1 ELSE 0 END), 0) as unreadCount
+        SELECT m.*,
+            COALESCE(SUM(CASE WHEN c.read = 0 THEN 1 ELSE 0 END), 0) as unreadCount,
+            (
+                SELECT MAX(rh.read_at)
+                FROM reading_history rh
+                INNER JOIN chapters rc ON rh.chapter_id = rc.id
+                WHERE rc.mangaId = m.id
+            ) as lastRead
         FROM manga m
         LEFT JOIN chapters c ON m.id = c.mangaId
         WHERE m.favorite = 1
