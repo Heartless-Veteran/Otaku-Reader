@@ -1,12 +1,15 @@
 package app.otakureader.feature.more.bookmarks
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.BookmarkCollectionRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.feature.more.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -29,6 +32,7 @@ import javax.inject.Inject
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class BookmarksViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val pageBookmarkRepository: PageBookmarkRepository,
     private val bookmarkCollectionRepository: BookmarkCollectionRepository,
     private val mangaRepository: MangaRepository,
@@ -146,7 +150,7 @@ class BookmarksViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Failed to delete bookmark"))
+                _effect.send(BookmarksEffect.ShowSnackbar(context.getString(R.string.bookmarks_error_delete_bookmark)))
             }
         }
     }
@@ -158,7 +162,7 @@ class BookmarksViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Failed to create collection"))
+                _effect.send(BookmarksEffect.ShowSnackbar(context.getString(R.string.bookmarks_error_create_collection)))
             }
         }
     }
@@ -170,7 +174,7 @@ class BookmarksViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Failed to rename collection"))
+                _effect.send(BookmarksEffect.ShowSnackbar(context.getString(R.string.bookmarks_error_rename_collection)))
             }
         }
     }
@@ -184,7 +188,7 @@ class BookmarksViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Failed to delete collection"))
+                _effect.send(BookmarksEffect.ShowSnackbar(context.getString(R.string.bookmarks_error_delete_collection)))
             }
         }
     }
@@ -193,14 +197,13 @@ class BookmarksViewModel @Inject constructor(
         if (bookmarkIds.isEmpty()) return
         viewModelScope.launch {
             try {
-                // Export is handled by the screen via ExportComplete effect.
-                // The screen triggers the system share/save flow.
-                _effect.send(BookmarksEffect.ExportComplete(bookmarkIds.size))
+                // Delegate to Screen which has Context for MediaStore access.
+                _effect.send(BookmarksEffect.RequestExport(bookmarkIds))
                 _selectedBookmarkIds.value = emptySet()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                _effect.send(BookmarksEffect.ShowSnackbar("Export failed"))
+                _effect.send(BookmarksEffect.ShowSnackbar(context.getString(R.string.bookmarks_error_export)))
             }
         }
     }
@@ -208,7 +211,11 @@ class BookmarksViewModel @Inject constructor(
     private fun shareSelected(bookmarkIds: Set<Long>) {
         if (bookmarkIds.isEmpty()) return
         viewModelScope.launch {
-            _effect.send(BookmarksEffect.ShowSnackbar("Sharing ${bookmarkIds.size} bookmark(s) — feature coming soon"))
+            _effect.send(
+                BookmarksEffect.ShowSnackbar(
+                    context.getString(R.string.bookmarks_share_coming_soon, bookmarkIds.size)
+                )
+            )
             _selectedBookmarkIds.value = emptySet()
         }
     }

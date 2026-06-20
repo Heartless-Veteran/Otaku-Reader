@@ -78,6 +78,8 @@ import app.otakureader.feature.more.R
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.collectLatest
 
+private const val SWIPE_DISMISS_THRESHOLD = 0.4f
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookmarksScreen(
@@ -97,6 +99,10 @@ fun BookmarksScreen(
                     onOpenBookmark(effect.mangaId, effect.chapterId)
                 is BookmarksEffect.ShowSnackbar ->
                     snackbarHostState.showSnackbar(effect.message)
+                is BookmarksEffect.RequestExport ->
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.bookmarks_export_requested, effect.bookmarkIds.size)
+                    )
                 is BookmarksEffect.ExportComplete ->
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.bookmarks_export_complete, effect.savedCount)
@@ -138,10 +144,11 @@ fun BookmarksScreen(
                         }
                     },
                     actions = {
-                        if (state.collections.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onIntent(BookmarksIntent.ShowManageCollections) }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.bookmarks_manage_collections))
-                            }
+                        IconButton(onClick = { viewModel.onIntent(BookmarksIntent.ShowManageCollections) }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.bookmarks_manage_collections),
+                            )
                         }
                     },
                 )
@@ -478,7 +485,7 @@ private fun SwipeToDismissBookmarkRow(
                 false
             }
         },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f },
+        positionalThreshold = { totalDistance -> totalDistance * SWIPE_DISMISS_THRESHOLD },
     )
 
     SwipeToDismissBox(

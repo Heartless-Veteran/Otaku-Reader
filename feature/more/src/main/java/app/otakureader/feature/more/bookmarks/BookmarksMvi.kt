@@ -124,5 +124,7 @@ sealed interface BookmarksIntent : UiEvent {
 sealed interface BookmarksEffect : UiEffect {
     data class NavigateToReader(val mangaId: Long, val chapterId: Long) : BookmarksEffect
     data class ShowSnackbar(val message: String) : BookmarksEffect
+    /** Signals the Screen to perform the actual MediaStore export for the given bookmark IDs. */
+    data class RequestExport(val bookmarkIds: Set<Long>) : BookmarksEffect
     data class ExportComplete(val savedCount: Int) : BookmarksEffect
 }
