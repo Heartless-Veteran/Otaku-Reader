@@ -26,12 +26,15 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,8 +59,10 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,6 +79,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.DownloadStatus
+import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaUpdate
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -84,6 +90,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+
+private const val UNSET_FETCH_DATE = 0L
 
 /** Updates screen showing newly discovered chapters for library manga. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,6 +169,7 @@ fun UpdatesScreen(
                     }
                 )
             } else {
+                var overflowMenuExpanded by remember { mutableStateOf(false) }
                 TopAppBar(
                     title = { Text(stringResource(R.string.updates_title)) },
                     navigationIcon = {
@@ -202,6 +211,33 @@ fun UpdatesScreen(
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = stringResource(R.string.updates_downloads)
+                            )
+                        }
+                        // Overflow menu — display mode toggle
+                        IconButton(onClick = { overflowMenuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = stringResource(R.string.updates_more_options)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = overflowMenuExpanded,
+                            onDismissRequest = { overflowMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (state.displayMode == UpdatesDisplayMode.GROUPED_BY_MANGA) {
+                                            stringResource(R.string.updates_group_by_date)
+                                        } else {
+                                            stringResource(R.string.updates_group_by_manga)
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.onEvent(UpdatesEvent.ToggleDisplayMode)
+                                    overflowMenuExpanded = false
+                                }
                             )
                         }
                     }
@@ -310,36 +346,65 @@ fun UpdatesScreen(
                         }
                     }
 
-                    else -> UpdatesList(
-                        updates = filteredUpdates,
-                        selectedItems = state.selectedItems,
-                        activeDownloads = state.activeDownloads,
-                        lastRunSummary = state.lastRunSummary,
-                        onChapterClick = { update ->
+                    else -> {
+                        val onChapterClick: (MangaUpdate) -> Unit = { update ->
                             viewModel.onEvent(
                                 UpdatesEvent.OnChapterClick(
                                     mangaId = update.manga.id,
                                     chapterId = update.chapter.id
                                 )
                             )
-                        },
-                        onChapterLongClick = { update ->
+                        }
+                        val onChapterLongClick: (MangaUpdate) -> Unit = { update ->
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.onEvent(UpdatesEvent.OnChapterLongClick(update.chapter.id))
-                        },
-                        onDownloadClick = { update ->
+                        }
+                        val onDownloadClick: (MangaUpdate) -> Unit = { update ->
                             viewModel.onEvent(
                                 UpdatesEvent.OnDownloadChapter(
                                     mangaId = update.manga.id,
                                     chapterId = update.chapter.id
                                 )
                             )
-                        },
-                        onMarkAsRead = { chapterId ->
+                        }
+                        val onMarkAsRead: (Long) -> Unit = { chapterId ->
                             viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId))
-                        },
-                        modifier = Modifier.fillMaxSize()
-                    )
+                        }
+                        if (state.displayMode == UpdatesDisplayMode.GROUPED_BY_MANGA) {
+                            // Compute the filtered manga groups from the flat filtered list
+                            val filteredGroups = remember(state.groupedByManga, filteredUpdates) {
+                                val filteredIds = filteredUpdates.map { it.chapter.id }.toSet()
+                                state.groupedByManga
+                                    .map { group ->
+                                        group.copy(chapters = group.chapters.filter { it.chapter.id in filteredIds })
+                                    }
+                                    .filter { it.chapters.isNotEmpty() }
+                            }
+                            MangaGroupedUpdatesList(
+                                groups = filteredGroups,
+                                selectedItems = state.selectedItems,
+                                activeDownloads = state.activeDownloads,
+                                lastRunSummary = state.lastRunSummary,
+                                onChapterClick = onChapterClick,
+                                onChapterLongClick = onChapterLongClick,
+                                onDownloadClick = onDownloadClick,
+                                onMarkAsRead = onMarkAsRead,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            UpdatesList(
+                                updates = filteredUpdates,
+                                selectedItems = state.selectedItems,
+                                activeDownloads = state.activeDownloads,
+                                lastRunSummary = state.lastRunSummary,
+                                onChapterClick = onChapterClick,
+                                onChapterLongClick = onChapterLongClick,
+                                onDownloadClick = onDownloadClick,
+                                onMarkAsRead = onMarkAsRead,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -366,7 +431,212 @@ fun UpdatesScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Grouped list
+// Manga-grouped list (Mihon-style)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MangaGroupedUpdatesList(
+    groups: List<MangaUpdateGroup>,
+    selectedItems: Set<Long>,
+    activeDownloads: Map<Long, DownloadItem>,
+    lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
+    onChapterClick: (MangaUpdate) -> Unit,
+    onChapterLongClick: (MangaUpdate) -> Unit,
+    onDownloadClick: (MangaUpdate) -> Unit,
+    onMarkAsRead: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+        if (lastRunSummary != null) {
+            item(key = "last_run_summary") {
+                LastRunSummaryCard(
+                    summary = lastRunSummary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        }
+        groups.forEach { group ->
+            // Manga header row: cover + title + chapter count chip
+            item(key = "manga_header_${group.manga.id}") {
+                MangaGroupHeader(manga = group.manga, chapterCount = group.chapters.size)
+            }
+            // Chapter rows (no cover thumbnail — the group header provides context)
+            items(group.chapters, key = { it.chapter.id }) { update ->
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { value ->
+                        if (value == SwipeToDismissBoxValue.EndToStart) {
+                            onMarkAsRead(update.chapter.id)
+                            true
+                        } else false
+                    }
+                )
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromStartToEnd = false,
+                    backgroundContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.tertiaryContainer),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = androidx.compose.ui.Modifier.padding(end = 16.dp)
+                            )
+                        }
+                    }
+                ) {
+                    // Indented chapter row without the manga cover (already shown in header)
+                    GroupedChapterItem(
+                        update = update,
+                        isSelected = selectedItems.contains(update.chapter.id),
+                        activeDownload = activeDownloads[update.chapter.id],
+                        onClick = { onChapterClick(update) },
+                        onLongClick = { onChapterLongClick(update) },
+                        onDownloadClick = { onDownloadClick(update) }
+                    )
+                }
+                HorizontalDivider()
+            }
+        }
+    }
+}
+
+@Composable
+private fun MangaGroupHeader(
+    manga: Manga,
+    chapterCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Manga cover thumbnail
+        Surface(
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.size(width = 40.dp, height = 56.dp)
+        ) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(manga.thumbnailUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = manga.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(5f / 7f)
+                    .clip(MaterialTheme.shapes.small)
+            )
+        }
+        Text(
+            text = manga.title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        // Chapter count chip
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = MaterialTheme.shapes.small,
+        ) {
+            Text(
+                text = "$chapterCount",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GroupedChapterItem(
+    update: MangaUpdate,
+    isSelected: Boolean,
+    activeDownload: DownloadItem?,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onDownloadClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
+            // Indent to align with title text in the group header (cover width + spacing)
+            .padding(start = 62.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isSelected) {
+            androidx.compose.material3.Checkbox(
+                checked = true,
+                onCheckedChange = { onClick() },
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = update.chapter.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (update.chapter.dateFetch > UNSET_FETCH_DATE) {
+                Text(
+                    text = formatFetchDate(update.chapter.dateFetch),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+        }
+        if (!isSelected) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(48.dp)
+            ) {
+                when (activeDownload?.status) {
+                    DownloadStatus.DOWNLOADING -> CircularProgressIndicator(
+                        progress = { (activeDownload.progress / 100f).coerceIn(0f, 1f) },
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    DownloadStatus.QUEUED, DownloadStatus.PAUSED -> CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    else -> IconButton(onClick = onDownloadClick) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = stringResource(R.string.updates_download_chapter),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Date-grouped list
 // ─────────────────────────────────────────────────────────────────────────────
 
 private enum class UpdateDateBucket { TODAY, YESTERDAY, THIS_WEEK, THIS_MONTH, OLDER }
@@ -567,7 +837,7 @@ private fun UpdateItem(
             )
         }
         if (!isSelected) {
-            if (update.chapter.dateFetch > 0L) {
+            if (update.chapter.dateFetch > UNSET_FETCH_DATE) {
                 Text(
                     text = formatFetchDate(update.chapter.dateFetch),
                     style = MaterialTheme.typography.labelSmall,

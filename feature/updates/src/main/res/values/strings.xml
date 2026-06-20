@@ -96,4 +96,8 @@
     <string name="updates_marked_as_read_single">Marked as read</string>
     <string name="updates_unmark_as_read_failed">Failed to undo</string>
     <string name="updates_undo_action">Undo</string>
+    <!-- Display mode toggle -->
+    <string name="updates_more_options">More options</string>
+    <string name="updates_group_by_manga">Group by manga</string>
+    <string name="updates_group_by_date">Group by date</string>
 </resources>

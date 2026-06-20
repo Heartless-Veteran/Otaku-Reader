@@ -16,7 +16,6 @@ data class HistoryWithMangaEntity(
     @ColumnInfo(name = "name")           val name: String,
     @ColumnInfo(name = "scanlator")      val scanlator: String?,
     @ColumnInfo(name = "read")           val read: Boolean,
-    @ColumnInfo(name = "bookmark")       val bookmark: Boolean,
     @ColumnInfo(name = "lastPageRead")   val lastPageRead: Int,
     @ColumnInfo(name = "chapterNumber")  val chapterNumber: Float,
     @ColumnInfo(name = "dateFetch")      val dateFetch: Long,

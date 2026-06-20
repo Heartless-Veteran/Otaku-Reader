@@ -143,7 +143,6 @@ internal fun ChapterFilterDialog(
     onDismiss: () -> Unit
 ) {
     var read by remember { mutableStateOf(filter.read) }
-    var bookmarked by remember { mutableStateOf(filter.bookmarked) }
     var downloaded by remember { mutableStateOf(filter.downloaded) }
     var selectedScanlator by remember { mutableStateOf(filter.scanlator) }
 
@@ -164,22 +163,6 @@ internal fun ChapterFilterDialog(
                     labelExclude = stringResource(R.string.details_filter_unread),
                     state = read,
                     onStateChange = { read = it }
-                )
-
-                HorizontalDivider()
-
-                // Bookmark filter
-                Text(
-                    text = stringResource(R.string.details_filter_bookmarked_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                TriStateRow(
-                    labelAll = stringResource(R.string.details_filter_all),
-                    labelOnly = stringResource(R.string.details_filter_bookmarked),
-                    labelExclude = stringResource(R.string.details_filter_not_bookmarked),
-                    state = bookmarked,
-                    onStateChange = { bookmarked = it }
                 )
 
                 HorizontalDivider()
@@ -225,7 +208,7 @@ internal fun ChapterFilterDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                onApply(DetailsContract.ChapterFilter(read, bookmarked, downloaded, selectedScanlator))
+                onApply(DetailsContract.ChapterFilter(read, downloaded, selectedScanlator))
             }) {
                 Text(stringResource(R.string.details_filter_apply))
             }

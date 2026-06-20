@@ -31,18 +31,26 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
 
     private fun DynamicCategoryRuleEntity.toDomain(): DynamicCategoryRule? = when (ruleType) {
         DynamicCategoryRule.TYPE_UNREAD_AT_LEAST ->
-            DynamicCategoryRule.UnreadAtLeast(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.UnreadAtLeast(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_RECENTLY_UPDATED ->
-            DynamicCategoryRule.RecentlyUpdated(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.RecentlyUpdated(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
         DynamicCategoryRule.TYPE_GENRE_CONTAINS ->
             DynamicCategoryRule.GenreContains(ruleParamsJson)
         DynamicCategoryRule.TYPE_COMPLETED -> DynamicCategoryRule.Completed
         DynamicCategoryRule.TYPE_ONGOING -> DynamicCategoryRule.Ongoing
         DynamicCategoryRule.TYPE_RECENTLY_ADDED ->
-            DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull() ?: return null)
+            DynamicCategoryRule.RecentlyAdded(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
+        DynamicCategoryRule.TYPE_NEVER_STARTED -> DynamicCategoryRule.NeverStarted
+        DynamicCategoryRule.TYPE_READ_WITHIN_DAYS ->
+            DynamicCategoryRule.ReadWithinDays(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
+        DynamicCategoryRule.TYPE_NOT_READ_IN_DAYS ->
+            DynamicCategoryRule.NotReadInDays(ruleParamsJson.toIntOrNull()?.takeIf { it >= 0 } ?: return null)
+        DynamicCategoryRule.TYPE_MARKED_COMPLETED -> DynamicCategoryRule.MarkedCompleted
+        DynamicCategoryRule.TYPE_MARKED_DROPPED -> DynamicCategoryRule.MarkedDropped
         else -> null
     }
 
+    @Suppress("CyclomaticComplexMethod")
     private fun DynamicCategoryRule.toEntity(categoryId: Long) = DynamicCategoryRuleEntity(
         categoryId = categoryId,
         ruleType = when (this) {
@@ -52,6 +60,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> DynamicCategoryRule.TYPE_COMPLETED
             is DynamicCategoryRule.Ongoing -> DynamicCategoryRule.TYPE_ONGOING
             is DynamicCategoryRule.RecentlyAdded -> DynamicCategoryRule.TYPE_RECENTLY_ADDED
+            is DynamicCategoryRule.NeverStarted -> DynamicCategoryRule.TYPE_NEVER_STARTED
+            is DynamicCategoryRule.ReadWithinDays -> DynamicCategoryRule.TYPE_READ_WITHIN_DAYS
+            is DynamicCategoryRule.NotReadInDays -> DynamicCategoryRule.TYPE_NOT_READ_IN_DAYS
+            is DynamicCategoryRule.MarkedCompleted -> DynamicCategoryRule.TYPE_MARKED_COMPLETED
+            is DynamicCategoryRule.MarkedDropped -> DynamicCategoryRule.TYPE_MARKED_DROPPED
         },
         ruleParamsJson = when (this) {
             is DynamicCategoryRule.UnreadAtLeast -> count.toString()
@@ -60,6 +73,11 @@ class DynamicCategoryRepositoryImpl @Inject constructor(
             is DynamicCategoryRule.Completed -> ""
             is DynamicCategoryRule.Ongoing -> ""
             is DynamicCategoryRule.RecentlyAdded -> withinDays.toString()
+            is DynamicCategoryRule.NeverStarted -> ""
+            is DynamicCategoryRule.ReadWithinDays -> withinDays.toString()
+            is DynamicCategoryRule.NotReadInDays -> withinDays.toString()
+            is DynamicCategoryRule.MarkedCompleted -> ""
+            is DynamicCategoryRule.MarkedDropped -> ""
         }
     )
 }

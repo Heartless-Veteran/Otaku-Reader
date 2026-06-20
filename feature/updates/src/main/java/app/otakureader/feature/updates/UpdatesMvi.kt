@@ -4,8 +4,21 @@ import app.otakureader.core.common.mvi.UiEffect
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.model.UpdateRunSummary
+
+/**
+ * A group of chapters from the same manga, used by the manga-grouped display mode.
+ * The chapters list is sorted newest-first within the group.
+ */
+data class MangaUpdateGroup(
+    val manga: Manga,
+    val chapters: List<MangaUpdate>,
+)
+
+/** Controls whether the Updates list is grouped by manga or by date bucket. */
+enum class UpdatesDisplayMode { GROUPED_BY_MANGA, GROUPED_BY_DATE }
 
 /**
  * Represents a failed update entry for the error screen.
@@ -52,6 +65,10 @@ data class UpdatesState(
     val dateFilterStart: Long? = null,
     /** End of the active date filter (epoch-ms, inclusive), or null if no filter set. */
     val dateFilterEnd: Long? = null,
+    /** Chapters grouped by manga for the GROUPED_BY_MANGA display mode. */
+    val groupedByManga: List<MangaUpdateGroup> = emptyList(),
+    /** Whether to render the list grouped by manga or by date bucket. Default is manga-grouped (Mihon style). */
+    val displayMode: UpdatesDisplayMode = UpdatesDisplayMode.GROUPED_BY_MANGA,
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {
@@ -83,6 +100,8 @@ sealed interface UpdatesEvent : UiEvent {
     data class SetDateFilter(val start: Long?, val end: Long?) : UpdatesEvent
     /** Remove the active date range filter and show all update entries. */
     data object ClearDateFilter : UpdatesEvent
+    /** Toggle between GROUPED_BY_MANGA and GROUPED_BY_DATE display modes. */
+    data object ToggleDisplayMode : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {

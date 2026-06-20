@@ -318,10 +318,6 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Load chapter pages and initialize reader state.
-     */
-    @Suppress("LongMethod")
     private fun loadChapter() {
         loadChapterJob?.cancel()
         // Capture the target ID now so the coroutine can guard against stale writes.
@@ -333,9 +329,7 @@ class ReaderViewModel @Inject constructor(
             when (val result = chapterLoaderDelegate.load(mangaId, targetChapterId)) {
                 is ReaderChapterLoaderDelegate.Result.NotFound -> {
                     if (targetChapterId != chapterId) return@launch
-                    _state.update {
-                        it.copy(isLoading = false, error = result.message)
-                    }
+                    _state.update { it.copy(isLoading = false, error = result.message) }
                 }
                 is ReaderChapterLoaderDelegate.Result.Failure -> {
                     if (targetChapterId != chapterId) return@launch
@@ -346,64 +340,75 @@ class ReaderViewModel @Inject constructor(
                         )
                     }
                 }
-                is ReaderChapterLoaderDelegate.Result.Success -> {
-                    // Discard the result if the user navigated to a different chapter while
-                    // this load was in flight — prevents stale pages overwriting the new chapter.
-                    if (targetChapterId != chapterId) return@launch
-                    currentManga = result.manga
-                    currentChapter = result.chapter
-                    observeContentType(result.manga)
-
-                    val pages = result.pages
-                    val initialPage = result.chapter.lastPageRead
-                        .coerceIn(0, (pages.size - 1).coerceAtLeast(0))
-
-                    _state.update { current ->
-                        current.copy(
-                            pages = pages,
-                            currentPage = initialPage,
-                            isLoading = false,
-                            chapterTitle = result.chapter.name,
-                            readerBackgroundColor = result.manga.readerBackgroundColor,
-                        )
-                    }
-
-                    // Record history now that the chapter is confirmed to exist.
-                    historyDelegate.recordOpen(
-                        scope = viewModelScope,
-                        chapterId = chapterId,
-                        sessionReadAt = sessionReadAt,
-                        fallbackIncognito = _state.value.incognitoMode,
-                    )
-                    // Reset page-change timestamp so first recorded page duration
-                    // does not include chapter load time.
-                    lastPageChangeMs = SystemClock.elapsedRealtime()
-
-                    // Update Discord Rich Presence with reading info.
-                    discordDelegate.updatePresence(
-                        result.manga.title,
-                        result.chapter.name,
-                        pages.size,
-                    )
-
-                    // Start preloading adjacent pages.
-                    if (pages.isNotEmpty()) {
-                        prefetchDelegate.preloadPages(
-                            scope = viewModelScope,
-                            pages = pages,
-                            currentPage = initialPage,
-                            mangaId = mangaId,
-                            chapterId = chapterId,
-                            currentManga = currentManga,
-                        )
-                    }
-
-                    // Start panel detection when in Smart Panels mode.
-                    if (_state.value.mode == ReaderMode.SMART_PANELS && pages.isNotEmpty()) {
-                        // Panel detection is handled by SmartPanelsReader composable.
-                    }
-                }
+                is ReaderChapterLoaderDelegate.Result.Success ->
+                    handleChapterLoadSuccess(result, targetChapterId)
             }
+        }
+    }
+
+    private suspend fun handleChapterLoadSuccess(
+        result: ReaderChapterLoaderDelegate.Result.Success,
+        targetChapterId: Long,
+    ) {
+        // Discard the result if the user navigated to a different chapter while
+        // this load was in flight — prevents stale pages overwriting the new chapter.
+        if (targetChapterId != chapterId) return
+        currentManga = result.manga
+        currentChapter = result.chapter
+        observeContentType(result.manga)
+
+        val pages = result.pages
+        val initialPage = result.chapter.lastPageRead
+            .coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+
+        _state.update { current ->
+            current.copy(
+                pages = pages,
+                currentPage = initialPage,
+                isLoading = false,
+                chapterTitle = result.chapter.name,
+                readerBackgroundColor = result.manga.readerBackgroundColor,
+            )
+        }
+
+        // Update download badge so the overlay can show/hide the download button.
+        val isDownloaded = try {
+            downloadAheadDelegate.isChapterDownloaded(result.manga, result.chapter)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+        if (chapterId != _state.value.currentChapterId) return
+        _state.update { it.copy(isCurrentChapterDownloaded = isDownloaded) }
+
+        // Record history now that the chapter is confirmed to exist.
+        historyDelegate.recordOpen(
+            scope = viewModelScope,
+            chapterId = chapterId,
+            sessionReadAt = sessionReadAt,
+            fallbackIncognito = _state.value.incognitoMode,
+        )
+        // Reset page-change timestamp so first recorded page duration
+        // does not include chapter load time.
+        lastPageChangeMs = SystemClock.elapsedRealtime()
+
+        // Update Discord Rich Presence with reading info.
+        discordDelegate.updatePresence(
+            result.manga.title,
+            result.chapter.name,
+            pages.size,
+        )
+
+        if (pages.isNotEmpty()) {
+            prefetchDelegate.preloadPages(
+                scope = viewModelScope,
+                pages = pages,
+                currentPage = initialPage,
+                mangaId = mangaId,
+                chapterId = chapterId,
+                currentManga = currentManga,
+            )
         }
     }
 
@@ -578,6 +583,24 @@ class ReaderViewModel @Inject constructor(
             }
             ReaderEvent.SavePageImage -> savePageImage()
             ReaderEvent.SetPageAsCover -> setPageAsCover()
+            ReaderEvent.DownloadCurrentChapter -> downloadCurrentChapter()
+        }
+    }
+
+    private fun downloadCurrentChapter() {
+        val manga = currentManga ?: return
+        val chapter = currentChapter ?: return
+        viewModelScope.launch {
+            val enqueued = try {
+                downloadAheadDelegate.enqueueCurrentChapter(manga, chapter)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+            if (enqueued) {
+                _effect.send(ReaderEffect.ShowSnackbar(messageResId = R.string.reader_chapter_download_queued))
+            }
         }
     }
 

@@ -19,6 +19,9 @@ class EvaluateDynamicCategoryUseCaseTest {
         genre: List<String> = emptyList(),
         lastUpdate: Long = 0,
         dateAdded: Long = 0,
+        lastRead: Long? = null,
+        userCompleted: Boolean = false,
+        userDropped: Boolean = false,
     ) = Manga(
         id = id,
         sourceId = 1,
@@ -29,6 +32,9 @@ class EvaluateDynamicCategoryUseCaseTest {
         genre = genre,
         lastUpdate = lastUpdate,
         dateAdded = dateAdded,
+        lastRead = lastRead,
+        userCompleted = userCompleted,
+        userDropped = userDropped,
     )
 
     @Test
@@ -64,6 +70,50 @@ class EvaluateDynamicCategoryUseCaseTest {
         )
         val result = useCase(listOf(DynamicCategoryRule.RecentlyAdded(7)), library, now)
         assertEquals(setOf(1L), result)
+    }
+
+    @Test
+    fun `never started matches manga with no read history`() {
+        val library = listOf(
+            manga(1, lastRead = null),
+            manga(2, lastRead = 0L),
+            manga(3, lastRead = now - TimeUnit.DAYS.toMillis(1)),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.NeverStarted), library, now)
+        assertEquals(setOf(1L, 2L), result)
+    }
+
+    @Test
+    fun `read within days matches recently read manga`() {
+        val library = listOf(
+            manga(1, lastRead = now - TimeUnit.DAYS.toMillis(2)),
+            manga(2, lastRead = now - TimeUnit.DAYS.toMillis(20)),
+            manga(3, lastRead = null),
+        )
+        val result = useCase(listOf(DynamicCategoryRule.ReadWithinDays(7)), library, now)
+        assertEquals(setOf(1L), result)
+    }
+
+    @Test
+    fun `not read in days excludes never-started and recently-read manga`() {
+        val library = listOf(
+            manga(1, lastRead = now - TimeUnit.DAYS.toMillis(40)), // stale -> match
+            manga(2, lastRead = now - TimeUnit.DAYS.toMillis(2)),  // recent -> no
+            manga(3, lastRead = null),                             // never started -> no
+        )
+        val result = useCase(listOf(DynamicCategoryRule.NotReadInDays(30)), library, now)
+        assertEquals(setOf(1L), result)
+    }
+
+    @Test
+    fun `marked completed and dropped match user flags`() {
+        val library = listOf(
+            manga(1, userCompleted = true),
+            manga(2, userDropped = true),
+            manga(3),
+        )
+        assertEquals(setOf(1L), useCase(listOf(DynamicCategoryRule.MarkedCompleted), library, now))
+        assertEquals(setOf(2L), useCase(listOf(DynamicCategoryRule.MarkedDropped), library, now))
     }
 
     @Test

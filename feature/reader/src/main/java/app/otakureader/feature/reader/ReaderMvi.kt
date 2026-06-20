@@ -191,6 +191,9 @@ data class ReaderState(
     val showActionsOnLongTap: Boolean = true,
     /** Whether the page long-press context menu (save/share/cover) is visible. */
     val isPageContextMenuVisible: Boolean = false,
+
+    /** True when the currently-open chapter is already downloaded to device storage. */
+    val isCurrentChapterDownloaded: Boolean = false,
     /** URL of the page that triggered the long-press context menu. */
     val contextMenuPageUrl: String? = null,
     /** Save pages to separate folders by manga title */
@@ -623,6 +626,9 @@ sealed interface ReaderEvent {
 
     /** Set the context-menu page image as the manga cover. */
     data object SetPageAsCover : ActionEvent
+
+    /** Enqueue the currently-open chapter for download. */
+    data object DownloadCurrentChapter : ActionEvent
 
     // ──────────────────────────────────────────────────────────────────────────
     // Constants

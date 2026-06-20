@@ -64,6 +64,14 @@ data class BrowseState(
     val showSaveSearchDialog: Boolean = false,
     /** Current text in the "Save search" name field. */
     val saveSearchName: String = "",
+    /** Mirrors [app.otakureader.core.preferences.GeneralPreferences.showNsfwContent] for display in the overflow menu. */
+    val showNsfw: Boolean = false,
+    /** Language codes the user has enabled for Browse source filtering (e.g. "en", "ja"). */
+    val enabledLanguages: Set<String> = setOf("en"),
+    /** Whether the language filter dialog is open. */
+    val showLanguageDialog: Boolean = false,
+    /** All distinct language codes present across installed sources (computed in ViewModel). */
+    val availableLanguages: List<String> = emptyList(),
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -130,6 +138,16 @@ sealed interface BrowseEvent : UiEvent {
     data class ApplyNamedSavedSearch(val search: SavedSourceSearch) : BrowseEvent
     /** Removes a saved named search by its UUID id. */
     data class DeleteNamedSavedSearch(val id: String) : BrowseEvent
+
+    /** Toggles the global NSFW content preference from the Browse overflow menu. */
+    data object ToggleNsfwFilter : BrowseEvent
+
+    /** Opens the language filter dialog. */
+    data object ShowLanguageDialog : BrowseEvent
+    /** Dismisses the language filter dialog without saving. */
+    data object DismissLanguageDialog : BrowseEvent
+    /** Persists the selected language set and re-filters the source list. */
+    data class SetEnabledLanguages(val languages: Set<String>) : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

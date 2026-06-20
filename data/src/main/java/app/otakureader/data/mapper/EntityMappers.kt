@@ -81,7 +81,6 @@ fun ChapterEntity.toChapter(): Chapter = Chapter(
     dateUpload = dateUpload,
     chapterNumber = chapterNumber,
     read = read,
-    bookmark = bookmark,
     lastPageRead = lastPageRead,
     dateFetch = dateFetch,
     userNotes = userNotes,
@@ -97,7 +96,6 @@ fun Chapter.toEntity(): ChapterEntity = ChapterEntity(
     dateUpload = dateUpload,
     chapterNumber = chapterNumber,
     read = read,
-    bookmark = bookmark,
     lastPageRead = lastPageRead,
     // Were omitted, so a full-row REPLACE during chapter refresh zeroed dateFetch (breaking
     // "recent updates" sorting) and erased userNotes. Match the complete mapper in

@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as columnItems
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -38,6 +40,7 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -144,21 +147,42 @@ internal fun MangaGrid(
         }
     }
 
-    // Header items shared by both grid variants
-    val headerContent: @Composable () -> Unit = {
-        // Greeting header
+    // GAP 1: page 0 = "All" (null), pages 1..n = each category id
+    val categoryPages: List<Long?> = remember(state.categories) {
+        listOf(null) + state.categories.map { it.id }
+    }
+    val pagerState = rememberPagerState(
+        initialPage = categoryPages.indexOf(state.selectedCategory).coerceAtLeast(0),
+        pageCount = { categoryPages.size },
+    )
+
+    // Swipe → update selected category in ViewModel
+    LaunchedEffect(pagerState.currentPage) {
+        val id = categoryPages.getOrNull(pagerState.currentPage)
+        onEvent(LibraryEvent.OnCategorySelected(id))
+    }
+    // Chip / tab tap → scroll pager to matching page
+    // Guard against fighting an in-progress user swipe gesture
+    LaunchedEffect(state.selectedCategory) {
+        if (pagerState.isScrollInProgress) return@LaunchedEffect
+        val target = categoryPages.indexOf(state.selectedCategory).coerceAtLeast(0)
+        if (pagerState.currentPage != target) {
+            pagerState.animateScrollToPage(target)
+        }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        // Fixed header: greeting, goal banner, continue reading, category controls
         LibraryGreetingHeader(
             mangaCount = state.mangaList.size,
             unreadCount = state.mangaList.sumOf { it.unreadCount },
             userName = state.displayName,
         )
 
-        // Daily reading goal banner
         if (state.readingGoal.dailyGoal > 0) {
             DailyGoalBanner(readingGoal = state.readingGoal)
         }
 
-        // Continue Reading section
         if (state.continueReadingItems.isNotEmpty()) {
             ContinueReadingSection(
                 items = state.continueReadingItems,
@@ -176,7 +200,6 @@ internal fun MangaGrid(
             )
         }
 
-        // "Categories" section header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -211,7 +234,6 @@ internal fun MangaGrid(
             modifier = Modifier.padding(vertical = 4.dp)
         )
 
-        // Reading list filter chips
         if (state.readingLists.isNotEmpty()) {
             ReadingListFilterChips(
                 readingLists = state.readingLists,
@@ -221,7 +243,7 @@ internal fun MangaGrid(
             )
         }
 
-        // Content-type filter tabs
+        // Content-type filter tabs (All / Manga / Manhwa)
         TabRow(
             selectedTabIndex = selectedContentFilter,
             containerColor = Color.Transparent,
@@ -255,7 +277,6 @@ internal fun MangaGrid(
             }
         }
 
-        // "All Titles" section header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -269,15 +290,40 @@ internal fun MangaGrid(
                 modifier = Modifier.weight(1f),
             )
         }
-    }
 
+        // Swipeable pager — each page shows the active category's manga list.
+        // Content is extracted to a separate composable to prevent ColumnScope from leaking
+        // into AnimatedVisibility resolution (Kotlin 2.x context receiver change).
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+        ) { _ ->
+            LibraryMangaPageContent(
+                state = state,
+                adaptiveColumns = adaptiveColumns,
+                displayedManga = displayedManga,
+                onMangaTap = onMangaTap,
+                onMangaLongClick = onMangaLongClick,
+                onEvent = onEvent,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LibraryMangaPageContent(
+    state: LibraryState,
+    adaptiveColumns: Int,
+    displayedManga: List<LibraryMangaItem>,
+    onMangaTap: (LibraryMangaItem) -> Unit,
+    onMangaLongClick: (Long) -> Unit,
+    onEvent: (LibraryEvent) -> Unit,
+) {
     if (state.displayMode == LibraryDisplayMode.LIST) {
         LazyColumn(
             contentPadding = PaddingValues(vertical = 8.dp),
-            modifier = modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item(contentType = "header_section") { headerContent() }
-
             columnItems(
                 items = displayedManga,
                 key = { it.id },
@@ -301,21 +347,14 @@ internal fun MangaGrid(
                 }
             }
         }
-        return
-    }
-
-    if (state.isStaggeredGrid) {
+    } else if (state.isStaggeredGrid) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalItemSpacing = 8.dp,
-            modifier = modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item(span = StaggeredGridItemSpan.FullLine) {
-                Column { headerContent() }
-            }
-
             staggeredItems(
                 items = displayedManga,
                 key = { it.id },
@@ -348,6 +387,7 @@ internal fun MangaGrid(
                             readProgress = readProgress,
                             continueReading = continueReading,
                             isNew = manga.unreadCount > 0,
+                            showTitle = state.showTitle,
                             badge = when {
                                 state.showBadges && manga.unreadCount > 0 &&
                                     state.showDownloadBadge && downloadCount > 0 -> {
@@ -403,15 +443,8 @@ internal fun MangaGrid(
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
-            item(
-                span = { GridItemSpan(maxLineSpan) },
-                contentType = "header_section"
-            ) {
-                Column { headerContent() }
-            }
-
             gridItems(
                 items = displayedManga,
                 key = { it.id },
@@ -434,6 +467,7 @@ internal fun MangaGrid(
                         readProgress = readProgress,
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
+                        showTitle = state.showTitle,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 &&
                                 state.showDownloadBadge && downloadCount > 0 -> {

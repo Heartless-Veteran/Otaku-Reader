@@ -32,6 +32,28 @@ sealed class DynamicCategoryRule {
         init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
     }
 
+    /** Manga the user has never opened a chapter of (no read history). "Plan to read". */
+    data object NeverStarted : DynamicCategoryRule()
+
+    /** Manga last read within the last [withinDays] days. "Currently reading". */
+    data class ReadWithinDays(val withinDays: Int) : DynamicCategoryRule() {
+        init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
+    }
+
+    /**
+     * Manga that has been read at least once but not within the last [withinDays] days.
+     * "Almost forgotten" — never-started manga are excluded (they belong to [NeverStarted]).
+     */
+    data class NotReadInDays(val withinDays: Int) : DynamicCategoryRule() {
+        init { require(withinDays >= 0) { "withinDays must be non-negative, was $withinDays" } }
+    }
+
+    /** Manga the user has manually marked completed. */
+    data object MarkedCompleted : DynamicCategoryRule()
+
+    /** Manga the user has manually marked dropped. */
+    data object MarkedDropped : DynamicCategoryRule()
+
     companion object {
         const val TYPE_UNREAD_AT_LEAST = "unread_at_least"
         const val TYPE_RECENTLY_UPDATED = "recently_updated"
@@ -39,5 +61,10 @@ sealed class DynamicCategoryRule {
         const val TYPE_COMPLETED = "completed"
         const val TYPE_ONGOING = "ongoing"
         const val TYPE_RECENTLY_ADDED = "recently_added"
+        const val TYPE_NEVER_STARTED = "never_started"
+        const val TYPE_READ_WITHIN_DAYS = "read_within_days"
+        const val TYPE_NOT_READ_IN_DAYS = "not_read_in_days"
+        const val TYPE_MARKED_COMPLETED = "marked_completed"
+        const val TYPE_MARKED_DROPPED = "marked_dropped"
     }
 }

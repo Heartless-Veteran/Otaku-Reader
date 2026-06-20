@@ -68,10 +68,6 @@ class ChapterRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateBookmark(chapterId: Long, bookmark: Boolean) {
-        chapterDao.updateBookmark(chapterId, bookmark)
-    }
-
     override suspend fun updateChapterNotes(chapterId: Long, notes: String?) {
         chapterDao.updateChapterNotes(chapterId, notes)
     }
@@ -159,7 +155,6 @@ class ChapterRepositoryImpl @Inject constructor(
         name = name,
         scanlator = scanlator,
         read = read,
-        bookmark = bookmark,
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,
@@ -181,7 +176,6 @@ class ChapterRepositoryImpl @Inject constructor(
             name = name,
             scanlator = scanlator,
             read = read,
-            bookmark = bookmark,
             lastPageRead = lastPageRead,
             chapterNumber = chapterNumber,
             dateFetch = dateFetch,
@@ -223,7 +217,6 @@ class ChapterRepositoryImpl @Inject constructor(
         name = name,
         scanlator = scanlator,
         read = read,
-        bookmark = bookmark,
         lastPageRead = lastPageRead,
         chapterNumber = chapterNumber,
         dateUpload = dateUpload,

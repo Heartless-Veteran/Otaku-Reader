@@ -103,6 +103,9 @@
     <string name="library_mark_selected_read">Mark as read</string>
     <string name="library_mark_selected_unread">Mark as unread</string>
     <string name="library_download_selected">Download selected</string>
+    <string name="library_move_to_category">Move to category</string>
+    <string name="library_moved_to_category">Moved to category</string>
+    <string name="library_move_to_category_error">Some items could not be moved</string>
     <string name="library_remove_selected">Remove from library</string>
     <string name="library_more_actions">More actions</string>
     <string name="library_select_all">Select all</string>
@@ -156,6 +159,35 @@
     <string name="category_make_dynamic">Make dynamic</string>
     <string name="category_remove_dynamic">Remove dynamic</string>
     <string name="category_unlock_prompt">Unlock to view hidden category</string>
+    <!-- Smart rules editor -->
+    <string name="category_edit_smart_rules">Smart rules…</string>
+    <string name="category_smart_rules_title">Smart rules: %1$s</string>
+    <string name="category_smart_rules_desc">Manga matching all of these rules are added to this category automatically.</string>
+    <string name="category_smart_rules_empty">No rules yet. A category with no rules stays manual.</string>
+    <string name="category_smart_rules_current">Current rules</string>
+    <string name="category_smart_rules_add">Add a rule</string>
+    <string name="category_rule_remove">Remove rule</string>
+    <string name="category_rule_add_button">Add</string>
+    <string name="category_rule_value_hint">Value</string>
+    <!-- Rule labels -->
+    <string name="rule_label_completed">Status: Completed</string>
+    <string name="rule_label_ongoing">Status: Ongoing</string>
+    <string name="rule_label_never_started">Never started (plan to read)</string>
+    <string name="rule_label_marked_completed">Marked completed</string>
+    <string name="rule_label_marked_dropped">Marked dropped</string>
+    <string name="rule_label_unread_at_least">Unread ≥ %1$d</string>
+    <string name="rule_label_read_within_days">Read within %1$d days</string>
+    <string name="rule_label_not_read_in_days">Not read in %1$d days</string>
+    <string name="rule_label_genre_contains">Genre: %1$s</string>
+    <string name="rule_label_recently_added">Added within %1$d days</string>
+    <string name="rule_label_recently_updated">Updated within %1$d days</string>
+    <!-- Rule type picker names -->
+    <string name="rule_type_unread_at_least">Unread at least</string>
+    <string name="rule_type_read_within_days">Read within (days)</string>
+    <string name="rule_type_not_read_in_days">Not read in (days)</string>
+    <string name="rule_type_genre_contains">Genre contains</string>
+    <string name="rule_type_recently_added">Added within (days)</string>
+    <string name="rule_type_recently_updated">Updated within (days)</string>
     <!-- Bottom sheet tabs -->
     <string name="display_tab">Display</string>
     <string name="sort_tab">Sort</string>
@@ -165,6 +197,7 @@
     <string name="display_grid_size_value">%1$d columns</string>
     <string name="display_show_badges">Show unread badges</string>
     <string name="display_show_download_badge">Show download badge</string>
+    <string name="display_show_title">Show title on cover</string>
     <string name="display_staggered_grid">Staggered grid</string>
     <string name="group_category_label">Category</string>
     <string name="group_by_category">Group by category</string>
@@ -181,6 +214,8 @@
     <string name="sort_date_added">Date added</string>
     <string name="sort_unread_count">Unread count</string>
     <string name="sort_source">Source</string>
+    <string name="sort_last_updated">Last updated</string>
+    <string name="sort_total_chapters">Total chapters</string>
     <string name="filter_all">All</string>
     <string name="filter_downloaded">Downloaded</string>
     <string name="filter_unread">Unread</string>

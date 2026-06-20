@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -214,7 +213,6 @@ fun DetailsScreen(
                     onSelectAll = { viewModel.onEvent(DetailsContract.Event.SelectAllChapters) },
                     onMarkRead = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsRead) },
                     onMarkUnread = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsUnread) },
-                    onBookmark = { viewModel.onEvent(DetailsContract.Event.BookmarkSelectedChapters) },
                     onDownload = { viewModel.onEvent(DetailsContract.Event.DownloadSelectedChapters) },
                     onDelete = { viewModel.onEvent(DetailsContract.Event.DeleteSelectedChapters) },
                 )
@@ -387,8 +385,7 @@ fun DetailsScreen(
 
 /**
  * Contextual app bar shown while one or more chapters are selected. Surfaces the batch
- * actions that the ViewModel already handles (select-all, mark read/unread, bookmark,
- * download, delete) — previously these events had no entry point in the live UI.
+ * actions that the ViewModel already handles (select-all, mark read/unread, download, delete).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -398,7 +395,6 @@ private fun ChapterSelectionTopBar(
     onSelectAll: () -> Unit,
     onMarkRead: () -> Unit,
     onMarkUnread: () -> Unit,
-    onBookmark: () -> Unit,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -421,9 +417,6 @@ private fun ChapterSelectionTopBar(
                     Icons.Default.RadioButtonUnchecked,
                     contentDescription = stringResource(R.string.details_mark_as_unread),
                 )
-            }
-            IconButton(onClick = onBookmark) {
-                Icon(Icons.Default.Bookmark, contentDescription = stringResource(R.string.details_bookmark_selected))
             }
             IconButton(onClick = onDownload) {
                 Icon(Icons.Default.Download, contentDescription = stringResource(R.string.details_download_selected))
@@ -525,32 +518,21 @@ private fun DetailsContent(
                 0 -> detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
                 1 -> detailsChapterItems(state = state, onEvent = onEvent)
                 2 -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.details_tab_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    TrackerTabContent(
+                        onManageTracking = { onEvent(DetailsContract.Event.OpenTracking) }
+                    )
                 }
                 3 -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.details_tab_placeholder),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    SourceSuggestionsSection(
+                        suggestions = state.sourceSuggestions,
+                        isLoading = state.isLoadingSourceSuggestions,
+                        error = state.sourceSuggestionsError,
+                        onSuggestionClick = { suggestion ->
+                            onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
+                        },
+                        onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
                 }
             }
         }
@@ -786,7 +768,6 @@ private fun LazyListScope.detailsChapterItems(
             onClick = { onEvent(DetailsContract.Event.ChapterClick(chapter.id)) },
             onLongClick = { onEvent(DetailsContract.Event.ChapterLongClick(chapter.id)) },
             onToggleRead = { onEvent(DetailsContract.Event.ToggleChapterRead(chapter.id)) },
-            onToggleBookmark = { onEvent(DetailsContract.Event.ToggleChapterBookmark(chapter.id)) },
             onDownload = { onEvent(DetailsContract.Event.DownloadChapter(chapter.id)) },
             onDeleteDownload = { onEvent(DetailsContract.Event.DeleteChapterDownload(chapter.id)) },
             onMarkPreviousRead = { onEvent(DetailsContract.Event.MarkPreviousAsRead(chapter.id)) },
@@ -892,6 +873,40 @@ private fun MangaDescription(
     }
 }
 
+
+/**
+ * Tracker tab content: an informational card prompting the user to manage their tracking
+ * entries via the tracking feature. Tapping the button fires [OpenTracking] which the
+ * ViewModel converts into a [NavigateToTracking] effect.
+ */
+@Composable
+private fun TrackerTabContent(
+    onManageTracking: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Default.QueryStats,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = stringResource(R.string.details_tracker_tab_description),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
+        Button(onClick = onManageTracking) {
+            Text(stringResource(R.string.details_tracker_tab_manage_button))
+        }
+    }
+}
 
 @Preview(showBackground = true, backgroundColor = 0xFF12121A)
 @Composable

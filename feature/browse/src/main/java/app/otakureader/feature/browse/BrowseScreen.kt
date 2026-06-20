@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,10 +35,15 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -74,6 +80,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -173,6 +180,7 @@ fun BrowseScreen(
                     },
                 )
             } else {
+                var overflowExpanded by remember { mutableStateOf(false) }
                 TopAppBar(
                     title = { Text(stringResource(R.string.browse_title)) },
                     actions = {
@@ -181,6 +189,50 @@ fun BrowseScreen(
                         }
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                        }
+                        if (state.selectedTab == BrowseTab.SOURCES) {
+                            IconButton(onClick = { viewModel.onEvent(BrowseEvent.ShowLanguageDialog) }) {
+                                Icon(
+                                    Icons.Default.FilterList,
+                                    contentDescription = stringResource(R.string.browse_language_filter)
+                                )
+                            }
+                        }
+                        if (state.selectedTab == BrowseTab.SOURCES || state.selectedTab == BrowseTab.EXTENSIONS) {
+                            Box {
+                                IconButton(onClick = { overflowExpanded = true }) {
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.browse_more_options)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = overflowExpanded,
+                                    onDismissRequest = { overflowExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (state.showNsfw) {
+                                                    stringResource(R.string.browse_hide_nsfw)
+                                                } else {
+                                                    stringResource(R.string.browse_show_nsfw)
+                                                }
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.onEvent(BrowseEvent.ToggleNsfwFilter)
+                                            overflowExpanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     },
                 )
@@ -326,6 +378,16 @@ fun BrowseScreen(
         )
     }
 
+    // Language filter dialog
+    if (state.showLanguageDialog) {
+        LanguageFilterDialog(
+            availableLanguages = state.availableLanguages,
+            enabledLanguages = state.enabledLanguages,
+            onConfirm = { selected -> viewModel.onEvent(BrowseEvent.SetEnabledLanguages(selected)) },
+            onDismiss = { viewModel.onEvent(BrowseEvent.DismissLanguageDialog) },
+        )
+    }
+
     // Save search dialog
     if (state.showSaveSearchDialog) {
         AlertDialog(
@@ -352,6 +414,76 @@ fun BrowseScreen(
             },
         )
     }
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Language filter dialog — multi-select chips for source language filtering
+// ────────────────────────────────────────────────────────────────────────────────
+
+private val LANGUAGE_DIALOG_ROW_VERTICAL_PADDING = 4.dp
+private val LANGUAGE_DIALOG_ICON_SIZE = 20.dp
+private val LANGUAGE_DIALOG_ICON_TEXT_SPACING = 12.dp
+
+@Composable
+private fun LanguageFilterDialog(
+    availableLanguages: List<String>,
+    enabledLanguages: Set<String>,
+    onConfirm: (Set<String>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var selected by remember(enabledLanguages) { mutableStateOf(enabledLanguages) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.browse_language_filter)) },
+        text = {
+            Column {
+                if (availableLanguages.isEmpty()) {
+                    Text(stringResource(R.string.browse_no_languages))
+                } else {
+                    availableLanguages.forEach { lang ->
+                        val checked = lang in selected
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = checked,
+                                    role = Role.Checkbox,
+                                    onValueChange = {
+                                        selected = if (checked) selected - lang else selected + lang
+                                    },
+                                )
+                                .padding(vertical = LANGUAGE_DIALOG_ROW_VERTICAL_PADDING),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (checked) {
+                                Icon(
+                                    Icons.Default.Done,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(LANGUAGE_DIALOG_ICON_SIZE),
+                                )
+                            } else {
+                                Spacer(Modifier.size(LANGUAGE_DIALOG_ICON_SIZE))
+                            }
+                            Spacer(Modifier.width(LANGUAGE_DIALOG_ICON_TEXT_SPACING))
+                            Text(lang.uppercase(), style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(selected) }) {
+                Text(stringResource(android.R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+    )
 }
 
 // ────────────────────────────────────────────────────────────────────────────────

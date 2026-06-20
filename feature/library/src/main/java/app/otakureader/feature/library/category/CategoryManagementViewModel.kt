@@ -15,9 +15,11 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import app.otakureader.domain.model.DynamicCategoryRule
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -82,7 +84,32 @@ class CategoryManagementViewModel @Inject constructor(
             is CategoryEvent.ToggleHidden -> toggleHidden(event.categoryId)
             is CategoryEvent.ToggleNsfw -> toggleNsfw(event.categoryId)
             is CategoryEvent.ToggleLocked -> toggleLocked(event.categoryId)
-            is CategoryEvent.SetDynamic -> setDynamic(event.categoryId, event.enabled)
+            is CategoryEvent.OpenRuleEditor -> openRuleEditor(event.categoryId)
+            is CategoryEvent.CloseRuleEditor ->
+                _state.update { it.copy(ruleEditor = null) }
+            is CategoryEvent.AddRule -> _state.update { st ->
+                st.ruleEditor?.let { editor ->
+                    if (editor.rules.contains(event.rule)) st else {
+                        st.copy(ruleEditor = editor.copy(rules = editor.rules + event.rule))
+                    }
+                } ?: st
+            }
+            is CategoryEvent.RemoveRule -> _state.update { st ->
+                st.ruleEditor?.let { editor ->
+                    st.copy(
+                        ruleEditor = editor.copy(
+                            rules = editor.rules.filterIndexed { i, _ -> i != event.index },
+                        ),
+                    )
+                } ?: st
+            }
+            is CategoryEvent.SaveRules -> {
+                val editor = _state.value.ruleEditor
+                if (editor != null) {
+                    _state.update { it.copy(ruleEditor = null) }
+                    saveRules(editor)
+                }
+            }
             is CategoryEvent.SetHiddenRevealed ->
                 _state.value = _state.value.copy(hiddenRevealed = event.revealed)
         }
@@ -165,18 +192,48 @@ class CategoryManagementViewModel @Inject constructor(
         }
     }
 
-    private fun setDynamic(categoryId: Long, enabled: Boolean) {
+    private fun openRuleEditor(categoryId: Long) {
         viewModelScope.launch {
             try {
-                if (enabled) {
-                    dynamicCategoryRepository.setRules(categoryId, emptyList())
-                } else {
-                    dynamicCategoryRepository.clearRules(categoryId)
+                val name = _state.value.categories.find { it.id == categoryId }?.name.orEmpty()
+                val rules = dynamicCategoryRepository.getRulesForCategory(categoryId).first()
+                _state.update {
+                    it.copy(ruleEditor = RuleEditorUiState(categoryId, name, rules))
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _effect.emit(CategoryEffect.ShowSnackbar("Failed to update dynamic rules: ${e.message}"))
+                _effect.emit(CategoryEffect.ShowSnackbar("Failed to load smart rules: ${e.message}"))
+            }
+        }
+    }
+
+    private fun saveRules(editor: RuleEditorUiState) {
+        viewModelScope.launch {
+            try {
+                dynamicCategoryRepository.setRules(editor.categoryId, editor.rules)
+                // Reflect the new dynamic state immediately; the category list flow does not
+                // re-emit on rule changes alone.
+                _state.update { st ->
+                    st.copy(
+                        categories = st.categories.map {
+                            if (it.id == editor.categoryId) {
+                                it.copy(isDynamic = editor.rules.isNotEmpty())
+                            } else {
+                                it
+                            }
+                        },
+                    )
+                }
+                _effect.emit(
+                    CategoryEffect.ShowSnackbar(
+                        if (editor.rules.isEmpty()) "Smart rules cleared" else "Smart rules saved",
+                    ),
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _effect.emit(CategoryEffect.ShowSnackbar("Failed to save smart rules: ${e.message}"))
             }
         }
     }

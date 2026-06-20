@@ -154,6 +154,19 @@ private fun DisplayTab(
             )
         }
 
+        // Show title on cover
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_title))
+            Switch(
+                checked = state.showTitle,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowTitle(enabled)) },
+            )
+        }
+
         // Staggered grid
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -336,6 +349,8 @@ private fun LibrarySortMode.label(): String = when (this) {
     LibrarySortMode.DATE_ADDED -> stringResource(R.string.sort_date_added)
     LibrarySortMode.UNREAD_COUNT -> stringResource(R.string.sort_unread_count)
     LibrarySortMode.SOURCE -> stringResource(R.string.sort_source)
+    LibrarySortMode.LAST_UPDATED -> stringResource(R.string.sort_last_updated)
+    LibrarySortMode.TOTAL_CHAPTERS -> stringResource(R.string.sort_total_chapters)
 }
 
 @Composable

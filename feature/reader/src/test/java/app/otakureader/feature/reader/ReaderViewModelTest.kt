@@ -24,7 +24,6 @@ import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.model.ComicPanel
 import app.otakureader.feature.reader.model.PanelBounds
-import app.otakureader.feature.reader.panel.PanelDetectionService
 import app.otakureader.feature.reader.prefetch.AdaptiveChapterPrefetcher
 import app.otakureader.feature.reader.prefetch.ReadingBehaviorTracker
 import app.otakureader.feature.reader.prefetch.SmartPrefetchManager
@@ -89,7 +88,6 @@ class ReaderViewModelTest {
     private lateinit var behaviorTracker: ReadingBehaviorTracker
     private lateinit var smartPrefetchManager: SmartPrefetchManager
     private lateinit var chapterPrefetcher: AdaptiveChapterPrefetcher
-    private lateinit var panelDetectionService: PanelDetectionService
     private lateinit var trackerSyncRepository: TrackerSyncRepository
     private lateinit var readerCommentRepository: app.otakureader.domain.repository.ReaderCommentRepository
     private lateinit var trackRepository: app.otakureader.domain.tracking.TrackRepository
@@ -119,7 +117,6 @@ class ReaderViewModelTest {
         behaviorTracker = mockk(relaxed = true)
         smartPrefetchManager = mockk(relaxed = true)
         chapterPrefetcher = mockk(relaxed = true)
-        panelDetectionService = mockk()
         historyScheduler = mockk(relaxed = true)
         trackerSyncRepository = mockk(relaxed = true)
         readerCommentRepository = mockk(relaxed = true)
@@ -133,7 +130,6 @@ class ReaderViewModelTest {
         displayDelegate = ReaderDisplayDelegate(
             settingsRepository = settingsRepository,
         )
-        coEvery { panelDetectionService.detectPanelsFromUrl(any(), any()) } returns emptyList()
         every { generalPreferences.discordRpcEnabled } returns flowOf(false)
         every { generalPreferences.visualEffectsEnabled } returns flowOf(true)
         every { generalPreferences.getMangaContentType(any()) } returns flowOf(false)
@@ -686,7 +682,7 @@ class ReaderViewModelTest {
     }
 
     @Test
-    fun `switching to SINGLE_PAGE does not trigger panel detection`() = runTest {
+    fun `switching to SINGLE_PAGE updates mode state`() = runTest {
         coEvery { settingsRepository.setReaderMode(any()) } just runs
 
         val vm = createViewModel()
@@ -698,8 +694,6 @@ class ReaderViewModelTest {
         vm.onEvent(ReaderEvent.OnModeChange(ReaderMode.SINGLE_PAGE))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // No panel detection should occur when switching to a non-Smart-Panels mode
-        coVerify(exactly = 0) { panelDetectionService.detectPanelsFromUrl(any(), any()) }
         assertEquals(ReaderMode.SINGLE_PAGE, vm.state.value.mode)
     }
 

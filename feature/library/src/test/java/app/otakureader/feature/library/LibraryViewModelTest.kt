@@ -10,6 +10,7 @@ import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.ReadingList
 import app.otakureader.domain.model.ReadingListMangaItem
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
@@ -67,6 +68,7 @@ class LibraryViewModelTest {
     private lateinit var downloadRepository: DownloadRepository
     private lateinit var settingsRepository: ReaderSettingsRepository
     private lateinit var trackRepository: TrackRepository
+    private val categoryRepository: CategoryRepository = mockk(relaxed = true)
     private lateinit var getCategories: GetCategoriesUseCase
     private lateinit var getContinueReading: GetContinueReadingUseCase
     private lateinit var readingGoalPreferences: ReadingGoalPreferences
@@ -109,6 +111,7 @@ class LibraryViewModelTest {
             every { groupByCategory } returns flowOf(false)
             every { savedViewsJson } returns flowOf("[]")
             coEvery { setSavedViewsJson(any()) } just Awaits
+            every { showTitle } returns flowOf(true)
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
@@ -168,6 +171,7 @@ class LibraryViewModelTest {
             downloadRepository,
             settingsRepository,
             trackRepository,
+            categoryRepository,
             getCategories,
             getContinueReading,
             readingGoalPreferences,

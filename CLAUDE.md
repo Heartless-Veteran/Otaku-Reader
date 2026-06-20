@@ -8,7 +8,7 @@ This file is the AI assistant reference for the Otaku Reader codebase. Read it b
 
 Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is feature-complete: all 35 parity issues, the hardening batch, and the post-beta polish pass have shipped.
 
-**Status:** Alpha shipped 2026-05-25. Beta feature parity (#926–#958), the 2026-06 hardening batch (#1090–#1099), and the P3 post-beta polish (PR #1114, 2026-06-19) are merged. **Current phase: production release preparation.** Project website: https://heartless-veteran.github.io/Otaku-Reader/
+**Status:** All phases shipped. Alpha (2026-05-25) → Beta parity (#926–#958) → Hardening (#1090–#1099) → P3 polish (#1114) → Post-P3 additions: QR library sharing (#1110/#1125), update-errors screen (#1119), stats improvements (#1122), in-chapter download button (#1127), page bookmarks + collections (PR #1130, merged 2026-06-20). **Current phase: cutting v1.0.0 release tag.** Project website: https://heartless-veteran.github.io/Otaku-Reader/ — VitePress landing page, download with live version lookup, docs, FAQ, auto-synced changelog. Deployed from `website/` via `pages.yml`.
 
 **The developer is newer to Kotlin. Always explain what was wrong and why a fix works — never drop solutions without context.**
 
@@ -53,6 +53,91 @@ Otaku-Reader/
     ├── feed/               # Recommendations and activity feed
     └── more/               # Bottom nav "More" section
 ```
+
+---
+
+## Shipped Feature Inventory
+
+**Do not re-implement any feature listed here.** If you think something is missing, search the codebase first.
+
+### Reader (`feature/reader/`)
+- 4 reading modes: single-page, dual-page, webtoon (vertical scroll), smart-panels (auto-crop)
+- Page-level bookmarks (toggle per page, persisted in `page_bookmarks` DB table)
+- Bookmark collections (group bookmarks, filter by collection in BookmarksScreen)
+- Reader comments / notes per chapter (`reader_comments` DB table, PR #1098)
+- Gesture controls: tap-zones, swipe navigation, volume-key paging
+- Download while reading (per-chapter download button in top bar, PR #1127)
+- Chapter list overlay with progress indicator
+- Discord Rich Presence (native JNI, `core/discord/`)
+
+### Library (`feature/library/`)
+- Grid and list view toggle, sort by title / last read / latest chapter / date added
+- Custom categories with drag-to-reorder
+- Multi-select with bulk actions: move category, mark read, download, delete, remove from library
+- Library update scheduler (global and per-source intervals)
+- Download badges, unread count badges per entry
+- QR code library sharing / scanning (PR #1110/#1125)
+
+### Browse (`feature/browse/`)
+- Per-source manga list + global search across all sources (Paging 3)
+- Source list with installed/uninstalled state, language filter
+- OPDS catalog support (Komga, Kavita)
+
+### Manga Details (`feature/details/`)
+- Chapter list with filters (read/unread, bookmarked/not), sort (ascending/descending), search
+- Multi-select chapters: mark read, download, delete, bookmark (chapter-level bookmarks removed in PR #1130)
+- Tracker status chips inline (tap to open tracker)
+- Track manga on multiple services simultaneously
+
+### Tracking (`feature/tracking/`)
+- MAL, AniList, Kitsu, MangaUpdates, Shikimori all fully integrated
+- OAuth / token auth per tracker
+- Score, status, chapter progress sync both directions
+
+### Downloads (`feature/reader/`, `data/workers/`)
+- Per-source download queue with pause/resume
+- Auto-download new chapters (global on/off + per-manga override)
+- Delete-after-read (global on/off + per-manga override, PR #1114)
+- Download manager screen under More → Downloads
+
+### History (`feature/history/`)
+- Timeline of chapters read with timestamps
+- Swipe-to-delete single entry, bulk delete with undo snackbar
+- Tap to resume reading at last page
+
+### Updates (`feature/updates/`)
+- New-chapter update list from last library refresh
+- Unread badge on bottom nav tab
+- Bulk mark-as-read with undo
+
+### Statistics (`feature/statistics/`)
+- Total chapters read, total reading time, average per day
+- Per-manga reading stats, streak tracking (PR #1122)
+- Stats summary widget on MoreScreen (Glance)
+
+### Settings (`feature/settings/`)
+- Theme: system / light / dark + dynamic color
+- Reader defaults: mode, reading direction, background color
+- Download location, concurrent download limit
+- Auto-update schedule: interval, wifi-only
+- Tracker auth management
+- Extension management (install/uninstall/trust)
+- Backup: export and import (native format + Tachiyomi import)
+
+### More tab (`feature/more/`)
+- Bookmarks screen: page-level bookmarks, collection filtering, multi-select, export (PR #1130)
+- History screen
+- Statistics screen
+- Feed screen (activity from followed manga)
+- First-run Onboarding wizard
+- About screen (version, credits, links)
+- Update Errors screen (PR #1119)
+- QR Library Share / Scan (PR #1110/#1125)
+
+### Security
+- Certificate pinning (`cert-pin-check.yml` CI gate)
+- Encrypted credential storage for tracker tokens (`AndroidX Security Crypto`)
+- No Firebase, no analytics SDK, no crash tooling
 
 ---
 
@@ -121,7 +206,8 @@ LibraryScreen.kt    — stateless composable consuming state
 - Migrations must be explicit. **Never use `fallbackToDestructiveMigration()` in production.**
 - Entities are separate from domain models. Always write and use mapper functions.
 - For tests, use in-memory Room databases — no `MigrationTestHelper`.
-- Current schema version: **v37** (added reader comments in PR #1098).
+- Current schema version: **v39** (PR #1130, merged 2026-06-20 — adds `bookmark_collections` table and `page_bookmarks.collection_id` FK).
+- **SQLite cannot `DROP COLUMN`** — to remove a column, CREATE TABLE new → INSERT INTO SELECT (omit removed column) → DROP TABLE old → RENAME new. When child tables have FK references to the table being recreated, wrap the entire block with `PRAGMA foreign_keys = OFF` (before) and `PRAGMA foreign_keys = ON` (after) to prevent `SQLITE_CONSTRAINT_FOREIGNKEY` on the DROP step.
 
 ---
 
@@ -180,7 +266,7 @@ The build is a **single flat artifact** — no product flavors.
 ## Key Libraries
 
 | Purpose | Library |
-|---------|---------|
+|---------|----------|
 | UI | Jetpack Compose + Material 3 |
 | Async | Kotlin Coroutines 1.10.2 + Flow |
 | DI | Hilt 2.59.2 (KSP-processed) |
@@ -346,6 +432,7 @@ If a UI element exists (preference, button, tab), wire it to the real implementa
 7. **Coroutine scope leaks** — `GlobalScope` used instead of `viewModelScope` or `lifecycleScope`. Always use structured concurrency.
 8. **Stale undo from concurrent batches** — Guard the undo handler: `if (pendingBatchIds != incomingIds) return`.
 9. **Flow recreated on recomposition** — Wrap with `remember(key) { flow }` when derived from a `@Singleton` injected dependency.
+10. **Room migration FK violations** — Recreating a table (to DROP a column) while child tables have FK references to it causes `SQLITE_CONSTRAINT_FOREIGNKEY`. Wrap the CREATE/INSERT/DROP/RENAME block with `PRAGMA foreign_keys = OFF` before and `PRAGMA foreign_keys = ON` after.
 
 ---
 
@@ -401,7 +488,7 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 
 - Solo developer, veteran background, newer to Kotlin — explain fixes, don't just drop code.
 - Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
-- **Current priority: production release.** Beta parity, hardening, and post-beta polish are all merged and on `main`.
+- **Current priority: cut v1.0.0 release tag.** All features including page bookmarks (PR #1130, merged 2026-06-20) are shipped.
 
 ---
 

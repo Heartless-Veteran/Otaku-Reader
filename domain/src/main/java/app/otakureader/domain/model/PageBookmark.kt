@@ -19,5 +19,6 @@ data class PageBookmark(
     val chapterId: Long,
     val pageIndex: Int,
     val note: String? = null,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val collectionId: Long? = null
 )

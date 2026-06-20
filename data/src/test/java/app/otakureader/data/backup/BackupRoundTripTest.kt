@@ -243,7 +243,6 @@ class BackupRoundTripTest {
             name = "Chapter 20",
             scanlator = "Group X",
             read = true,
-            bookmark = true,
             lastPageRead = 15,
             chapterNumber = 20f,
             sourceOrder = 19,
@@ -262,7 +261,6 @@ class BackupRoundTripTest {
         assertEquals(entity.name, restored.name)
         assertEquals(entity.scanlator, restored.scanlator)
         assertEquals(entity.read, restored.read)
-        assertEquals(entity.bookmark, restored.bookmark)
         assertEquals(entity.lastPageRead, restored.lastPageRead)
         assertEquals(entity.chapterNumber, restored.chapterNumber)
         assertEquals(entity.dateFetch, restored.dateFetch)

@@ -470,6 +470,69 @@ internal val MIGRATION_36_37 = object : Migration(36, 37) {
     }
 }
 
+/** Drop the chapter-level bookmark column (replaced by the page_bookmarks table). */
+internal val MIGRATION_37_38 = object : Migration(37, 38) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Disable FK constraints for the duration of this table reconstruction.
+        // reading_history and page_bookmarks reference chapters(id); dropping the old table
+        // would trigger SQLITE_CONSTRAINT_FOREIGNKEY if FK enforcement is active.
+        // FK constraints cannot be toggled inside an explicit transaction in strict SQLite, but
+        // Android's SQLite implementation allows it and the pattern is widely used in Room migrations.
+        db.execSQL("PRAGMA foreign_keys = OFF")
+
+        // SQLite cannot DROP COLUMN directly, so we recreate the table without the bookmark column.
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS chapters_new (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                mangaId INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                name TEXT NOT NULL,
+                scanlator TEXT,
+                read INTEGER NOT NULL DEFAULT 0,
+                lastPageRead INTEGER NOT NULL DEFAULT 0,
+                chapterNumber REAL NOT NULL DEFAULT -1,
+                sourceOrder INTEGER NOT NULL DEFAULT 0,
+                dateFetch INTEGER NOT NULL DEFAULT 0,
+                dateUpload INTEGER NOT NULL DEFAULT 0,
+                lastModified INTEGER NOT NULL DEFAULT 0,
+                userNotes TEXT,
+                FOREIGN KEY (mangaId) REFERENCES manga(id) ON DELETE CASCADE
+            )
+        """.trimIndent())
+        db.execSQL("""
+            INSERT INTO chapters_new
+            SELECT id, mangaId, url, name, scanlator, read, lastPageRead, chapterNumber,
+                   sourceOrder, dateFetch, dateUpload, lastModified, userNotes
+            FROM chapters
+        """.trimIndent())
+        db.execSQL("DROP TABLE chapters")
+        db.execSQL("ALTER TABLE chapters_new RENAME TO chapters")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_mangaId ON chapters(mangaId)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_chapters_mangaId_url ON chapters(mangaId, url)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_read ON chapters(read)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_dateFetch ON chapters(dateFetch)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_mangaId_dateFetch ON chapters(mangaId, dateFetch)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_mangaId_read_sourceOrder ON chapters(mangaId, read, sourceOrder)")
+
+        db.execSQL("PRAGMA foreign_keys = ON")
+    }
+}
+
+/** Add bookmark_collections table and collection_id FK on page_bookmarks. */
+internal val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS bookmark_collections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                name TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT 0
+            )
+        """.trimIndent())
+        db.execSQL("ALTER TABLE page_bookmarks ADD COLUMN collection_id INTEGER REFERENCES bookmark_collections(id) ON DELETE SET NULL")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_page_bookmarks_collection_id ON page_bookmarks(collection_id)")
+    }
+}
+
 /** All migrations in order, for use in [Room.databaseBuilder] and migration tests. */
 internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
@@ -480,5 +543,5 @@ internal val ALL_MIGRATIONS = arrayOf(
     MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26,
     MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31,
     MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35,
-    MIGRATION_35_36, MIGRATION_36_37,
+    MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39,
 )

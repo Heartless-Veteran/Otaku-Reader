@@ -6,6 +6,7 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
 import app.otakureader.core.ui.selection.SelectionManager
+import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.MangaRepository
@@ -66,6 +67,7 @@ class LibraryViewModel @Inject constructor(
     private val downloadRepository: DownloadRepository,
     private val settingsRepository: ReaderSettingsRepository,
     private val trackRepository: TrackRepository,
+    private val categoryRepository: CategoryRepository,
     private val getCategories: GetCategoriesUseCase,
     private val getContinueReading: GetContinueReadingUseCase,
     private val readingGoalPreferences: ReadingGoalPreferences,
@@ -134,6 +136,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
             is LibraryEvent.SetGridSize, is LibraryEvent.SetShowBadges,
             is LibraryEvent.SetShowDownloadBadge, is LibraryEvent.SetStaggeredGrid,
+            is LibraryEvent.SetShowTitle,
             is LibraryEvent.SetDisplayMode -> handleDisplayEvent(event)
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
@@ -143,7 +146,9 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsUnread, is LibraryEvent.RemoveSelectedFromLibrary,
             is LibraryEvent.DownloadSelected, is LibraryEvent.MarkSelectedAsCompleted,
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
-            is LibraryEvent.ViewSelectedManga, is LibraryEvent.UndoLibraryDelete -> handleActionEvent(event)
+            is LibraryEvent.ViewSelectedManga, is LibraryEvent.UndoLibraryDelete,
+            is LibraryEvent.OpenMoveToCategoryDialog, is LibraryEvent.DismissMoveToCategoryDialog,
+            is LibraryEvent.MoveToCategory -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
             is LibraryEvent.SyncEhFavorites,
@@ -183,6 +188,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetShowBadges -> viewModelScope.launch { libraryPreferences.setShowBadges(event.enabled) }
             is LibraryEvent.SetShowDownloadBadge ->
                 viewModelScope.launch { libraryPreferences.setShowDownloadBadge(event.enabled) }
+            is LibraryEvent.SetShowTitle ->
+                viewModelScope.launch { libraryPreferences.setShowTitle(event.show) }
             is LibraryEvent.SetStaggeredGrid ->
                 viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
             is LibraryEvent.SetDisplayMode ->
@@ -249,7 +256,33 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ShareSelectedManga -> shareSelectedManga()
             is LibraryEvent.ViewSelectedManga -> viewSelectedManga()
             is LibraryEvent.UndoLibraryDelete -> undoLibraryDelete(event.mangaIds)
+            is LibraryEvent.OpenMoveToCategoryDialog -> _state.update {
+                it.copy(showMoveToCategoryDialog = true, moveToCategoryMangaIds = it.selectedManga)
+            }
+            is LibraryEvent.DismissMoveToCategoryDialog -> _state.update {
+                it.copy(showMoveToCategoryDialog = false, moveToCategoryMangaIds = emptySet())
+            }
+            is LibraryEvent.MoveToCategory -> moveMangaToCategory(event.mangaIds, event.categoryId)
             else -> Unit
+        }
+    }
+
+    private fun moveMangaToCategory(mangaIds: Set<Long>, categoryId: Long) {
+        viewModelScope.launch {
+            val results = coroutineScope {
+                mangaIds.map { mangaId ->
+                    async { runCatching { categoryRepository.addMangaToCategory(mangaId, categoryId) } }
+                }.awaitAll()
+            }
+            val allSucceeded = results.all { it.isSuccess }
+            _state.update { it.copy(showMoveToCategoryDialog = false, moveToCategoryMangaIds = emptySet()) }
+            if (allSucceeded) {
+                selection.clear()
+                _state.update { it.copy(selectedManga = emptySet()) }
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_moved_to_category))
+            } else {
+                _effect.send(LibraryEffect.ShowSnackbar(R.string.library_move_to_category_error))
+            }
         }
     }
 
@@ -430,6 +463,9 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.showDownloadBadge
             .onEach { show -> _state.update { it.copy(showDownloadBadge = show) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showTitle
+            .onEach { show -> _state.update { it.copy(showTitle = show) } }
             .launchIn(viewModelScope)
         libraryPreferences.librarySortMode
             .onEach { sortModeInt ->
