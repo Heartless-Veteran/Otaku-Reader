@@ -34,6 +34,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -68,17 +70,21 @@ class BrowseViewModel @Inject constructor(
     private val _effect = Channel<BrowseEffect>()
     val effect = _effect.receiveAsFlow()
 
+    /** Serializes NSFW toggle writes so rapid double-taps cannot race. */
+    private val nsfwToggleMutex = Mutex()
+
     init {
-        // Collect sources and filter by NSFW preference
+        // Collect sources and filter by NSFW preference; also mirror showNsfw into state
+        // so the Browse overflow menu can display the current toggle state.
         viewModelScope.launch {
             combine(
                 getSourcesUseCase(),
                 generalPreferences.showNsfwContent
             ) { sources, showNsfw ->
-                if (showNsfw) sources else sources.filter { !it.isNsfw }
-            }.collect { filteredSources ->
+                Pair(if (showNsfw) sources else sources.filter { !it.isNsfw }, showNsfw)
+            }.collect { (filteredSources, showNsfw) ->
                 _sources.value = filteredSources
-                _state.update { it.copy(sources = filteredSources) }
+                _state.update { it.copy(sources = filteredSources, showNsfw = showNsfw) }
             }
         }
         observeSavedSearches()
@@ -233,6 +239,15 @@ class BrowseViewModel @Inject constructor(
             is BrowseEvent.ConfirmSaveSearch -> confirmSaveNamedSearch()
             is BrowseEvent.ApplyNamedSavedSearch -> applyNamedSavedSearch(event.search)
             is BrowseEvent.DeleteNamedSavedSearch -> deleteNamedSavedSearch(event.id)
+            is BrowseEvent.ToggleNsfwFilter -> {
+                // Mutex serializes rapid taps: the second tap waits until the first write
+                // has been queued, so both reads see different values and the toggle is correct.
+                viewModelScope.launch {
+                    nsfwToggleMutex.withLock {
+                        generalPreferences.setShowNsfwContent(!state.value.showNsfw)
+                    }
+                }
+            }
         }
     }
 

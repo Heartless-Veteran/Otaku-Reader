@@ -64,6 +64,8 @@ data class BrowseState(
     val showSaveSearchDialog: Boolean = false,
     /** Current text in the "Save search" name field. */
     val saveSearchName: String = "",
+    /** Mirrors [app.otakureader.core.preferences.GeneralPreferences.showNsfwContent] for display in the overflow menu. */
+    val showNsfw: Boolean = false,
 ) : UiState
 
 sealed interface BrowseEvent : UiEvent {
@@ -130,6 +132,9 @@ sealed interface BrowseEvent : UiEvent {
     data class ApplyNamedSavedSearch(val search: SavedSourceSearch) : BrowseEvent
     /** Removes a saved named search by its UUID id. */
     data class DeleteNamedSavedSearch(val id: String) : BrowseEvent
+
+    /** Toggles the global NSFW content preference from the Browse overflow menu. */
+    data object ToggleNsfwFilter : BrowseEvent
 }
 
 sealed interface BrowseEffect : UiEffect {

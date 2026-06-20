@@ -35,9 +35,12 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryAdd
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -173,6 +176,7 @@ fun BrowseScreen(
                     },
                 )
             } else {
+                var overflowExpanded by remember { mutableStateOf(false) }
                 TopAppBar(
                     title = { Text(stringResource(R.string.browse_title)) },
                     actions = {
@@ -181,6 +185,42 @@ fun BrowseScreen(
                         }
                         IconButton(onClick = onGlobalSearchClick) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_search))
+                        }
+                        if (state.selectedTab == BrowseTab.SOURCES || state.selectedTab == BrowseTab.EXTENSIONS) {
+                            Box {
+                                IconButton(onClick = { overflowExpanded = true }) {
+                                    Icon(
+                                        Icons.Default.MoreVert,
+                                        contentDescription = stringResource(R.string.browse_more_options)
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = overflowExpanded,
+                                    onDismissRequest = { overflowExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                if (state.showNsfw) {
+                                                    stringResource(R.string.browse_hide_nsfw)
+                                                } else {
+                                                    stringResource(R.string.browse_show_nsfw)
+                                                }
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.onEvent(BrowseEvent.ToggleNsfwFilter)
+                                            overflowExpanded = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     },
                 )

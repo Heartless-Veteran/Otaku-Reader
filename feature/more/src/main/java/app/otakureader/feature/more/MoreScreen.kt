@@ -4,6 +4,7 @@ import android.content.pm.PackageManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -35,12 +36,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +54,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.R as CoreUiR
+import app.otakureader.core.ui.components.GlassCard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.theme.LocalOtakuColors
@@ -88,6 +96,9 @@ fun MoreScreen(
         }
     }
 
+    val viewModel: MoreViewModel = hiltViewModel()
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -103,7 +114,16 @@ fun MoreScreen(
                 .padding(paddingValues)
         ) {
             AppLogoCard(versionName = versionName)
-            Spacer(modifier = Modifier.height(8.dp))
+            StatsSummaryCard(
+                currentStreak = state.currentStreak,
+                todayChaptersRead = state.todayChaptersRead,
+                dailyGoal = state.dailyGoal,
+                onClick = onNavigateToStatistics,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
 
             // ── Library Tools ──────────────────────────────────────────────────
             MoreSectionHeader(stringResource(R.string.more_section_library_tools))
@@ -226,6 +246,62 @@ fun MoreScreen(
     }
 }
 
+/**
+ * A glassy card widget showing the user's current reading streak and today's chapter
+ * goal progress.  Tapping it navigates to the full Statistics screen.
+ *
+ * When [dailyGoal] is 0 (goal disabled), only the raw chapter count is shown without
+ * a progress bar, so we don't show a meaningless 0/0 indicator.
+ */
+@Composable
+private fun StatsSummaryCard(
+    currentStreak: Int,
+    todayChaptersRead: Int,
+    dailyGoal: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cardCd = stringResource(R.string.more_stats_card_cd)
+    GlassCard(
+        modifier = modifier
+            .semantics { contentDescription = cardCd }
+            .clickable(onClick = onClick),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = stringResource(R.string.more_stats_streak, currentStreak),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+            if (dailyGoal > 0) {
+                LinearProgressIndicator(
+                    // Lambda form avoids unnecessary recomposition on each frame
+                    progress = {
+                        (todayChaptersRead.toFloat() / dailyGoal).coerceIn(0f, 1f)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.more_stats_chapters_today,
+                        todayChaptersRead,
+                        dailyGoal,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f),
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.more_stats_no_goal, todayChaptersRead),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.75f),
+                )
+            }
+        }
+    }
+}
+
 private val SectionDividerTopPadding = 8.dp
 private val SectionTitleStartPadding = 16.dp
 private val SectionTitleTopPadding = 12.dp
@@ -276,7 +352,7 @@ private fun AppLogoCard(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Box(
                     modifier = Modifier

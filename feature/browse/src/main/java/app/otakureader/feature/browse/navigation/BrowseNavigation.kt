@@ -1,15 +1,12 @@
 package app.otakureader.feature.browse.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import app.otakureader.core.navigation.Route
 import app.otakureader.feature.browse.BrowseScreen
-import app.otakureader.feature.browse.ExtensionsBottomSheet
+import app.otakureader.feature.browse.ExtensionsScreen
 import app.otakureader.feature.browse.GlobalSearchScreen
 import app.otakureader.feature.browse.SourceMangaDetailScreen
 import app.otakureader.feature.browse.SourceMangaScreen
@@ -79,20 +76,23 @@ fun NavGraphBuilder.sourceMangaDetailScreen(
     }
 }
 
+/**
+ * Registers [Route.ExtensionCatalog] as a regular full-screen composable destination.
+ *
+ * Previously this was a ModalBottomSheet overlay. Issue #1117 converts it to a standard
+ * screen so users get the Mihon/Komikku experience: a slide-in screen rather than a
+ * slide-up sheet. [ExtensionsTabBody] (embedded inline in Browse's Extensions pager tab)
+ * is unchanged — this destination is reached from the More screen and Onboarding.
+ */
 fun NavGraphBuilder.extensionsBottomSheet(
     onDismiss: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
     onNavigateToRepositories: () -> Unit = {},
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
-    composable<Route.ExtensionCatalog>(
-        enterTransition = { fadeIn(animationSpec = tween(200)) },
-        exitTransition = { fadeOut(animationSpec = tween(200)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(200)) },
-        popExitTransition = { fadeOut(animationSpec = tween(200)) }
-    ) {
-        ExtensionsBottomSheet(
-            onDismiss = onDismiss,
+    composable<Route.ExtensionCatalog> {
+        ExtensionsScreen(
+            onNavigateBack = onDismiss,
             onNavigateToSettings = onNavigateToSettings,
             onNavigateToRepositories = onNavigateToRepositories,
             onNavigateToExtensionDetail = onNavigateToExtensionDetail,

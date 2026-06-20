@@ -95,7 +95,7 @@ fun ExtensionsBottomSheet(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
@@ -320,6 +320,48 @@ private fun ExtensionsContent(
 }
 
 /**
+ * Full-screen Extensions destination that replaces the old ModalBottomSheet approach.
+ *
+ * This composable is registered as [Route.ExtensionCatalog] in the nav graph. It renders
+ * [ExtensionsContent] (which already contains a Scaffold and TopAppBar) without any
+ * bottom-sheet chrome, so navigating to it produces a regular slide-in screen rather than
+ * a slide-up overlay. This matches the Mihon/Komikku UX described in issue #1117.
+ *
+ * The [onNavigateBack] callback is wired to the TopAppBar close button via [onClose].
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExtensionsScreen(
+    onNavigateBack: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToRepositories: () -> Unit = {},
+    onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
+    viewModel: ExtensionsViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(viewModel.effect) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)
+                is ExtensionsEffect.ShowError -> snackbarHostState.showSnackbar(effect.message)
+            }
+        }
+    }
+
+    ExtensionsContent(
+        state = state,
+        onEvent = viewModel::onEvent,
+        snackbarHostState = snackbarHostState,
+        onClose = onNavigateBack,
+        onNavigateToSettings = onNavigateToSettings,
+        onNavigateToRepositories = onNavigateToRepositories,
+        onNavigateToExtensionDetail = onNavigateToExtensionDetail,
+    )
+}
+
+/**
  * Scaffold-free Extensions content for embedding in Browse's Extensions tab.
  * Manages its own [ExtensionsViewModel] and snackbar; no TopAppBar.
  */
@@ -333,7 +375,7 @@ internal fun ExtensionsTabBody(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(viewModel.effect) {
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ExtensionsEffect.ShowSnackbar -> snackbarHostState.showSnackbar(effect.message)

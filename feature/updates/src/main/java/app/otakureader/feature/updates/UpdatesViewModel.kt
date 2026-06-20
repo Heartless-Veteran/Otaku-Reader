@@ -73,6 +73,14 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.ClearDateFilter -> _state.update {
                 it.copy(dateFilterStart = null, dateFilterEnd = null)
             }
+            UpdatesEvent.ToggleDisplayMode -> _state.update { state ->
+                val next = if (state.displayMode == UpdatesDisplayMode.GROUPED_BY_MANGA) {
+                    UpdatesDisplayMode.GROUPED_BY_DATE
+                } else {
+                    UpdatesDisplayMode.GROUPED_BY_MANGA
+                }
+                state.copy(displayMode = next)
+            }
             UpdatesEvent.ShowUpdateErrors,
             UpdatesEvent.HideUpdateErrors,
             UpdatesEvent.ClearAllUpdateErrors,
@@ -250,7 +258,22 @@ class UpdatesViewModel @Inject constructor(
         _state.update { it.copy(isLoading = true, error = null) }
         getRecentUpdatesUseCase()
             .onEach { updates ->
-                _state.update { it.copy(isLoading = false, updates = updates) }
+                // Build the manga-grouped view. Group by manga ID, preserve ordering from
+                // the flat list (newest chapter first), then sort groups so the one with
+                // the most-recent chapter comes first.
+                val groups = updates
+                    .groupBy { it.manga.id }
+                    .values
+                    .map { chapterList ->
+                        MangaUpdateGroup(
+                            manga = chapterList.first().manga,
+                            chapters = chapterList,
+                        )
+                    }
+                    .sortedByDescending { group ->
+                        group.chapters.maxOf { it.chapter.dateFetch }
+                    }
+                _state.update { it.copy(isLoading = false, updates = updates, groupedByManga = groups) }
             }
             .catch { error ->
                 _state.update { it.copy(isLoading = false, error = error.message) }
