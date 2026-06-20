@@ -19,10 +19,6 @@ import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.data.download.ChapterDownloadRequest
 import app.otakureader.data.download.DownloadManager
-import app.otakureader.domain.model.CategoryUpdateFrequency
-import app.otakureader.domain.model.Manga
-import app.otakureader.domain.model.MangaStatus
-import app.otakureader.domain.repository.CategoryRepository
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetLibraryMangaUseCase
 import app.otakureader.domain.usecase.UpdateLibraryMangaUseCase
@@ -48,9 +44,9 @@ class LibraryUpdateWorker @AssistedInject constructor(
     private val generalPreferences: GeneralPreferences,
     private val downloadManager: DownloadManager,
     private val chapterRepository: ChapterRepository,
-    private val categoryRepository: CategoryRepository,
     private val notificationPreferences: app.otakureader.core.preferences.NotificationPreferences,
     private val updateRunSummaryDao: UpdateRunSummaryDao,
+    private val libraryUpdateFilter: LibraryUpdateFilter,
 ) : CoroutineWorker(context, workerParams) {
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
@@ -79,51 +75,12 @@ class LibraryUpdateWorker @AssistedInject constructor(
                 }
             }
 
-            // TODO: extract skip-filter + per-category-frequency logic into a LibraryUpdateFilter
-            //  class if this worker gains another feature; it's already at ~340 lines.
-            // Smart skip: exclude manga based on configurable conditions
-            val skipWithUnread = libraryPreferences.skipUpdatesWithUnread.first()
-            val skipCompleted = libraryPreferences.skipUpdatesWithCompleted.first()
-            val skipNeverStarted = libraryPreferences.skipUpdatesNeverStarted.first()
-            val skippedManga = mutableListOf<Manga>()
-            if (skipWithUnread || skipCompleted || skipNeverStarted) {
-                libraryManga = libraryManga.filter { manga ->
-                    when {
-                        skipWithUnread && manga.unreadCount > 0 -> { skippedManga += manga; false }
-                        skipCompleted && manga.status == MangaStatus.COMPLETED -> { skippedManga += manga; false }
-                        // lastRead is the max read_at across the manga's chapters (populated by
-                        // getFavoriteMangaWithUnreadCount). Null/0L means the user has never opened
-                        // any chapter, so "skip never started" excludes it from the update.
-                        skipNeverStarted && (manga.lastRead == null || manga.lastRead == 0L) -> { skippedManga += manga; false }
-                        else -> true
-                    }
-                }
-            }
-
-            // Per-category frequency filter: skip categories whose interval has not elapsed
+            // Apply smart-skip and per-category frequency filter via dedicated class.
             val now = System.currentTimeMillis()
-            val categoryFrequencyMap = categoryRepository.getCategories().first()
-                .associate { it.id to it.updateFrequency }
-            val categoryLastUpdate = libraryPreferences.categoryLastUpdateMs.first()
-            val updatedCategoryIds = mutableSetOf<Long>()
-            libraryManga = libraryManga.filter { manga ->
-                val catIds = manga.categoryIds
-                if (catIds.isEmpty()) return@filter true
-                // Evaluate ALL categories so every due category's timestamp is refreshed,
-                // not just the first one found by short-circuit evaluation.
-                val dueCatIds = catIds.filter { catId ->
-                    val freq = categoryFrequencyMap[catId] ?: CategoryUpdateFrequency.DAILY
-                    val elapsed = now - (categoryLastUpdate[catId] ?: 0L)
-                    when (freq) {
-                        CategoryUpdateFrequency.NEVER -> false
-                        CategoryUpdateFrequency.DAILY -> elapsed >= TimeUnit.DAYS.toMillis(1)
-                        CategoryUpdateFrequency.EVERY_3_DAYS -> elapsed >= TimeUnit.DAYS.toMillis(3)
-                        CategoryUpdateFrequency.WEEKLY -> elapsed >= TimeUnit.DAYS.toMillis(7)
-                    }
-                }
-                updatedCategoryIds.addAll(dueCatIds)
-                dueCatIds.isNotEmpty()
-            }
+            val filterResult = libraryUpdateFilter.apply(libraryManga, now)
+            libraryManga = filterResult.filtered
+            val skippedManga = filterResult.skipped
+            val updatedCategoryIds = filterResult.updatedCategoryIds
 
             val notificationsEnabled = generalPreferences.notificationsEnabled.first()
 
@@ -227,7 +184,7 @@ class LibraryUpdateWorker @AssistedInject constructor(
             // Persist per-category last-update timestamps only for categories where
             // at least one manga was successfully fetched (failures should not advance the clock).
             if (successfullyUpdatedCategoryIds.isNotEmpty()) {
-                val updated = categoryLastUpdate.toMutableMap()
+                val updated = libraryPreferences.categoryLastUpdateMs.first().toMutableMap()
                 successfullyUpdatedCategoryIds.forEach { catId -> updated[catId] = now }
                 libraryPreferences.setCategoryLastUpdateMs(updated)
             }
