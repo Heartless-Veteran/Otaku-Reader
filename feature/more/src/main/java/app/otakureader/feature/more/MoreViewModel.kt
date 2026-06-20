@@ -45,7 +45,8 @@ class MoreViewModel @Inject constructor(
         combine(
             readingGoalPreferences.dailyChapterGoal,
             readingGoalPreferences.weeklyChapterGoal,
-        ) { daily, weekly -> Pair(daily, weekly) }
+            ::Pair,
+        )
             .distinctUntilChanged()
             .flatMapLatest { (dailyGoal, weeklyGoal) ->
                 statisticsRepository.getReadingGoalProgress(dailyGoal, weeklyGoal)

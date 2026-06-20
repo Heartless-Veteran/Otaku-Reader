@@ -85,8 +85,7 @@ class StatisticsRepositoryImpl @Inject constructor(
             .sorted()
         
         val currentStreak = calculateCurrentStreak(readingDays, today)
-        val bestStreak = calculateBestStreak(readingDays)
-        
+
         ReadingGoal(
             dailyGoal = dailyGoal,
             dailyProgress = todayCount,
