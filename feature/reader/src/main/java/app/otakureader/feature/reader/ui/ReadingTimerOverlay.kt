@@ -1,7 +1,6 @@
 package app.otakureader.feature.reader.ui
 
 import android.os.SystemClock
-import java.util.Locale
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -14,6 +13,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import app.otakureader.feature.reader.R
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -74,7 +75,7 @@ fun ReadingTimerOverlay(
             )
             Spacer(Modifier.width(8.dp))
             Text(
-                text = String.format(Locale.US, "%02d:%02d:%02d", hours, minutes, seconds),
+                text = stringResource(R.string.reading_timer_format, hours, minutes, seconds),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface
             )
