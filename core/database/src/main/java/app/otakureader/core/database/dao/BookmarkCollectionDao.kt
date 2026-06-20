@@ -12,7 +12,9 @@ interface BookmarkCollectionDao {
     @Query("SELECT * FROM bookmark_collections ORDER BY created_at ASC")
     fun getAllCollections(): Flow<List<BookmarkCollectionEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    // ABORT (not REPLACE): REPLACE performs delete+insert which triggers ON DELETE SET NULL
+    // on child page_bookmarks rows, silently detaching all bookmarks from the collection.
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(collection: BookmarkCollectionEntity): Long
 
     @Query("UPDATE bookmark_collections SET name = :name WHERE id = :id")

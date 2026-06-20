@@ -772,6 +772,15 @@ class DatabaseMigrationTest {
                 "chapterNumber, sourceOrder, dateFetch, dateUpload, lastModified) " +
                 "VALUES (1, '/chapter/1', 'Chapter 1', 0, 1, 5, 1.0, 0, 0, 0, 0)",
         )
+        // Insert referential child rows (reading_history and page_bookmarks reference chapters).
+        // These must survive the table reconstruction without FK violations.
+        db.execSQL(
+            "INSERT INTO reading_history (chapter_id, read_at, read_duration_ms) VALUES (1, 123456, 1000)",
+        )
+        db.execSQL(
+            "INSERT INTO page_bookmarks (manga_id, chapter_id, page_index, note, created_at) " +
+                "VALUES (1, 1, 2, 'Note', 123456)",
+        )
         MIGRATION_37_38.migrate(db)
         val cursor = db.query("SELECT name, read, lastPageRead FROM chapters WHERE url = '/chapter/1'")
         assertTrue("Row must survive migration 37→38", cursor.moveToFirst())
@@ -779,6 +788,15 @@ class DatabaseMigrationTest {
         assertEquals("read must survive migration", 0, cursor.getInt(1))
         assertEquals("lastPageRead must survive migration", 5, cursor.getInt(2))
         cursor.close()
+        // Verify referential child rows also survived.
+        val historyCursor = db.query("SELECT COUNT(*) FROM reading_history")
+        assertTrue(historyCursor.moveToFirst())
+        assertEquals("reading_history rows must survive migration", 1, historyCursor.getInt(0))
+        historyCursor.close()
+        val bookmarkCursor = db.query("SELECT COUNT(*) FROM page_bookmarks")
+        assertTrue(bookmarkCursor.moveToFirst())
+        assertEquals("page_bookmarks rows must survive migration", 1, bookmarkCursor.getInt(0))
+        bookmarkCursor.close()
         db.close()
     }
 
@@ -822,7 +840,18 @@ class DatabaseMigrationTest {
     fun migration38To39_collectionIdDefaultsToNull() {
         val db = helper.createDatabase(TEST_DB, 37)
         MIGRATION_37_38.migrate(db)
-        // Insert page_bookmark (page_bookmarks has no FK to chapters or manga enforced here).
+        // Insert required parent rows before page_bookmarks to satisfy FK constraints.
+        db.execSQL(
+            "INSERT INTO manga (sourceId, url, title, status, favorite, lastUpdate, initialized, " +
+                "viewerFlags, chapterFlags, coverLastModified, dateAdded, autoDownload, " +
+                "notifyNewChapters, contentRating, userCompleted, userDropped) " +
+                "VALUES (1, '/manga/1', 'Test Manga', 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0)",
+        )
+        db.execSQL(
+            "INSERT INTO chapters (mangaId, url, name, read, lastPageRead, " +
+                "chapterNumber, sourceOrder, dateFetch, dateUpload, lastModified) " +
+                "VALUES (1, '/chapter/1', 'Ch 1', 0, 0, 1.0, 0, 0, 0, 0)",
+        )
         db.execSQL(
             "INSERT INTO page_bookmarks (manga_id, chapter_id, page_index, note, created_at) " +
                 "VALUES (1, 1, 0, NULL, 0)",

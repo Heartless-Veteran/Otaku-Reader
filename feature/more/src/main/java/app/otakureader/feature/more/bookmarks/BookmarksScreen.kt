@@ -30,7 +30,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -571,6 +574,15 @@ private fun ManageCollectionsDialog(
                         onValueChange = { newCollectionName = it },
                         placeholder = { Text(stringResource(R.string.bookmarks_new_collection_hint)) },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                if (newCollectionName.isNotBlank()) {
+                                    onCreateCollection(newCollectionName.trim())
+                                    newCollectionName = ""
+                                }
+                            },
+                        ),
                         modifier = Modifier.weight(1f),
                     )
                     TextButton(
@@ -595,6 +607,15 @@ private fun ManageCollectionsDialog(
                                     value = renameText,
                                     onValueChange = { renameText = it },
                                     singleLine = true,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    keyboardActions = KeyboardActions(
+                                        onDone = {
+                                            if (renameText.isNotBlank()) {
+                                                onRenameCollection(collection.id, renameText.trim())
+                                                renamingId = null
+                                            }
+                                        },
+                                    ),
                                     modifier = Modifier.weight(1f),
                                 )
                                 TextButton(onClick = {

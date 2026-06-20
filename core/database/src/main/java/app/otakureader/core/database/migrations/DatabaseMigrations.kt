@@ -473,6 +473,13 @@ internal val MIGRATION_36_37 = object : Migration(36, 37) {
 /** Drop the chapter-level bookmark column (replaced by the page_bookmarks table). */
 internal val MIGRATION_37_38 = object : Migration(37, 38) {
     override fun migrate(db: SupportSQLiteDatabase) {
+        // Disable FK constraints for the duration of this table reconstruction.
+        // reading_history and page_bookmarks reference chapters(id); dropping the old table
+        // would trigger SQLITE_CONSTRAINT_FOREIGNKEY if FK enforcement is active.
+        // FK constraints cannot be toggled inside an explicit transaction in strict SQLite, but
+        // Android's SQLite implementation allows it and the pattern is widely used in Room migrations.
+        db.execSQL("PRAGMA foreign_keys = OFF")
+
         // SQLite cannot DROP COLUMN directly, so we recreate the table without the bookmark column.
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS chapters_new (
@@ -506,6 +513,8 @@ internal val MIGRATION_37_38 = object : Migration(37, 38) {
         db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_dateFetch ON chapters(dateFetch)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_mangaId_dateFetch ON chapters(mangaId, dateFetch)")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_chapters_mangaId_read_sourceOrder ON chapters(mangaId, read, sourceOrder)")
+
+        db.execSQL("PRAGMA foreign_keys = ON")
     }
 }
 
