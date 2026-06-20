@@ -10,7 +10,9 @@ enum class LibrarySortMode {
     LAST_READ,
     DATE_ADDED,
     UNREAD_COUNT,
-    SOURCE
+    SOURCE,
+    LAST_UPDATED,
+    TOTAL_CHAPTERS
 }
 
 enum class LibraryFilterMode {
@@ -58,6 +60,7 @@ data class LibraryState(
     val gridSize: Int = 3,
     val showBadges: Boolean = true,
     val showDownloadBadge: Boolean = true,
+    val showTitle: Boolean = true,
     val downloadCountByManga: Map<Long, Int> = emptyMap(),
     val isStaggeredGrid: Boolean = false,
     val displayMode: LibraryDisplayMode = LibraryDisplayMode.GRID,
@@ -97,6 +100,9 @@ data class LibraryState(
     // L2/L3: long-press context menu — holds the id of the manga whose popup is open
     val contextMenuMangaId: Long? = null,
     val displayName: String = "",
+    // Move to category bulk action (GAP 2)
+    val showMoveToCategoryDialog: Boolean = false,
+    val moveToCategoryMangaIds: Set<Long> = emptySet(),
 )
 
 data class LibraryMangaItem(
@@ -114,6 +120,7 @@ data class LibraryMangaItem(
     val dateAdded: Long = 0L,
     val status: MangaStatus = MangaStatus.UNKNOWN,
     val totalChapterCount: Int = 0,
+    val lastUpdate: Long = 0L,
     val userCompleted: Boolean = false,
     val userDropped: Boolean = false,
     val genres: List<String> = emptyList(),
@@ -175,6 +182,7 @@ sealed class LibraryEvent {
     data class SetGridSize(val size: Int) : LibraryEvent()
     data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
     data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
+    data class SetShowTitle(val show: Boolean) : LibraryEvent()
     data class SetStaggeredGrid(val enabled: Boolean) : LibraryEvent()
     data class SetDisplayMode(val mode: LibraryDisplayMode) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
@@ -202,6 +210,10 @@ sealed class LibraryEvent {
     data class MigrateMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class SelectMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class UndoLibraryDelete(val mangaIds: Set<Long>) : LibraryEvent()
+    // Move to category bulk action (GAP 2)
+    data object OpenMoveToCategoryDialog : LibraryEvent()
+    data object DismissMoveToCategoryDialog : LibraryEvent()
+    data class MoveToCategory(val mangaIds: Set<Long>, val categoryId: Long) : LibraryEvent()
 }
 
 sealed class LibraryEffect {

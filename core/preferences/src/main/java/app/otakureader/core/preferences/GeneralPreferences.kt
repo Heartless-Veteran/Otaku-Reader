@@ -87,6 +87,14 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: false }
     suspend fun setShowNsfwContent(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW_CONTENT] = value }
 
+    /** Language codes (e.g. "en", "ja") the user wants to see in Browse. Default: all English sources. */
+    val enabledSourceLanguages: Flow<Set<String>> = dataStore.data.map {
+        it[Keys.ENABLED_SOURCE_LANGUAGES] ?: setOf("en")
+    }
+    suspend fun setEnabledSourceLanguages(languages: Set<String>) = dataStore.edit {
+        it[Keys.ENABLED_SOURCE_LANGUAGES] = languages
+    }
+
     // --- Discord Rich Presence ---
 
     /** Whether Discord Rich Presence is enabled. Default: off (opt-in). */
@@ -492,6 +500,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SOURCE_CATEGORY_MAP = stringPreferencesKey("source_category_map")
         val SAVED_SOURCE_SEARCHES_JSON = stringPreferencesKey("saved_source_searches_json")
         val EXTENSION_FIRST_SEEN_HASHES = stringPreferencesKey("extension_first_seen_hashes")
+        val ENABLED_SOURCE_LANGUAGES = stringSetPreferencesKey("enabled_source_languages")
     }
 
     companion object {

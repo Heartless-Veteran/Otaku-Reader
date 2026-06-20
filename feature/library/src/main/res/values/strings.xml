@@ -103,6 +103,9 @@
     <string name="library_mark_selected_read">Mark as read</string>
     <string name="library_mark_selected_unread">Mark as unread</string>
     <string name="library_download_selected">Download selected</string>
+    <string name="library_move_to_category">Move to category</string>
+    <string name="library_moved_to_category">Moved to category</string>
+    <string name="library_move_to_category_error">Some items could not be moved</string>
     <string name="library_remove_selected">Remove from library</string>
     <string name="library_more_actions">More actions</string>
     <string name="library_select_all">Select all</string>
@@ -194,6 +197,7 @@
     <string name="display_grid_size_value">%1$d columns</string>
     <string name="display_show_badges">Show unread badges</string>
     <string name="display_show_download_badge">Show download badge</string>
+    <string name="display_show_title">Show title on cover</string>
     <string name="display_staggered_grid">Staggered grid</string>
     <string name="group_category_label">Category</string>
     <string name="group_by_category">Group by category</string>
@@ -210,6 +214,8 @@
     <string name="sort_date_added">Date added</string>
     <string name="sort_unread_count">Unread count</string>
     <string name="sort_source">Source</string>
+    <string name="sort_last_updated">Last updated</string>
+    <string name="sort_total_chapters">Total chapters</string>
     <string name="filter_all">All</string>
     <string name="filter_downloaded">Downloaded</string>
     <string name="filter_unread">Unread</string>

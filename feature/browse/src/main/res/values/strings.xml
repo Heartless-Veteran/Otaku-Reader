@@ -154,6 +154,9 @@
     <string name="browse_add_to_library">Add to Library</string>
     <string name="browse_exit_selection">Exit selection</string>
     <string name="browse_clear_selection">Clear selection</string>
+    <!-- Browse language filter (GAP 12) -->
+    <string name="browse_language_filter">Filter languages</string>
+    <string name="browse_no_languages">No languages detected</string>
     <!-- Browse overflow menu: NSFW quick filter (#1117) -->
     <string name="browse_show_nsfw">Show NSFW (18+)</string>
     <string name="browse_hide_nsfw">Hide NSFW (18+)</string>

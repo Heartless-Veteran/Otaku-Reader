@@ -8,6 +8,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,10 +18,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -100,6 +110,14 @@ import kotlinx.coroutines.launch
  */
 
 private const val VOLUME_HOLD_SKIP_PAGES = 5
+private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
+private val DIRECTION_INDICATOR_BOTTOM_PADDING = 80.dp
+private val DIRECTION_INDICATOR_CORNER_RADIUS = 8.dp
+private val DIRECTION_INDICATOR_HORIZONTAL_PADDING = 12.dp
+private val DIRECTION_INDICATOR_VERTICAL_PADDING = 8.dp
+private val DIRECTION_INDICATOR_ICON_SIZE = 18.dp
+private val DIRECTION_INDICATOR_ICON_SPACING = 6.dp
+private const val DIRECTION_INDICATOR_SCRIM_ALPHA = 0.7f
 
 @Composable
 @Suppress("UnusedParameter")
@@ -121,6 +139,7 @@ fun ReaderScreen(
     var showZoomIndicator by remember { mutableStateOf(false) }
     var showBrightnessSlider by remember { mutableStateOf(false) }
     var showChapterFilterSheet by remember { mutableStateOf(false) }
+    var showDirectionIndicator by remember { mutableStateOf(false) }
     
     // Handle effects
     LaunchedEffect(Unit) {
@@ -176,6 +195,13 @@ fun ReaderScreen(
         }
     }
     
+    // Reading direction indicator — brief arrow overlay on direction change
+    LaunchedEffect(state.readingDirection) {
+        showDirectionIndicator = true
+        delay(DIRECTION_INDICATOR_DURATION_MS)
+        showDirectionIndicator = false
+    }
+
     // Handle zoom indicator visibility
     LaunchedEffect(state.zoomLevel) {
         if (state.zoomLevel != 1f) {
@@ -317,6 +343,8 @@ fun ReaderScreen(
             visualEffectsEnabled = state.visualEffectsEnabled,
             onDismiss = onNavigateBack,
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+            onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
+            isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
             onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
             onPageSliderChange = { fraction ->
@@ -455,6 +483,15 @@ fun ReaderScreen(
                 modifier = Modifier
             )
         }
+
+        // Reading direction indicator — bottom-start, fades after 2 s
+        ReadingDirectionIndicator(
+            readingDirection = state.readingDirection,
+            isVisible = showDirectionIndicator && !state.isMenuVisible,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = DIRECTION_INDICATOR_BOTTOM_PADDING)
+        )
 
         // Snackbar host
         SnackbarHost(
@@ -622,6 +659,45 @@ private fun ReaderContent(
                     ColorFilterMode.NONE -> Unit
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReadingDirectionIndicator(
+    readingDirection: app.otakureader.domain.model.ReadingDirection,
+    isVisible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier,
+    ) {
+        val (icon, label) = when (readingDirection) {
+            app.otakureader.domain.model.ReadingDirection.LTR ->
+                Icons.AutoMirrored.Filled.ArrowForward to stringResource(R.string.reader_direction_ltr)
+            app.otakureader.domain.model.ReadingDirection.RTL ->
+                Icons.AutoMirrored.Filled.ArrowBack to stringResource(R.string.reader_direction_rtl)
+            app.otakureader.domain.model.ReadingDirection.VERTICAL ->
+                Icons.Default.ArrowDownward to stringResource(R.string.reader_direction_vertical)
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(
+                    Color.Black.copy(alpha = DIRECTION_INDICATOR_SCRIM_ALPHA),
+                    RoundedCornerShape(DIRECTION_INDICATOR_CORNER_RADIUS),
+                )
+                .padding(
+                    horizontal = DIRECTION_INDICATOR_HORIZONTAL_PADDING,
+                    vertical = DIRECTION_INDICATOR_VERTICAL_PADDING,
+                )
+        ) {
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(DIRECTION_INDICATOR_ICON_SIZE))
+            Spacer(Modifier.width(DIRECTION_INDICATOR_ICON_SPACING))
+            Text(label, color = Color.White, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

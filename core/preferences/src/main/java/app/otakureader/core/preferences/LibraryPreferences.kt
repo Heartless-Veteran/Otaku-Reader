@@ -31,11 +31,15 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val isStaggeredGrid: Flow<Boolean> = dataStore.data.map { it[Keys.IS_STAGGERED_GRID] ?: false }
     suspend fun setStaggeredGrid(value: Boolean) = dataStore.edit { it[Keys.IS_STAGGERED_GRID] = value }
 
-    // --- Badges ---
+    // --- Badges & Title ---
 
     /** Whether to show unread-count badges on library covers. */
     val showBadges: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_BADGES] ?: true }
     suspend fun setShowBadges(value: Boolean) = dataStore.edit { it[Keys.SHOW_BADGES] = value }
+
+    /** Whether to show the manga title overlaid on cover art in the library grid. */
+    val showTitle: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_TITLE] ?: true }
+    suspend fun setShowTitle(value: Boolean) = dataStore.edit { it[Keys.SHOW_TITLE] = value }
 
     /** Whether to show downloaded-chapter count badges on library covers. */
     val showDownloadBadge: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_DOWNLOAD_BADGE] ?: true }
@@ -171,6 +175,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
         val SHOW_DOWNLOAD_BADGE = booleanPreferencesKey("show_download_badge")
+        val SHOW_TITLE = booleanPreferencesKey("library_show_title")
         val LIBRARY_SORT_MODE = intPreferencesKey("library_sort_mode")
         val LIBRARY_DISPLAY_MODE = intPreferencesKey("library_display_mode")
         val LIBRARY_FILTER_MODE = intPreferencesKey("library_filter_mode")

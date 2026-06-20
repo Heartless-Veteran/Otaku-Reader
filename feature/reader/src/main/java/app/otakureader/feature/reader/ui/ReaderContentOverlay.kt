@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LinearScale
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewModule
@@ -80,6 +81,8 @@ import app.otakureader.feature.reader.R
  *                             Material 3 controls are used (respects user preference).
  * @param onDismiss     Called when the back arrow is tapped — typically navigates back.
  * @param onSettingsClick Called when the settings icon is tapped.
+ * @param onDownloadChapter Called when the download icon is tapped; null hides the button.
+ * @param isCurrentChapterDownloaded When true, the download button is hidden.
  * @param onPrevChapter Called when "Prev chapter" is tapped.
  * @param onNextChapter Called when "Next chapter" is tapped.
  * @param onPageSliderChange Called with a 0–1 normalized value as the user scrubs the slider.
@@ -96,6 +99,8 @@ fun ReaderContentOverlay(
     visualEffectsEnabled: Boolean,
     onDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
+    onDownloadChapter: (() -> Unit)? = null,
+    isCurrentChapterDownloaded: Boolean = false,
     onPrevChapter: () -> Unit,
     onNextChapter: () -> Unit,
     onPageSliderChange: (Float) -> Unit,
@@ -117,6 +122,8 @@ fun ReaderContentOverlay(
                 visualEffectsEnabled = visualEffectsEnabled,
                 onDismiss = onDismiss,
                 onSettingsClick = onSettingsClick,
+                onDownloadChapter = onDownloadChapter,
+                isCurrentChapterDownloaded = isCurrentChapterDownloaded,
                 onPrevChapter = onPrevChapter,
                 onNextChapter = onNextChapter,
                 onPageSliderChange = onPageSliderChange,
@@ -131,6 +138,8 @@ fun ReaderContentOverlay(
                 visualEffectsEnabled = visualEffectsEnabled,
                 onDismiss = onDismiss,
                 onSettingsClick = onSettingsClick,
+                onDownloadChapter = onDownloadChapter,
+                isCurrentChapterDownloaded = isCurrentChapterDownloaded,
                 onPrevChapter = onPrevChapter,
                 onNextChapter = onNextChapter,
                 onPageSliderChange = onPageSliderChange,
@@ -153,6 +162,8 @@ private fun MangaReaderOverlayContent(
     visualEffectsEnabled: Boolean,
     onDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
+    onDownloadChapter: (() -> Unit)? = null,
+    isCurrentChapterDownloaded: Boolean = false,
     onPrevChapter: () -> Unit,
     onNextChapter: () -> Unit,
     onPageSliderChange: (Float) -> Unit,
@@ -192,6 +203,15 @@ private fun MangaReaderOverlayContent(
                     style = MaterialTheme.typography.bodySmall,
                     color = LocalOtakuColors.current.unselectedPageIndicator
                 )
+            }
+            if (onDownloadChapter != null && !isCurrentChapterDownloaded) {
+                IconButton(onClick = onDownloadChapter) {
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = stringResource(R.string.reader_download_chapter),
+                        tint = LocalOtakuColors.current.unselectedPageIndicator
+                    )
+                }
             }
             IconButton(onClick = onSettingsClick) {
                 Icon(
@@ -326,6 +346,8 @@ private fun ManhwaReaderOverlayContent(
     visualEffectsEnabled: Boolean,
     onDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
+    onDownloadChapter: (() -> Unit)? = null,
+    isCurrentChapterDownloaded: Boolean = false,
     onPrevChapter: () -> Unit,
     onNextChapter: () -> Unit,
     onPageSliderChange: (Float) -> Unit,
@@ -382,6 +404,15 @@ private fun ManhwaReaderOverlayContent(
                     style = MaterialTheme.typography.bodySmall,
                     color = LocalOtakuColors.current.unselectedPageIndicator
                 )
+            }
+            if (onDownloadChapter != null && !isCurrentChapterDownloaded) {
+                IconButton(onClick = onDownloadChapter) {
+                    Icon(
+                        Icons.Default.Download,
+                        contentDescription = stringResource(R.string.reader_download_chapter),
+                        tint = accentColor
+                    )
+                }
             }
             IconButton(onClick = onSettingsClick) {
                 Icon(
