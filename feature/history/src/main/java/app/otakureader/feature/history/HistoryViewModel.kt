@@ -79,6 +79,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryEvent.ClearHistory -> clearHistory()
             is HistoryEvent.ClearSelection -> clearSelection()
             is HistoryEvent.SelectAll -> selectAll()
+            is HistoryEvent.InvertSelection -> invertSelection()
             is HistoryEvent.OnSearchQueryChange -> {
                 searchQuery.value = event.query
                 _state.update { it.copy(searchQuery = event.query) }
@@ -134,6 +135,18 @@ class HistoryViewModel @Inject constructor(
         _state.update { state ->
             val allIds = state.history.map { it.chapter.id }.toSet()
             state.copy(selectedItems = allIds)
+        }
+    }
+
+    /**
+     * Selects every visible history entry not currently selected and deselects the rest
+     * (Mihon/Komikku parity). [HistoryState.history] is already the filtered/searched list, so
+     * inverting against it never touches entries hidden by an active search or date filter.
+     */
+    private fun invertSelection() {
+        _state.update { state ->
+            val allIds = state.history.map { it.chapter.id }.toSet()
+            state.copy(selectedItems = allIds - state.selectedItems)
         }
     }
 
