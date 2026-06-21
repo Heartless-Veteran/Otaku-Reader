@@ -513,8 +513,6 @@ fun LibraryScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
 /**
  * Thin progress banner shown at the top of the library while a background library update is
  * running, matching Mihon/Komikku's update indicator. Driven by [LibraryState.isLibraryUpdating].
