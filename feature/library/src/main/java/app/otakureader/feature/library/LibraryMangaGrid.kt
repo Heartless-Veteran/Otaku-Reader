@@ -101,6 +101,9 @@ internal fun isManhwa(manga: LibraryMangaItem): Boolean {
 /** Max title lines for the caption shown below covers in comfortable grid mode. */
 private const val COMFORTABLE_TITLE_MAX_LINES = 2
 
+/** Padding around the title caption shown below covers in comfortable grid mode. */
+private val COMFORTABLE_TITLE_PADDING = 4.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun MangaGrid(
@@ -521,7 +524,11 @@ private fun LibraryMangaPageContent(
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 4.dp, start = 4.dp, end = 4.dp),
+                                    .padding(
+                                        top = COMFORTABLE_TITLE_PADDING,
+                                        start = COMFORTABLE_TITLE_PADDING,
+                                        end = COMFORTABLE_TITLE_PADDING,
+                                    ),
                             )
                         }
                     } else {

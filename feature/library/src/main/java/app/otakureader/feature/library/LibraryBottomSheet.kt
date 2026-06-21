@@ -90,6 +90,9 @@ internal fun LibraryBottomSheet(
     }
 }
 
+/** Spacing between the display-mode chips in the library display settings. */
+private val DISPLAY_MODE_CHIP_SPACING = 8.dp
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DisplayTab(
@@ -163,8 +166,8 @@ private fun DisplayTab(
         )
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
+            verticalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
         ) {
             // Explicit display order (Grid → Comfortable → List), independent of the enum's
             // declaration/ordinal order, which keeps COMFORTABLE_GRID appended for stable
