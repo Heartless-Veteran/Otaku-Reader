@@ -500,6 +500,9 @@ class LibraryViewModel @Inject constructor(
         generalPreferences.visualEffectsEnabled
             .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
             .launchIn(viewModelScope)
+        libraryUpdateScheduler.isUpdating()
+            .onEach { updating -> _state.update { it.copy(isLibraryUpdating = updating) } }
+            .launchIn(viewModelScope)
         libraryPreferences.groupByCategory
             .onEach { groupByCategory -> _state.update { it.copy(groupByCategory = groupByCategory) } }
             .launchIn(viewModelScope)
