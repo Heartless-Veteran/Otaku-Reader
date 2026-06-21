@@ -53,6 +53,7 @@ class UpdatesViewModel @Inject constructor(
         observeActiveDownloads()
     }
 
+    @Suppress("CyclomaticComplexMethod")
     fun onEvent(event: UpdatesEvent) {
         when (event) {
             UpdatesEvent.Refresh -> loadUpdates()
@@ -128,17 +129,37 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
+    /**
+     * IDs of the updates currently visible to the user — i.e. those passing the active date
+     * filter (the same filter the screen applies before rendering). Selection-building actions
+     * must restrict to these so they never select date-hidden entries.
+     */
+    private fun UpdatesState.visibleUpdateIds(): Set<Long> {
+        val start = dateFilterStart
+        val end = dateFilterEnd
+        return updates.filter { update ->
+            val date = update.chapter.dateFetch
+            (start == null || date >= start) && (end == null || date <= end)
+        }.map { it.chapter.id }.toSet()
+    }
+
     private fun selectAll() {
         _state.update { state ->
-            state.copy(selectedItems = state.updates.map { it.chapter.id }.toSet())
+            // Add only the visible updates; keep any already-selected hidden entries intact.
+            state.copy(selectedItems = state.selectedItems + state.visibleUpdateIds())
         }
     }
 
-    /** Selects every update not currently selected and deselects the rest (Mihon/Komikku parity). */
+    /**
+     * Selects every visible update not currently selected and deselects the visible ones that are
+     * (Mihon/Komikku parity). Restricted to the date-filtered set so a filter can't flip the
+     * selection state of hidden updates; already-selected hidden entries are preserved.
+     */
     private fun invertSelection() {
         _state.update { state ->
-            val allIds = state.updates.map { it.chapter.id }.toSet()
-            state.copy(selectedItems = allIds - state.selectedItems)
+            val visibleIds = state.visibleUpdateIds()
+            val keptHidden = state.selectedItems - visibleIds
+            state.copy(selectedItems = keptHidden + (visibleIds - state.selectedItems))
         }
     }
 
