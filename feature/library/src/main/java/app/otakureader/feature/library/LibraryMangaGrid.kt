@@ -347,7 +347,7 @@ private fun LibraryMangaPageContent(
                 }
             }
         }
-    } else if (state.isStaggeredGrid) {
+    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
             contentPadding = PaddingValues(8.dp),
@@ -457,7 +457,10 @@ private fun LibraryMangaPageContent(
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                 val continueReading = manga.lastRead != null && manga.unreadCount > 0
-                val cardContent: @Composable () -> Unit = {
+                // Comfortable grid (#Komikku parity): cover with the title shown as a caption
+                // below it rather than overlaid on the cover.
+                val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
+                val card: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
                         coverUrl = manga.thumbnailUrl,
@@ -467,7 +470,7 @@ private fun LibraryMangaPageContent(
                         readProgress = readProgress,
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
-                        showTitle = state.showTitle,
+                        showTitle = if (comfortable) false else state.showTitle,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 &&
                                 state.showDownloadBadge && downloadCount > 0 -> {
@@ -493,6 +496,24 @@ private fun LibraryMangaPageContent(
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                val cardContent: @Composable () -> Unit = {
+                    if (comfortable) {
+                        Column {
+                            card()
+                            Text(
+                                text = manga.title,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp, start = 4.dp, end = 4.dp),
+                            )
+                        }
+                    } else {
+                        card()
+                    }
                 }
                 Box {
                     if (state.visualEffectsEnabled) {

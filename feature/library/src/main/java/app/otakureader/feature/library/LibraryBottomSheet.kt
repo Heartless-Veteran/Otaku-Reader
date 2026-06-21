@@ -154,6 +154,26 @@ private fun DisplayTab(
             )
         }
 
+        // Display mode picker (grid / comfortable / list) — matches Mihon/Komikku.
+        Text(
+            text = stringResource(R.string.display_mode_label),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LibraryDisplayMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = state.displayMode == mode,
+                    onClick = { onEvent(LibraryEvent.SetDisplayMode(mode)) },
+                    label = { Text(mode.label()) },
+                )
+            }
+        }
+
         // Show title on cover
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -340,6 +360,13 @@ private fun GroupTab(
             )
         }
     }
+}
+
+@Composable
+private fun LibraryDisplayMode.label(): String = when (this) {
+    LibraryDisplayMode.GRID -> stringResource(R.string.display_mode_grid)
+    LibraryDisplayMode.COMFORTABLE_GRID -> stringResource(R.string.display_mode_comfortable)
+    LibraryDisplayMode.LIST -> stringResource(R.string.display_mode_list)
 }
 
 @Composable
