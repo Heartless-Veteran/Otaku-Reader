@@ -22,19 +22,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -53,13 +49,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.background.CoverSplashBackground
-import app.otakureader.core.ui.components.GlitchText
-import app.otakureader.core.ui.components.GlowButton
-import app.otakureader.core.ui.components.InkButton
-import app.otakureader.core.ui.components.TypewriterText
-import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.core.ui.theme.LocalOtakuColors
-import app.otakureader.core.ui.theme.manhwaAccent
 import app.otakureader.feature.details.R
 import coil3.compose.AsyncImage
 
@@ -72,6 +62,11 @@ private const val HERO_BG_PARALLAX_FACTOR = 0.4f
 private const val HERO_FG_PARALLAX_FACTOR = 0.15f
 private const val HERO_BG_SCALE = 1.15f
 
+// Header info-block tokens.
+private const val HEADER_TITLE_MAX_LINES = 3
+private const val HEADER_SUBTITLE_ALPHA = 0.8f
+private val HEADER_ACTION_ICON_SIZE = 18.dp
+
 @Composable
 internal fun MangaHeader(
     manga: app.otakureader.domain.model.Manga,
@@ -83,24 +78,6 @@ internal fun MangaHeader(
     modifier: Modifier = Modifier
 ) {
     val otaku = LocalOtakuColors.current
-
-    // Detect content type from sourceId string representation
-    val sourceIdStr = remember(manga.sourceId) { manga.sourceId.toString() }
-    val autoDetectedContentType = remember(sourceIdStr) {
-        val src = sourceIdStr.lowercase()
-        if (src.contains("manhwa") || src.contains("webtoon") ||
-            src.contains("korean") || src.contains("toon")
-        ) {
-            ContentType.MANHWA
-        } else {
-            ContentType.MANGA
-        }
-    }
-    // Local override toggle — survives recomposition, resets when manga changes
-    var isOverriddenManhwa by rememberSaveable(manga.id) {
-        mutableStateOf(autoDetectedContentType == ContentType.MANHWA)
-    }
-    val contentType = if (isOverriddenManhwa) ContentType.MANHWA else ContentType.MANGA
 
     // Bloom enter animation — fades the hero in on first composition.
     // The Animatable is remembered so Compose reads its `value` as observable state,
@@ -243,94 +220,67 @@ internal fun MangaHeader(
                         }
                     }
 
-                    // Title, author, action buttons
+                    // Clean Mihon/Komikku-style info block: plain bold title, author, artist,
+                    // status, and an add-to-library button. No animated title, content-type
+                    // toggle, or glow buttons (those Otaku-exclusive flourishes diverged from
+                    // Komikku's look and were dropped per the parity pass).
                     Column(modifier = Modifier.weight(1f)) {
-                        // Animated title: TypewriterText for manga, GlitchText for manhwa
-                        val titleStyle = MaterialTheme.typography.headlineSmall.copy(
+                        Text(
+                            text = manga.title,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
+                            maxLines = HEADER_TITLE_MAX_LINES,
+                            overflow = TextOverflow.Ellipsis,
                         )
-                        if (contentType == ContentType.MANGA) {
-                            TypewriterText(
-                                text = manga.title,
-                                style = titleStyle,
-                                speedMs = 40L
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        manga.author?.takeIf { it.isNotBlank() }?.let { author ->
+                            Text(
+                                text = author,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
-                        } else {
-                            GlitchText(
-                                text = manga.title,
-                                style = titleStyle
+                        }
+                        // Show the artist only when it differs from the author (Komikku behaviour).
+                        manga.artist?.takeIf { it.isNotBlank() && it != manga.author }?.let { artist ->
+                            Text(
+                                text = artist,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))
-                        manga.author?.let { author ->
-                            Text(
-                                text = author,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.8f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
 
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // ContentType toggle chip
-                        AssistChip(
-                            onClick = { isOverriddenManhwa = !isOverriddenManhwa },
-                            label = {
-                                Text(
-                                    if (contentType == ContentType.MANGA) {
-                                        stringResource(R.string.details_content_type_manga)
-                                    } else {
-                                        stringResource(R.string.details_content_type_manhwa)
-                                    },
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
+                        Text(
+                            text = stringResource(manga.status.displayTextResId()),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                        // Read button — styled by content type
-                        if (contentType == ContentType.MANGA) {
-                            InkButton(onClick = onToggleFavorite) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = if (isFavorite)
-                                        stringResource(R.string.details_remove_from_library)
-                                    else
-                                        stringResource(R.string.details_add_to_library),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = Color.White
-                                )
-                            }
-                        } else {
-                            GlowButton(
-                                onClick = onToggleFavorite,
-                                glowColor = ContentType.MANHWA.manhwaAccent()
-                            ) {
-                                Icon(
-                                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = if (isFavorite)
-                                        stringResource(R.string.details_remove_from_library)
-                                    else
-                                        stringResource(R.string.details_add_to_library),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = Color.White
-                                )
-                            }
+                        FilledTonalButton(onClick = onToggleFavorite) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = null,
+                                modifier = Modifier.size(HEADER_ACTION_ICON_SIZE),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (isFavorite) {
+                                    stringResource(R.string.details_remove_from_library)
+                                } else {
+                                    stringResource(R.string.details_add_to_library)
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                            )
                         }
                     }
                 }
