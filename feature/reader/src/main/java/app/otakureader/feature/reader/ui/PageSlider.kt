@@ -37,6 +37,8 @@ import app.otakureader.feature.reader.R
 private val NAV_ROW_PADDING_HORIZONTAL = 8.dp
 private val NAV_ROW_PADDING_VERTICAL = 8.dp
 private val NAV_ROW_ITEM_SPACING = 4.dp
+private const val SLIDER_SURFACE_ALPHA = 0.95f
+private val SLIDER_SURFACE_ELEVATION = 8.dp
 
 /**
  * Draggable page slider (seekbar) for the reader.
@@ -85,8 +87,8 @@ fun PageSlider(
         // bar from flashing empty while the menu animates away.
         if (totalPages > 0) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                tonalElevation = 8.dp
+                color = MaterialTheme.colorScheme.surface.copy(alpha = SLIDER_SURFACE_ALPHA),
+                tonalElevation = SLIDER_SURFACE_ELEVATION
             ) {
                 val isRtl = readingDirection == ReadingDirection.RTL
                 // Under RTL the on-screen left/right buttons swap which chapter they load, so the
