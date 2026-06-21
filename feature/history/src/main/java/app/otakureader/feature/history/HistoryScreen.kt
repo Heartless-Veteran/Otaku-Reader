@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelectAll
@@ -174,6 +175,12 @@ fun HistoryScreen(
                 },
                 actions = {
                     if (state.selectedItems.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onEvent(HistoryEvent.SelectAll) }) {
+                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.history_select_all))
+                        }
+                        IconButton(onClick = { viewModel.onEvent(HistoryEvent.InvertSelection) }) {
+                            Icon(Icons.Default.FlipToBack, contentDescription = stringResource(R.string.history_invert_selection))
+                        }
                         IconButton(onClick = { viewModel.onEvent(HistoryEvent.MarkSelectedAsRead) }) {
                             Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.history_mark_read))
                         }

@@ -24,6 +24,7 @@ sealed interface HistoryEvent : UiEvent {
     data object ClearHistory : HistoryEvent
     data object ClearSelection : HistoryEvent
     data object SelectAll : HistoryEvent
+    data object InvertSelection : HistoryEvent
     data class OnSearchQueryChange(val query: String) : HistoryEvent
     data class RemoveFromHistory(val chapterId: Long) : HistoryEvent
     /** Cancel the pending swipe-delete; carries chapterId so the ViewModel knows which timer to cancel. */
