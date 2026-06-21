@@ -90,6 +90,7 @@ internal fun LibraryBottomSheet(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DisplayTab(
     state: LibraryState,
@@ -160,10 +161,10 @@ private fun DisplayTab(
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
         )
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             LibraryDisplayMode.entries.forEach { mode ->
                 FilterChip(

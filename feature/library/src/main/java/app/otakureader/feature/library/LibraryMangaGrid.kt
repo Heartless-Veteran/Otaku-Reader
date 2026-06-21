@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +97,9 @@ internal fun isManhwa(manga: LibraryMangaItem): Boolean {
     return src.contains("manhwa") || src.contains("webtoon") ||
         src.contains("korean") || src.contains("toon") || src.contains("naver")
 }
+
+/** Max title lines for the caption shown below covers in comfortable grid mode. */
+private const val COMFORTABLE_TITLE_MAX_LINES = 2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -499,12 +503,21 @@ private fun LibraryMangaPageContent(
                 }
                 val cardContent: @Composable () -> Unit = {
                     if (comfortable) {
-                        Column {
+                        // Whole item (cover + caption + padding) is tappable. Null indication
+                        // avoids a second ripple layering over the card's own ripple.
+                        Column(
+                            modifier = Modifier.combinedClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onMangaTap(manga) },
+                                onLongClick = { onMangaLongClick(manga.id) },
+                            ),
+                        ) {
                             card()
                             Text(
                                 text = manga.title,
                                 style = MaterialTheme.typography.bodySmall,
-                                maxLines = 2,
+                                maxLines = COMFORTABLE_TITLE_MAX_LINES,
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
                                     .fillMaxWidth()
