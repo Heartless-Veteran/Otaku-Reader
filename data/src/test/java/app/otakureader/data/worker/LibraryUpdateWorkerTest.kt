@@ -57,6 +57,7 @@ class LibraryUpdateWorkerTest {
     private lateinit var categoryRepository: CategoryRepository
     private lateinit var notificationPreferences: NotificationPreferences
     private lateinit var updateRunSummaryDao: UpdateRunSummaryDao
+    private lateinit var libraryUpdateFilter: LibraryUpdateFilter
     private lateinit var worker: LibraryUpdateWorker
 
     private lateinit var connectivityManager: ConnectivityManager
@@ -145,6 +146,15 @@ class LibraryUpdateWorkerTest {
         coEvery { categoryRepository.getCategories() } returns flowOf(emptyList())
         coEvery { libraryPreferences.setCategoryLastUpdateMs(any()) } just runs
 
+        libraryUpdateFilter = mockk()
+        coEvery { libraryUpdateFilter.apply(any(), any()) } answers {
+            LibraryUpdateFilter.Result(
+                filtered = firstArg(),
+                skipped = emptyList(),
+                updatedCategoryIds = emptySet(),
+            )
+        }
+
         // Mock connectivity
         every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
         every { connectivityManager.activeNetwork } returns network
@@ -161,9 +171,9 @@ class LibraryUpdateWorkerTest {
             generalPreferences,
             downloadManager,
             chapterRepository,
-            categoryRepository,
             notificationPreferences,
             updateRunSummaryDao,
+            libraryUpdateFilter,
         )
     }
 

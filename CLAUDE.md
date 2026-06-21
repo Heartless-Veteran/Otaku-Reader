@@ -8,7 +8,7 @@ This file is the AI assistant reference for the Otaku Reader codebase. Read it b
 
 Otaku Reader is a production-grade Android manga reader built entirely in Kotlin and Jetpack Compose by a solo developer. It is a clean-architecture alternative to Mihon/Tachiyomi that inherits the Tachiyomi extension ecosystem. The app is feature-complete: all 35 parity issues, the hardening batch, and the post-beta polish pass have shipped.
 
-**Status:** All phases shipped. Alpha (2026-05-25) → Beta parity (#926–#958) → Hardening (#1090–#1099) → P3 polish (#1114) → Post-P3 additions: QR library sharing (#1110/#1125), update-errors screen (#1119), stats improvements (#1122), in-chapter download button (#1127), page bookmarks + collections (PR #1130, in review). **Current phase: preparing v1.0.0 release tag.** Project website: https://heartless-veteran.github.io/Otaku-Reader/ — VitePress landing page, download with live version lookup, docs, FAQ, auto-synced changelog. Deployed from `website/` via `pages.yml`.
+**Status:** All phases shipped. Alpha (2026-05-25) → Beta parity (#926–#958) → Hardening (#1090–#1099) → P3 polish (#1114) → Post-P3 additions: QR library sharing (#1110/#1125), update-errors screen (#1119), stats improvements (#1122), in-chapter download button (#1127), page bookmarks + collections (PR #1130, merged 2026-06-20). **Current phase: cutting v1.0.0 release tag.** Project website: https://heartless-veteran.github.io/Otaku-Reader/ — VitePress landing page, download with live version lookup, docs, FAQ, auto-synced changelog. Deployed from `website/` via `pages.yml`.
 
 **The developer is newer to Kotlin. Always explain what was wrong and why a fix works — never drop solutions without context.**
 
@@ -206,7 +206,7 @@ LibraryScreen.kt    — stateless composable consuming state
 - Migrations must be explicit. **Never use `fallbackToDestructiveMigration()` in production.**
 - Entities are separate from domain models. Always write and use mapper functions.
 - For tests, use in-memory Room databases — no `MigrationTestHelper`.
-- Current schema version: **v37** on `main` (v39 after PR #1130 merges — adds `bookmark_collections` table and `page_bookmarks.collection_id` FK).
+- Current schema version: **v39** (PR #1130, merged 2026-06-20 — adds `bookmark_collections` table and `page_bookmarks.collection_id` FK).
 - **SQLite cannot `DROP COLUMN`** — to remove a column, CREATE TABLE new → INSERT INTO SELECT (omit removed column) → DROP TABLE old → RENAME new. When child tables have FK references to the table being recreated, wrap the entire block with `PRAGMA foreign_keys = OFF` (before) and `PRAGMA foreign_keys = ON` (after) to prevent `SQLITE_CONSTRAINT_FOREIGNKEY` on the DROP step.
 
 ---
@@ -467,7 +467,7 @@ If a UI element exists (preference, button, tab), wire it to the real implementa
 ## CI/CD
 
 | Workflow | Trigger | What It Does |
-|----------|---------|---------------|
+|----------|---------|--------------|
 | `ci.yml` | Push/PR to `main`, `develop` | Detekt, ktlint, unit tests, coverage gate, screenshot tests, assembleDebug |
 | `build.yml` | Push/PR | Debug APK build |
 | `release.yml` | Tag push (`v*`) | Signed release APK, GitHub release |
@@ -488,7 +488,7 @@ CI uses JDK 17 for standard builds and JDK 21 for release builds. Gradle caches 
 
 - Solo developer, veteran background, newer to Kotlin — explain fixes, don't just drop code.
 - Multi-agent workflow: Claude (architecture + debugging), Copilot (day-to-day), Gemini Code Assist, Kimi Claw (bulk GitHub tasks).
-- **Current priority: merge PR #1130 (page bookmarks, DB v37→v39), then cut v1.0.0 release tag.**
+- **Current priority: cut v1.0.0 release tag.** All features including page bookmarks (PR #1130, merged 2026-06-20) are shipped.
 
 ---
 

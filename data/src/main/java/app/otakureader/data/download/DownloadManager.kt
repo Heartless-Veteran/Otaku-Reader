@@ -647,7 +647,19 @@ class DownloadManager @Inject constructor(
             request.mangaTitle,
             request.chapterTitle
         )
-        CbzCreator.createCbz(chapterDir).onSuccess { cbzFile ->
+        val chapter = try {
+            chapterRepository.getChapterById(chapterId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        val metadata = CbzCreator.ComicInfoMetadata(
+            title = request.chapterTitle,
+            series = request.mangaTitle,
+            number = chapter?.chapterNumber?.takeIf { it > 0f }?.toString(),
+        )
+        CbzCreator.createCbz(chapterDir, metadata).onSuccess { cbzFile ->
             chapterDir.listFiles()
                 ?.filter { file ->
                     file.isFile &&

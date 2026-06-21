@@ -242,7 +242,6 @@
     <string name="library_sync_failed">Library sync failed</string>
     <string name="library_sync_incognito_blocked">Sync disabled in incognito mode</string>
     <string name="library_update_full_started">Full library update started</string>
-    <string name="library_reindex_not_available">Download reindex not yet available</string>
     <string name="library_reindex_complete">Reindex complete: %1$d chapters verified</string>
     <string name="library_share_error">Unable to open share sheet</string>
     <string name="library_share_via_qr">Share library via QR</string>

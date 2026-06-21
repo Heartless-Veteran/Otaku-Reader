@@ -1,5 +1,6 @@
 package app.otakureader.feature.more.bookmarks
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -107,6 +108,29 @@ fun BookmarksScreen(
                     snackbarHostState.showSnackbar(
                         context.getString(R.string.bookmarks_export_complete, effect.savedCount)
                     )
+                is BookmarksEffect.ShareSelected -> {
+                    val unknownManga = context.getString(R.string.bookmarks_unknown_manga)
+                    val chapterFallback = context.getString(R.string.bookmarks_chapter_fallback)
+                    val text = effect.items.joinToString("\n") { bm ->
+                        context.getString(
+                            R.string.bookmarks_share_text_line,
+                            bm.mangaTitle.ifBlank { unknownManga },
+                            bm.chapterName.ifBlank { chapterFallback },
+                            bm.pageIndex + 1,
+                        )
+                    }
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    runCatching {
+                        context.startActivity(Intent.createChooser(intent, null))
+                    }.onFailure {
+                        snackbarHostState.showSnackbar(
+                            context.getString(R.string.bookmarks_share_error)
+                        )
+                    }
+                }
             }
         }
     }

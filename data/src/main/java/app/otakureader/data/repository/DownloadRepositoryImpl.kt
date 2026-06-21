@@ -153,7 +153,11 @@ class DownloadRepositoryImpl @Inject constructor(
             )
         }
 
-        CbzCreator.createCbz(chapterDir).map { }
+        val metadata = CbzCreator.ComicInfoMetadata(
+            title = chapterTitle,
+            series = mangaTitle,
+        )
+        CbzCreator.createCbz(chapterDir, metadata).map { }
     }
 
     override suspend fun reindexDownloads(): ReindexResult = withContext(Dispatchers.IO) {
