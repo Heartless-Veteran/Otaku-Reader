@@ -166,7 +166,14 @@ private fun DisplayTab(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LibraryDisplayMode.entries.forEach { mode ->
+            // Explicit display order (Grid → Comfortable → List), independent of the enum's
+            // declaration/ordinal order, which keeps COMFORTABLE_GRID appended for stable
+            // persisted ordinals.
+            listOf(
+                LibraryDisplayMode.GRID,
+                LibraryDisplayMode.COMFORTABLE_GRID,
+                LibraryDisplayMode.LIST,
+            ).forEach { mode ->
                 FilterChip(
                     selected = state.displayMode == mode,
                     onClick = { onEvent(LibraryEvent.SetDisplayMode(mode)) },
