@@ -183,6 +183,34 @@ class HistoryViewModelTest {
     }
 
     @Test
+    fun onEvent_InvertSelection_selectsComplementOfCurrentSelection() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Select item 1, then invert: items 2 and 3 should now be selected, 1 deselected.
+        viewModel.onEvent(HistoryEvent.OnChapterLongClick(1L))
+        assertEquals(setOf(1L), viewModel.state.value.selectedItems)
+
+        viewModel.onEvent(HistoryEvent.InvertSelection)
+
+        assertEquals(setOf(2L, 3L), viewModel.state.value.selectedItems)
+    }
+
+    @Test
+    fun onEvent_InvertSelection_withNoSelection_selectsAll() = runTest {
+        every { getHistoryUseCase() } returns flowOf(sampleHistory)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(HistoryEvent.InvertSelection)
+
+        assertEquals(setOf(1L, 2L, 3L), viewModel.state.value.selectedItems)
+    }
+
+    @Test
     fun onEvent_OnChapterClick_withNoSelection_emitsNavigateEffect() = runTest {
         every { getHistoryUseCase() } returns flowOf(sampleHistory)
 

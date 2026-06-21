@@ -6,6 +6,7 @@
     <string name="history_back">Back</string>
     <string name="history_delete_selected">Delete selected</string>
     <string name="history_select_all">Select all</string>
+    <string name="history_invert_selection">Invert selection</string>
     <string name="history_clear_all">Clear all</string>
     <!-- Clear-all confirmation -->
     <string name="history_clear_all_confirm_title">Clear history?</string>
