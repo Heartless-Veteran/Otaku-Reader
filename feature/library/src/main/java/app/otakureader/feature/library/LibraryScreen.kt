@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -39,6 +40,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -474,7 +476,23 @@ fun LibraryScreen(
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            // Resume FAB (Mihon/Komikku): continues the most recently read chapter. Shown only
+            // when there is something to resume and not while selecting or searching.
+            val resume = state.continueReadingItems.firstOrNull()
+            if (resume != null && state.selectedManga.isEmpty() && !state.showSearchBar) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.library_resume)) },
+                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                    onClick = {
+                        viewModel.onEvent(
+                            LibraryEvent.ContinueReadingClick(resume.mangaId, resume.chapterId)
+                        )
+                    },
+                )
+            }
+        },
     ) { padding ->
         LibraryContent(
             state = state,
