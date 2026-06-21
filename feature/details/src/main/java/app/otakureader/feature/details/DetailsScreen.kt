@@ -100,6 +100,11 @@ private const val CHAPTER_PANE_WEIGHT = 0.45f
 // Controls how far the user must scroll before the TopAppBar reaches full opacity.
 private const val HERO_TOP_BAR_FADE_RANGE = 600f
 
+// Genre/tag chip layout tokens.
+private val GENRE_CHIP_SPACING = 8.dp
+private val GENRE_CHIP_PADDING_HORIZONTAL = 12.dp
+private val GENRE_CHIP_PADDING_VERTICAL = 6.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
@@ -883,8 +888,8 @@ private fun MangaGenreChips(
     if (genres.isEmpty()) return
     FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(GENRE_CHIP_SPACING),
+        verticalArrangement = Arrangement.spacedBy(GENRE_CHIP_SPACING),
     ) {
         genres.forEach { genre ->
             GenreChip(
@@ -913,7 +918,10 @@ private fun GenreChip(
         Text(
             text = text,
             style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(
+                horizontal = GENRE_CHIP_PADDING_HORIZONTAL,
+                vertical = GENRE_CHIP_PADDING_VERTICAL,
+            ),
         )
     }
 }

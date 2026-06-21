@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
@@ -66,6 +67,7 @@ import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.feature.browse.R
 import coil3.compose.AsyncImage
+import java.util.Locale
 import kotlinx.coroutines.launch
 
 /**
@@ -193,8 +195,15 @@ private fun ExtensionsList(
             item(key = "hdr_updates") {
                 ExtensionSectionHeader(
                     title = stringResource(R.string.extensions_tab_updates),
-                    actionText = stringResource(R.string.extensions_update_all),
+                    actionText = stringResource(
+                        if (state.isUpdatingAll) {
+                            R.string.extensions_updating_all
+                        } else {
+                            R.string.extensions_update_all
+                        },
+                    ),
                     onAction = { onEvent(ExtensionsEvent.UpdateAllExtensions) },
+                    actionEnabled = !state.isUpdatingAll,
                 )
             }
             items(state.extensionsWithUpdates, key = { "upd_${it.id}" }) { extension ->
@@ -236,7 +245,7 @@ private fun ExtensionsList(
                     title = if (lang.isBlank()) {
                         stringResource(R.string.extensions_tab_available)
                     } else {
-                        lang.uppercase()
+                        lang.uppercase(Locale.ROOT)
                     },
                     actionText = if (showRepoAction) {
                         stringResource(R.string.extensions_manage_repositories)
@@ -286,7 +295,7 @@ private fun ExtensionsContent(
                     }
                     Box {
                         IconButton(onClick = { overflowExpanded = true }) {
-                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.extensions_settings))
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.browse_more_options))
                         }
                         DropdownMenu(
                             expanded = overflowExpanded,
@@ -426,6 +435,7 @@ private fun ExtensionSectionHeader(
     actionText: String?,
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    actionEnabled: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -440,7 +450,7 @@ private fun ExtensionSectionHeader(
             modifier = Modifier.weight(1f),
         )
         if (actionText != null) {
-            TextButton(onClick = onAction) {
+            TextButton(onClick = onAction, enabled = actionEnabled) {
                 Text(actionText)
             }
         }
@@ -600,7 +610,7 @@ private fun ExtensionMetadataLine(
 ) {
     val separator = stringResource(R.string.extension_meta_separator)
     val parts = buildList {
-        if (extension.lang.isNotBlank()) add(extension.lang.uppercase())
+        if (extension.lang.isNotBlank()) add(extension.lang.uppercase(Locale.ROOT))
         if (extension.versionName.isNotBlank()) add(stringResource(R.string.extension_meta_version, extension.versionName))
         repoOwner(extension.repoUrl)?.let { add(stringResource(R.string.extension_meta_repo, it)) }
     }
