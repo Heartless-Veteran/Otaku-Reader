@@ -12,41 +12,6 @@ import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.components.OtakuChip
 
 @Composable
-internal fun CategoryFilterChips(
-    categories: List<CategoryItem>,
-    selectedCategory: Long?,
-    onCategorySelected: (Long?) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        // "All" chip
-        item {
-            OtakuChip(
-                label = stringResource(R.string.library_category_all),
-                selected = selectedCategory == null,
-                onClick = { onCategorySelected(null) },
-            )
-        }
-
-        // Category chips
-        items(
-            items = categories,
-            key = { it.id }
-        ) { category ->
-            OtakuChip(
-                label = "${category.name} (${category.count})",
-                selected = selectedCategory == category.id,
-                onClick = { onCategorySelected(category.id) },
-            )
-        }
-    }
-}
-
-@Composable
 internal fun ReadingListFilterChips(
     readingLists: List<ReadingListFilterItem>,
     selectedListId: Long?,
