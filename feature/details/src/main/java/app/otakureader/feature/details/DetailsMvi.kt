@@ -199,6 +199,7 @@ object DetailsContract {
         data object SaveChapterNote : Event
         data object ClearChapterSelection : Event
         data object SelectAllChapters : Event
+        data object InvertChapterSelection : Event
         data object DownloadSelectedChapters : Event
         data object DownloadAllChapters : Event
         data object DownloadUnreadChapters : Event

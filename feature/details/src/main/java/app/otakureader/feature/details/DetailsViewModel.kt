@@ -130,6 +130,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.SaveChapterNote -> saveChapterNote()
             is DetailsContract.Event.ClearChapterSelection -> clearChapterSelection()
             is DetailsContract.Event.SelectAllChapters -> selectAllChapters()
+            is DetailsContract.Event.InvertChapterSelection -> invertChapterSelection()
             is DetailsContract.Event.DownloadSelectedChapters -> downloadSelectedChapters()
             is DetailsContract.Event.DeleteSelectedChapters -> deleteSelectedChapters()
             is DetailsContract.Event.MarkSelectedAsRead -> markSelectedAsRead()
@@ -498,8 +499,23 @@ class DetailsViewModel @Inject constructor(
 
     private fun selectAllChapters() {
         _state.update { state ->
-            val allIds = state.chapters.map { it.id }.toSet()
-            state.copy(selectedChapters = allIds)
+            // Only the currently visible (filtered/searched) chapters — matches Mihon/Komikku,
+            // so an active filter never selects chapters the user can't see.
+            val visibleIds = state.sortedChapters.map { it.id }.toSet()
+            state.copy(selectedChapters = state.selectedChapters + visibleIds)
+        }
+    }
+
+    /**
+     * Selects every visible chapter not currently selected and deselects the visible ones that
+     * are (Komikku parity). Restricted to [State.sortedChapters] so a filter/search can't flip
+     * the selection state of hidden chapters.
+     */
+    private fun invertChapterSelection() {
+        _state.update { state ->
+            val visibleIds = state.sortedChapters.map { it.id }.toSet()
+            val keptHidden = state.selectedChapters - visibleIds
+            state.copy(selectedChapters = keptHidden + (visibleIds - state.selectedChapters))
         }
     }
 
@@ -753,6 +769,9 @@ class DetailsViewModel @Inject constructor(
                     }
                 }
                 _effect.send(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
+                // Exit selection mode like the other batch actions. Harmless no-op when invoked
+                // from the per-chapter context menu (no selection is active there).
+                clearChapterSelection()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
