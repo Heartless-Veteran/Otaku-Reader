@@ -65,10 +65,11 @@ class SourceMangaViewModel @Inject constructor(
     private val _effect = Channel<SourceMangaEffect>()
     val effect = _effect.receiveAsFlow()
 
-    fun setSourceId(sourceId: String) {
+    fun setSourceId(sourceId: String, initialQuery: String = "") {
         if (_state.value.sourceId != sourceId) {
             viewModelScope.launch {
                 val sourceName = sourceRepository.getSource(sourceId)?.name ?: sourceId
+                val hasQuery = initialQuery.isNotBlank()
                 _state.update {
                     it.copy(
                         sourceId = sourceId,
@@ -76,12 +77,14 @@ class SourceMangaViewModel @Inject constructor(
                         manga = emptyList(),
                         currentPage = 1,
                         hasNextPage = false,
-                        isSearchMode = false,
-                        searchQuery = "",
+                        isSearchMode = hasQuery,
+                        searchQuery = initialQuery,
                         error = null,
                     )
                 }
-                loadManga(sourceId, page = 1)
+                // When opened with a tag/genre query (from a manga's detail page), search the
+                // source for it immediately; otherwise show the popular listing.
+                if (hasQuery) performSearch() else loadManga(sourceId, page = 1)
             }
         }
     }

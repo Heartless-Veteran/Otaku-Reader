@@ -71,7 +71,7 @@ sealed interface Route {
      * @param sourceId Installed extension source ID (string identifier).
      */
     @Serializable
-    data class SourceListing(val sourceId: String) : Route
+    data class SourceListing(val sourceId: String, val initialQuery: String = "") : Route
 
     /**
      * Extension catalog — browse/install available extensions.

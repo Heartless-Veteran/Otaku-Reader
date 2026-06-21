@@ -5,9 +5,13 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +53,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -103,6 +108,7 @@ fun DetailsScreen(
     onNavigateToReader: (mangaId: Long, chapterId: Long) -> Unit,
     onNavigateToTracking: (mangaId: Long, mangaTitle: String) -> Unit = { _, _ -> },
     onNavigateToGlobalSearch: (query: String) -> Unit = {},
+    onNavigateToSourceSearch: (sourceId: String, query: String) -> Unit = { _, _ -> },
     viewModel: DetailsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -155,6 +161,9 @@ fun DetailsScreen(
                 }
                 is DetailsContract.Effect.NavigateToGlobalSearch -> {
                     onNavigateToGlobalSearch(effect.query)
+                }
+                is DetailsContract.Effect.NavigateToSourceSearch -> {
+                    onNavigateToSourceSearch(effect.sourceId, effect.query)
                 }
                 is DetailsContract.Effect.OpenDownloadFolder -> {
                     val externalFilesDir = context.getExternalFilesDir(null)
@@ -623,6 +632,17 @@ private fun LazyListScope.detailsInfoTabItems(
         )
     }
 
+    if (manga.genre.isNotEmpty()) {
+        item {
+            MangaGenreChips(
+                genres = manga.genre,
+                onGenreClick = { onEvent(DetailsContract.Event.GenreClick(it)) },
+                onGenreLongClick = { onEvent(DetailsContract.Event.GenreLongClick(it)) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
+    }
+
     item {
         MangaNotes(
             notes = manga.notes,
@@ -846,6 +866,56 @@ private fun NoteEditorDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.notes_editor_cancel)) }
         }
     )
+}
+
+/**
+ * Genre/tag chips shown under the description. Matches Mihon/Komikku: short-press searches the
+ * tag within the manga's source, long-press searches it across all sources (global search).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MangaGenreChips(
+    genres: List<String>,
+    onGenreClick: (String) -> Unit,
+    onGenreLongClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (genres.isEmpty()) return
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        genres.forEach { genre ->
+            GenreChip(
+                text = genre,
+                onClick = { onGenreClick(genre) },
+                onLongClick = { onGenreLongClick(genre) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun GenreChip(
+    text: String,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
 }
 
 @Composable

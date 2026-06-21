@@ -59,7 +59,8 @@ fun NavGraphBuilder.sourceDetailScreen(
             onMangaClick = { mangaUrl, mangaTitle ->
                 onMangaClick(route.sourceId.toString(), mangaUrl, mangaTitle)
             },
-            onNavigateBack = onNavigateBack
+            onNavigateBack = onNavigateBack,
+            initialQuery = route.initialQuery,
         )
     }
 }

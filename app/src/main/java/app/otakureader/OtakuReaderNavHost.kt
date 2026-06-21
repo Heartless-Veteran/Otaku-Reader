@@ -347,6 +347,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToGlobalSearch = { query ->
                 navController.navigate(Route.Search(query = query))
+            },
+            onNavigateToSourceSearch = { sourceId, query ->
+                navController.navigate(Route.SourceListing(sourceId, query))
             }
         )
 
