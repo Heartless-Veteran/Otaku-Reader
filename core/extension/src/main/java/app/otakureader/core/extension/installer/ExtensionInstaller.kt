@@ -5,8 +5,6 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.Intent
 import android.os.Build
-import android.provider.Settings
-import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import app.otakureader.core.extension.data.remote.ExtensionRemoteDataSource
 import app.otakureader.core.extension.domain.model.Extension
@@ -126,19 +124,18 @@ class ExtensionInstaller(
             // universal trust gate inside ExtensionLoader can be satisfied without a separate
             // user confirmation step. The repository-backed extension rides along so a
             // fallback-created DB row keeps provenance (#1019) plus apkUrl/iconUrl metadata.
-            val result = install(
+            // Private-installer model (matches Komikku's default): install() copies the APK into
+            // the app's private extensions dir, loads/validates it, trusts repo-sourced signatures,
+            // and persists the DB row. That is fully self-sufficient — the source becomes loadable
+            // immediately and the caller's refreshSources() picks it up. We deliberately do NOT
+            // also launch the system package installer here: doing so popped a second, confusing
+            // "install this app?" dialog (and an unknown-sources settings redirect) on top of an
+            // already-successful silent install.
+            install(
                 downloadFile,
                 trustedHash = extension.signatureHash,
                 repoMetadata = extension,
             )
-
-            result.onSuccess { installed ->
-                installed.apkPath?.let { path ->
-                    maybeLaunchSystemInstaller(File(path))
-                }
-            }
-
-            result
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -624,41 +621,6 @@ class ExtensionInstaller(
         _installationState.value = InstallationState.Idle
     }
 
-    /**
-     * Optionally trigger the system package installer so extensions are registered
-     * as shared packages. Falls back to internal loading if the permission is not
-     * granted; opens the settings screen to request it.
-     */
-    private fun maybeLaunchSystemInstaller(apkFile: File) {
-        // Make the file read-only so the system installer accepts it.
-        apkFile.setReadOnly()
-
-        // C-4: Request unknown-sources permission if not already granted.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            !context.packageManager.canRequestPackageInstalls()
-        ) {
-            val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                data = "package:${context.packageName}".toUri()
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(settingsIntent)
-            // Note: The user must manually return and retry the install after granting.
-            return
-        }
-
-        val uri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            apkFile,
-        )
-        val installIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-
-        context.startActivity(installIntent)
-    }
-    
     private fun computeHash(bytes: ByteArray): String {
         val digest = MessageDigest.getInstance("SHA-256")
         val hash = digest.digest(bytes)

@@ -10,8 +10,9 @@ import kotlinx.coroutines.flow.map
 /** Identifiers for the five main bottom-navigation tabs. */
 enum class NavTab { LIBRARY, UPDATES, BROWSE, HISTORY, MORE }
 
+// Matches Mihon/Komikku's default bottom-nav order: Library, Updates, History, Browse, More.
 private val DEFAULT_ORDER = listOf(
-    NavTab.LIBRARY, NavTab.UPDATES, NavTab.BROWSE, NavTab.HISTORY, NavTab.MORE
+    NavTab.LIBRARY, NavTab.UPDATES, NavTab.HISTORY, NavTab.BROWSE, NavTab.MORE
 )
 
 /**

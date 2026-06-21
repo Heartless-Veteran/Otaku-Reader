@@ -57,6 +57,8 @@
     <string name="extensions_uninstall">Uninstall</string>
     <string name="extensions_update">Update</string>
     <string name="extensions_install">Install</string>
+    <string name="extensions_enable">Enable</string>
+    <string name="extensions_disable">Disable</string>
     <string name="extensions_remove_repo">Remove repository</string>
 
     <!-- Accessibility: GlobalSearchScreen -->
