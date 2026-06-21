@@ -23,8 +23,10 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
@@ -160,11 +162,17 @@ fun UpdatesScreen(
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.SelectAll) }) {
                             Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.updates_select_all))
                         }
+                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.InvertSelection) }) {
+                            Icon(Icons.Default.FlipToBack, contentDescription = stringResource(R.string.updates_invert_selection))
+                        }
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.DownloadSelected) }) {
                             Icon(Icons.Default.Download, contentDescription = stringResource(R.string.updates_download_selected))
                         }
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsRead) }) {
                             Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.updates_mark_selected_read))
+                        }
+                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsUnread) }) {
+                            Icon(Icons.Default.RemoveDone, contentDescription = stringResource(R.string.updates_mark_selected_unread))
                         }
                     }
                 )

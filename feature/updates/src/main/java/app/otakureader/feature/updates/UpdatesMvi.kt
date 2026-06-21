@@ -78,8 +78,10 @@ sealed interface UpdatesEvent : UiEvent {
     data class OnDownloadChapter(val mangaId: Long, val chapterId: Long) : UpdatesEvent
     data object ClearSelection : UpdatesEvent
     data object SelectAll : UpdatesEvent
+    data object InvertSelection : UpdatesEvent
     data object DownloadSelected : UpdatesEvent
     data object MarkSelectedAsRead : UpdatesEvent
+    data object MarkSelectedAsUnread : UpdatesEvent
     data class MarkChapterAsRead(val chapterId: Long) : UpdatesEvent
 
     // Update Error Screen events

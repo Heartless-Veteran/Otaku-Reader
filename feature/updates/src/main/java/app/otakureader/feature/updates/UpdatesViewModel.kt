@@ -61,8 +61,10 @@ class UpdatesViewModel @Inject constructor(
             is UpdatesEvent.OnDownloadChapter -> downloadChapter(event.mangaId, event.chapterId)
             UpdatesEvent.ClearSelection -> _state.update { it.copy(selectedItems = emptySet()) }
             UpdatesEvent.SelectAll -> selectAll()
+            UpdatesEvent.InvertSelection -> invertSelection()
             UpdatesEvent.DownloadSelected -> downloadSelected()
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
+            UpdatesEvent.MarkSelectedAsUnread -> markSelectedAsUnread()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkSelectedAsRead -> unmarkSelectedAsRead(event.chapterIds)
@@ -129,6 +131,14 @@ class UpdatesViewModel @Inject constructor(
     private fun selectAll() {
         _state.update { state ->
             state.copy(selectedItems = state.updates.map { it.chapter.id }.toSet())
+        }
+    }
+
+    /** Selects every update not currently selected and deselects the rest (Mihon/Komikku parity). */
+    private fun invertSelection() {
+        _state.update { state ->
+            val allIds = state.updates.map { it.chapter.id }.toSet()
+            state.copy(selectedItems = allIds - state.selectedItems)
         }
     }
 
@@ -208,6 +218,32 @@ class UpdatesViewModel @Inject constructor(
                 throw e
             } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    /**
+     * Marks the selected chapters as unread (Mihon/Komikku parity). Non-destructive — the user
+     * can simply mark them read again — so a plain confirmation snackbar is shown rather than an
+     * undo action (unlike the destructive mark-as-read flow).
+     */
+    private fun markSelectedAsUnread() {
+        val selected = _state.value.selectedItems
+        if (selected.isEmpty()) return
+        val count = selected.size
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(selected, read = false, lastPageRead = UNREAD_LAST_PAGE_READ)
+                _state.update { it.copy(selectedItems = it.selectedItems - selected) }
+                _effect.send(
+                    UpdatesEffect.ShowSnackbar(
+                        context.resources.getQuantityString(R.plurals.updates_marked_as_unread, count, count)
+                    )
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_unread_failed)))
             }
         }
     }
