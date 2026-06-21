@@ -36,14 +36,18 @@ enum class LibraryBottomSheetTab {
  * Top-level layout for the library grid.
  *
  * - [GRID]: cover-centric grid (the [LibraryState.isStaggeredGrid] flag further selects
- *   uniform vs. waterfall columns).
+ *   uniform vs. waterfall columns; [LibraryState.showTitle] toggles compact vs. cover-only).
+ * - [COMFORTABLE_GRID]: like the grid, but the title is a caption *below* each cover instead
+ *   of overlaid — matches Mihon/Komikku's "Comfortable grid".
  * - [LIST]: compact single-column rows with a small cover thumbnail, title, and badges.
  *
- * Persisted as an ordinal via `LibraryPreferences.libraryDisplayMode`.
+ * Persisted as an ordinal via `LibraryPreferences.libraryDisplayMode`. New values must be
+ * appended (never reordered) so existing persisted ordinals keep resolving correctly.
  */
 enum class LibraryDisplayMode {
     GRID,
     LIST,
+    COMFORTABLE_GRID,
 }
 
 data class LibraryState(

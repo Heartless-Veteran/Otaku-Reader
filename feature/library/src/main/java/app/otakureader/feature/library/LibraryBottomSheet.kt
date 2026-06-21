@@ -90,6 +90,10 @@ internal fun LibraryBottomSheet(
     }
 }
 
+/** Spacing between the display-mode chips in the library display settings. */
+private val DISPLAY_MODE_CHIP_SPACING = 8.dp
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DisplayTab(
     state: LibraryState,
@@ -152,6 +156,33 @@ private fun DisplayTab(
                 checked = state.showDownloadBadge,
                 onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowDownloadBadge(enabled)) },
             )
+        }
+
+        // Display mode picker (grid / comfortable / list) — matches Mihon/Komikku.
+        Text(
+            text = stringResource(R.string.display_mode_label),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
+            verticalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
+        ) {
+            // Explicit display order (Grid → Comfortable → List), independent of the enum's
+            // declaration/ordinal order, which keeps COMFORTABLE_GRID appended for stable
+            // persisted ordinals.
+            listOf(
+                LibraryDisplayMode.GRID,
+                LibraryDisplayMode.COMFORTABLE_GRID,
+                LibraryDisplayMode.LIST,
+            ).forEach { mode ->
+                FilterChip(
+                    selected = state.displayMode == mode,
+                    onClick = { onEvent(LibraryEvent.SetDisplayMode(mode)) },
+                    label = { Text(mode.label()) },
+                )
+            }
         }
 
         // Show title on cover
@@ -340,6 +371,13 @@ private fun GroupTab(
             )
         }
     }
+}
+
+@Composable
+private fun LibraryDisplayMode.label(): String = when (this) {
+    LibraryDisplayMode.GRID -> stringResource(R.string.display_mode_grid)
+    LibraryDisplayMode.COMFORTABLE_GRID -> stringResource(R.string.display_mode_comfortable)
+    LibraryDisplayMode.LIST -> stringResource(R.string.display_mode_list)
 }
 
 @Composable

@@ -199,6 +199,10 @@
     <string name="display_show_download_badge">Show download badge</string>
     <string name="display_show_title">Show title on cover</string>
     <string name="display_staggered_grid">Staggered grid</string>
+    <string name="display_mode_label">Display mode</string>
+    <string name="display_mode_grid">Grid</string>
+    <string name="display_mode_comfortable">Comfortable</string>
+    <string name="display_mode_list">List</string>
     <string name="group_category_label">Category</string>
     <string name="group_by_category">Group by category</string>
     <!-- Filter sheet -->

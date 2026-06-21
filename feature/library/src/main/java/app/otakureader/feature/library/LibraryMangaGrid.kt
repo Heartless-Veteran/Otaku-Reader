@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -96,6 +97,12 @@ internal fun isManhwa(manga: LibraryMangaItem): Boolean {
     return src.contains("manhwa") || src.contains("webtoon") ||
         src.contains("korean") || src.contains("toon") || src.contains("naver")
 }
+
+/** Max title lines for the caption shown below covers in comfortable grid mode. */
+private const val COMFORTABLE_TITLE_MAX_LINES = 2
+
+/** Padding around the title caption shown below covers in comfortable grid mode. */
+private val COMFORTABLE_TITLE_PADDING = 4.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -347,7 +354,7 @@ private fun LibraryMangaPageContent(
                 }
             }
         }
-    } else if (state.isStaggeredGrid) {
+    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
             contentPadding = PaddingValues(8.dp),
@@ -457,7 +464,10 @@ private fun LibraryMangaPageContent(
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                 val continueReading = manga.lastRead != null && manga.unreadCount > 0
-                val cardContent: @Composable () -> Unit = {
+                // Comfortable grid (#Komikku parity): cover with the title shown as a caption
+                // below it rather than overlaid on the cover.
+                val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
+                val card: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
                         coverUrl = manga.thumbnailUrl,
@@ -467,7 +477,7 @@ private fun LibraryMangaPageContent(
                         readProgress = readProgress,
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
-                        showTitle = state.showTitle,
+                        showTitle = if (comfortable) false else state.showTitle,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 &&
                                 state.showDownloadBadge && downloadCount > 0 -> {
@@ -493,6 +503,37 @@ private fun LibraryMangaPageContent(
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+                val cardContent: @Composable () -> Unit = {
+                    if (comfortable) {
+                        // Whole item (cover + caption + padding) is tappable. Null indication
+                        // avoids a second ripple layering over the card's own ripple.
+                        Column(
+                            modifier = Modifier.combinedClickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { onMangaTap(manga) },
+                                onLongClick = { onMangaLongClick(manga.id) },
+                            ),
+                        ) {
+                            card()
+                            Text(
+                                text = manga.title,
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = COMFORTABLE_TITLE_MAX_LINES,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        top = COMFORTABLE_TITLE_PADDING,
+                                        start = COMFORTABLE_TITLE_PADDING,
+                                        end = COMFORTABLE_TITLE_PADDING,
+                                    ),
+                            )
+                        }
+                    } else {
+                        card()
+                    }
                 }
                 Box {
                     if (state.visualEffectsEnabled) {
