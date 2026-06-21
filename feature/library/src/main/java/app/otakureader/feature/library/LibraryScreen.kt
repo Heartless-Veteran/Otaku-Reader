@@ -42,6 +42,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -514,6 +515,24 @@ fun LibraryScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
+/**
+ * Thin progress banner shown at the top of the library while a background library update is
+ * running, matching Mihon/Komikku's update indicator. Driven by [LibraryState.isLibraryUpdating].
+ */
+@Composable
+private fun LibraryUpdatingBanner(modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.library_updating),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+    }
+}
+
+@Composable
 private fun LibraryContent(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
@@ -532,6 +551,10 @@ private fun LibraryContent(
     Column(modifier = modifier.fillMaxSize()) {
         if (state.incognitoMode) {
             IncognitoBanner()
+        }
+
+        if (state.isLibraryUpdating) {
+            LibraryUpdatingBanner()
         }
 
         if (state.showSearchBar) {

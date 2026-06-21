@@ -53,6 +53,8 @@ enum class LibraryDisplayMode {
 data class LibraryState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
+    /** True while a background library update (the WorkManager job) is running. */
+    val isLibraryUpdating: Boolean = false,
     val mangaList: List<LibraryMangaItem> = emptyList(),
     val selectedManga: Set<Long> = emptySet(),
     val searchQuery: String = "",

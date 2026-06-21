@@ -1,8 +1,12 @@
 package app.otakureader.data.worker
 
 import android.content.Context
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import app.otakureader.domain.scheduler.LibraryUpdateScheduler as LibraryUpdateSchedulerInterface
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,4 +33,9 @@ class LibraryUpdateScheduler @Inject constructor(
     override fun enqueueNow() {
         LibraryUpdateWorker.enqueue(context)
     }
+
+    override fun isUpdating(): Flow<Boolean> =
+        WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWorkFlow(LibraryUpdateWorker.WORK_NAME)
+            .map { infos -> infos.any { it.state == WorkInfo.State.RUNNING } }
 }
