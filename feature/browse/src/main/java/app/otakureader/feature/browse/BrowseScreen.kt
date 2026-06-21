@@ -105,6 +105,7 @@ import app.otakureader.sourceapi.SourceManga
 import app.otakureader.sourceapi.isActive
 import app.otakureader.sourceapi.toSourceId
 import coil3.compose.AsyncImage
+import java.util.Locale
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -467,7 +468,7 @@ private fun LanguageFilterDialog(
                                 Spacer(Modifier.size(LANGUAGE_DIALOG_ICON_SIZE))
                             }
                             Spacer(Modifier.width(LANGUAGE_DIALOG_ICON_TEXT_SPACING))
-                            Text(lang.uppercase(), style = MaterialTheme.typography.bodyMedium)
+                            Text(lang.uppercase(Locale.ROOT), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -671,8 +672,12 @@ private fun SourceListContent(
 
     val pinnedSources = allSources.filter { it.id.toSourceId() in state.pinnedSourceIds }
     val unpinnedSources = allSources.filter { it.id.toSourceId() !in state.pinnedSourceIds }
+    // Group unpinned sources by their assigned source category when one is set, otherwise by
+    // language — matching Komikku's SourcesScreen, which shows language headers (English, Multi, …)
+    // for uncategorized sources rather than a single flat list.
     val grouped: Map<String, List<MangaSource>> = unpinnedSources.groupBy { src ->
-        state.sourceCategoryMap[src.id.toSourceId()] ?: ""
+        state.sourceCategoryMap[src.id.toSourceId()]?.takeIf { it.isNotBlank() }
+            ?: src.lang.uppercase(Locale.ROOT)
     }
     val categoryOrder = grouped.keys.sortedWith(compareBy { if (it.isBlank()) "" else it })
 
@@ -952,7 +957,7 @@ private fun LanguageBadge(lang: String, modifier: Modifier = Modifier) {
         containerColor = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
-        Text(lang.uppercase(), style = MaterialTheme.typography.labelSmall)
+        Text(lang.uppercase(Locale.ROOT), style = MaterialTheme.typography.labelSmall)
     }
 }
 

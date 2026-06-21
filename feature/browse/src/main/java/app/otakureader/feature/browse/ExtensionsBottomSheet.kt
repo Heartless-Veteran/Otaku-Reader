@@ -1,8 +1,8 @@
 @file:Suppress("MaxLineLength")
 package app.otakureader.feature.browse
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,40 +18,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -65,7 +56,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,8 +67,19 @@ import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.feature.browse.R
 import coil3.compose.AsyncImage
+import java.util.Locale
 import kotlinx.coroutines.launch
 
+/**
+ * Extensions browser — restructured to match Mihon/Komikku's single sectioned list.
+ *
+ * Komikku shows one scrolling list with section headers (Updates pending → Installed →
+ * Available, grouped by language) and compact rows. Per the parity work, the old inline
+ * search bar, NSFW/sort row, repository manager and security banner, and Installed/Available/
+ * Updates sub-tabs were removed: repository management lives on its own screen (reachable from a
+ * section-header action), and enable/disable + uninstall are reached by long-pressing a row
+ * (matching Komikku's onLongClickItem affordance).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionsBottomSheet(
@@ -127,8 +128,8 @@ fun ExtensionsBottomSheet(
 }
 
 /**
- * Scaffold-free body used both by [ExtensionsContent] (inside the bottom sheet Scaffold) and
- * by [ExtensionsTabBody] (embedded directly in Browse's Extensions tab).
+ * Scaffold-free body used both by [ExtensionsContent] (inside the bottom sheet / full-screen
+ * Scaffold) and by [ExtensionsTabBody] (embedded directly in Browse's Extensions tab).
  */
 @Composable
 private fun ExtensionsBody(
@@ -138,139 +139,131 @@ private fun ExtensionsBody(
     onNavigateToExtensionDetail: (packageName: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val selectedTab = state.selectedTab
-    val tabs = listOf(
-        stringResource(R.string.extensions_tab_installed),
-        stringResource(R.string.extensions_tab_available),
-        stringResource(R.string.extensions_tab_updates),
-    )
+    val allEmpty = state.installedExtensions.isEmpty() &&
+        state.availableExtensions.isEmpty() &&
+        state.extensionsWithUpdates.isEmpty()
 
-    Column(modifier = modifier) {
-        // Search bar
-        TextField(
-            value = state.searchQuery,
-            onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
-            placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.extensions_search_cd)) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+    when {
+        state.isLoading && allEmpty -> LoadingScreen(modifier = modifier)
+        state.error != null && allEmpty -> ErrorScreen(
+            message = state.error,
+            onRetry = { onEvent(ExtensionsEvent.Refresh) },
+            modifier = modifier,
         )
-
-        // Filter & Sort controls
-        FilterAndSortRow(
-            showNsfw = state.showNsfw,
-            sortMode = state.sortMode,
-            onToggleNsfw = { onEvent(ExtensionsEvent.ToggleNsfw(it)) },
-            onSetSortMode = { onEvent(ExtensionsEvent.SetSortMode(it)) }
+        allEmpty -> EmptyExtensionsView(
+            onManageRepositories = onNavigateToRepositories,
+            modifier = modifier,
         )
-
-        // Update All button (only in Updates tab, visible whenever updates exist)
-        if (selectedTab == 2 && state.updateCount > 0) {
-            UpdateAllButton(
-                updateCount = state.updateCount,
-                isUpdating = state.isUpdatingAll,
-                onUpdateAll = { onEvent(ExtensionsEvent.UpdateAllExtensions) }
-            )
-        }
-
-        RepositoryManager(
-            repositories = state.repositories,
-            onAdd = { onEvent(ExtensionsEvent.AddRepository(it)) },
-            onRemove = { onEvent(ExtensionsEvent.RemoveRepository(it)) },
-            onOpenFullManager = onNavigateToRepositories,
+        else -> ExtensionsList(
+            state = state,
+            onEvent = onEvent,
+            onNavigateToRepositories = onNavigateToRepositories,
+            onNavigateToExtensionDetail = onNavigateToExtensionDetail,
+            modifier = modifier,
         )
+    }
 
-        // Tabs
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { onEvent(ExtensionsEvent.SelectTab(index)) },
-                    text = {
-                        when (index) {
-                            2 -> if (state.updateCount > 0) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(title)
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = MaterialTheme.colorScheme.error
-                                    ) {
-                                        Text(
-                                            text = state.updateCount.toString(),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onError,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            } else Text(title)
-                            else -> Text(title)
-                        }
-                    }
+    // Unverified install confirmation dialog (sideloaded APKs with no repo-provided hash).
+    if (state.showUnverifiedInstallDialog) {
+        UnverifiedInstallDialog(
+            extension = state.pendingUnverifiedExtension,
+            onDismiss = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
+            onConfirm = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }
+        )
+    }
+}
+
+@Composable
+private fun ExtensionsList(
+    state: ExtensionsState,
+    onEvent: (ExtensionsEvent) -> Unit,
+    onNavigateToRepositories: () -> Unit,
+    onNavigateToExtensionDetail: (packageName: String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Place the "manage repositories" header action on the Installed section when present,
+    // otherwise on the first Available-language section, so repos are always reachable.
+    val repoActionOnInstalled = state.installedExtensions.isNotEmpty()
+    val availableByLang = state.availableExtensions.groupBy { it.lang }.toSortedMap(compareBy { it })
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 4.dp),
+    ) {
+        // ── Updates pending ──────────────────────────────────────────────────────────
+        if (state.extensionsWithUpdates.isNotEmpty()) {
+            item(key = "hdr_updates") {
+                ExtensionSectionHeader(
+                    title = stringResource(R.string.extensions_tab_updates),
+                    actionText = stringResource(
+                        if (state.isUpdatingAll) {
+                            R.string.extensions_updating_all
+                        } else {
+                            R.string.extensions_update_all
+                        },
+                    ),
+                    onAction = { onEvent(ExtensionsEvent.UpdateAllExtensions) },
+                    actionEnabled = !state.isUpdatingAll,
+                )
+            }
+            items(state.extensionsWithUpdates, key = { "upd_${it.id}" }) { extension ->
+                ExtensionRow(
+                    extension = extension,
+                    signerMismatch = extension.pkgName in state.signerMismatchedPackages,
+                    blockedReason = state.blockedPackages[extension.pkgName],
+                    onEvent = onEvent,
+                    onViewDetails = { onNavigateToExtensionDetail(extension.pkgName) },
                 )
             }
         }
 
-        when (selectedTab) {
-            0 -> ExtensionsList(
-                extensions = state.installedExtensions,
-                isLoading = state.isLoading,
-                error = state.error,
-                signerMismatchedPackages = state.signerMismatchedPackages,
-                blockedPackages = state.blockedPackages,
-                onInstall = { /* Already installed */ },
-                onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
-                onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
-                onToggleEnabled = { ext, enabled ->
-                    onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
-                },
-                onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
-            )
-            1 -> Column {
-                if (state.hasUnverifiedExtensions) {
-                    TrustBanner(visible = true)
-                }
-                ExtensionsList(
-                    extensions = state.availableExtensions,
-                    isLoading = state.isLoading,
-                    error = state.error,
-                    signerMismatchedPackages = emptySet(),
-                    blockedPackages = state.blockedPackages,
-                    onInstall = { onEvent(ExtensionsEvent.InstallExtension(it)) },
-                    onUninstall = { /* Not installed */ },
-                    onUpdate = { /* No update */ },
-                    onToggleEnabled = { _, _ -> },
-                    onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                    onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
+        // ── Installed ────────────────────────────────────────────────────────────────
+        if (state.installedExtensions.isNotEmpty()) {
+            item(key = "hdr_installed") {
+                ExtensionSectionHeader(
+                    title = stringResource(R.string.extensions_tab_installed),
+                    actionText = stringResource(R.string.extensions_manage_repositories),
+                    onAction = onNavigateToRepositories,
                 )
             }
-            2 -> ExtensionsList(
-                extensions = state.extensionsWithUpdates,
-                isLoading = state.isLoading,
-                error = state.error,
-                signerMismatchedPackages = state.signerMismatchedPackages,
-                blockedPackages = state.blockedPackages,
-                onInstall = { /* Already installed */ },
-                onUninstall = { onEvent(ExtensionsEvent.UninstallExtension(it)) },
-                onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(it)) },
-                onToggleEnabled = { ext, enabled ->
-                    onEvent(ExtensionsEvent.ToggleExtensionEnabled(ext, enabled))
-                },
-                onRefresh = { onEvent(ExtensionsEvent.Refresh) },
-                onViewDetails = { onNavigateToExtensionDetail(it.pkgName) }
-            )
+            items(state.installedExtensions, key = { "ins_${it.id}" }) { extension ->
+                ExtensionRow(
+                    extension = extension,
+                    signerMismatch = extension.pkgName in state.signerMismatchedPackages,
+                    blockedReason = state.blockedPackages[extension.pkgName],
+                    onEvent = onEvent,
+                    onViewDetails = { onNavigateToExtensionDetail(extension.pkgName) },
+                )
+            }
         }
 
-        // Unverified install confirmation dialog
-        if (state.showUnverifiedInstallDialog) {
-            UnverifiedInstallDialog(
-                extension = state.pendingUnverifiedExtension,
-                onDismiss = { onEvent(ExtensionsEvent.DismissUnverifiedDialog) },
-                onConfirm = { onEvent(ExtensionsEvent.ConfirmUnverifiedInstall) }
-            )
+        // ── Available, grouped by language ───────────────────────────────────────────
+        availableByLang.entries.forEachIndexed { index, (lang, extensions) ->
+            val showRepoAction = !repoActionOnInstalled && index == 0
+            item(key = "hdr_avail_$lang") {
+                ExtensionSectionHeader(
+                    title = if (lang.isBlank()) {
+                        stringResource(R.string.extensions_tab_available)
+                    } else {
+                        lang.uppercase(Locale.ROOT)
+                    },
+                    actionText = if (showRepoAction) {
+                        stringResource(R.string.extensions_manage_repositories)
+                    } else {
+                        null
+                    },
+                    onAction = onNavigateToRepositories,
+                )
+            }
+            items(extensions, key = { "avl_${it.id}" }) { extension ->
+                ExtensionRow(
+                    extension = extension,
+                    signerMismatch = false,
+                    blockedReason = state.blockedPackages[extension.pkgName],
+                    onEvent = onEvent,
+                    onViewDetails = { onNavigateToExtensionDetail(extension.pkgName) },
+                )
+            }
         }
     }
 }
@@ -288,6 +281,7 @@ private fun ExtensionsContent(
 ) {
     Scaffold(
         topBar = {
+            var overflowExpanded by remember { mutableStateOf(false) }
             TopAppBar(
                 title = { Text(stringResource(R.string.extensions_sheet_title)) },
                 navigationIcon = {
@@ -299,8 +293,50 @@ private fun ExtensionsContent(
                     IconButton(onClick = { onEvent(ExtensionsEvent.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.extensions_refresh))
                     }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.extensions_settings))
+                    Box {
+                        IconButton(onClick = { overflowExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.browse_more_options))
+                        }
+                        DropdownMenu(
+                            expanded = overflowExpanded,
+                            onDismissRequest = { overflowExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.extensions_manage_repositories)) },
+                                onClick = {
+                                    overflowExpanded = false
+                                    onNavigateToRepositories()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (state.showNsfw) {
+                                            stringResource(R.string.browse_hide_nsfw)
+                                        } else {
+                                            stringResource(R.string.browse_show_nsfw)
+                                        },
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    onEvent(ExtensionsEvent.ToggleNsfw(!state.showNsfw))
+                                    overflowExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.extensions_settings)) },
+                                onClick = {
+                                    overflowExpanded = false
+                                    onNavigateToSettings()
+                                },
+                            )
+                        }
                     }
                 }
             )
@@ -320,14 +356,8 @@ private fun ExtensionsContent(
 }
 
 /**
- * Full-screen Extensions destination that replaces the old ModalBottomSheet approach.
- *
- * This composable is registered as [Route.ExtensionCatalog] in the nav graph. It renders
- * [ExtensionsContent] (which already contains a Scaffold and TopAppBar) without any
- * bottom-sheet chrome, so navigating to it produces a regular slide-in screen rather than
- * a slide-up overlay. This matches the Mihon/Komikku UX described in issue #1117.
- *
- * The [onNavigateBack] callback is wired to the TopAppBar close button via [onClose].
+ * Full-screen Extensions destination ([Route.ExtensionCatalog] in the nav graph). Renders
+ * [ExtensionsContent] (Scaffold + TopAppBar) as a regular slide-in screen (issue #1117).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -363,7 +393,7 @@ fun ExtensionsScreen(
 
 /**
  * Scaffold-free Extensions content for embedding in Browse's Extensions tab.
- * Manages its own [ExtensionsViewModel] and snackbar; no TopAppBar.
+ * Manages its own [ExtensionsViewModel] and snackbar; no TopAppBar (Browse provides it).
  */
 @Composable
 internal fun ExtensionsTabBody(
@@ -400,533 +430,252 @@ internal fun ExtensionsTabBody(
 }
 
 @Composable
-private fun ExtensionsList(
-    extensions: List<Extension>,
-    isLoading: Boolean,
-    error: String?,
-    signerMismatchedPackages: Set<String>,
-    blockedPackages: Map<String, String> = emptyMap(),
-    onInstall: (Extension) -> Unit,
-    onUninstall: (Extension) -> Unit,
-    onUpdate: (Extension) -> Unit,
-    onToggleEnabled: (Extension, Boolean) -> Unit,
-    onRefresh: () -> Unit,
-    onViewDetails: (Extension) -> Unit = {},
-    modifier: Modifier = Modifier
+private fun ExtensionSectionHeader(
+    title: String,
+    actionText: String?,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    actionEnabled: Boolean = true,
 ) {
-    when {
-        isLoading -> LoadingScreen(modifier = modifier)
-        error != null -> ErrorScreen(
-            message = error,
-            onRetry = onRefresh,
-            modifier = modifier
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
         )
-        extensions.isEmpty() -> EmptyExtensionsView(modifier = modifier)
-        else -> LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(extensions, key = { it.id }) { extension ->
-                ExtensionItem(
-                    extension = extension,
-                    signerMismatch = extension.pkgName in signerMismatchedPackages,
-                    blockedReason = blockedPackages[extension.pkgName],
-                    onInstall = { onInstall(extension) },
-                    onUninstall = { onUninstall(extension) },
-                    onUpdate = { onUpdate(extension) },
-                    onToggleEnabled = { enabled -> onToggleEnabled(extension, enabled) },
-                    onViewDetails = { onViewDetails(extension) }
-                )
+        if (actionText != null) {
+            TextButton(onClick = onAction, enabled = actionEnabled) {
+                Text(actionText)
             }
         }
     }
 }
 
 @Composable
-private fun EmptyExtensionsView(modifier: Modifier = Modifier) {
+private fun EmptyExtensionsView(
+    onManageRepositories: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = "No extensions found",
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun ExtensionItem(
-    extension: Extension,
-    signerMismatch: Boolean,
-    blockedReason: String? = null,
-    onInstall: () -> Unit,
-    onUninstall: () -> Unit,
-    onUpdate: () -> Unit,
-    onToggleEnabled: (Boolean) -> Unit,
-    onViewDetails: () -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Extension icon
-                AsyncImage(
-                    model = extension.iconUrl,
-                    contentDescription = extension.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                )
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = extension.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false),
-                        )
-                        // Signer mismatch warning: shown when the signing cert changed since
-                        // first install. Surfaced here so the user can decide whether to keep
-                        // the extension. Full details are logged at WARN level.
-                        if (signerMismatch) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = stringResource(R.string.extension_signer_mismatch_warning),
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                    Text(
-                        text = "v${extension.versionName} • ${extension.lang.uppercase()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (extension.sources.isNotEmpty()) {
-                        Text(
-                            text = "${extension.sources.size} source(s)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    if (signerMismatch) {
-                        Text(
-                            text = stringResource(R.string.extension_signer_mismatch_warning),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    if (blockedReason != null) {
-                        Text(
-                            text = stringResource(R.string.extension_blocked_warning, blockedReason),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                    Text(
-                    text = if (extension.signatureHash != null) "Trusted" else "Unverified",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (extension.signatureHash != null) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-                // Capability badges: shown only when the flag is true so the row is invisible
-                // for most extensions and adds zero visual noise.
-                ExtensionCapabilityBadges(extension = extension)
-            }
-
-            // Action buttons based on status
-            when (extension.status) {
-                InstallStatus.INSTALLED -> {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Switch(
-                            checked = extension.isEnabled,
-                            onCheckedChange = onToggleEnabled
-                        )
-                        IconButton(onClick = onUninstall) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_uninstall))
-                        }
-                    }
-                }
-                InstallStatus.HAS_UPDATE -> {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Switch(
-                            checked = extension.isEnabled,
-                            onCheckedChange = onToggleEnabled
-                        )
-                        IconButton(onClick = onUpdate) {
-                            Icon(
-                                Icons.Default.Update,
-                                contentDescription = stringResource(R.string.extensions_update),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-                InstallStatus.AVAILABLE -> {
-                    IconButton(onClick = onInstall) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = stringResource(R.string.extensions_install),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                InstallStatus.INSTALLING, InstallStatus.UPDATING -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-                else -> {
-                    // Error or other states - show install button
-                    IconButton(onClick = onInstall) {
-                        Icon(Icons.Default.Download, contentDescription = stringResource(R.string.extensions_install))
-                    }
-                }
-            }
-            }
-
-            // Details link — always visible at the bottom of the card
-            TextButton(
-                onClick = onViewDetails,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(end = 8.dp, bottom = 4.dp)
-            ) {
-                Text(stringResource(R.string.extension_detail_view_details))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = stringResource(R.string.browse_no_sources_title),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onManageRepositories) {
+                Text(stringResource(R.string.extensions_manage_repositories))
             }
         }
     }
 }
 
 /**
- * Displays glanceable capability badges for an extension.
- *
- * - Amber "CF" chip: extension requires Cloudflare bypass (any of its sources has hasCloudflare).
- * - Blue "README" chip: extension has README documentation in its repository.
- * - Green "CHANGELOG" chip: extension has a changelog in its repository.
- *
- * The Row is only shown when at least one badge is visible; otherwise it collapses to nothing,
- * so extensions without any of these flags incur zero layout cost.
+ * Compact extension row matching Komikku's [ExtensionItem]: icon, name, a single metadata line
+ * (language · version · @repo · NSFW), and a trailing action (install / update / settings /
+ * progress). Long-press opens enable-disable / uninstall / details for installed extensions.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ExtensionCapabilityBadges(
+private fun ExtensionRow(
     extension: Extension,
-    modifier: Modifier = Modifier
+    signerMismatch: Boolean,
+    blockedReason: String?,
+    onEvent: (ExtensionsEvent) -> Unit,
+    onViewDetails: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val hasAny = extension.hasCloudflare || extension.hasReadme || extension.hasChangelog
-    if (!hasAny) return
+    var menuExpanded by remember { mutableStateOf(false) }
+    val isInstalledKind = extension.status == InstallStatus.INSTALLED ||
+        extension.status == InstallStatus.HAS_UPDATE
 
-    Row(
-        modifier = modifier.padding(top = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (extension.hasCloudflare) {
-            SuggestionChip(
-                onClick = {},
-                label = {
-                    Text(
-                        text = stringResource(R.string.extension_has_cloudflare),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    labelColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            )
-        }
-        if (extension.hasReadme) {
-            SuggestionChip(
-                onClick = {},
-                label = {
-                    Text(
-                        text = stringResource(R.string.extension_has_readme),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            )
-        }
-        if (extension.hasChangelog) {
-            SuggestionChip(
-                onClick = {},
-                label = {
-                    Text(
-                        text = stringResource(R.string.extension_has_changelog),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                },
-                colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    labelColor = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterAndSortRow(
-    showNsfw: Boolean,
-    sortMode: SortMode,
-    onToggleNsfw: (Boolean) -> Unit,
-    onSetSortMode: (SortMode) -> Unit
-) {
-    var showSortMenu by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // NSFW Toggle
+    Box {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.clickable { onToggleNsfw(!showNsfw) }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = stringResource(R.string.extensions_icon_cd),
-                tint = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                text = stringResource(R.string.extensions_nsfw_label),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (showNsfw) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Switch(
-                checked = showNsfw,
-                onCheckedChange = onToggleNsfw,
-                modifier = Modifier.padding(start = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Sort dropdown
-        Box {
-            TextButton(onClick = { showSortMenu = true }) {
-                Icon(
-                    imageVector = Icons.Default.Sort,
-                    contentDescription = stringResource(R.string.extensions_language_cd),
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = when (sortMode) {
-                        SortMode.NAME -> stringResource(R.string.extensions_sort_name)
-                        SortMode.RECENTLY_ADDED -> stringResource(R.string.extensions_sort_recently_added)
-                        SortMode.LANGUAGE -> stringResource(R.string.extensions_sort_language)
-                    }
-                )
-            }
-
-            DropdownMenu(
-                expanded = showSortMenu,
-                onDismissRequest = { showSortMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.extensions_sort_name)) },
-                    onClick = {
-                        onSetSortMode(SortMode.NAME)
-                        showSortMenu = false
-                    },
-                    leadingIcon = {
-                        if (sortMode == SortMode.NAME) {
-                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
-                        }
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.extensions_sort_recently_added)) },
-                    onClick = {
-                        onSetSortMode(SortMode.RECENTLY_ADDED)
-                        showSortMenu = false
-                    },
-                    leadingIcon = {
-                        if (sortMode == SortMode.RECENTLY_ADDED) {
-                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
-                        }
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.extensions_sort_language)) },
-                    onClick = {
-                        onSetSortMode(SortMode.LANGUAGE)
-                        showSortMenu = false
-                    },
-                    leadingIcon = {
-                        if (sortMode == SortMode.LANGUAGE) {
-                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.extensions_installed_cd))
-                        }
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun UpdateAllButton(
-    updateCount: Int,
-    isUpdating: Boolean,
-    onUpdateAll: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable(enabled = !isUpdating) { onUpdateAll() }
-    ) {
-        Row(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .combinedClickable(
+                    onClick = {
+                        when (extension.status) {
+                            InstallStatus.AVAILABLE, InstallStatus.ERROR ->
+                                onEvent(ExtensionsEvent.InstallExtension(extension))
+                            // No-op while a transient operation is in flight.
+                            InstallStatus.INSTALLING, InstallStatus.UPDATING, InstallStatus.UNINSTALLING -> Unit
+                            InstallStatus.INSTALLED, InstallStatus.HAS_UPDATE -> onViewDetails()
+                        }
+                    },
+                    onLongClick = { if (isInstalledKind) menuExpanded = true },
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isUpdating) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
+            AsyncImage(
+                model = extension.iconUrl,
+                contentDescription = extension.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape),
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = extension.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
                     )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Update,
-                        contentDescription = stringResource(R.string.extensions_language_flag_cd),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    if (signerMismatch) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = stringResource(R.string.extension_signer_mismatch_warning),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                ExtensionMetadataLine(extension = extension)
+                if (blockedReason != null) {
                     Text(
-                        text = if (isUpdating) {
-                            stringResource(R.string.extensions_updating_all)
-                        } else {
-                            stringResource(R.string.extensions_update_all)
-                        },
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = pluralStringResource(R.plurals.extensions_updates_available, updateCount, updateCount),
+                        text = stringResource(R.string.extension_blocked_warning, blockedReason),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.error,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
 
-            if (!isUpdating) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primary
-                ) {
+            ExtensionRowAction(
+                status = extension.status,
+                onInstall = { onEvent(ExtensionsEvent.InstallExtension(extension)) },
+                onUpdate = { onEvent(ExtensionsEvent.UpdateExtension(extension)) },
+                onSettings = onViewDetails,
+            )
+        }
+
+        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+            DropdownMenuItem(
+                text = {
                     Text(
-                        text = updateCount.toString(),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        if (extension.isEnabled) {
+                            stringResource(R.string.extensions_disable)
+                        } else {
+                            stringResource(R.string.extensions_enable)
+                        },
                     )
-                }
-            }
+                },
+                onClick = {
+                    menuExpanded = false
+                    onEvent(ExtensionsEvent.ToggleExtensionEnabled(extension, !extension.isEnabled))
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.extension_detail_view_details)) },
+                onClick = {
+                    menuExpanded = false
+                    onViewDetails()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.extensions_uninstall)) },
+                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                onClick = {
+                    menuExpanded = false
+                    onEvent(ExtensionsEvent.UninstallExtension(extension))
+                },
+            )
         }
     }
 }
 
 @Composable
-private fun RepositoryManager(
-    repositories: List<String>,
-    onAdd: (String) -> Unit,
-    onRemove: (String) -> Unit,
-    onOpenFullManager: () -> Unit = {},
+private fun ExtensionMetadataLine(
+    extension: Extension,
+    modifier: Modifier = Modifier,
 ) {
-    var repoInput by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    val separator = stringResource(R.string.extension_meta_separator)
+    val parts = buildList {
+        if (extension.lang.isNotBlank()) add(extension.lang.uppercase(Locale.ROOT))
+        if (extension.versionName.isNotBlank()) add(stringResource(R.string.extension_meta_version, extension.versionName))
+        repoOwner(extension.repoUrl)?.let { add(stringResource(R.string.extension_meta_repo, it)) }
+    }
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = stringResource(R.string.extensions_repositories_title), style = MaterialTheme.typography.titleMedium)
-
-        repositories.forEach { repo ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = repo,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = { onRemove(repo) }) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.extensions_remove_repo))
-                }
-            }
-        }
-
-        OutlinedTextField(
-            value = repoInput,
-            onValueChange = { repoInput = it },
-            placeholder = { Text(stringResource(R.string.extensions_repo_url_placeholder)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+        Text(
+            text = parts.joinToString(separator),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
         )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = onOpenFullManager) {
-                Text(stringResource(R.string.extensions_manage_repositories))
-            }
-            TextButton(
-                onClick = {
-                    onAdd(repoInput)
-                    repoInput = ""
-                },
-                enabled = repoInput.isNotBlank()
-            ) {
-                Text(stringResource(R.string.extensions_add_repository))
-            }
+        if (extension.isNsfw) {
+            Text(
+                text = separator,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(R.string.browse_source_nsfw_badge),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
         }
-
-        HorizontalDivider()
     }
 }
 
+@Composable
+private fun ExtensionRowAction(
+    status: InstallStatus,
+    onInstall: () -> Unit,
+    onUpdate: () -> Unit,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        when (status) {
+            InstallStatus.INSTALLED -> IconButton(onClick = onSettings) {
+                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.extensions_settings))
+            }
+            InstallStatus.HAS_UPDATE -> IconButton(onClick = onUpdate) {
+                Icon(
+                    Icons.Default.Update,
+                    contentDescription = stringResource(R.string.extensions_update),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            InstallStatus.AVAILABLE, InstallStatus.ERROR -> IconButton(onClick = onInstall) {
+                Icon(
+                    Icons.Default.Download,
+                    contentDescription = stringResource(R.string.extensions_install),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+            InstallStatus.INSTALLING, InstallStatus.UPDATING, InstallStatus.UNINSTALLING ->
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+        }
+    }
+}
 
 @Composable
 private fun UnverifiedInstallDialog(
@@ -935,7 +684,7 @@ private fun UnverifiedInstallDialog(
     onConfirm: () -> Unit,
 ) {
     if (extension == null) return
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.extension_unverified_title)) },
         text = {
@@ -952,7 +701,7 @@ private fun UnverifiedInstallDialog(
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
@@ -967,39 +716,23 @@ private fun UnverifiedInstallDialog(
     )
 }
 
-@Composable
-private fun TrustBanner(
-    visible: Boolean,
-    modifier: Modifier = Modifier
-) {
-    if (!visible) return
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.error,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = stringResource(R.string.extension_repo_warning),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.weight(1f)
-            )
-        }
+/**
+ * Best-effort extraction of the repository owner from an extension's repo URL, e.g.
+ * `https://raw.githubusercontent.com/keiyoushi/extensions/repo` → `keiyoushi`. Falls back to the
+ * host when the path has no owner segment. Returns null when no URL is known.
+ */
+private fun repoOwner(repoUrl: String?): String? {
+    if (repoUrl.isNullOrBlank()) return null
+    val segments = repoUrl
+        .substringAfter("://", repoUrl)
+        .split("/")
+        .filter { it.isNotBlank() }
+    val host = segments.firstOrNull() ?: return null
+    return when {
+        // GitHub Pages: the owner is the subdomain, e.g. keiyoushi.github.io/extensions
+        host.endsWith(".github.io", ignoreCase = true) -> host.substringBefore(".github.io")
+        // raw.githubusercontent.com/<owner>/<repo>/... or github.com/<owner>/<repo>
+        host.contains("githubusercontent") || host.contains("github") -> segments.getOrNull(1) ?: host
+        else -> host
     }
 }

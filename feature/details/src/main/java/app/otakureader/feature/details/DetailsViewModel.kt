@@ -172,6 +172,9 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.ResetMangaInfo -> resetMangaInfo()
             is DetailsContract.Event.SetCustomCover -> setCustomCover(event.imageUri)
             is DetailsContract.Event.RemoveCustomCover -> removeCustomCover()
+
+            is DetailsContract.Event.GenreClick -> searchGenreInSource(event.genre)
+            is DetailsContract.Event.GenreLongClick -> searchGenreGlobally(event.genre)
         }
     }
 
@@ -184,6 +187,26 @@ class DetailsViewModel @Inject constructor(
                     mangaTitle = manga.title
                 )
             )
+        }
+    }
+
+    /** Tag short-press: browse the manga's own source filtered by [genre] (Mihon/Komikku). */
+    private fun searchGenreInSource(genre: String) {
+        viewModelScope.launch {
+            val manga = _state.value.manga ?: return@launch
+            _effect.send(
+                DetailsContract.Effect.NavigateToSourceSearch(
+                    sourceId = manga.sourceId.toString(),
+                    query = genre,
+                )
+            )
+        }
+    }
+
+    /** Tag long-press: search [genre] across all sources (global search). */
+    private fun searchGenreGlobally(genre: String) {
+        viewModelScope.launch {
+            _effect.send(DetailsContract.Effect.NavigateToGlobalSearch(query = genre))
         }
     }
 

@@ -255,6 +255,12 @@ object DetailsContract {
         /** [imageUri] is a content:// URI string returned by the system image picker. */
         data class SetCustomCover(val imageUri: String) : Event
         data object RemoveCustomCover : Event
+
+        /** Genre/tag chip short-press: search this tag within the manga's own source. */
+        data class GenreClick(val genre: String) : Event
+
+        /** Genre/tag chip long-press: search this tag across all sources (global search). */
+        data class GenreLongClick(val genre: String) : Event
     }
 
     /**
@@ -268,6 +274,8 @@ object DetailsContract {
         data class NavigateToTracking(val mangaId: Long, val mangaTitle: String) : Effect
         data class OpenInBrowser(val url: String) : Effect
         data class NavigateToGlobalSearch(val query: String) : Effect
+        /** Search [query] within a single source's browse listing (tag short-press). */
+        data class NavigateToSourceSearch(val sourceId: String, val query: String) : Effect
         data class OpenDownloadFolder(val sourceName: String, val mangaTitle: String) : Effect
     }
 }

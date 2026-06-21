@@ -57,12 +57,13 @@ fun SourceMangaScreen(
     sourceId: String,
     onMangaClick: (mangaUrl: String, mangaTitle: String) -> Unit,
     onNavigateBack: () -> Unit,
+    initialQuery: String = "",
     viewModel: SourceMangaViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    LaunchedEffect(sourceId) {
-        viewModel.setSourceId(sourceId)
+    LaunchedEffect(sourceId, initialQuery) {
+        viewModel.setSourceId(sourceId, initialQuery)
     }
 
     LaunchedEffect(viewModel.effect) {

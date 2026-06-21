@@ -67,6 +67,7 @@ import app.otakureader.core.ui.component.ErrorScreen
 import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.feature.browse.R
 import coil3.compose.AsyncImage
+import java.util.Locale
 
 // ─── Nav-graph extension ─────────────────────────────────────────────────────
 
@@ -348,7 +349,7 @@ private fun CapabilityBadges(extension: Extension, modifier: Modifier = Modifier
             CapabilityChip(label = "Changelog")
         }
         // Show language badge
-        CapabilityChip(label = extension.lang.uppercase())
+        CapabilityChip(label = extension.lang.uppercase(Locale.ROOT))
     }
 }
 
@@ -412,7 +413,7 @@ private fun SourcesList(extension: Extension, modifier: Modifier = Modifier) {
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                             Text(
-                                text = source.lang.uppercase(),
+                                text = source.lang.uppercase(Locale.ROOT),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

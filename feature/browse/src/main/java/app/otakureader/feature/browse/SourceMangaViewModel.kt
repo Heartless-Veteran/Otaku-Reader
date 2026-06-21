@@ -65,24 +65,32 @@ class SourceMangaViewModel @Inject constructor(
     private val _effect = Channel<SourceMangaEffect>()
     val effect = _effect.receiveAsFlow()
 
-    fun setSourceId(sourceId: String) {
-        if (_state.value.sourceId != sourceId) {
-            viewModelScope.launch {
-                val sourceName = sourceRepository.getSource(sourceId)?.name ?: sourceId
-                _state.update {
-                    it.copy(
-                        sourceId = sourceId,
-                        sourceName = sourceName,
-                        manga = emptyList(),
-                        currentPage = 1,
-                        hasNextPage = false,
-                        isSearchMode = false,
-                        searchQuery = "",
-                        error = null,
-                    )
-                }
-                loadManga(sourceId, page = 1)
+    fun setSourceId(sourceId: String, initialQuery: String = "") {
+        val hasQuery = initialQuery.isNotBlank()
+        val current = _state.value
+        // Re-initialize when either the source OR the requested query changes, so navigating
+        // to the same source with a different tag/genre query re-runs the search.
+        val sameRequest = current.sourceId == sourceId &&
+            current.searchQuery == initialQuery &&
+            current.isSearchMode == hasQuery
+        if (sameRequest) return
+        viewModelScope.launch {
+            val sourceName = sourceRepository.getSource(sourceId)?.name ?: sourceId
+            _state.update {
+                it.copy(
+                    sourceId = sourceId,
+                    sourceName = sourceName,
+                    manga = emptyList(),
+                    currentPage = 1,
+                    hasNextPage = false,
+                    isSearchMode = hasQuery,
+                    searchQuery = initialQuery,
+                    error = null,
+                )
             }
+            // When opened with a tag/genre query (from a manga's detail page), search the
+            // source for it immediately; otherwise show the popular listing.
+            if (hasQuery) performSearch() else loadManga(sourceId, page = 1)
         }
     }
 

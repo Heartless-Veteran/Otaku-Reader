@@ -83,8 +83,14 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
 
     // --- Browse ---
 
-    /** Whether to show NSFW (18+) sources and extensions in the Browse screen. */
-    val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: false }
+    /**
+     * Whether to show NSFW (18+) sources and extensions in the Browse screen.
+     *
+     * Defaults to true to match Mihon/Komikku (showNsfwSource defaults to true). A false default
+     * silently hid freshly installed NSFW sources from the Sources screen — the user installs an
+     * 18+ extension and it never appears, which reads as a broken install.
+     */
+    val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: true }
     suspend fun setShowNsfwContent(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW_CONTENT] = value }
 
     /** Language codes (e.g. "en", "ja") the user wants to see in Browse. Default: all English sources. */

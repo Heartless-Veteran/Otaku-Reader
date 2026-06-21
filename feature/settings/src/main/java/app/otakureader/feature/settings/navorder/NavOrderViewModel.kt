@@ -2,7 +2,6 @@ package app.otakureader.feature.settings.navorder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import app.otakureader.core.preferences.NavTab
 import app.otakureader.core.preferences.NavOrderPreferences
 import app.otakureader.core.preferences.NavTabPreferenceEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -76,8 +75,9 @@ class NavOrderViewModel @Inject constructor(
     }
 
     private fun reset() {
-        // Restore default order with all tabs visible.
-        persist(NavTab.entries.map { NavTabEntry(it, isVisible = true) })
+        // Restore the same default order used on first run (NOT NavTab.entries, whose enum
+        // declaration order differs), with all tabs visible.
+        persist(NavOrderPreferences.DEFAULT_ORDER.map { NavTabEntry(it, isVisible = true) })
     }
 
     private fun persist(order: List<NavTabEntry>) {
