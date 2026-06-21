@@ -130,6 +130,7 @@ class DetailsViewModel @Inject constructor(
             is DetailsContract.Event.SaveChapterNote -> saveChapterNote()
             is DetailsContract.Event.ClearChapterSelection -> clearChapterSelection()
             is DetailsContract.Event.SelectAllChapters -> selectAllChapters()
+            is DetailsContract.Event.InvertChapterSelection -> invertChapterSelection()
             is DetailsContract.Event.DownloadSelectedChapters -> downloadSelectedChapters()
             is DetailsContract.Event.DeleteSelectedChapters -> deleteSelectedChapters()
             is DetailsContract.Event.MarkSelectedAsRead -> markSelectedAsRead()
@@ -500,6 +501,14 @@ class DetailsViewModel @Inject constructor(
         _state.update { state ->
             val allIds = state.chapters.map { it.id }.toSet()
             state.copy(selectedChapters = allIds)
+        }
+    }
+
+    /** Selects every chapter not currently selected and deselects the rest (Komikku parity). */
+    private fun invertChapterSelection() {
+        _state.update { state ->
+            val allIds = state.chapters.map { it.id }.toSet()
+            state.copy(selectedChapters = allIds - state.selectedChapters)
         }
     }
 

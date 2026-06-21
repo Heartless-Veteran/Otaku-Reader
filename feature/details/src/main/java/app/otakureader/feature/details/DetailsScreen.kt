@@ -5,7 +5,11 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,17 +30,21 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QueryStats
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -72,6 +80,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +113,9 @@ private const val HERO_TOP_BAR_FADE_RANGE = 600f
 private val GENRE_CHIP_SPACING = 8.dp
 private val GENRE_CHIP_PADDING_HORIZONTAL = 12.dp
 private val GENRE_CHIP_PADDING_VERTICAL = 6.dp
+
+// Corner radius for the ripple on each chapter selection bottom-bar action.
+private val CHAPTER_ACTION_CORNER = 8.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,10 +237,7 @@ fun DetailsScreen(
                     selectedCount = state.selectedChapters.size,
                     onClearSelection = { viewModel.onEvent(DetailsContract.Event.ClearChapterSelection) },
                     onSelectAll = { viewModel.onEvent(DetailsContract.Event.SelectAllChapters) },
-                    onMarkRead = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsRead) },
-                    onMarkUnread = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsUnread) },
-                    onDownload = { viewModel.onEvent(DetailsContract.Event.DownloadSelectedChapters) },
-                    onDelete = { viewModel.onEvent(DetailsContract.Event.DeleteSelectedChapters) },
+                    onInvertSelection = { viewModel.onEvent(DetailsContract.Event.InvertChapterSelection) },
                 )
             } else {
             TopAppBar(
@@ -376,6 +385,21 @@ fun DetailsScreen(
             )
             }
         },
+        bottomBar = {
+            val selectedChapters = remember(state.chapters, state.selectedChapters) {
+                state.chapters.filter { it.id in state.selectedChapters }
+            }
+            ChapterSelectionBottomBar(
+                selectedChapters = selectedChapters,
+                onMarkRead = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsRead) },
+                onMarkUnread = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsUnread) },
+                onMarkPreviousAsRead = { chapterId ->
+                    viewModel.onEvent(DetailsContract.Event.MarkPreviousAsRead(chapterId))
+                },
+                onDownload = { viewModel.onEvent(DetailsContract.Event.DownloadSelectedChapters) },
+                onDelete = { viewModel.onEvent(DetailsContract.Event.DeleteSelectedChapters) },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         when {
@@ -398,8 +422,10 @@ fun DetailsScreen(
 }
 
 /**
- * Contextual app bar shown while one or more chapters are selected. Surfaces the batch
- * actions that the ViewModel already handles (select-all, mark read/unread, download, delete).
+ * Contextual app bar shown while one or more chapters are selected. Matching Mihon/Komikku's
+ * `MangaToolbar` selection mode, this only carries the count plus select-all / invert-selection;
+ * the actual batch operations (mark read/unread, download, delete) live in the animated
+ * [ChapterSelectionBottomBar] at the bottom of the screen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -407,10 +433,7 @@ private fun ChapterSelectionTopBar(
     selectedCount: Int,
     onClearSelection: () -> Unit,
     onSelectAll: () -> Unit,
-    onMarkRead: () -> Unit,
-    onMarkUnread: () -> Unit,
-    onDownload: () -> Unit,
-    onDelete: () -> Unit,
+    onInvertSelection: () -> Unit,
 ) {
     TopAppBar(
         title = { Text(stringResource(R.string.details_selected_count, selectedCount)) },
@@ -423,23 +446,119 @@ private fun ChapterSelectionTopBar(
             IconButton(onClick = onSelectAll) {
                 Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.details_select_all))
             }
-            IconButton(onClick = onMarkRead) {
-                Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.details_mark_as_read))
-            }
-            IconButton(onClick = onMarkUnread) {
-                Icon(
-                    Icons.Default.RadioButtonUnchecked,
-                    contentDescription = stringResource(R.string.details_mark_as_unread),
-                )
-            }
-            IconButton(onClick = onDownload) {
-                Icon(Icons.Default.Download, contentDescription = stringResource(R.string.details_download_selected))
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.details_delete_selected))
+            IconButton(onClick = onInvertSelection) {
+                Icon(Icons.Default.FlipToBack, contentDescription = stringResource(R.string.details_invert_selection))
             }
         },
     )
+}
+
+/**
+ * Komikku-style chapter selection action menu. Slides up from the bottom while chapters are
+ * selected and only surfaces the actions that make sense for the current selection — mirroring
+ * Mihon/Komikku's `MangaBottomActionMenu`:
+ *  - Mark as read: shown when any selected chapter is unread.
+ *  - Mark as unread: shown when any selected chapter is read (or partially read).
+ *  - Mark previous as read: shown only when exactly one chapter is selected.
+ *  - Download: shown when any selected chapter is not yet downloaded.
+ *  - Delete: shown when any selected chapter is downloaded.
+ */
+@Composable
+private fun ChapterSelectionBottomBar(
+    selectedChapters: List<DetailsContract.ChapterItem>,
+    onMarkRead: () -> Unit,
+    onMarkUnread: () -> Unit,
+    onMarkPreviousAsRead: (Long) -> Unit,
+    onDownload: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = selectedChapters.isNotEmpty(),
+        enter = expandVertically(expandFrom = Alignment.Bottom),
+        exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+    ) {
+        val showMarkRead = selectedChapters.any { !it.read }
+        val showMarkUnread = selectedChapters.any { it.read || it.lastPageRead > 0 }
+        val showMarkPrevious = selectedChapters.size == 1
+        val showDownload = selectedChapters.any { it.downloadStatus != DetailsContract.DownloadStatus.DOWNLOADED }
+        val showDelete = selectedChapters.any { it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADED }
+
+        Surface(
+            shape = MaterialTheme.shapes.large.copy(
+                bottomEnd = androidx.compose.foundation.shape.ZeroCornerSize,
+                bottomStart = androidx.compose.foundation.shape.ZeroCornerSize,
+            ),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                if (showMarkRead) {
+                    ChapterSelectionAction(
+                        icon = Icons.Default.DoneAll,
+                        label = stringResource(R.string.details_mark_as_read),
+                        onClick = onMarkRead,
+                    )
+                }
+                if (showMarkUnread) {
+                    ChapterSelectionAction(
+                        icon = Icons.Default.RemoveDone,
+                        label = stringResource(R.string.details_mark_as_unread),
+                        onClick = onMarkUnread,
+                    )
+                }
+                if (showMarkPrevious) {
+                    ChapterSelectionAction(
+                        icon = Icons.Default.Done,
+                        label = stringResource(R.string.details_mark_previous_as_read),
+                        onClick = { onMarkPreviousAsRead(selectedChapters.first().id) },
+                    )
+                }
+                if (showDownload) {
+                    ChapterSelectionAction(
+                        icon = Icons.Default.Download,
+                        label = stringResource(R.string.details_download_selected),
+                        onClick = onDownload,
+                    )
+                }
+                if (showDelete) {
+                    ChapterSelectionAction(
+                        icon = Icons.Default.Delete,
+                        label = stringResource(R.string.details_delete_selected),
+                        onClick = onDelete,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChapterSelectionAction(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(CHAPTER_ACTION_CORNER))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Icon(imageVector = icon, contentDescription = null)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 @Composable
