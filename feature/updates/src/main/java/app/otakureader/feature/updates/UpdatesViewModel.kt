@@ -53,6 +53,7 @@ class UpdatesViewModel @Inject constructor(
         observeActiveDownloads()
     }
 
+    @Suppress("CyclomaticComplexMethod")
     fun onEvent(event: UpdatesEvent) {
         when (event) {
             UpdatesEvent.Refresh -> loadUpdates()
@@ -61,8 +62,10 @@ class UpdatesViewModel @Inject constructor(
             is UpdatesEvent.OnDownloadChapter -> downloadChapter(event.mangaId, event.chapterId)
             UpdatesEvent.ClearSelection -> _state.update { it.copy(selectedItems = emptySet()) }
             UpdatesEvent.SelectAll -> selectAll()
+            UpdatesEvent.InvertSelection -> invertSelection()
             UpdatesEvent.DownloadSelected -> downloadSelected()
             UpdatesEvent.MarkSelectedAsRead -> markSelectedAsRead()
+            UpdatesEvent.MarkSelectedAsUnread -> markSelectedAsUnread()
             is UpdatesEvent.MarkChapterAsRead -> markSingleChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkChapterAsRead -> unmarkChapterAsRead(event.chapterId)
             is UpdatesEvent.UnmarkSelectedAsRead -> unmarkSelectedAsRead(event.chapterIds)
@@ -126,9 +129,37 @@ class UpdatesViewModel @Inject constructor(
         }
     }
 
+    /**
+     * IDs of the updates currently visible to the user — i.e. those passing the active date
+     * filter (the same filter the screen applies before rendering). Selection-building actions
+     * must restrict to these so they never select date-hidden entries.
+     */
+    private fun UpdatesState.visibleUpdateIds(): Set<Long> {
+        val start = dateFilterStart
+        val end = dateFilterEnd
+        return updates.filter { update ->
+            val date = update.chapter.dateFetch
+            (start == null || date >= start) && (end == null || date <= end)
+        }.map { it.chapter.id }.toSet()
+    }
+
     private fun selectAll() {
         _state.update { state ->
-            state.copy(selectedItems = state.updates.map { it.chapter.id }.toSet())
+            // Add only the visible updates; keep any already-selected hidden entries intact.
+            state.copy(selectedItems = state.selectedItems + state.visibleUpdateIds())
+        }
+    }
+
+    /**
+     * Selects every visible update not currently selected and deselects the visible ones that are
+     * (Mihon/Komikku parity). Restricted to the date-filtered set so a filter can't flip the
+     * selection state of hidden updates; already-selected hidden entries are preserved.
+     */
+    private fun invertSelection() {
+        _state.update { state ->
+            val visibleIds = state.visibleUpdateIds()
+            val keptHidden = state.selectedItems - visibleIds
+            state.copy(selectedItems = keptHidden + (visibleIds - state.selectedItems))
         }
     }
 
@@ -208,6 +239,32 @@ class UpdatesViewModel @Inject constructor(
                 throw e
             } catch (_: Exception) {
                 _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_read_failed)))
+            }
+        }
+    }
+
+    /**
+     * Marks the selected chapters as unread (Mihon/Komikku parity). Non-destructive — the user
+     * can simply mark them read again — so a plain confirmation snackbar is shown rather than an
+     * undo action (unlike the destructive mark-as-read flow).
+     */
+    private fun markSelectedAsUnread() {
+        val selected = _state.value.selectedItems
+        if (selected.isEmpty()) return
+        val count = selected.size
+        viewModelScope.launch {
+            try {
+                chapterRepository.updateChapterProgress(selected, read = false, lastPageRead = UNREAD_LAST_PAGE_READ)
+                _state.update { it.copy(selectedItems = it.selectedItems - selected) }
+                _effect.send(
+                    UpdatesEffect.ShowSnackbar(
+                        context.resources.getQuantityString(R.plurals.updates_marked_as_unread, count, count)
+                    )
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _effect.send(UpdatesEffect.ShowSnackbar(context.getString(R.string.updates_mark_as_unread_failed)))
             }
         }
     }
