@@ -236,12 +236,20 @@ fun DetailsScreen(
         enabled = state.manga?.mangaThemeOverride ?: state.autoThemeEnabled
     )
 
+    // Single source of truth for both selection bars: the selected chapters that are actually
+    // visible in the current (filtered/sorted) list. Deriving the top bar count and the bottom
+    // action menu from the same list keeps them in sync even if some selected IDs become stale
+    // after a list refresh or are hidden by a filter.
+    val selectedVisibleChapters = remember(state.sortedChapters, state.selectedChapters) {
+        state.sortedChapters.filter { it.id in state.selectedChapters }
+    }
+
     MangaDynamicTheme(colorScheme = dynamicScheme) {
         Scaffold(
             topBar = {
-            if (state.selectedChapters.isNotEmpty()) {
+            if (selectedVisibleChapters.isNotEmpty()) {
                 ChapterSelectionTopBar(
-                    selectedCount = state.selectedChapters.size,
+                    selectedCount = selectedVisibleChapters.size,
                     onClearSelection = { viewModel.onEvent(DetailsContract.Event.ClearChapterSelection) },
                     onSelectAll = { viewModel.onEvent(DetailsContract.Event.SelectAllChapters) },
                     onInvertSelection = { viewModel.onEvent(DetailsContract.Event.InvertChapterSelection) },
@@ -393,11 +401,8 @@ fun DetailsScreen(
             }
         },
         bottomBar = {
-            val selectedChapters = remember(state.sortedChapters, state.selectedChapters) {
-                state.sortedChapters.filter { it.id in state.selectedChapters }
-            }
             ChapterSelectionBottomBar(
-                selectedChapters = selectedChapters,
+                selectedChapters = selectedVisibleChapters,
                 onMarkRead = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsRead) },
                 onMarkUnread = { viewModel.onEvent(DetailsContract.Event.MarkSelectedAsUnread) },
                 onMarkPreviousAsRead = { chapterId ->

@@ -769,6 +769,9 @@ class DetailsViewModel @Inject constructor(
                     }
                 }
                 _effect.send(DetailsContract.Effect.ShowSnackbar("Marked previous chapters as read"))
+                // Exit selection mode like the other batch actions. Harmless no-op when invoked
+                // from the per-chapter context menu (no selection is active there).
+                clearChapterSelection()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
