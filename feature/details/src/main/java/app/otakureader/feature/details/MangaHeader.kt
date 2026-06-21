@@ -64,6 +64,7 @@ private const val HERO_BG_SCALE = 1.15f
 
 // Header info-block tokens.
 private const val HEADER_TITLE_MAX_LINES = 3
+private const val HEADER_SUBTITLE_MAX_LINES = 1
 private const val HEADER_SUBTITLE_ALPHA = 0.8f
 private val HEADER_ACTION_ICON_SIZE = 18.dp
 
@@ -234,26 +235,32 @@ internal fun MangaHeader(
                             overflow = TextOverflow.Ellipsis,
                         )
 
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        manga.author?.takeIf { it.isNotBlank() }?.let { author ->
-                            Text(
-                                text = author,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                        val author = manga.author?.takeIf { it.isNotBlank() }
                         // Show the artist only when it differs from the author (Komikku behaviour).
-                        manga.artist?.takeIf { it.isNotBlank() && it != manga.author }?.let { artist ->
-                            Text(
-                                text = artist,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                        val artist = manga.artist?.takeIf { it.isNotBlank() && it != manga.author }
+
+                        // Only insert the leading gap when at least one subtitle is present, so a
+                        // manga with no author/artist doesn't get a double-spacer gap below the title.
+                        if (author != null || artist != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            author?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
+                                    maxLines = HEADER_SUBTITLE_MAX_LINES,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            artist?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
+                                    maxLines = HEADER_SUBTITLE_MAX_LINES,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
 
                         Spacer(modifier = Modifier.height(4.dp))
