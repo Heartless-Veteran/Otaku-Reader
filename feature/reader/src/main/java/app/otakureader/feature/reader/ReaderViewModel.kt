@@ -827,20 +827,44 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private fun navigatePreviousChapter() {
-        viewModelScope.launch {
-            _effect.send(ReaderEffect.NavigateBack)
-        }
-    }
+    private fun navigatePreviousChapter() = navigateToAdjacentChapter(forward = false)
 
-    private fun navigateNextChapter() {
-        viewModelScope.launch {
-            _effect.send(
-                ReaderEffect.ShowSnackbar(
-                    messageResId = app.otakureader.feature.reader.R.string.reader_end_of_chapters
-                )
-            )
+    private fun navigateNextChapter() = navigateToAdjacentChapter(forward = true)
+
+    /**
+     * Loads the chapter immediately before or after the current one, in reading order
+     * (ascending chapter number). Previously both directions were stubbed — "next" only showed
+     * an end-of-chapters toast and "previous" simply exited the reader — so chapter-to-chapter
+     * navigation never worked. Reuses the same [loadChapterById] path the chapter-list overlay
+     * uses, and falls back to a boundary snackbar when there is no adjacent chapter.
+     */
+    private fun navigateToAdjacentChapter(forward: Boolean) {
+        val ordered = chapters.value.sortedBy { it.chapterNumber }
+        val currentIndex = ordered.indexOfFirst { it.id == _state.value.currentChapterId }
+        // Resolve the target only when the current chapter is found; an unresolved current
+        // chapter (empty/not-yet-loaded list) is treated the same as hitting a boundary so the
+        // control always gives feedback instead of becoming a silent no-op — this matters for the
+        // end-of-chapter overlay's "Next" button, which isn't gated by the slider's enabled state.
+        val target = if (currentIndex >= 0) {
+            ordered.getOrNull(if (forward) currentIndex + 1 else currentIndex - 1)
+        } else {
+            null
         }
+        if (target == null) {
+            viewModelScope.launch {
+                _effect.send(
+                    ReaderEffect.ShowSnackbar(
+                        messageResId = if (forward) {
+                            R.string.reader_end_of_chapters
+                        } else {
+                            R.string.reader_no_previous_chapter
+                        }
+                    )
+                )
+            }
+            return
+        }
+        loadChapterById(target.id)
     }
 
     /**
