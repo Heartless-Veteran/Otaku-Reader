@@ -71,7 +71,9 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
      * Whether to show NSFW content in the library. false = hide NSFW categories.
      *
      * Defaults to true to match Mihon/Komikku and to stay consistent with
-     * [GeneralPreferences.showNsfwContent], which reads the same SHOW_NSFW_CONTENT key.
+     * [GeneralPreferences.showNsfwContent]. Note these are independent keys
+     * ("library_show_nsfw_content" here vs "show_nsfw_content" there): this one gates library
+     * content visibility, while the General one gates source/extension/search visibility.
      */
     val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: true }
     suspend fun setShowNsfwContent(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW_CONTENT] = value }

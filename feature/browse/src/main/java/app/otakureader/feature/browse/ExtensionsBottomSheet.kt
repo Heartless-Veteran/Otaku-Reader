@@ -498,7 +498,9 @@ private fun ExtensionRow(
                         when (extension.status) {
                             InstallStatus.AVAILABLE, InstallStatus.ERROR ->
                                 onEvent(ExtensionsEvent.InstallExtension(extension))
-                            else -> onViewDetails()
+                            // No-op while a transient operation is in flight.
+                            InstallStatus.INSTALLING, InstallStatus.UPDATING, InstallStatus.UNINSTALLING -> Unit
+                            InstallStatus.INSTALLED, InstallStatus.HAS_UPDATE -> onViewDetails()
                         }
                     },
                     onLongClick = { if (isInstalledKind) menuExpanded = true },
@@ -596,17 +598,18 @@ private fun ExtensionMetadataLine(
     extension: Extension,
     modifier: Modifier = Modifier,
 ) {
+    val separator = stringResource(R.string.extension_meta_separator)
     val parts = buildList {
         if (extension.lang.isNotBlank()) add(extension.lang.uppercase())
-        if (extension.versionName.isNotBlank()) add("v${extension.versionName}")
-        repoOwner(extension.repoUrl)?.let { add("@$it") }
+        if (extension.versionName.isNotBlank()) add(stringResource(R.string.extension_meta_version, extension.versionName))
+        repoOwner(extension.repoUrl)?.let { add(stringResource(R.string.extension_meta_repo, it)) }
     }
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = parts.joinToString(SEPARATOR),
+            text = parts.joinToString(separator),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -615,7 +618,7 @@ private fun ExtensionMetadataLine(
         )
         if (extension.isNsfw) {
             Text(
-                text = SEPARATOR,
+                text = separator,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -703,8 +706,6 @@ private fun UnverifiedInstallDialog(
     )
 }
 
-private const val SEPARATOR = " • "
-
 /**
  * Best-effort extraction of the repository owner from an extension's repo URL, e.g.
  * `https://raw.githubusercontent.com/keiyoushi/extensions/repo` → `keiyoushi`. Falls back to the
@@ -717,9 +718,11 @@ private fun repoOwner(repoUrl: String?): String? {
         .split("/")
         .filter { it.isNotBlank() }
     val host = segments.firstOrNull() ?: return null
-    return if (host.contains("githubusercontent") || host.contains("github")) {
-        segments.getOrNull(1) ?: host
-    } else {
-        host
+    return when {
+        // GitHub Pages: the owner is the subdomain, e.g. keiyoushi.github.io/extensions
+        host.endsWith(".github.io", ignoreCase = true) -> host.substringBefore(".github.io")
+        // raw.githubusercontent.com/<owner>/<repo>/... or github.com/<owner>/<repo>
+        host.contains("githubusercontent") || host.contains("github") -> segments.getOrNull(1) ?: host
+        else -> host
     }
 }
