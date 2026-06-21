@@ -68,6 +68,7 @@
     <!-- Reader screen -->
     <string name="reader_navigating_to_chapter">Navigating to chapter…</string>
     <string name="reader_end_of_chapters">End of available chapters</string>
+    <string name="reader_no_previous_chapter">No previous chapter</string>
 
     <!-- Brightness slider -->
     <string name="reader_brightness_decrease">Decrease brightness</string>

@@ -827,20 +827,39 @@ class ReaderViewModel @Inject constructor(
         }
     }
 
-    private fun navigatePreviousChapter() {
-        viewModelScope.launch {
-            _effect.send(ReaderEffect.NavigateBack)
-        }
-    }
+    private fun navigatePreviousChapter() = navigateToAdjacentChapter(forward = false)
 
-    private fun navigateNextChapter() {
-        viewModelScope.launch {
-            _effect.send(
-                ReaderEffect.ShowSnackbar(
-                    messageResId = app.otakureader.feature.reader.R.string.reader_end_of_chapters
+    private fun navigateNextChapter() = navigateToAdjacentChapter(forward = true)
+
+    /**
+     * Loads the chapter immediately before or after the current one, in reading order
+     * (ascending chapter number). Previously both directions were stubbed — "next" only showed
+     * an end-of-chapters toast and "previous" simply exited the reader — so chapter-to-chapter
+     * navigation never worked. Reuses the same [loadChapterById] path the chapter-list overlay
+     * uses, and falls back to a boundary snackbar when there is no adjacent chapter.
+     */
+    private fun navigateToAdjacentChapter(forward: Boolean) {
+        val ordered = chapters.value.sortedBy { it.chapterNumber }
+        if (ordered.isEmpty()) return
+        val currentIndex = ordered.indexOfFirst { it.id == _state.value.currentChapterId }
+        if (currentIndex < 0) return
+
+        val target = ordered.getOrNull(if (forward) currentIndex + 1 else currentIndex - 1)
+        if (target == null) {
+            viewModelScope.launch {
+                _effect.send(
+                    ReaderEffect.ShowSnackbar(
+                        messageResId = if (forward) {
+                            R.string.reader_end_of_chapters
+                        } else {
+                            R.string.reader_no_previous_chapter
+                        }
+                    )
                 )
-            )
+            }
+            return
         }
+        loadChapterById(target.id)
     }
 
     /**

@@ -458,11 +458,23 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.CenterStart)
         )
 
-        // Page slider — shown when the menu is visible so users can quickly scrub pages
+        // Page slider — shown when the menu is visible so users can quickly scrub pages, flanked
+        // by previous/next-chapter buttons (Komikku's ChapterNavigator). Adjacent-chapter
+        // availability is derived from the manga's chapter list in reading order.
+        val orderedChapterIds = remember(chapters) {
+            chapters.sortedBy { it.chapterNumber }.map { it.id }
+        }
+        val currentChapterIndex = remember(orderedChapterIds, state.currentChapterId) {
+            orderedChapterIds.indexOf(state.currentChapterId)
+        }
         PageSlider(
             currentPage = state.currentPage,
             totalPages = state.totalPages,
             onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
+            onPreviousChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
+            onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
+            hasPreviousChapter = currentChapterIndex > 0,
+            hasNextChapter = currentChapterIndex >= 0 && currentChapterIndex < orderedChapterIds.lastIndex,
             readingDirection = state.readingDirection,
             isVisible = state.isMenuVisible && state.pages.isNotEmpty(),
             modifier = Modifier.align(Alignment.BottomCenter)
