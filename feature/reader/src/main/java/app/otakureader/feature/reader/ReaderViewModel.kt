@@ -840,11 +840,16 @@ class ReaderViewModel @Inject constructor(
      */
     private fun navigateToAdjacentChapter(forward: Boolean) {
         val ordered = chapters.value.sortedBy { it.chapterNumber }
-        if (ordered.isEmpty()) return
         val currentIndex = ordered.indexOfFirst { it.id == _state.value.currentChapterId }
-        if (currentIndex < 0) return
-
-        val target = ordered.getOrNull(if (forward) currentIndex + 1 else currentIndex - 1)
+        // Resolve the target only when the current chapter is found; an unresolved current
+        // chapter (empty/not-yet-loaded list) is treated the same as hitting a boundary so the
+        // control always gives feedback instead of becoming a silent no-op — this matters for the
+        // end-of-chapter overlay's "Next" button, which isn't gated by the slider's enabled state.
+        val target = if (currentIndex >= 0) {
+            ordered.getOrNull(if (forward) currentIndex + 1 else currentIndex - 1)
+        } else {
+            null
+        }
         if (target == null) {
             viewModelScope.launch {
                 _effect.send(
