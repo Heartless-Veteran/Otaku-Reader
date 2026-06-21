@@ -59,8 +59,10 @@
     <string name="updates_selected_count">%1$d selected</string>
     <string name="updates_clear_selection">Clear selection</string>
     <string name="updates_select_all">Select all</string>
+    <string name="updates_invert_selection">Invert selection</string>
     <string name="updates_download_selected">Download selected</string>
     <string name="updates_mark_selected_read">Mark selected as read</string>
+    <string name="updates_mark_selected_unread">Mark selected as unread</string>
     <string name="updates_download_chapter">Download chapter</string>
     <!-- Download feedback -->
     <string name="updates_download_queued">Download queued: %1$s</string>
@@ -74,6 +76,11 @@
         <item quantity="other">Marked %1$d chapters as read</item>
     </plurals>
     <string name="updates_mark_as_read_failed">Failed to mark as read</string>
+    <plurals name="updates_marked_as_unread">
+        <item quantity="one">Marked %1$d chapter as unread</item>
+        <item quantity="other">Marked %1$d chapters as unread</item>
+    </plurals>
+    <string name="updates_mark_as_unread_failed">Failed to mark as unread</string>
     <string name="updates_library_update_started">Library update started</string>
     <!-- Last run summary diagnostics card (#1041) -->
     <string name="updates_last_run_title">Last Update Run</string>
