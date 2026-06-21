@@ -499,16 +499,23 @@ class DetailsViewModel @Inject constructor(
 
     private fun selectAllChapters() {
         _state.update { state ->
-            val allIds = state.chapters.map { it.id }.toSet()
-            state.copy(selectedChapters = allIds)
+            // Only the currently visible (filtered/searched) chapters — matches Mihon/Komikku,
+            // so an active filter never selects chapters the user can't see.
+            val visibleIds = state.sortedChapters.map { it.id }.toSet()
+            state.copy(selectedChapters = state.selectedChapters + visibleIds)
         }
     }
 
-    /** Selects every chapter not currently selected and deselects the rest (Komikku parity). */
+    /**
+     * Selects every visible chapter not currently selected and deselects the visible ones that
+     * are (Komikku parity). Restricted to [State.sortedChapters] so a filter/search can't flip
+     * the selection state of hidden chapters.
+     */
     private fun invertChapterSelection() {
         _state.update { state ->
-            val allIds = state.chapters.map { it.id }.toSet()
-            state.copy(selectedChapters = allIds - state.selectedChapters)
+            val visibleIds = state.sortedChapters.map { it.id }.toSet()
+            val keptHidden = state.selectedChapters - visibleIds
+            state.copy(selectedChapters = keptHidden + (visibleIds - state.selectedChapters))
         }
     }
 

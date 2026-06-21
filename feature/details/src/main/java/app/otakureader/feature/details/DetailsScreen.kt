@@ -117,6 +117,13 @@ private val GENRE_CHIP_PADDING_VERTICAL = 6.dp
 // Corner radius for the ripple on each chapter selection bottom-bar action.
 private val CHAPTER_ACTION_CORNER = 8.dp
 
+// "Mark previous as read" only applies to a single anchor chapter, so the action is shown
+// only when exactly this many chapters are selected (Komikku parity).
+private const val SINGLE_CHAPTER_SELECTION = 1
+
+// Action labels in the selection bottom bar are kept to a single line so the row stays compact.
+private const val CHAPTER_ACTION_LABEL_MAX_LINES = 1
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
@@ -386,8 +393,8 @@ fun DetailsScreen(
             }
         },
         bottomBar = {
-            val selectedChapters = remember(state.chapters, state.selectedChapters) {
-                state.chapters.filter { it.id in state.selectedChapters }
+            val selectedChapters = remember(state.sortedChapters, state.selectedChapters) {
+                state.sortedChapters.filter { it.id in state.selectedChapters }
             }
             ChapterSelectionBottomBar(
                 selectedChapters = selectedChapters,
@@ -471,15 +478,17 @@ private fun ChapterSelectionBottomBar(
     onMarkPreviousAsRead: (Long) -> Unit,
     onDownload: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
         visible = selectedChapters.isNotEmpty(),
         enter = expandVertically(expandFrom = Alignment.Bottom),
         exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+        modifier = modifier,
     ) {
         val showMarkRead = selectedChapters.any { !it.read }
         val showMarkUnread = selectedChapters.any { it.read || it.lastPageRead > 0 }
-        val showMarkPrevious = selectedChapters.size == 1
+        val showMarkPrevious = selectedChapters.size == SINGLE_CHAPTER_SELECTION
         val showDownload = selectedChapters.any { it.downloadStatus != DetailsContract.DownloadStatus.DOWNLOADED }
         val showDelete = selectedChapters.any { it.downloadStatus == DetailsContract.DownloadStatus.DOWNLOADED }
 
@@ -512,10 +521,11 @@ private fun ChapterSelectionBottomBar(
                     )
                 }
                 if (showMarkPrevious) {
+                    val previousAnchorId = selectedChapters.first().id
                     ChapterSelectionAction(
                         icon = Icons.Default.Done,
                         label = stringResource(R.string.details_mark_previous_as_read),
-                        onClick = { onMarkPreviousAsRead(selectedChapters.first().id) },
+                        onClick = { onMarkPreviousAsRead(previousAnchorId) },
                     )
                 }
                 if (showDownload) {
@@ -555,7 +565,7 @@ private fun ChapterSelectionAction(
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
+            maxLines = CHAPTER_ACTION_LABEL_MAX_LINES,
             overflow = TextOverflow.Ellipsis,
         )
     }
