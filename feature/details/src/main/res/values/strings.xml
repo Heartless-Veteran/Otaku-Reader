@@ -111,6 +111,8 @@
     <string name="details_mark_as_unread">Mark as unread</string>
     <string name="details_delete_selected">Delete selected</string>
     <string name="details_select_all">Select all</string>
+    <string name="details_invert_selection">Invert selection</string>
+    <string name="details_mark_previous_as_read">Mark previous as read</string>
     <string name="details_sort_chapters">Sort chapters</string>
 
     <!-- Chapter context menu actions -->
