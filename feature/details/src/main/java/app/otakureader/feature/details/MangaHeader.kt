@@ -67,6 +67,10 @@ private const val HEADER_TITLE_MAX_LINES = 3
 private const val HEADER_SUBTITLE_MAX_LINES = 1
 private const val HEADER_SUBTITLE_ALPHA = 0.8f
 private val HEADER_ACTION_ICON_SIZE = 18.dp
+private val HEADER_SUBTITLE_TOP_SPACING = 6.dp
+private val HEADER_STATUS_TOP_SPACING = 4.dp
+private val HEADER_ACTION_TOP_SPACING = 10.dp
+private val HEADER_ACTION_CONTENT_SPACING = 8.dp
 
 @Composable
 internal fun MangaHeader(
@@ -242,7 +246,7 @@ internal fun MangaHeader(
                         // Only insert the leading gap when at least one subtitle is present, so a
                         // manga with no author/artist doesn't get a double-spacer gap below the title.
                         if (author != null || artist != null) {
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(HEADER_SUBTITLE_TOP_SPACING))
                             author?.let {
                                 Text(
                                     text = it,
@@ -263,7 +267,7 @@ internal fun MangaHeader(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(HEADER_STATUS_TOP_SPACING))
 
                         Text(
                             text = stringResource(manga.status.displayTextResId()),
@@ -271,7 +275,7 @@ internal fun MangaHeader(
                             color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
                         )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(HEADER_ACTION_TOP_SPACING))
 
                         FilledTonalButton(onClick = onToggleFavorite) {
                             Icon(
@@ -279,7 +283,7 @@ internal fun MangaHeader(
                                 contentDescription = null,
                                 modifier = Modifier.size(HEADER_ACTION_ICON_SIZE),
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(HEADER_ACTION_CONTENT_SPACING))
                             Text(
                                 text = if (isFavorite) {
                                     stringResource(R.string.details_remove_from_library)
