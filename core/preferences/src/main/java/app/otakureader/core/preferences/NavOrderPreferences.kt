@@ -10,11 +10,6 @@ import kotlinx.coroutines.flow.map
 /** Identifiers for the five main bottom-navigation tabs. */
 enum class NavTab { LIBRARY, UPDATES, BROWSE, HISTORY, MORE }
 
-// Matches Mihon/Komikku's default bottom-nav order: Library, Updates, History, Browse, More.
-private val DEFAULT_ORDER = listOf(
-    NavTab.LIBRARY, NavTab.UPDATES, NavTab.HISTORY, NavTab.BROWSE, NavTab.MORE
-)
-
 /**
  * Lightweight projection of a tab's persisted state: its position in the list and whether
  * the user has toggled it on or off. Kept in core so the ViewModel can convert to and from
@@ -71,5 +66,16 @@ class NavOrderPreferences(private val dataStore: DataStore<Preferences>) {
 
     private object Keys {
         val TAB_ORDER = stringPreferencesKey("nav_tab_order")
+    }
+
+    companion object {
+        /**
+         * Default bottom-nav order, matching Mihon/Komikku: Library, Updates, History, Browse, More.
+         * Used both for the first-run fallback and for the "Reset" action so they stay in sync —
+         * do not derive the reset order from [NavTab.entries], whose declaration order differs.
+         */
+        val DEFAULT_ORDER: List<NavTab> = listOf(
+            NavTab.LIBRARY, NavTab.UPDATES, NavTab.HISTORY, NavTab.BROWSE, NavTab.MORE,
+        )
     }
 }

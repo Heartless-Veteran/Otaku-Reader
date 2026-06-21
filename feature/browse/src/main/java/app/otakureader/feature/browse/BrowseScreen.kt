@@ -671,8 +671,12 @@ private fun SourceListContent(
 
     val pinnedSources = allSources.filter { it.id.toSourceId() in state.pinnedSourceIds }
     val unpinnedSources = allSources.filter { it.id.toSourceId() !in state.pinnedSourceIds }
+    // Group unpinned sources by their assigned source category when one is set, otherwise by
+    // language — matching Komikku's SourcesScreen, which shows language headers (English, Multi, …)
+    // for uncategorized sources rather than a single flat list.
     val grouped: Map<String, List<MangaSource>> = unpinnedSources.groupBy { src ->
-        state.sourceCategoryMap[src.id.toSourceId()] ?: ""
+        state.sourceCategoryMap[src.id.toSourceId()]?.takeIf { it.isNotBlank() }
+            ?: src.lang.uppercase()
     }
     val categoryOrder = grouped.keys.sortedWith(compareBy { if (it.isBlank()) "" else it })
 
