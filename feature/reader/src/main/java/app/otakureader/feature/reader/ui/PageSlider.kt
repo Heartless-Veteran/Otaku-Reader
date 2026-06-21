@@ -33,6 +33,11 @@ import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.R
 
+// Layout tokens for the chapter-navigator row (slider flanked by prev/next-chapter buttons).
+private val NAV_ROW_PADDING_HORIZONTAL = 8.dp
+private val NAV_ROW_PADDING_VERTICAL = 8.dp
+private val NAV_ROW_ITEM_SPACING = 4.dp
+
 /**
  * Draggable page slider (seekbar) for the reader.
  *
@@ -75,48 +80,53 @@ fun PageSlider(
         exit = slideOutVertically { it } + fadeOut(),
         modifier = modifier
     ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-            tonalElevation = 8.dp
-        ) {
-            // Guard against totalPages == 0 (can occur during AnimatedVisibility exit transition).
-            if (totalPages <= 0) return@Surface
-
-            val isRtl = readingDirection == ReadingDirection.RTL
-            // Under RTL the on-screen left/right buttons swap which chapter they load, so the
-            // physical layout still reads skip-previous | slider | skip-next.
-            val leftEnabled = if (isRtl) hasNextChapter else hasPreviousChapter
-            val leftClick = if (isRtl) onNextChapter else onPreviousChapter
-            val leftDesc = stringResource(
-                if (isRtl) R.string.reader_next_chapter else R.string.reader_previous_chapter
-            )
-            val rightEnabled = if (isRtl) hasPreviousChapter else hasNextChapter
-            val rightClick = if (isRtl) onPreviousChapter else onNextChapter
-            val rightDesc = stringResource(
-                if (isRtl) R.string.reader_previous_chapter else R.string.reader_next_chapter
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+        // Guard against totalPages == 0 (can occur during the AnimatedVisibility exit transition).
+        // Wrapping the Surface — rather than returning from its content lambda — keeps the elevated
+        // bar from flashing empty while the menu animates away.
+        if (totalPages > 0) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                tonalElevation = 8.dp
             ) {
-                FilledIconButton(onClick = leftClick, enabled = leftEnabled) {
-                    Icon(imageVector = Icons.Outlined.SkipPrevious, contentDescription = leftDesc)
-                }
-
-                PageSeekColumn(
-                    currentPage = currentPage,
-                    totalPages = totalPages,
-                    onPageSeek = onPageSeek,
-                    readingDirection = readingDirection,
-                    modifier = Modifier.weight(1f),
+                val isRtl = readingDirection == ReadingDirection.RTL
+                // Under RTL the on-screen left/right buttons swap which chapter they load, so the
+                // physical layout still reads skip-previous | slider | skip-next.
+                val leftEnabled = if (isRtl) hasNextChapter else hasPreviousChapter
+                val leftClick = if (isRtl) onNextChapter else onPreviousChapter
+                val leftDesc = stringResource(
+                    if (isRtl) R.string.reader_next_chapter else R.string.reader_previous_chapter
+                )
+                val rightEnabled = if (isRtl) hasPreviousChapter else hasNextChapter
+                val rightClick = if (isRtl) onPreviousChapter else onNextChapter
+                val rightDesc = stringResource(
+                    if (isRtl) R.string.reader_previous_chapter else R.string.reader_next_chapter
                 )
 
-                FilledIconButton(onClick = rightClick, enabled = rightEnabled) {
-                    Icon(imageVector = Icons.Outlined.SkipNext, contentDescription = rightDesc)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = NAV_ROW_PADDING_HORIZONTAL,
+                            vertical = NAV_ROW_PADDING_VERTICAL,
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(NAV_ROW_ITEM_SPACING),
+                ) {
+                    FilledIconButton(onClick = leftClick, enabled = leftEnabled) {
+                        Icon(imageVector = Icons.Outlined.SkipPrevious, contentDescription = leftDesc)
+                    }
+
+                    PageSeekColumn(
+                        currentPage = currentPage,
+                        totalPages = totalPages,
+                        onPageSeek = onPageSeek,
+                        readingDirection = readingDirection,
+                        modifier = Modifier.weight(1f),
+                    )
+
+                    FilledIconButton(onClick = rightClick, enabled = rightEnabled) {
+                        Icon(imageVector = Icons.Outlined.SkipNext, contentDescription = rightDesc)
+                    }
                 }
             }
         }

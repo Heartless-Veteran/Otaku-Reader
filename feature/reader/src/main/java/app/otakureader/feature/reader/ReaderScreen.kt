@@ -110,6 +110,8 @@ import kotlinx.coroutines.launch
  */
 
 private const val VOLUME_HOLD_SKIP_PAGES = 5
+// Index of the first chapter in reading order; used to gate the previous/next-chapter buttons.
+private const val FIRST_CHAPTER_INDEX = 0
 private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
 private val DIRECTION_INDICATOR_BOTTOM_PADDING = 80.dp
 private val DIRECTION_INDICATOR_CORNER_RADIUS = 8.dp
@@ -461,11 +463,12 @@ fun ReaderScreen(
         // Page slider — shown when the menu is visible so users can quickly scrub pages, flanked
         // by previous/next-chapter buttons (Komikku's ChapterNavigator). Adjacent-chapter
         // availability is derived from the manga's chapter list in reading order.
-        val orderedChapterIds = remember(chapters) {
-            chapters.sortedBy { it.chapterNumber }.map { it.id }
-        }
-        val currentChapterIndex = remember(orderedChapterIds, state.currentChapterId) {
-            orderedChapterIds.indexOf(state.currentChapterId)
+        val (hasPreviousChapter, hasNextChapter) = remember(chapters, state.currentChapterId) {
+            val ordered = chapters.sortedBy { it.chapterNumber }
+            val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
+            val hasPrev = currentIndex > FIRST_CHAPTER_INDEX
+            val hasNext = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex
+            hasPrev to hasNext
         }
         PageSlider(
             currentPage = state.currentPage,
@@ -473,8 +476,8 @@ fun ReaderScreen(
             onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
             onPreviousChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
             onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
-            hasPreviousChapter = currentChapterIndex > 0,
-            hasNextChapter = currentChapterIndex >= 0 && currentChapterIndex < orderedChapterIds.lastIndex,
+            hasPreviousChapter = hasPreviousChapter,
+            hasNextChapter = hasNextChapter,
             readingDirection = state.readingDirection,
             isVisible = state.isMenuVisible && state.pages.isNotEmpty(),
             modifier = Modifier.align(Alignment.BottomCenter)
