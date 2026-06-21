@@ -16,6 +16,7 @@
     <string name="library_toggle_incognito">Toggle incognito mode</string>
     <string name="library_view_mode_grid">Switch to grid view</string>
     <string name="library_view_mode_list">Switch to list view</string>
+    <string name="library_resume">Resume</string>
     <!-- Content-type filter tabs -->
     <string name="library_content_tab_all">All</string>
     <string name="library_content_tab_manga">Manga</string>
