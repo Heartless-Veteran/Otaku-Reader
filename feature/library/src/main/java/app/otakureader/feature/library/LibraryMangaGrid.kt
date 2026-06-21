@@ -227,8 +227,7 @@ internal fun MangaGrid(
             }
         }
 
-        // Category selector as Mihon/Komikku-style swipeable tabs. (A redundant duplicate chip
-        // row used to render directly above this; it was removed so categories show as tabs only.)
+        // Category selector — Mihon/Komikku-style swipeable tabs.
         CategoryTabRow(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
