@@ -20,6 +20,7 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.model.PageBookmark
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.ReaderComment
@@ -271,12 +272,21 @@ class ReaderViewModel @Inject constructor(
             val manga = mangaRepository.getMangaById(mangaId)
             currentManga = manga
             val settingsState = settingsLoaderDelegate.load(_state.value, manga)
+            // Read orientation here rather than in ReaderSettingsLoaderDelegate.load(): that
+            // method's coroutineScope lambda is already near the JVM 64KB method-size limit, so
+            // adding another async read there overflows it ("Method too large").
+            val orientation = try {
+                settingsRepository.readerOrientation.first()
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                ReaderOrientation.DEFAULT
+            }
             // Merge only settings fields into current state to avoid overwriting
             // pages/chapter data loaded concurrently by loadChapter().
             _state.update { current ->
                 current.copy(
                     mode = settingsState.mode,
-                    readerOrientation = settingsState.readerOrientation,
+                    readerOrientation = orientation,
                     brightness = settingsState.brightness,
                     keepScreenOn = settingsState.keepScreenOn,
                     showPageNumber = settingsState.showPageNumber,
