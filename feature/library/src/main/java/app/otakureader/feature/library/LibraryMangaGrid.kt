@@ -227,13 +227,7 @@ internal fun MangaGrid(
             }
         }
 
-        CategoryFilterChips(
-            categories = state.categories,
-            selectedCategory = state.selectedCategory,
-            onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-
+        // Category selector — Mihon/Komikku-style swipeable tabs.
         CategoryTabRow(
             categories = state.categories,
             selectedCategory = state.selectedCategory,
