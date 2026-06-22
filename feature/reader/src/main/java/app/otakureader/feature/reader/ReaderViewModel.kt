@@ -277,8 +277,9 @@ class ReaderViewModel @Inject constructor(
             // adding another async read there overflows it ("Method too large").
             val orientation = try {
                 settingsRepository.readerOrientation.first()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                if (e is CancellationException) throw e
                 ReaderOrientation.DEFAULT
             }
             // Merge only settings fields into current state to avoid overwriting
