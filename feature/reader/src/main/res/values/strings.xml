@@ -3,6 +3,7 @@
     <!-- Reader menu overlay -->
     <string name="reader_page_indicator">Page %1$d of %2$d</string>
     <string name="reader_back">Back</string>
+    <string name="reader_settings">Settings</string>
     <string name="reader_fullscreen">Fullscreen</string>
     <string name="reader_gallery">Gallery</string>
     <string name="reader_tap_to_hide">Tap center to hide menu</string>
