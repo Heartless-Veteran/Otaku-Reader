@@ -333,12 +333,12 @@ fun ReaderScreen(
             )
         }
         
-        // Clean Mihon/Komikku-style reader overlay shown at the top of the screen.
+        // Clean Mihon/Komikku-style reader top app bar. Page scrubbing and chapter navigation
+        // live in the bottom bar (PageSlider) and thumbnails in PageThumbnailStrip, so this
+        // overlay deliberately carries only the top bar to avoid duplicating those controls.
         ReaderContentOverlay(
             title = state.chapterTitle,
             chapterTitle = state.chapterTitle,
-            currentPage = state.displayPageNumber,
-            totalPages = state.totalPages,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             onDismiss = onNavigateBack,
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
@@ -346,17 +346,6 @@ fun ReaderScreen(
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
             isCurrentPageBookmarked = state.isCurrentPageBookmarked,
-            onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
-            onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
-            onPageSliderChange = { fraction ->
-                val targetPage = (fraction * state.totalPages)
-                    .toInt()
-                    .coerceIn(0, (state.totalPages - 1).coerceAtLeast(0))
-                viewModel.onEvent(ReaderEvent.OnPageChange(targetPage))
-            },
-            onThumbnailClick = { page ->
-                viewModel.jumpToPage(page - 1)
-            },
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
