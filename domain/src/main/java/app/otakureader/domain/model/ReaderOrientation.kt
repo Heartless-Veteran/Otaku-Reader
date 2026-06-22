@@ -32,7 +32,11 @@ enum class ReaderOrientation {
     ;
 
     companion object {
+        /** Sentinel ordinal that never matches an entry, so a null/absent preference resolves to [DEFAULT]. */
+        private const val INVALID_ORDINAL = -1
+
         /** Resolve a persisted ordinal back to an entry, falling back to [DEFAULT]. */
-        fun fromOrdinal(ordinal: Int?): ReaderOrientation = entries.getOrNull(ordinal ?: -1) ?: DEFAULT
+        fun fromOrdinal(ordinal: Int?): ReaderOrientation =
+            entries.getOrNull(ordinal ?: INVALID_ORDINAL) ?: DEFAULT
     }
 }
