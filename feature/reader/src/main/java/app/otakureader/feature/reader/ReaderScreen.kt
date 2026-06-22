@@ -73,7 +73,6 @@ import app.otakureader.feature.reader.modes.DualPageReader
 import app.otakureader.feature.reader.modes.SinglePageReader
 import app.otakureader.feature.reader.modes.SmartPanelsReader
 import app.otakureader.feature.reader.modes.WebtoonReader
-import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.ChapterFilterBottomSheet
@@ -334,32 +333,19 @@ fun ReaderScreen(
             )
         }
         
-        // Content-type-aware reader overlay shown at the top of the screen.
+        // Clean Mihon/Komikku-style reader top app bar. Page scrubbing and chapter navigation
+        // live in the bottom bar (PageSlider) and thumbnails in PageThumbnailStrip, so this
+        // overlay deliberately carries only the top bar to avoid duplicating those controls.
         ReaderContentOverlay(
             title = state.chapterTitle,
             chapterTitle = state.chapterTitle,
-            currentPage = state.displayPageNumber,
-            totalPages = state.totalPages,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
-            contentType = if (state.isManhwaContent) ContentType.MANHWA else ContentType.MANGA,
-            visualEffectsEnabled = state.visualEffectsEnabled,
             onDismiss = onNavigateBack,
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
             isCurrentPageBookmarked = state.isCurrentPageBookmarked,
-            onPrevChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
-            onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
-            onPageSliderChange = { fraction ->
-                val targetPage = (fraction * state.totalPages)
-                    .toInt()
-                    .coerceIn(0, (state.totalPages - 1).coerceAtLeast(0))
-                viewModel.onEvent(ReaderEvent.OnPageChange(targetPage))
-            },
-            onThumbnailClick = { page ->
-                viewModel.jumpToPage(page - 1)
-            },
             modifier = Modifier.align(Alignment.TopCenter)
         )
 
