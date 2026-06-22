@@ -276,6 +276,7 @@ class ReaderViewModel @Inject constructor(
             _state.update { current ->
                 current.copy(
                     mode = settingsState.mode,
+                    readerOrientation = settingsState.readerOrientation,
                     brightness = settingsState.brightness,
                     keepScreenOn = settingsState.keepScreenOn,
                     showPageNumber = settingsState.showPageNumber,
