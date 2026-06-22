@@ -209,12 +209,16 @@ fun ReaderScreen(
         }
     }
 
-    // Apply the reader's screen-orientation lock; restore the system default on exit.
-    DisposableEffect(state.readerOrientation) {
-        val activity = context as? Activity
-        activity?.requestedOrientation = state.readerOrientation.toActivityInfo()
+    // Apply the reader's screen-orientation lock whenever it changes, and restore the system
+    // default only when leaving the reader. Splitting application (LaunchedEffect) from
+    // restoration (DisposableEffect) avoids a brief reset-to-default flicker on each change.
+    val readerActivity = context as? Activity
+    LaunchedEffect(readerActivity, state.readerOrientation) {
+        readerActivity?.requestedOrientation = state.readerOrientation.toActivityInfo()
+    }
+    DisposableEffect(readerActivity) {
         onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            readerActivity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
     
