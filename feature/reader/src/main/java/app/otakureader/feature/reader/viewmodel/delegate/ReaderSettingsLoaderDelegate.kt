@@ -5,6 +5,7 @@ import app.otakureader.domain.model.PrefetchStrategy
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.VolumeKeyBehavior
 import app.otakureader.domain.repository.ReaderSettingsRepository
@@ -45,6 +46,12 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val keepScreenOnD = async { settingsRepository.keepScreenOn.first() }
         val showPageNumberD = async { settingsRepository.showPageNumber.first() }
         val directionD = async { settingsRepository.readingDirection.first() }
+        val orientationD = async {
+            try { settingsRepository.readerOrientation.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                ReaderOrientation.DEFAULT
+            }
+        }
         val volumeKeysEnabledD = async { settingsRepository.volumeKeysEnabled.first() }
         val volumeKeysInvertedD = async { settingsRepository.volumeKeysInverted.first() }
         val fullscreenD = async { settingsRepository.fullscreen.first() }
@@ -231,6 +238,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
 
         current.copy(
             mode = effectiveMode,
+            readerOrientation = orientationD.await(),
             brightness = brightnessD.await(),
             keepScreenOn = keepScreenOnD.await(),
             showPageNumber = showPageNumberD.await(),

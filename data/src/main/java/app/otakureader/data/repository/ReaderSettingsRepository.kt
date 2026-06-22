@@ -14,6 +14,7 @@ import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.repository.ReaderSettingsRepository as ReaderSettingsRepositoryInterface
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.TapZoneConfig
 import kotlinx.coroutines.CoroutineScope
@@ -73,7 +74,17 @@ class ReaderSettingsRepository @Inject constructor(
     override suspend fun setReaderMode(mode: ReaderMode) {
         safeEdit { it[Keys.READER_MODE] = mode.ordinal }
     }
-    
+
+    // ==================== Orientation ====================
+
+    override val readerOrientation: Flow<ReaderOrientation> = dataStore.data.map { prefs ->
+        ReaderOrientation.fromOrdinal(prefs[Keys.READER_ORIENTATION])
+    }
+
+    override suspend fun setReaderOrientation(orientation: ReaderOrientation) {
+        safeEdit { it[Keys.READER_ORIENTATION] = orientation.ordinal }
+    }
+
     // ==================== Brightness ====================
     
     override val brightness: Flow<Float> = dataStore.data.map { prefs ->
@@ -588,6 +599,7 @@ class ReaderSettingsRepository @Inject constructor(
 
     private object Keys {
         val READER_MODE = intPreferencesKey("reader_mode_setting")
+        val READER_ORIENTATION = intPreferencesKey("reader_orientation")
         val BRIGHTNESS = floatPreferencesKey("reader_brightness")
         val ZOOM_LEVEL = floatPreferencesKey("reader_zoom_level")
         val DOUBLE_TAP_ZOOM = booleanPreferencesKey("reader_double_tap_zoom")

@@ -366,6 +366,7 @@ class ReaderViewModel @Inject constructor(
                 pages = pages,
                 currentPage = initialPage,
                 isLoading = false,
+                mangaTitle = result.manga.title,
                 chapterTitle = result.chapter.name,
                 readerBackgroundColor = result.manga.readerBackgroundColor,
             )
@@ -506,6 +507,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleDisplay(event: ReaderEvent.DisplayControl) {
         when (event) {
             is ReaderEvent.OnModeChange -> displayDelegate.changeReaderMode(event.mode)
+            is ReaderEvent.OnOrientationChange -> displayDelegate.changeOrientation(event.orientation)
             is ReaderEvent.OnDirectionChange -> displayDelegate.updateReadingDirection(event.direction)
             ReaderEvent.RotateCW -> displayDelegate.cyclePageRotation()
             ReaderEvent.ResetRotation -> displayDelegate.resetRotation()

@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.R
 
@@ -44,12 +45,14 @@ fun ReaderSettingsOverlay(
     isVisible: Boolean,
     currentMode: ReaderMode,
     readingDirection: ReadingDirection,
+    orientation: ReaderOrientation,
     brightness: Float,
     colorFilterMode: ColorFilterMode,
     cropBordersEnabled: Boolean,
     incognitoMode: Boolean,
     onModeChange: (ReaderMode) -> Unit,
     onDirectionChange: (ReadingDirection) -> Unit,
+    onOrientationChange: (ReaderOrientation) -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onColorFilterChange: (ColorFilterMode) -> Unit,
     onToggleCropBorders: () -> Unit,
@@ -100,6 +103,26 @@ fun ReaderSettingsOverlay(
                         selected = readingDirection == direction,
                         onClick = { onDirectionChange(direction) },
                         label = { Text(direction.toLabel()) },
+                        modifier = Modifier.padding(end = 6.dp),
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Orientation lock
+            Text(
+                text = stringResource(R.string.reader_orientation_title),
+                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+            )
+            FlowRow(modifier = Modifier.fillMaxWidth()) {
+                ReaderOrientation.entries.forEach { entry ->
+                    FilterChip(
+                        selected = orientation == entry,
+                        onClick = { onOrientationChange(entry) },
+                        label = { Text(entry.toLabel()) },
                         modifier = Modifier.padding(end = 6.dp),
                     )
                 }
@@ -198,6 +221,17 @@ private fun ReadingDirection.toLabel(): String = when (this) {
     ReadingDirection.LTR -> stringResource(R.string.reader_direction_ltr)
     ReadingDirection.RTL -> stringResource(R.string.reader_direction_rtl)
     ReadingDirection.VERTICAL -> stringResource(R.string.reader_direction_vertical)
+}
+
+@Composable
+private fun ReaderOrientation.toLabel(): String = when (this) {
+    ReaderOrientation.DEFAULT -> stringResource(R.string.reader_orientation_default)
+    ReaderOrientation.FREE -> stringResource(R.string.reader_orientation_free)
+    ReaderOrientation.PORTRAIT -> stringResource(R.string.reader_orientation_portrait)
+    ReaderOrientation.LANDSCAPE -> stringResource(R.string.reader_orientation_landscape)
+    ReaderOrientation.LOCKED_PORTRAIT -> stringResource(R.string.reader_orientation_locked_portrait)
+    ReaderOrientation.LOCKED_LANDSCAPE -> stringResource(R.string.reader_orientation_locked_landscape)
+    ReaderOrientation.REVERSE_PORTRAIT -> stringResource(R.string.reader_orientation_reverse_portrait)
 }
 
 @Composable

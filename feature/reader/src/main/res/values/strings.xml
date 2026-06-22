@@ -168,6 +168,16 @@
     <string name="reader_direction_rtl">Right to Left</string>
     <string name="reader_direction_vertical">Vertical</string>
 
+    <!-- Orientation lock -->
+    <string name="reader_orientation_title">Orientation</string>
+    <string name="reader_orientation_default">Default</string>
+    <string name="reader_orientation_free">Free</string>
+    <string name="reader_orientation_portrait">Portrait</string>
+    <string name="reader_orientation_landscape">Landscape</string>
+    <string name="reader_orientation_locked_portrait">Locked portrait</string>
+    <string name="reader_orientation_locked_landscape">Locked landscape</string>
+    <string name="reader_orientation_reverse_portrait">Reverse portrait</string>
+
     <!-- Chapter-list overlay (#986) -->
     <string name="reader_chapter_list_title">Chapters</string>
 
