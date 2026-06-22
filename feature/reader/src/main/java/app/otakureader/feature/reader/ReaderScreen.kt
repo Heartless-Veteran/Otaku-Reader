@@ -73,7 +73,6 @@ import app.otakureader.feature.reader.modes.DualPageReader
 import app.otakureader.feature.reader.modes.SinglePageReader
 import app.otakureader.feature.reader.modes.SmartPanelsReader
 import app.otakureader.feature.reader.modes.WebtoonReader
-import app.otakureader.core.ui.theme.ContentType
 import app.otakureader.feature.reader.ui.BatteryTimeOverlay
 import app.otakureader.feature.reader.ui.BrightnessSliderOverlay
 import app.otakureader.feature.reader.ui.ChapterFilterBottomSheet
@@ -334,15 +333,13 @@ fun ReaderScreen(
             )
         }
         
-        // Content-type-aware reader overlay shown at the top of the screen.
+        // Clean Mihon/Komikku-style reader overlay shown at the top of the screen.
         ReaderContentOverlay(
             title = state.chapterTitle,
             chapterTitle = state.chapterTitle,
             currentPage = state.displayPageNumber,
             totalPages = state.totalPages,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
-            contentType = if (state.isManhwaContent) ContentType.MANHWA else ContentType.MANGA,
-            visualEffectsEnabled = state.visualEffectsEnabled,
             onDismiss = onNavigateBack,
             onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
