@@ -561,6 +561,9 @@ class ReaderViewModel @Inject constructor(
         when (event) {
             is ReaderEvent.ToggleSetting -> displayDelegate.toggleSetting(event.setting)
             is ReaderEvent.UpdateTapZones -> displayDelegate.updateTapZones(event.config)
+            is ReaderEvent.SetBackgroundColor -> displayDelegate.updateBackgroundColor(event.color)
+            is ReaderEvent.SetReaderScale -> displayDelegate.updateReaderScale(event.scale)
+            is ReaderEvent.SetWebtoonSidePadding -> displayDelegate.updateWebtoonSidePadding(event.padding)
         }
     }
 

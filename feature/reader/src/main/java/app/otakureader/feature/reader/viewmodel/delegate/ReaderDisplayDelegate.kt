@@ -151,7 +151,7 @@ class ReaderDisplayDelegate @Inject constructor(
 
     // ── Settings toggles ───────────────────────────────────────────────────
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun toggleSetting(setting: ReaderSetting) {
         when (setting) {
             ReaderSetting.KEEP_SCREEN_ON -> {
@@ -204,7 +204,82 @@ class ReaderDisplayDelegate @Inject constructor(
                 update { it.copy(skipDuplicateChapters = new) }
                 launchSave { setSkipDuplicateChapters(new) }
             }
+            ReaderSetting.SHOW_READING_TIMER -> {
+                val new = !stateFlow.value.showReadingTimer
+                update { it.copy(showReadingTimer = new) }
+                launchSave { setShowReadingTimer(new) }
+            }
+            ReaderSetting.SHOW_BATTERY_TIME -> {
+                val new = !stateFlow.value.showBatteryTime
+                update { it.copy(showBatteryTime = new) }
+                launchSave { setShowBatteryTime(new) }
+            }
+            ReaderSetting.ANIMATE_PAGE_TRANSITIONS -> {
+                val new = !stateFlow.value.animatePageTransitions
+                update { it.copy(animatePageTransitions = new) }
+                launchSave { setAnimatePageTransitions(new) }
+            }
+            ReaderSetting.ALWAYS_SHOW_CHAPTER_TRANSITION -> {
+                val new = !stateFlow.value.alwaysShowChapterTransition
+                update { it.copy(alwaysShowChapterTransition = new) }
+                launchSave { setAlwaysShowChapterTransition(new) }
+            }
+            ReaderSetting.SHOW_ACTIONS_ON_LONG_TAP -> {
+                val new = !stateFlow.value.showActionsOnLongTap
+                update { it.copy(showActionsOnLongTap = new) }
+                launchSave { setShowActionsOnLongTap(new) }
+            }
+            ReaderSetting.EINK_FLASH_ON_PAGE_CHANGE -> {
+                val new = !stateFlow.value.einkFlashOnPageChange
+                update { it.copy(einkFlashOnPageChange = new) }
+                launchSave { setEinkFlashOnPageChange(new) }
+            }
+            ReaderSetting.EINK_BLACK_AND_WHITE -> {
+                val new = !stateFlow.value.einkBlackAndWhite
+                update { it.copy(einkBlackAndWhite = new) }
+                launchSave { setEinkBlackAndWhite(new) }
+            }
+            ReaderSetting.WEBTOON_DOUBLE_TAP_ZOOM -> {
+                val new = !stateFlow.value.webtoonDoubleTapZoom
+                update { it.copy(webtoonDoubleTapZoom = new) }
+                launchSave { setWebtoonDoubleTapZoom(new) }
+            }
+            ReaderSetting.WEBTOON_DISABLE_ZOOM_OUT -> {
+                val new = !stateFlow.value.webtoonDisableZoomOut
+                update { it.copy(webtoonDisableZoomOut = new) }
+                launchSave { setWebtoonDisableZoomOut(new) }
+            }
+            ReaderSetting.AUTO_ZOOM_WIDE_IMAGES -> {
+                val new = !stateFlow.value.autoZoomWideImages
+                update { it.copy(autoZoomWideImages = new) }
+                launchSave { setAutoZoomWideImages(new) }
+            }
+            ReaderSetting.SHOW_CONTENT_IN_CUTOUT -> {
+                val new = !stateFlow.value.showContentInCutout
+                update { it.copy(showContentInCutout = new) }
+                launchSave { setShowContentInCutout(new) }
+            }
+            ReaderSetting.FULLSCREEN -> {
+                val new = !stateFlow.value.isFullscreen
+                update { it.copy(isFullscreen = new) }
+                launchSave { setFullscreen(new) }
+            }
         }
+    }
+
+    fun updateBackgroundColor(color: Int) {
+        update { it.copy(backgroundColor = color) }
+        launchSave { setBackgroundColor(color) }
+    }
+
+    fun updateReaderScale(scale: Int) {
+        update { it.copy(readerScale = scale) }
+        launchSave { setReaderScale(scale) }
+    }
+
+    fun updateWebtoonSidePadding(padding: Int) {
+        update { it.copy(webtoonSidePadding = padding) }
+        launchSave { setWebtoonSidePadding(padding) }
     }
 
     fun updateTapZones(config: TapZoneConfig) {

@@ -48,6 +48,7 @@ fun WebtoonReader(
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
     dataSaverEnabled: Boolean = false,
     pageGapDp: Int = 4,
+    sidePaddingDp: Int = 0,
     disableZoomOut: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -121,7 +122,7 @@ fun WebtoonReader(
                     }
                 }
             },
-        contentPadding = PaddingValues(vertical = pageGapDp.dp),
+        contentPadding = PaddingValues(horizontal = sidePaddingDp.dp, vertical = pageGapDp.dp),
         verticalArrangement = Arrangement.spacedBy(pageGapDp.dp)
     ) {
         itemsIndexed(

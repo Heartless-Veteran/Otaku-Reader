@@ -72,6 +72,14 @@ private fun buildSpreadGroups(
  * Dual page reader mode - displays two pages side by side (spreads).
  * Auto-detects landscape images and displays them as full-width solo spreads.
  */
+private fun scaleTypeToContentScale(scaleType: Int): ContentScale = when (scaleType) {
+    1 -> ContentScale.FillWidth
+    2 -> ContentScale.FillHeight
+    3 -> ContentScale.None
+    4 -> ContentScale.Inside
+    else -> ContentScale.Fit
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun DualPageReader(
@@ -82,11 +90,15 @@ fun DualPageReader(
     onLongPress: ((String) -> Unit)? = null,
     isRtl: Boolean = false,
     rotation: Float = 0f,
+    scaleType: Int = 0,
+    animatePageTransitions: Boolean = true,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
     dataSaverEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val contentScale = scaleTypeToContentScale(scaleType)
+
     // Map from page.index → true if detected as a landscape spread.
     // Keyed on `pages` so the map is cleared automatically when a new chapter loads.
     val detectedSpreads = remember(pages) { mutableStateMapOf<Int, Boolean>() }
@@ -106,7 +118,11 @@ fun DualPageReader(
     LaunchedEffect(currentPage, spreadGroups) {
         val target = spreadGroups.indexOfFirst { group -> group.any { it == currentPage } }
         if (target >= 0 && pagerState.currentPage != target) {
-            pagerState.animateScrollToPage(target)
+            if (animatePageTransitions) {
+                pagerState.animateScrollToPage(target)
+            } else {
+                pagerState.scrollToPage(target)
+            }
         }
     }
 
@@ -140,7 +156,7 @@ fun DualPageReader(
                     ZoomableImage(
                         imageUrl = page.imageUrl,
                         contentDescription = stringResource(R.string.reader_page_content, page.pageNumber),
-                        contentScale = ContentScale.Fit,
+                        contentScale = contentScale,
                         rotation = rotation,
                         cropBordersEnabled = cropBordersEnabled,
                         imageQuality = imageQuality,
@@ -172,7 +188,7 @@ fun DualPageReader(
                             ZoomableImage(
                                 imageUrl = leftPage.imageUrl,
                                 contentDescription = stringResource(R.string.reader_page_content, leftPage.pageNumber),
-                                contentScale = ContentScale.Fit,
+                                contentScale = contentScale,
                                 rotation = rotation,
                                 cropBordersEnabled = cropBordersEnabled,
                                 imageQuality = imageQuality,
@@ -202,7 +218,7 @@ fun DualPageReader(
                             ZoomableImage(
                                 imageUrl = rightPage.imageUrl,
                                 contentDescription = stringResource(R.string.reader_page_content, rightPage.pageNumber),
-                                contentScale = ContentScale.Fit,
+                                contentScale = contentScale,
                                 rotation = rotation,
                                 cropBordersEnabled = cropBordersEnabled,
                                 imageQuality = imageQuality,

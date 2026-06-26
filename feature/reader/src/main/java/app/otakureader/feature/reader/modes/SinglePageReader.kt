@@ -20,6 +20,14 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.feature.reader.model.ReaderPage
 import kotlinx.coroutines.flow.distinctUntilChanged
 
+private fun scaleTypeToContentScale(scaleType: Int): ContentScale = when (scaleType) {
+    1 -> ContentScale.FillWidth
+    2 -> ContentScale.FillHeight
+    3 -> ContentScale.None
+    4 -> ContentScale.Inside
+    else -> ContentScale.Fit
+}
+
 /**
  * Single page reader mode - displays one page at a time.
  * Supports zoom, pan, and swipe navigation.
@@ -35,20 +43,27 @@ fun SinglePageReader(
     onZoomChange: (Float) -> Unit,
     onLongPress: ((String) -> Unit)? = null,
     rotation: Float = 0f,
+    scaleType: Int = 0,
+    animatePageTransitions: Boolean = true,
     cropBordersEnabled: Boolean = false,
     imageQuality: ImageQuality = ImageQuality.ORIGINAL,
     dataSaverEnabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val contentScale = scaleTypeToContentScale(scaleType)
     val pagerState = rememberPagerState(
         initialPage = currentPage,
         pageCount = { pages.size }
     )
-    
+
     // Sync pager state with external current page
     LaunchedEffect(currentPage) {
         if (pagerState.currentPage != currentPage) {
-            pagerState.animateScrollToPage(currentPage)
+            if (animatePageTransitions) {
+                pagerState.animateScrollToPage(currentPage)
+            } else {
+                pagerState.scrollToPage(currentPage)
+            }
         }
     }
     
@@ -82,7 +97,7 @@ fun SinglePageReader(
             ZoomableImage(
                 imageUrl = page.imageUrl,
                 contentDescription = stringResource(R.string.reader_page_content, page.pageNumber),
-                contentScale = ContentScale.Fit,
+                contentScale = contentScale,
                 rotation = rotation,
                 cropBordersEnabled = cropBordersEnabled,
                 imageQuality = imageQuality,

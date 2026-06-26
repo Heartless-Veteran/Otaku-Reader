@@ -3,6 +3,7 @@ package app.otakureader.feature.reader
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -206,6 +207,34 @@ fun ReaderScreen(
         }
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+
+    // Apply display-cutout mode so content can extend into the camera notch when enabled.
+    // LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES was added in API 28; on API 26-27 the block
+    // runs but the constant is present as a stub, so there is no crash — just no effect.
+    DisposableEffect(state.showContentInCutout) {
+        val activity = context as? Activity
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val params = activity?.window?.attributes
+            if (params != null) {
+                params.layoutInDisplayCutoutMode = if (state.showContentInCutout) {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                } else {
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                }
+                activity.window.attributes = params
+            }
+        }
+        onDispose {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val params = activity?.window?.attributes
+                if (params != null) {
+                    params.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                    activity.window.attributes = params
+                }
+            }
         }
     }
 
@@ -528,23 +557,11 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Quick-settings overlay — compact sheet triggered by long-press on center zone
+        // Reader settings dialog — 3-tab sheet (Reading mode / General / Color filter)
         ReaderSettingsOverlay(
             isVisible = state.isSettingsOverlayVisible,
-            currentMode = state.mode,
-            readingDirection = state.readingDirection,
-            orientation = state.readerOrientation,
-            brightness = state.brightness,
-            colorFilterMode = state.colorFilterMode,
-            cropBordersEnabled = state.cropBordersEnabled,
-            incognitoMode = state.incognitoMode,
-            onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
-            onDirectionChange = { viewModel.onEvent(ReaderEvent.OnDirectionChange(it)) },
-            onOrientationChange = { viewModel.onEvent(ReaderEvent.OnOrientationChange(it)) },
-            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
-            onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
-            onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
-            onToggleIncognito = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.INCOGNITO_MODE)) },
+            state = state,
+            onEvent = { viewModel.onEvent(it) },
             onDismiss = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
         )
 
@@ -582,11 +599,21 @@ private fun ReaderContent(
     onZoomChange: (Float) -> Unit,
     onLongPress: ((String) -> Unit)? = null,
 ) {
-    // Use the per-manga background color if set, otherwise default to black
-    val backgroundColor = if (state.readerBackgroundColor != null) {
-        Color(state.readerBackgroundColor.toInt())
-    } else {
-        Color.Black
+    // Prefer per-manga color override; fall back to the user's global background preference.
+    // backgroundColor index: 0=Black (default), 1=White, 2=Grey, 3=Auto (system surface).
+    val backgroundColor = when {
+        state.readerBackgroundColor != null -> Color(state.readerBackgroundColor.toInt())
+        state.backgroundColor == 1 -> Color.White
+        state.backgroundColor == 2 -> Color.Gray
+        state.backgroundColor == 3 -> Color.Transparent
+        else -> Color.Black
+    }
+
+    val webtoonSidePaddingDp = when (state.webtoonSidePadding) {
+        1 -> 8
+        2 -> 16
+        3 -> 32
+        else -> 0
     }
 
     // CompositingStrategy.Offscreen ensures blend modes in the Canvas overlay work correctly
@@ -616,6 +643,8 @@ private fun ReaderContent(
                     onZoomChange = onZoomChange,
                     onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     rotation = state.pageRotation.degrees,
+                    scaleType = state.readerScale,
+                    animatePageTransitions = state.animatePageTransitions,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
                     dataSaverEnabled = state.dataSaverEnabled,
@@ -632,6 +661,8 @@ private fun ReaderContent(
                     onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL,
                     rotation = state.pageRotation.degrees,
+                    scaleType = state.readerScale,
+                    animatePageTransitions = state.animatePageTransitions,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
                     dataSaverEnabled = state.dataSaverEnabled,
@@ -651,6 +682,7 @@ private fun ReaderContent(
                     imageQuality = state.imageQuality,
                     dataSaverEnabled = state.dataSaverEnabled,
                     pageGapDp = state.webtoonGapDp,
+                    sidePaddingDp = webtoonSidePaddingDp,
                     disableZoomOut = state.webtoonDisableZoomOut,
                     modifier = Modifier.fillMaxSize()
                 )
