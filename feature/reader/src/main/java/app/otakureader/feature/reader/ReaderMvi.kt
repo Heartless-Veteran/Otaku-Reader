@@ -579,6 +579,15 @@ sealed interface ReaderEvent {
     /** Update tap zone configuration. */
     data class UpdateTapZones(val config: TapZoneConfig) : SettingsControl
 
+    /** Set background color: 0=Black, 1=White, 2=Gray, 3=Auto. */
+    data class SetBackgroundColor(val color: Int) : SettingsControl
+
+    /** Set scale type: 0=Fit Screen, 1=Fit Width, 2=Fit Height, 3=Original, 4=Smart Fit. */
+    data class SetReaderScale(val scale: Int) : SettingsControl
+
+    /** Set webtoon side padding: 0=None, 1=Small, 2=Medium, 3=Large. */
+    data class SetWebtoonSidePadding(val padding: Int) : SettingsControl
+
     // ──────────────────────────────────────────────────────────────────────────
     // Color filter
     // ──────────────────────────────────────────────────────────────────────────
@@ -667,6 +676,18 @@ enum class ReaderSetting {
     SKIP_READ_CHAPTERS,
     SKIP_FILTERED_CHAPTERS,
     SKIP_DUPLICATE_CHAPTERS,
+    SHOW_READING_TIMER,
+    SHOW_BATTERY_TIME,
+    ANIMATE_PAGE_TRANSITIONS,
+    ALWAYS_SHOW_CHAPTER_TRANSITION,
+    SHOW_ACTIONS_ON_LONG_TAP,
+    EINK_FLASH_ON_PAGE_CHANGE,
+    EINK_BLACK_AND_WHITE,
+    WEBTOON_DOUBLE_TAP_ZOOM,
+    WEBTOON_DISABLE_ZOOM_OUT,
+    AUTO_ZOOM_WIDE_IMAGES,
+    SHOW_CONTENT_IN_CUTOUT,
+    FULLSCREEN,
 }
 
 /**

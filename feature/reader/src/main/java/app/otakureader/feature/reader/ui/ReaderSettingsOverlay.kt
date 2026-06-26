@@ -1,5 +1,6 @@
 package app.otakureader.feature.reader.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -16,9 +21,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -28,176 +36,387 @@ import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.R
+import app.otakureader.feature.reader.ReaderEvent
+import app.otakureader.feature.reader.ReaderSetting
+import app.otakureader.feature.reader.ReaderState
+import kotlinx.coroutines.launch
 
-/**
- * Compact quick-settings overlay triggered by long-pressing the center tap zone.
- *
- * Exposes the four most commonly adjusted in-session settings without requiring
- * the user to open the full [ReaderMenuOverlay]:
- *  - Reading mode (Single / Dual / Webtoon / Smart Panels)
- *  - Reading direction (LTR / RTL / Vertical)
- *  - Brightness
- *  - Color filter
- */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ReaderSettingsOverlay(
     isVisible: Boolean,
-    currentMode: ReaderMode,
-    readingDirection: ReadingDirection,
-    orientation: ReaderOrientation,
-    brightness: Float,
-    colorFilterMode: ColorFilterMode,
-    cropBordersEnabled: Boolean,
-    incognitoMode: Boolean,
-    onModeChange: (ReaderMode) -> Unit,
-    onDirectionChange: (ReadingDirection) -> Unit,
-    onOrientationChange: (ReaderOrientation) -> Unit,
-    onBrightnessChange: (Float) -> Unit,
-    onColorFilterChange: (ColorFilterMode) -> Unit,
-    onToggleCropBorders: () -> Unit,
-    onToggleIncognito: () -> Unit,
+    state: ReaderState,
+    onEvent: (ReaderEvent) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!isVisible) return
+
+    val tabs = listOf(
+        stringResource(R.string.reader_settings_tab_reading_mode),
+        stringResource(R.string.reader_settings_tab_general),
+        stringResource(R.string.reader_settings_tab_color_filter),
+    )
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-            Text(
-                text = stringResource(R.string.reader_quick_settings_title),
-                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-
-            // Reading mode
-            Text(
-                text = stringResource(R.string.reader_mode_title),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            )
-            FlowRow(modifier = Modifier.fillMaxWidth()) {
-                ReaderMode.entries.forEach { mode ->
-                    FilterChip(
-                        selected = currentMode == mode,
-                        onClick = { onModeChange(mode) },
-                        label = { Text(mode.toLabel()) },
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                }
+        TabRow(selectedTabIndex = pagerState.currentPage) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                    text = { Text(title) },
+                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Reading direction
-            Text(
-                text = stringResource(R.string.reader_direction_title),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            )
-            FlowRow(modifier = Modifier.fillMaxWidth()) {
-                ReadingDirection.entries.forEach { direction ->
-                    FilterChip(
-                        selected = readingDirection == direction,
-                        onClick = { onDirectionChange(direction) },
-                        label = { Text(direction.toLabel()) },
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                }
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+        ) { page ->
+            when (page) {
+                0 -> ReadingModeTab(state = state, onEvent = onEvent)
+                1 -> GeneralTab(state = state, onEvent = onEvent)
+                2 -> ColorFilterTab(state = state, onEvent = onEvent)
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
 
-            // Orientation lock
-            Text(
-                text = stringResource(R.string.reader_orientation_title),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            )
-            FlowRow(modifier = Modifier.fillMaxWidth()) {
-                ReaderOrientation.entries.forEach { entry ->
-                    FilterChip(
-                        selected = orientation == entry,
-                        onClick = { onOrientationChange(entry) },
-                        label = { Text(entry.toLabel()) },
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                }
+@Composable
+private fun ReadingModeTab(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        SettingsSectionLabel(stringResource(R.string.reader_mode_title))
+        FlowRow(modifier = Modifier.fillMaxWidth()) {
+            ReaderMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = state.mode == mode,
+                    onClick = { onEvent(ReaderEvent.OnModeChange(mode)) },
+                    label = { Text(mode.toLabel()) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
+        SettingsDivider()
 
-            // Brightness
-            Text(
-                text = stringResource(R.string.reader_brightness),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            )
-            Slider(
-                value = brightness,
-                onValueChange = onBrightnessChange,
-                valueRange = 0.1f..1.5f,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Color filter
-            Text(
-                text = stringResource(R.string.reader_color_filter),
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
-            )
-            FlowRow(modifier = Modifier.fillMaxWidth()) {
-                ColorFilterMode.entries.forEach { mode ->
-                    FilterChip(
-                        selected = colorFilterMode == mode,
-                        onClick = { onColorFilterChange(mode) },
-                        label = { Text(mode.toLabel()) },
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                }
+        SettingsSectionLabel(stringResource(R.string.reader_direction_title))
+        FlowRow(modifier = Modifier.fillMaxWidth()) {
+            ReadingDirection.entries.forEach { direction ->
+                FilterChip(
+                    selected = state.readingDirection == direction,
+                    onClick = { onEvent(ReaderEvent.OnDirectionChange(direction)) },
+                    label = { Text(direction.toLabel()) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(8.dp))
+        SettingsDivider()
 
-            // Toggles (state + persistence already handled by the ViewModel)
-            ReaderToggleRow(
-                label = stringResource(R.string.reader_crop_borders),
-                checked = cropBordersEnabled,
-                onToggle = onToggleCropBorders,
-            )
-            ReaderToggleRow(
-                label = stringResource(R.string.reader_incognito_mode),
-                checked = incognitoMode,
-                onToggle = onToggleIncognito,
-            )
+        SettingsSectionLabel(stringResource(R.string.reader_orientation_title))
+        FlowRow(modifier = Modifier.fillMaxWidth()) {
+            ReaderOrientation.entries.forEach { orientation ->
+                FilterChip(
+                    selected = state.readerOrientation == orientation,
+                    onClick = { onEvent(ReaderEvent.OnOrientationChange(orientation)) },
+                    label = { Text(orientation.toLabel()) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+            }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        SettingsDivider()
+
+        if (state.mode == ReaderMode.WEBTOON) {
+            WebtoonViewerSettings(state = state, onEvent = onEvent)
+        } else {
+            PagerViewerSettings(state = state, onEvent = onEvent)
         }
     }
 }
 
 @Composable
-private fun ReaderToggleRow(
-    label: String,
-    checked: Boolean,
-    onToggle: () -> Unit,
-) {
-    // Whole row is clickable with vertical padding so the touch target meets the
-    // 48dp accessibility minimum; the Switch is driven by the row (onCheckedChange = null).
+private fun PagerViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
+    SettingsSectionLabel(stringResource(R.string.reader_scale_title))
+    val scaleLabels = listOf(
+        stringResource(R.string.reader_scale_fit_screen),
+        stringResource(R.string.reader_scale_fit_width),
+        stringResource(R.string.reader_scale_fit_height),
+        stringResource(R.string.reader_scale_original),
+        stringResource(R.string.reader_scale_smart_fit),
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        scaleLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = state.readerScale == index,
+                onClick = { onEvent(ReaderEvent.SetReaderScale(index)) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    SettingsDivider()
+
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_crop_borders),
+        checked = state.cropBordersEnabled,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+    )
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_auto_zoom_wide),
+        checked = state.autoZoomWideImages,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.AUTO_ZOOM_WIDE_IMAGES)) },
+    )
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_animate_transitions),
+        checked = state.animatePageTransitions,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.ANIMATE_PAGE_TRANSITIONS)) },
+    )
+}
+
+@Composable
+private fun WebtoonViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
+    SettingsSectionLabel(stringResource(R.string.reader_webtoon_side_padding))
+    val paddingLabels = listOf(
+        stringResource(R.string.reader_webtoon_side_padding_none),
+        stringResource(R.string.reader_webtoon_side_padding_small),
+        stringResource(R.string.reader_webtoon_side_padding_medium),
+        stringResource(R.string.reader_webtoon_side_padding_large),
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        paddingLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = state.webtoonSidePadding == index,
+                onClick = { onEvent(ReaderEvent.SetWebtoonSidePadding(index)) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    SettingsDivider()
+
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_crop_borders),
+        checked = state.cropBordersEnabled,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+    )
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_webtoon_double_tap_zoom),
+        checked = state.webtoonDoubleTapZoom,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.WEBTOON_DOUBLE_TAP_ZOOM)) },
+    )
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_webtoon_disable_zoom_out),
+        checked = state.webtoonDisableZoomOut,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.WEBTOON_DISABLE_ZOOM_OUT)) },
+    )
+}
+
+@Composable
+private fun GeneralTab(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        SettingsSectionLabel(stringResource(R.string.reader_background))
+        val bgLabels = listOf(
+            stringResource(R.string.reader_bg_black),
+            stringResource(R.string.reader_bg_white),
+            stringResource(R.string.reader_bg_grey),
+            stringResource(R.string.reader_bg_auto),
+        )
+        val bgValues = listOf(0, 1, 2, 3)
+        FlowRow(modifier = Modifier.fillMaxWidth()) {
+            bgLabels.forEachIndexed { index, label ->
+                FilterChip(
+                    selected = state.backgroundColor == bgValues[index],
+                    onClick = { onEvent(ReaderEvent.SetBackgroundColor(bgValues[index])) },
+                    label = { Text(label) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+            }
+        }
+
+        SettingsDivider()
+
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_show_reading_timer),
+            checked = state.showReadingTimer,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_READING_TIMER)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_show_battery_time),
+            checked = state.showBatteryTime,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_BATTERY_TIME)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_show_page_number),
+            checked = state.showPageNumber,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_PAGE_NUMBER)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_fullscreen),
+            checked = state.isFullscreen,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.FULLSCREEN)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_show_content_in_cutout),
+            checked = state.showContentInCutout,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_CONTENT_IN_CUTOUT)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_keep_screen_on),
+            checked = state.keepScreenOn,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.KEEP_SCREEN_ON)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_long_tap_actions),
+            checked = state.showActionsOnLongTap,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_ACTIONS_ON_LONG_TAP)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_always_show_chapter_transition),
+            checked = state.alwaysShowChapterTransition,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.ALWAYS_SHOW_CHAPTER_TRANSITION)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_eink_flash),
+            checked = state.einkFlashOnPageChange,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.EINK_FLASH_ON_PAGE_CHANGE)) },
+        )
+        SettingsToggleRow(
+            label = stringResource(R.string.reader_incognito_mode),
+            checked = state.incognitoMode,
+            onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.INCOGNITO_MODE)) },
+        )
+    }
+}
+
+@Composable
+private fun ColorFilterTab(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        SettingsSectionLabel(stringResource(R.string.reader_brightness))
+        Slider(
+            value = state.brightness,
+            onValueChange = { onEvent(ReaderEvent.OnBrightnessChange(it)) },
+            valueRange = 0.1f..1.5f,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        SettingsDivider()
+
+        SettingsSectionLabel(stringResource(R.string.reader_color_filter))
+        FlowRow(modifier = Modifier.fillMaxWidth()) {
+            ColorFilterMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = state.colorFilterMode == mode,
+                    onClick = { onEvent(ReaderEvent.SetColorFilterMode(mode)) },
+                    label = { Text(mode.toLabel()) },
+                    modifier = Modifier.padding(end = 6.dp),
+                )
+            }
+        }
+
+        if (state.colorFilterMode == ColorFilterMode.CUSTOM_TINT) {
+            SettingsDivider()
+            CustomTintSection(
+                tintColor = state.customTintColor,
+                onEvent = onEvent,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CustomTintSection(tintColor: Long, onEvent: (ReaderEvent) -> Unit) {
+    val alpha = ((tintColor shr 24) and 0xFF).toInt()
+    val red = ((tintColor shr 16) and 0xFF).toInt()
+    val green = ((tintColor shr 8) and 0xFF).toInt()
+    val blue = (tintColor and 0xFF).toInt()
+
+    SettingsSectionLabel(stringResource(R.string.reader_opacity))
+    Slider(
+        value = alpha / 255f,
+        onValueChange = { fraction ->
+            val newAlpha = (fraction * 255).toLong()
+            val newColor = (newAlpha shl 24) or (red.toLong() shl 16) or (green.toLong() shl 8) or blue.toLong()
+            onEvent(ReaderEvent.SetCustomTintColor(newColor))
+        },
+        valueRange = 0f..1f,
+        modifier = Modifier.fillMaxWidth(),
+    )
+
+    SettingsSectionLabel(stringResource(R.string.reader_tint_color))
+    val tintPresets: List<Pair<String, Long>> = listOf(
+        stringResource(R.string.reader_tint_blue) to 0xFF1E90FFL,
+        stringResource(R.string.reader_tint_red) to 0xFFDC143CL,
+        stringResource(R.string.reader_tint_orange) to 0xFFFF8C00L,
+        stringResource(R.string.reader_tint_yellow) to 0xFFFFD700L,
+        stringResource(R.string.reader_tint_green) to 0xFF228B22L,
+        stringResource(R.string.reader_tint_purple) to 0xFF8B008BL,
+        stringResource(R.string.reader_tint_brown) to 0xFF8B4513L,
+        stringResource(R.string.reader_tint_grey) to 0xFF808080L,
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        tintPresets.forEach { (label, baseColor) ->
+            val currentRgb = tintColor and 0x00FFFFFFL
+            val presetRgb = baseColor and 0x00FFFFFFL
+            FilterChip(
+                selected = currentRgb == presetRgb,
+                onClick = {
+                    val newColor = (alpha.toLong() shl 24) or presetRgb
+                    onEvent(ReaderEvent.SetCustomTintColor(newColor))
+                },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        modifier = Modifier.padding(bottom = 4.dp),
+    )
+}
+
+@Composable
+private fun SettingsDivider() {
+    Spacer(modifier = Modifier.height(8.dp))
+    HorizontalDivider()
+    Spacer(modifier = Modifier.height(8.dp))
+}
+
+@Composable
+private fun SettingsToggleRow(label: String, checked: Boolean, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggle() }
-            .padding(vertical = ToggleRowVerticalPadding),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -205,8 +424,6 @@ private fun ReaderToggleRow(
         Switch(checked = checked, onCheckedChange = null)
     }
 }
-
-private val ToggleRowVerticalPadding = 8.dp
 
 @Composable
 private fun ReaderMode.toLabel(): String = when (this) {

@@ -370,7 +370,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SHOW_READING_TIMER] ?: false
     }
 
-    suspend fun setShowReadingTimer(enabled: Boolean) {
+    override suspend fun setShowReadingTimer(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_READING_TIMER] = enabled }
     }
 
@@ -379,7 +379,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SHOW_BATTERY_TIME] ?: false
     }
 
-    suspend fun setShowBatteryTime(enabled: Boolean) {
+    override suspend fun setShowBatteryTime(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_BATTERY_TIME] = enabled }
     }
 
@@ -389,7 +389,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SHOW_CONTENT_IN_CUTOUT] ?: true
     }
 
-    suspend fun setShowContentInCutout(enabled: Boolean) {
+    override suspend fun setShowContentInCutout(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_CONTENT_IN_CUTOUT] = enabled }
     }
 
@@ -398,7 +398,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.BACKGROUND_COLOR] ?: 0
     }
 
-    suspend fun setBackgroundColor(color: Int) {
+    override suspend fun setBackgroundColor(color: Int) {
         safeEdit { it[Keys.BACKGROUND_COLOR] = color.coerceIn(0, 3) }
     }
 
@@ -406,7 +406,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.ANIMATE_PAGE_TRANSITIONS] ?: true
     }
 
-    suspend fun setAnimatePageTransitions(enabled: Boolean) {
+    override suspend fun setAnimatePageTransitions(enabled: Boolean) {
         safeEdit { it[Keys.ANIMATE_PAGE_TRANSITIONS] = enabled }
     }
 
@@ -433,7 +433,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.READER_SCALE] ?: 0
     }
 
-    suspend fun setReaderScale(scale: Int) {
+    override suspend fun setReaderScale(scale: Int) {
         safeEdit { it[Keys.READER_SCALE] = scale.coerceIn(0, 4) }
     }
 
@@ -441,7 +441,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.AUTO_ZOOM_WIDE_IMAGES] ?: true
     }
 
-    suspend fun setAutoZoomWideImages(enabled: Boolean) {
+    override suspend fun setAutoZoomWideImages(enabled: Boolean) {
         safeEdit { it[Keys.AUTO_ZOOM_WIDE_IMAGES] = enabled }
     }
 
@@ -462,7 +462,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.WEBTOON_SIDE_PADDING] ?: 0
     }
 
-    suspend fun setWebtoonSidePadding(padding: Int) {
+    override suspend fun setWebtoonSidePadding(padding: Int) {
         safeEdit { it[Keys.WEBTOON_SIDE_PADDING] = padding.coerceIn(0, 3) }
     }
 
@@ -488,7 +488,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.WEBTOON_DOUBLE_TAP_ZOOM] ?: true
     }
 
-    suspend fun setWebtoonDoubleTapZoom(enabled: Boolean) {
+    override suspend fun setWebtoonDoubleTapZoom(enabled: Boolean) {
         safeEdit { it[Keys.WEBTOON_DOUBLE_TAP_ZOOM] = enabled }
     }
 
@@ -496,7 +496,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.WEBTOON_DISABLE_ZOOM_OUT] ?: false
     }
 
-    suspend fun setWebtoonDisableZoomOut(enabled: Boolean) {
+    override suspend fun setWebtoonDisableZoomOut(enabled: Boolean) {
         safeEdit { it[Keys.WEBTOON_DISABLE_ZOOM_OUT] = enabled }
     }
 
@@ -506,7 +506,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.EINK_FLASH_ON_PAGE_CHANGE] ?: false
     }
 
-    suspend fun setEinkFlashOnPageChange(enabled: Boolean) {
+    override suspend fun setEinkFlashOnPageChange(enabled: Boolean) {
         safeEdit { it[Keys.EINK_FLASH_ON_PAGE_CHANGE] = enabled }
     }
 
@@ -514,7 +514,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.EINK_BLACK_AND_WHITE] ?: false
     }
 
-    suspend fun setEinkBlackAndWhite(enabled: Boolean) {
+    override suspend fun setEinkBlackAndWhite(enabled: Boolean) {
         safeEdit { it[Keys.EINK_BLACK_AND_WHITE] = enabled }
     }
 
@@ -548,7 +548,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.ALWAYS_SHOW_CHAPTER_TRANSITION] ?: true
     }
 
-    suspend fun setAlwaysShowChapterTransition(enabled: Boolean) {
+    override suspend fun setAlwaysShowChapterTransition(enabled: Boolean) {
         safeEdit { it[Keys.ALWAYS_SHOW_CHAPTER_TRANSITION] = enabled }
     }
 
@@ -558,7 +558,7 @@ class ReaderSettingsRepository @Inject constructor(
         prefs[Keys.SHOW_ACTIONS_ON_LONG_TAP] ?: true
     }
 
-    suspend fun setShowActionsOnLongTap(enabled: Boolean) {
+    override suspend fun setShowActionsOnLongTap(enabled: Boolean) {
         safeEdit { it[Keys.SHOW_ACTIONS_ON_LONG_TAP] = enabled }
     }
 

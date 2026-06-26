@@ -159,6 +159,43 @@
     <string name="reader_switch_to_slider">Switch to slider</string>
     <string name="reader_switch_to_filmstrip">Switch to filmstrip</string>
 
+    <!-- Reader settings dialog — tab labels -->
+    <string name="reader_settings_tab_reading_mode">Reading mode</string>
+    <string name="reader_settings_tab_general">General</string>
+    <string name="reader_settings_tab_color_filter">Color filter</string>
+
+    <!-- Reader settings dialog — scale type -->
+    <string name="reader_scale_title">Scale type</string>
+    <string name="reader_scale_fit_screen">Fit screen</string>
+    <string name="reader_scale_fit_width">Fit width</string>
+    <string name="reader_scale_fit_height">Fit height</string>
+    <string name="reader_scale_original">Original</string>
+    <string name="reader_scale_smart_fit">Smart fit</string>
+
+    <!-- Reader settings dialog — pager options -->
+    <string name="reader_auto_zoom_wide">Auto-zoom wide images</string>
+    <string name="reader_animate_transitions">Animate page transitions</string>
+
+    <!-- Reader settings dialog — webtoon options -->
+    <string name="reader_webtoon_side_padding">Side padding</string>
+    <string name="reader_webtoon_side_padding_none">None</string>
+    <string name="reader_webtoon_side_padding_small">Small</string>
+    <string name="reader_webtoon_side_padding_medium">Medium</string>
+    <string name="reader_webtoon_side_padding_large">Large</string>
+    <string name="reader_webtoon_double_tap_zoom">Double-tap to zoom</string>
+    <string name="reader_webtoon_disable_zoom_out">Disable zoom out</string>
+
+    <!-- Reader settings dialog — general tab -->
+    <string name="reader_bg_auto">Auto</string>
+    <string name="reader_show_reading_timer">Show reading timer</string>
+    <string name="reader_show_battery_time">Show clock and battery</string>
+    <string name="reader_show_content_in_cutout">Display in cutout area</string>
+    <string name="reader_show_page_number">Show page number</string>
+    <string name="reader_keep_screen_on">Keep screen on</string>
+    <string name="reader_long_tap_actions">Long tap actions</string>
+    <string name="reader_always_show_chapter_transition">Always show chapter transition</string>
+    <string name="reader_eink_flash">Flash on page change</string>
+
     <!-- Quick-settings overlay (#985) -->
     <string name="reader_quick_settings_title">Quick Settings</string>
     <string name="reader_crop_borders">Crop borders</string>

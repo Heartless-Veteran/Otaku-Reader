@@ -93,6 +93,20 @@ interface ReaderSettingsRepository {
     suspend fun setSkipReadChapters(enabled: Boolean)
     suspend fun setSkipFilteredChapters(enabled: Boolean)
     suspend fun setSkipDuplicateChapters(enabled: Boolean)
+    suspend fun setShowReadingTimer(enabled: Boolean)
+    suspend fun setShowBatteryTime(enabled: Boolean)
+    suspend fun setBackgroundColor(color: Int)
+    suspend fun setAnimatePageTransitions(enabled: Boolean)
+    suspend fun setAlwaysShowChapterTransition(enabled: Boolean)
+    suspend fun setShowActionsOnLongTap(enabled: Boolean)
+    suspend fun setEinkFlashOnPageChange(enabled: Boolean)
+    suspend fun setEinkBlackAndWhite(enabled: Boolean)
+    suspend fun setWebtoonDoubleTapZoom(enabled: Boolean)
+    suspend fun setWebtoonDisableZoomOut(enabled: Boolean)
+    suspend fun setAutoZoomWideImages(enabled: Boolean)
+    suspend fun setReaderScale(scale: Int)
+    suspend fun setWebtoonSidePadding(padding: Int)
+    suspend fun setShowContentInCutout(enabled: Boolean)
 
     companion object {
         const val DEFAULT_PRELOAD_PAGES = 3

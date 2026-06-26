@@ -528,23 +528,11 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         )
 
-        // Quick-settings overlay — compact sheet triggered by long-press on center zone
+        // Reader settings dialog — 3-tab sheet (Reading mode / General / Color filter)
         ReaderSettingsOverlay(
             isVisible = state.isSettingsOverlayVisible,
-            currentMode = state.mode,
-            readingDirection = state.readingDirection,
-            orientation = state.readerOrientation,
-            brightness = state.brightness,
-            colorFilterMode = state.colorFilterMode,
-            cropBordersEnabled = state.cropBordersEnabled,
-            incognitoMode = state.incognitoMode,
-            onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
-            onDirectionChange = { viewModel.onEvent(ReaderEvent.OnDirectionChange(it)) },
-            onOrientationChange = { viewModel.onEvent(ReaderEvent.OnOrientationChange(it)) },
-            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
-            onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
-            onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
-            onToggleIncognito = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.INCOGNITO_MODE)) },
+            state = state,
+            onEvent = { viewModel.onEvent(it) },
             onDismiss = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
         )
 
