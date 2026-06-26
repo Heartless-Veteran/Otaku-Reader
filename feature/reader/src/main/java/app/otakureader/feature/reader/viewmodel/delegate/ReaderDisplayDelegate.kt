@@ -151,7 +151,7 @@ class ReaderDisplayDelegate @Inject constructor(
 
     // ── Settings toggles ───────────────────────────────────────────────────
 
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod")
     fun toggleSetting(setting: ReaderSetting) {
         when (setting) {
             ReaderSetting.KEEP_SCREEN_ON -> {

@@ -75,7 +75,9 @@ fun ReaderSettingsOverlay(
 
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
         ) { page ->
             when (page) {
                 0 -> ReadingModeTab(state = state, onEvent = onEvent)
@@ -349,10 +351,10 @@ private fun ColorFilterTab(state: ReaderState, onEvent: (ReaderEvent) -> Unit) {
 
 @Composable
 private fun CustomTintSection(tintColor: Long, onEvent: (ReaderEvent) -> Unit) {
-    val alpha = ((tintColor shr 24) and 0xFF).toInt()
-    val red = ((tintColor shr 16) and 0xFF).toInt()
-    val green = ((tintColor shr 8) and 0xFF).toInt()
-    val blue = (tintColor and 0xFF).toInt()
+    val alpha = ((tintColor shr 24) and 0xFFL).toInt()
+    val red = ((tintColor shr 16) and 0xFFL).toInt()
+    val green = ((tintColor shr 8) and 0xFFL).toInt()
+    val blue = (tintColor and 0xFFL).toInt()
 
     SettingsSectionLabel(stringResource(R.string.reader_opacity))
     Slider(

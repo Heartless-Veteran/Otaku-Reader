@@ -8,6 +8,7 @@ import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.TapZoneConfig
 import kotlinx.coroutines.flow.Flow
 
+@Suppress("TooManyFunctions")
 interface ReaderSettingsRepository {
 
     val writeFailureEvents: Flow<Unit>
