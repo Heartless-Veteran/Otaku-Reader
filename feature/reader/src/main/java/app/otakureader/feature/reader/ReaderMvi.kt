@@ -3,6 +3,7 @@ package app.otakureader.feature.reader
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.TapZoneConfig
@@ -37,6 +38,9 @@ data class ReaderState(
 
     /** Current reader display mode */
     val mode: ReaderMode = ReaderMode.SINGLE_PAGE,
+
+    /** Screen-orientation lock applied while the reader is open */
+    val readerOrientation: ReaderOrientation = ReaderOrientation.DEFAULT,
 
     /** Current zoom level (1.0 = 100%, 2.0 = 200%, etc.) */
     val zoomLevel: Float = 1f,
@@ -94,6 +98,9 @@ data class ReaderState(
 
     /** Show page number indicator */
     val showPageNumber: Boolean = true,
+
+    /** Manga/series title shown as the reader top-bar title */
+    val mangaTitle: String = "",
 
     /** Current chapter title */
     val chapterTitle: String = "",
@@ -443,6 +450,9 @@ sealed interface ReaderEvent {
 
     /** Change the reader display mode (single, dual, webtoon, smart panels). */
     data class OnModeChange(val mode: ReaderMode) : DisplayControl
+
+    /** Change the screen-orientation lock applied while reading. */
+    data class OnOrientationChange(val orientation: ReaderOrientation) : DisplayControl
 
     /** Change reading direction (LTR/RTL/Vertical). */
     data class OnDirectionChange(val direction: ReadingDirection) : DisplayControl

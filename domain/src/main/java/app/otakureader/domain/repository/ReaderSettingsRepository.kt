@@ -3,6 +3,7 @@ package app.otakureader.domain.repository
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.TapZoneConfig
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,7 @@ interface ReaderSettingsRepository {
     val writeFailureEvents: Flow<Unit>
 
     val readerMode: Flow<ReaderMode>
+    val readerOrientation: Flow<ReaderOrientation>
     val readingDirection: Flow<ReadingDirection>
     val brightness: Flow<Float>
     val keepScreenOn: Flow<Boolean>
@@ -67,6 +69,7 @@ interface ReaderSettingsRepository {
     val secureScreen: Flow<Boolean>
 
     suspend fun setReaderMode(mode: ReaderMode)
+    suspend fun setReaderOrientation(orientation: ReaderOrientation)
     suspend fun setBrightness(brightness: Float)
     suspend fun setReadingDirection(direction: ReadingDirection)
     suspend fun setKeepScreenOn(enabled: Boolean)

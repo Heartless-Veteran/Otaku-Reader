@@ -3,6 +3,7 @@ package app.otakureader.feature.reader.viewmodel.delegate
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.PageRotation
 import app.otakureader.feature.reader.ReaderSetting
@@ -57,6 +58,11 @@ class ReaderDisplayDelegate @Inject constructor(
     fun updateReadingDirection(direction: ReadingDirection) {
         update { it.copy(readingDirection = direction) }
         launchSave { setReadingDirection(direction) }
+    }
+
+    fun changeOrientation(orientation: ReaderOrientation) {
+        update { it.copy(readerOrientation = orientation) }
+        launchSave { setReaderOrientation(orientation) }
     }
 
     fun cyclePageRotation() {

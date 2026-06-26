@@ -2,6 +2,7 @@ package app.otakureader.feature.reader
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -69,6 +70,7 @@ import app.otakureader.core.ui.component.LoadingScreen
 import app.otakureader.feature.reader.R
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.feature.reader.modes.DualPageReader
 import app.otakureader.feature.reader.modes.SinglePageReader
 import app.otakureader.feature.reader.modes.SmartPanelsReader
@@ -119,6 +121,17 @@ private val DIRECTION_INDICATOR_VERTICAL_PADDING = 8.dp
 private val DIRECTION_INDICATOR_ICON_SIZE = 18.dp
 private val DIRECTION_INDICATOR_ICON_SPACING = 6.dp
 private const val DIRECTION_INDICATOR_SCRIM_ALPHA = 0.7f
+
+/** Maps a domain [ReaderOrientation] to the matching Android `ActivityInfo` orientation flag. */
+private fun ReaderOrientation.toActivityInfo(): Int = when (this) {
+    ReaderOrientation.DEFAULT -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    ReaderOrientation.FREE -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+    ReaderOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+    ReaderOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    ReaderOrientation.LOCKED_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    ReaderOrientation.LOCKED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    ReaderOrientation.REVERSE_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+}
 
 @Composable
 @Suppress("UnusedParameter")
@@ -193,6 +206,19 @@ fun ReaderScreen(
         }
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+
+    // Apply the reader's screen-orientation lock whenever it changes, and restore the system
+    // default only when leaving the reader. Splitting application (LaunchedEffect) from
+    // restoration (DisposableEffect) avoids a brief reset-to-default flicker on each change.
+    val readerActivity = context as? Activity
+    LaunchedEffect(readerActivity, state.readerOrientation) {
+        readerActivity?.requestedOrientation = state.readerOrientation.toActivityInfo()
+    }
+    DisposableEffect(readerActivity) {
+        onDispose {
+            readerActivity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
     
@@ -337,7 +363,7 @@ fun ReaderScreen(
         // live in the bottom bar (PageSlider) and thumbnails in PageThumbnailStrip, so this
         // overlay deliberately carries only the top bar to avoid duplicating those controls.
         ReaderContentOverlay(
-            title = state.chapterTitle,
+            title = state.mangaTitle,
             chapterTitle = state.chapterTitle,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             onDismiss = onNavigateBack,
@@ -507,12 +533,14 @@ fun ReaderScreen(
             isVisible = state.isSettingsOverlayVisible,
             currentMode = state.mode,
             readingDirection = state.readingDirection,
+            orientation = state.readerOrientation,
             brightness = state.brightness,
             colorFilterMode = state.colorFilterMode,
             cropBordersEnabled = state.cropBordersEnabled,
             incognitoMode = state.incognitoMode,
             onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
             onDirectionChange = { viewModel.onEvent(ReaderEvent.OnDirectionChange(it)) },
+            onOrientationChange = { viewModel.onEvent(ReaderEvent.OnOrientationChange(it)) },
             onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
             onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
             onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },

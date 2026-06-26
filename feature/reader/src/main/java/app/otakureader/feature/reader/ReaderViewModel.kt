@@ -20,6 +20,7 @@ import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.model.PageBookmark
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.domain.model.ReaderComment
@@ -271,11 +272,22 @@ class ReaderViewModel @Inject constructor(
             val manga = mangaRepository.getMangaById(mangaId)
             currentManga = manga
             val settingsState = settingsLoaderDelegate.load(_state.value, manga)
+            // Read orientation here rather than in ReaderSettingsLoaderDelegate.load(): that
+            // method's coroutineScope lambda is already near the JVM 64KB method-size limit, so
+            // adding another async read there overflows it ("Method too large").
+            val orientation = try {
+                settingsRepository.readerOrientation.first()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ReaderOrientation.DEFAULT
+            }
             // Merge only settings fields into current state to avoid overwriting
             // pages/chapter data loaded concurrently by loadChapter().
             _state.update { current ->
                 current.copy(
                     mode = settingsState.mode,
+                    readerOrientation = orientation,
                     brightness = settingsState.brightness,
                     keepScreenOn = settingsState.keepScreenOn,
                     showPageNumber = settingsState.showPageNumber,
@@ -366,6 +378,7 @@ class ReaderViewModel @Inject constructor(
                 pages = pages,
                 currentPage = initialPage,
                 isLoading = false,
+                mangaTitle = result.manga.title,
                 chapterTitle = result.chapter.name,
                 readerBackgroundColor = result.manga.readerBackgroundColor,
             )
@@ -506,6 +519,7 @@ class ReaderViewModel @Inject constructor(
     private fun handleDisplay(event: ReaderEvent.DisplayControl) {
         when (event) {
             is ReaderEvent.OnModeChange -> displayDelegate.changeReaderMode(event.mode)
+            is ReaderEvent.OnOrientationChange -> displayDelegate.changeOrientation(event.orientation)
             is ReaderEvent.OnDirectionChange -> displayDelegate.updateReadingDirection(event.direction)
             ReaderEvent.RotateCW -> displayDelegate.cyclePageRotation()
             ReaderEvent.ResetRotation -> displayDelegate.resetRotation()
