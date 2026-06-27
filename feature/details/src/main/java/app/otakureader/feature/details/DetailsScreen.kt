@@ -246,7 +246,7 @@ fun DetailsScreen(
     }
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
-        BackHandler(enabled = selectedVisibleChapters.isNotEmpty()) {
+        BackHandler(enabled = state.selectedChapters.isNotEmpty()) {
             viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
         }
         Scaffold(
