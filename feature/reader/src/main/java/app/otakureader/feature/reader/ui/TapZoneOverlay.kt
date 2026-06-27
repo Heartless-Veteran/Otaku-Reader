@@ -114,7 +114,7 @@ fun NavigationOverlay(
     onPrev: () -> Unit,
     onNext: () -> Unit,
     onToggleMenu: () -> Unit,
-    onLongPress: () -> Unit = {},
+    onLongPress: (() -> Unit)? = null,
     navigationMode: Int = 0,
     tapInvertMode: TapInvertMode = TapInvertMode.NONE,
     smallerTapZone: Boolean = false,
@@ -177,7 +177,7 @@ fun NavigationOverlay(
                                 resolveAction(offset.x / w, offset.y / h)
                             }
                         },
-                        onLongPress = { onLongPress() },
+                        onLongPress = onLongPress?.let { cb -> { _ -> cb() } },
                     )
                 },
         )
@@ -193,7 +193,7 @@ fun SimpleTapZoneOverlay(
     onLeftTap: () -> Unit,
     onCenterTap: () -> Unit,
     onRightTap: () -> Unit,
-    onCenterLongPress: () -> Unit = {},
+    onCenterLongPress: (() -> Unit)? = null,
     isRtl: Boolean = false,
     modifier: Modifier = Modifier,
 ) {

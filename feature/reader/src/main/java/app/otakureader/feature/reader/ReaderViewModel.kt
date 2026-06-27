@@ -325,6 +325,11 @@ class ReaderViewModel @Inject constructor(
                     showActionsOnLongTap = settingsState.showActionsOnLongTap,
                     savePagesToSeparateFolders = settingsState.savePagesToSeparateFolders,
                     secureScreen = settingsState.secureScreen,
+                    navigationModePager = settingsState.navigationModePager,
+                    navigationModeWebtoon = settingsState.navigationModeWebtoon,
+                    tapInvertModePager = settingsState.tapInvertModePager,
+                    tapInvertModeWebtoon = settingsState.tapInvertModeWebtoon,
+                    smallerTapZone = settingsState.smallerTapZone,
                 )
             }
         }

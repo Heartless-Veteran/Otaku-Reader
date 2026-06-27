@@ -383,7 +383,8 @@ fun ReaderScreen(
                 onPrev = { viewModel.onEvent(if (isRtl) ReaderEvent.NextPage else ReaderEvent.PrevPage) },
                 onNext = { viewModel.onEvent(if (isRtl) ReaderEvent.PrevPage else ReaderEvent.NextPage) },
                 onToggleMenu = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
-                onLongPress = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+                onLongPress = if (state.showActionsOnLongTap) null
+                              else ({ viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) }),
                 navigationMode = if (isWebtoon) state.navigationModeWebtoon else state.navigationModePager,
                 tapInvertMode = if (isWebtoon) state.tapInvertModeWebtoon else state.tapInvertModePager,
                 smallerTapZone = state.smallerTapZone,

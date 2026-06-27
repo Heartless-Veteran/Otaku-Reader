@@ -183,36 +183,9 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
                 VolumeKeyBehavior.INHERIT
             }
         }
-        val navigationModePagerD = async {
-            try { settingsRepository.navigationModePager.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                0
-            }
-        }
-        val navigationModeWebtoonD = async {
-            try { settingsRepository.navigationModeWebtoon.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                0
-            }
-        }
-        val tapInvertModePagerD = async {
-            try { settingsRepository.tapInvertModePager.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                TapInvertMode.NONE
-            }
-        }
-        val tapInvertModeWebtoonD = async {
-            try { settingsRepository.tapInvertModeWebtoon.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                TapInvertMode.NONE
-            }
-        }
-        val smallerTapZoneD = async {
-            try { settingsRepository.smallerTapZone.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                false
-            }
-        }
+        // Navigation settings extracted into a helper to keep load() under the JVM
+        // 64 KB method-bytecode limit (MethodTooLargeException with all async blocks inline).
+        val navSettingsD = async { loadNavigationSettings() }
 
         val mode = modeD.await()
         val direction = directionD.await()
@@ -302,11 +275,58 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             savePagesToSeparateFolders = savePagesToSeparateFoldersD.await(),
             autoScrollSpeed = autoScrollSpeedD.await(),
             secureScreen = secureScreenD.await(),
-            navigationModePager = navigationModePagerD.await(),
-            navigationModeWebtoon = navigationModeWebtoonD.await(),
-            tapInvertModePager = tapInvertModePagerD.await(),
-            tapInvertModeWebtoon = tapInvertModeWebtoonD.await(),
-            smallerTapZone = smallerTapZoneD.await(),
+        ).let { base ->
+            val nav = navSettingsD.await()
+            base.copy(
+                navigationModePager = nav.modePager,
+                navigationModeWebtoon = nav.modeWebtoon,
+                tapInvertModePager = nav.invertPager,
+                tapInvertModeWebtoon = nav.invertWebtoon,
+                smallerTapZone = nav.smallerTapZone,
+            )
+        }
+    }
+
+    private data class NavigationSettings(
+        val modePager: Int = 0,
+        val modeWebtoon: Int = 0,
+        val invertPager: TapInvertMode = TapInvertMode.NONE,
+        val invertWebtoon: TapInvertMode = TapInvertMode.NONE,
+        val smallerTapZone: Boolean = false,
+    )
+
+    private suspend fun loadNavigationSettings(): NavigationSettings = kotlinx.coroutines.coroutineScope {
+        val modePagerD = async {
+            try { settingsRepository.navigationModePager.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e; 0
+            }
+        }
+        val modeWebtoonD = async {
+            try { settingsRepository.navigationModeWebtoon.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e; 0
+            }
+        }
+        val invertPagerD = async {
+            try { settingsRepository.tapInvertModePager.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e; TapInvertMode.NONE
+            }
+        }
+        val invertWebtoonD = async {
+            try { settingsRepository.tapInvertModeWebtoon.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e; TapInvertMode.NONE
+            }
+        }
+        val smallerD = async {
+            try { settingsRepository.smallerTapZone.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e; false
+            }
+        }
+        NavigationSettings(
+            modePager = modePagerD.await(),
+            modeWebtoon = modeWebtoonD.await(),
+            invertPager = invertPagerD.await(),
+            invertWebtoon = invertWebtoonD.await(),
+            smallerTapZone = smallerD.await(),
         )
     }
 }
