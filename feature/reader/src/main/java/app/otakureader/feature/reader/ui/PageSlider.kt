@@ -42,6 +42,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.ReadingDirection
@@ -171,6 +172,7 @@ fun PageSlider(
                                         text = ghostText,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color.Transparent,
+                                        modifier = Modifier.clearAndSetSemantics { },
                                     )
                                 }
 
