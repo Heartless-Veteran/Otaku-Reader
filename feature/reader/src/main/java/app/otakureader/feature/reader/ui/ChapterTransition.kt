@@ -3,6 +3,7 @@ package app.otakureader.feature.reader.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +45,7 @@ private val TRANSITION_SPACER_HEIGHT = 24.dp
 private val TRANSITION_CARD_HORIZONTAL_PADDING = 16.dp
 private val TRANSITION_CARD_VERTICAL_PADDING = 12.dp
 private const val TRANSITION_BG_ALPHA = 0.92f
+private const val CHAPTER_TITLE_MAX_LINES = 5
 
 /**
  * Full-screen overlay shown at chapter boundaries when [isVisible] is true.
@@ -82,7 +85,9 @@ fun ChapterTransition(
     ) {
         Surface(
             color = MaterialTheme.colorScheme.background.copy(alpha = TRANSITION_BG_ALPHA),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) { detectTapGestures { } },
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -188,7 +193,7 @@ private fun ChapterText(
             Text(
                 text = name,
                 fontSize = 20.sp,
-                maxLines = 5,
+                maxLines = CHAPTER_TITLE_MAX_LINES,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleLarge,
             )

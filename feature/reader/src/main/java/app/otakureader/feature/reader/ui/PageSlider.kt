@@ -56,6 +56,8 @@ private val NAV_PILL_HORIZONTAL_PADDING = 16.dp
 private val NAV_SLIDER_HORIZONTAL_PADDING = 8.dp
 private const val BAR_ALPHA_DARK = 0.9f
 private const val BAR_ALPHA_LIGHT = 0.95f
+private const val SLIDER_MIN_TOTAL_PAGES = 1  // slider only renders when at least one page exists
+private const val PAGE_DISPLAY_OFFSET = 1     // converts between 0-based page index and 1-based display
 
 /**
  * Draggable page slider (chapter navigator) for the reader.
@@ -95,7 +97,7 @@ fun PageSlider(
         exit = slideOutVertically { it } + fadeOut(),
         modifier = modifier,
     ) {
-        if (totalPages > 0) {
+        if (totalPages >= SLIDER_MIN_TOTAL_PAGES) {
             val isRtl = readingDirection == ReadingDirection.RTL
             val haptic = LocalHapticFeedback.current
             val backgroundColor = MaterialTheme.colorScheme
@@ -152,17 +154,21 @@ fun PageSlider(
                             ) {
                                 val textColor = MaterialTheme.colorScheme.onSurface
 
-                                // Current page label. A transparent ghost copy of the widest
-                                // possible number keeps the box width stable so the slider does
-                                // not shift left as the page number grows.
+                                // Current page label. Ghost copy uses '8' repeated to match
+                                // totalPages digit count — '8' is the widest digit in proportional
+                                // fonts, so this reserves the maximum possible width regardless of
+                                // which digits actually appear.
+                                val ghostText = remember(totalPages) {
+                                    buildString { repeat(totalPages.toString().length) { append('8') } }
+                                }
                                 Box(contentAlignment = Alignment.CenterEnd) {
                                     Text(
-                                        text = (currentPage + 1).toString(),
+                                        text = (currentPage + PAGE_DISPLAY_OFFSET).toString(),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = textColor,
                                     )
                                     Text(
-                                        text = totalPages.toString(),
+                                        text = ghostText,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color.Transparent,
                                     )
@@ -177,11 +183,17 @@ fun PageSlider(
                                     }
                                 }
 
-                                // Local float state keeps scrubbing responsive. Initialized from
-                                // external currentPage so external page turns (tap zones, etc.)
-                                // stay in sync. Uses 1-based range to match display labels.
-                                var sliderValue by remember(currentPage) {
-                                    mutableFloatStateOf((currentPage + 1).toFloat())
+                                // Local float state keeps scrubbing responsive. Not keyed on
+                                // currentPage to avoid thumb jitter during active drags: the
+                                // LaunchedEffect below syncs external page changes only when the
+                                // user is not dragging.
+                                var sliderValue by remember {
+                                    mutableFloatStateOf((currentPage + PAGE_DISPLAY_OFFSET).toFloat())
+                                }
+                                LaunchedEffect(currentPage, sliderDragged) {
+                                    if (!sliderDragged) {
+                                        sliderValue = (currentPage + PAGE_DISPLAY_OFFSET).toFloat()
+                                    }
                                 }
                                 var lastEmittedPage by remember(currentPage) {
                                     mutableIntStateOf(currentPage)
@@ -192,14 +204,13 @@ fun PageSlider(
                                     value = sliderValue,
                                     onValueChange = { newValue ->
                                         sliderValue = newValue
-                                        val newPage = newValue.toInt().coerceIn(1, totalPages) - 1
+                                        val newPage = newValue.toInt().coerceIn(PAGE_DISPLAY_OFFSET, totalPages) - PAGE_DISPLAY_OFFSET
                                         if (newPage != lastEmittedPage) {
                                             lastEmittedPage = newPage
                                             onPageSeek(newPage)
                                         }
                                     },
-                                    valueRange = 1f..maxValue,
-                                    steps = if (totalPages > 2) totalPages - 2 else 0,
+                                    valueRange = PAGE_DISPLAY_OFFSET.toFloat()..maxValue,
                                     interactionSource = interactionSource,
                                     modifier = Modifier
                                         .weight(1f)
