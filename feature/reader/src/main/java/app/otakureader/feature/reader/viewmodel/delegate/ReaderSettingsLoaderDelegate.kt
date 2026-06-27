@@ -183,7 +183,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val backgroundColor: Int,
     )
 
-    @Suppress("InstanceOfCheckForException")
+    @Suppress("InstanceOfCheckForException", "LongMethod", "CognitiveComplexMethod")
     private suspend fun loadCoreSettings(): CoreSettings = coroutineScope {
         val modeD              = async { settingsRepository.readerMode.first() }
         val brightnessD        = async { settingsRepository.brightness.first() }
@@ -365,7 +365,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val prefetchOnlyOnWiFi: Boolean,
     )
 
-    @Suppress("InstanceOfCheckForException")
+    @Suppress("InstanceOfCheckForException", "CognitiveComplexMethod")
     private suspend fun loadPrefetchSettings(): PrefetchSettings = coroutineScope {
         val preloadBeforeD     = async {
             try { settingsRepository.preloadPagesBefore.first() } catch (e: Exception) {
@@ -427,7 +427,7 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val smart: VolumeKeyBehavior,
     )
 
-    @Suppress("InstanceOfCheckForException")
+    @Suppress("InstanceOfCheckForException", "CognitiveComplexMethod")
     private suspend fun loadVolumeKeySettings(): VolumeKeySettings = coroutineScope {
         val singleD  = async {
             try { settingsRepository.volumeKeyBehaviorSinglePage.first() } catch (e: Exception) {
