@@ -95,6 +95,9 @@ class GlobalSearchViewModel @Inject constructor(
                     searchHistoryPreferences.removeSearchQuery(event.query)
                 }
             }
+            is GlobalSearchEvent.OnToggleOnlyResults -> {
+                _state.update { it.copy(onlyShowHasResults = !it.onlyShowHasResults) }
+            }
         }
     }
 
@@ -124,6 +127,7 @@ class GlobalSearchViewModel @Inject constructor(
                         SourceSearchResult(
                             sourceId = source.id,
                             sourceName = source.name,
+                            sourceLanguage = source.lang,
                             isLoading = true
                         )
                     }
