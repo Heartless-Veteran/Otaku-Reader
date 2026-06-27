@@ -121,6 +121,10 @@ private const val SINGLE_CHAPTER_SELECTION = 1
 // Action labels in the selection bottom bar are kept to a single line so the row stays compact.
 private const val CHAPTER_ACTION_LABEL_MAX_LINES = 1
 
+// Bottom content padding for the phone single-scroll list — enough to clear the FAB
+// (56 dp FAB height + 16 dp bottom margin + 16 dp list breathing room).
+private val FAB_CONTENT_PADDING_BOTTOM = 88.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
@@ -242,7 +246,7 @@ fun DetailsScreen(
     }
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
-        BackHandler(enabled = state.selectedChapters.isNotEmpty()) {
+        BackHandler(enabled = selectedVisibleChapters.isNotEmpty()) {
             viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
         }
         Scaffold(
@@ -414,8 +418,8 @@ fun DetailsScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (state.canStartReading) {
-                val isFabExpanded by remember {
+            if (state.canStartReading && selectedVisibleChapters.isEmpty()) {
+                val isFabExpanded by remember(isExpanded) {
                     derivedStateOf { isExpanded || !listState.canScrollBackward }
                 }
                 ExtendedFloatingActionButton(
@@ -643,7 +647,7 @@ private fun DetailsContent(
         LazyColumn(
             state = listState,
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 88.dp),
+            contentPadding = PaddingValues(bottom = FAB_CONTENT_PADDING_BOTTOM),
         ) {
             item(key = "header") {
                 MangaHeader(
