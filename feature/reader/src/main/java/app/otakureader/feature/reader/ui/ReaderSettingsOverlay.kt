@@ -35,6 +35,7 @@ import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.feature.reader.R
 import app.otakureader.feature.reader.ReaderEvent
 import app.otakureader.feature.reader.ReaderSetting
@@ -186,6 +187,18 @@ private fun PagerViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> Un
         checked = state.animatePageTransitions,
         onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.ANIMATE_PAGE_TRANSITIONS)) },
     )
+
+    SettingsDivider()
+
+    NavigationModeSection(
+        sectionLabel = stringResource(R.string.reader_nav_mode_title),
+        selectedMode = state.navigationModePager,
+        onModeSelect = { onEvent(ReaderEvent.SetNavigationModePager(it)) },
+        selectedInvert = state.tapInvertModePager,
+        onInvertSelect = { onEvent(ReaderEvent.SetTapInvertModePager(it)) },
+        smallerTapZone = state.smallerTapZone,
+        onSmallerTapZoneToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SMALLER_TAP_ZONE)) },
+    )
 }
 
 @Composable
@@ -224,6 +237,18 @@ private fun WebtoonViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> 
         label = stringResource(R.string.reader_webtoon_disable_zoom_out),
         checked = state.webtoonDisableZoomOut,
         onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.WEBTOON_DISABLE_ZOOM_OUT)) },
+    )
+
+    SettingsDivider()
+
+    NavigationModeSection(
+        sectionLabel = stringResource(R.string.reader_nav_mode_title),
+        selectedMode = state.navigationModeWebtoon,
+        onModeSelect = { onEvent(ReaderEvent.SetNavigationModeWebtoon(it)) },
+        selectedInvert = state.tapInvertModeWebtoon,
+        onInvertSelect = { onEvent(ReaderEvent.SetTapInvertModeWebtoon(it)) },
+        smallerTapZone = state.smallerTapZone,
+        onSmallerTapZoneToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SMALLER_TAP_ZONE)) },
     )
 }
 
@@ -460,4 +485,63 @@ private fun ColorFilterMode.toLabel(): String = when (this) {
     ColorFilterMode.GRAYSCALE -> stringResource(R.string.reader_color_filter_greyscale)
     ColorFilterMode.INVERT -> stringResource(R.string.reader_color_filter_invert)
     ColorFilterMode.CUSTOM_TINT -> stringResource(R.string.reader_color_filter_custom_tint)
+}
+
+@Composable
+private fun TapInvertMode.toLabel(): String = when (this) {
+    TapInvertMode.NONE -> stringResource(R.string.reader_tap_invert_none)
+    TapInvertMode.HORIZONTAL -> stringResource(R.string.reader_tap_invert_horizontal)
+    TapInvertMode.VERTICAL -> stringResource(R.string.reader_tap_invert_vertical)
+    TapInvertMode.BOTH -> stringResource(R.string.reader_tap_invert_both)
+}
+
+@Composable
+private fun NavigationModeSection(
+    sectionLabel: String,
+    selectedMode: Int,
+    onModeSelect: (Int) -> Unit,
+    selectedInvert: TapInvertMode,
+    onInvertSelect: (TapInvertMode) -> Unit,
+    smallerTapZone: Boolean,
+    onSmallerTapZoneToggle: () -> Unit,
+) {
+    val navLabels = listOf(
+        stringResource(R.string.reader_nav_mode_default),
+        stringResource(R.string.reader_nav_mode_l),
+        stringResource(R.string.reader_nav_mode_kindlish),
+        stringResource(R.string.reader_nav_mode_edge),
+        stringResource(R.string.reader_nav_mode_right_and_left),
+        stringResource(R.string.reader_nav_mode_disabled),
+    )
+
+    SettingsSectionLabel(sectionLabel)
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        navLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = selectedMode == index,
+                onClick = { onModeSelect(index) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+    SettingsSectionLabel(stringResource(R.string.reader_tap_invert_title))
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        TapInvertMode.entries.forEach { mode ->
+            FilterChip(
+                selected = selectedInvert == mode,
+                onClick = { onInvertSelect(mode) },
+                label = { Text(mode.toLabel()) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_smaller_tap_zone),
+        checked = smallerTapZone,
+        onToggle = onSmallerTapZoneToggle,
+    )
 }

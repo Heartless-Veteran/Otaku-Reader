@@ -56,6 +56,20 @@ enum class TapZoneAction {
 }
 
 /**
+ * Invert mode for tap zone navigation — mirrors which axis (or both) the region coordinates
+ * are flipped on. Matches Komikku's TappingInvertMode enum.
+ */
+enum class TapInvertMode {
+    NONE,
+    HORIZONTAL,
+    VERTICAL,
+    BOTH;
+
+    val shouldInvertHorizontal: Boolean get() = this == HORIZONTAL || this == BOTH
+    val shouldInvertVertical: Boolean get() = this == VERTICAL || this == BOTH
+}
+
+/**
  * Configuration for tap zones on the reader screen.
  */
 data class TapZoneConfig(

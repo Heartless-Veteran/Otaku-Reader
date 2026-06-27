@@ -5,6 +5,7 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.feature.reader.PageRotation
 import app.otakureader.feature.reader.ReaderSetting
 import app.otakureader.feature.reader.ReaderState
@@ -264,6 +265,11 @@ class ReaderDisplayDelegate @Inject constructor(
                 update { it.copy(isFullscreen = new) }
                 launchSave { setFullscreen(new) }
             }
+            ReaderSetting.SMALLER_TAP_ZONE -> {
+                val new = !stateFlow.value.smallerTapZone
+                update { it.copy(smallerTapZone = new) }
+                launchSave { setSmallerTapZone(new) }
+            }
         }
     }
 
@@ -284,6 +290,28 @@ class ReaderDisplayDelegate @Inject constructor(
 
     fun updateTapZones(config: TapZoneConfig) {
         scope.launch { settingsRepository.setTapZoneConfig(config) }
+    }
+
+    fun updateNavigationModePager(mode: Int) {
+        val coerced = mode.coerceIn(0, MAX_NAVIGATION_MODE)
+        update { it.copy(navigationModePager = coerced) }
+        launchSave { setNavigationModePager(coerced) }
+    }
+
+    fun updateNavigationModeWebtoon(mode: Int) {
+        val coerced = mode.coerceIn(0, MAX_NAVIGATION_MODE)
+        update { it.copy(navigationModeWebtoon = coerced) }
+        launchSave { setNavigationModeWebtoon(coerced) }
+    }
+
+    fun updateTapInvertModePager(mode: TapInvertMode) {
+        update { it.copy(tapInvertModePager = mode) }
+        launchSave { setTapInvertModePager(mode) }
+    }
+
+    fun updateTapInvertModeWebtoon(mode: TapInvertMode) {
+        update { it.copy(tapInvertModeWebtoon = mode) }
+        launchSave { setTapInvertModeWebtoon(mode) }
     }
 
     // ── Tap zone handling ────────────────────────────────────────────────────
@@ -312,5 +340,6 @@ class ReaderDisplayDelegate @Inject constructor(
     companion object {
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
+        private const val MAX_NAVIGATION_MODE = 5
     }
 }

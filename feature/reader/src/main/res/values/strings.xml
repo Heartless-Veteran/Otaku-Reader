@@ -253,4 +253,19 @@
     <string name="reader_page_cover_set">Cover updated</string>
     <string name="reader_page_cover_failed">Failed to set cover</string>
     <string name="reading_timer_format">%1$02d:%2$02d:%3$02d</string>
+
+    <!-- Tap zone navigation modes (R3 parity) -->
+    <string name="reader_nav_mode_title">Navigation Mode</string>
+    <string name="reader_nav_mode_default">Default</string>
+    <string name="reader_nav_mode_l">L Navigation</string>
+    <string name="reader_nav_mode_kindlish">Kindlish</string>
+    <string name="reader_nav_mode_edge">Edge</string>
+    <string name="reader_nav_mode_right_and_left">Right and Left</string>
+    <string name="reader_nav_mode_disabled">Disabled</string>
+    <string name="reader_tap_invert_title">Invert Tapping</string>
+    <string name="reader_tap_invert_none">None</string>
+    <string name="reader_tap_invert_horizontal">Horizontal</string>
+    <string name="reader_tap_invert_vertical">Vertical</string>
+    <string name="reader_tap_invert_both">Both</string>
+    <string name="reader_smaller_tap_zone">Smaller tap zone</string>
 </resources>

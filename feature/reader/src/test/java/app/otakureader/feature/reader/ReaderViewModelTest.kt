@@ -20,6 +20,7 @@ import app.otakureader.core.preferences.ReaderPreferences
 import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.ReadingDirection
 import app.otakureader.feature.reader.model.ComicPanel
@@ -190,6 +191,16 @@ class ReaderViewModelTest {
         every { settingsRepository.showPageThumbnailStrip } returns flowOf(true)
         every { settingsRepository.autoScrollSpeed } returns flowOf(100f)
         every { settingsRepository.tapZoneConfig } returns flowOf(app.otakureader.domain.model.TapZoneConfig())
+        every { settingsRepository.secureScreen } returns flowOf(false)
+        every { settingsRepository.volumeKeyBehaviorSinglePage } returns flowOf(0)
+        every { settingsRepository.volumeKeyBehaviorDualPage } returns flowOf(0)
+        every { settingsRepository.volumeKeyBehaviorWebtoon } returns flowOf(0)
+        every { settingsRepository.volumeKeyBehaviorSmartPanels } returns flowOf(0)
+        every { settingsRepository.navigationModePager } returns flowOf(0)
+        every { settingsRepository.navigationModeWebtoon } returns flowOf(0)
+        every { settingsRepository.tapInvertModePager } returns flowOf(TapInvertMode.NONE)
+        every { settingsRepository.tapInvertModeWebtoon } returns flowOf(TapInvertMode.NONE)
+        every { settingsRepository.smallerTapZone } returns flowOf(false)
         every { settingsRepository.writeFailureEvents } returns emptyFlow()
 
         // Return null for chapter/manga so loadChapter() exits early without side-effects.

@@ -16,6 +16,7 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.domain.model.TapZoneConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -500,6 +501,48 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.WEBTOON_DISABLE_ZOOM_OUT] = enabled }
     }
 
+    // ==================== Navigation Mode Settings ====================
+
+    override val navigationModePager: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.NAV_MODE_PAGER] ?: 0
+    }
+
+    override suspend fun setNavigationModePager(mode: Int) {
+        safeEdit { it[Keys.NAV_MODE_PAGER] = mode.coerceIn(0, 5) }
+    }
+
+    override val navigationModeWebtoon: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.NAV_MODE_WEBTOON] ?: 0
+    }
+
+    override suspend fun setNavigationModeWebtoon(mode: Int) {
+        safeEdit { it[Keys.NAV_MODE_WEBTOON] = mode.coerceIn(0, 5) }
+    }
+
+    override val tapInvertModePager: Flow<TapInvertMode> = dataStore.data.map { prefs ->
+        TapInvertMode.entries.getOrNull(prefs[Keys.TAP_INVERT_PAGER] ?: 0) ?: TapInvertMode.NONE
+    }
+
+    override suspend fun setTapInvertModePager(mode: TapInvertMode) {
+        safeEdit { it[Keys.TAP_INVERT_PAGER] = mode.ordinal }
+    }
+
+    override val tapInvertModeWebtoon: Flow<TapInvertMode> = dataStore.data.map { prefs ->
+        TapInvertMode.entries.getOrNull(prefs[Keys.TAP_INVERT_WEBTOON] ?: 0) ?: TapInvertMode.NONE
+    }
+
+    override suspend fun setTapInvertModeWebtoon(mode: TapInvertMode) {
+        safeEdit { it[Keys.TAP_INVERT_WEBTOON] = mode.ordinal }
+    }
+
+    override val smallerTapZone: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.SMALLER_TAP_ZONE] ?: false
+    }
+
+    override suspend fun setSmallerTapZone(enabled: Boolean) {
+        safeEdit { it[Keys.SMALLER_TAP_ZONE] = enabled }
+    }
+
     // ==================== E-ink Settings ====================
 
     override val einkFlashOnPageChange: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -654,6 +697,11 @@ class ReaderSettingsRepository @Inject constructor(
         
         // --- Tap Zone Settings ---
         val INVERT_TAP_ZONES = booleanPreferencesKey("reader_invert_tap_zones")
+        val NAV_MODE_PAGER = intPreferencesKey("reader_navigation_mode_pager")
+        val NAV_MODE_WEBTOON = intPreferencesKey("reader_navigation_mode_webtoon")
+        val TAP_INVERT_PAGER = intPreferencesKey("reader_tapping_inverted_pager")
+        val TAP_INVERT_WEBTOON = intPreferencesKey("reader_tapping_inverted_webtoon")
+        val SMALLER_TAP_ZONE = booleanPreferencesKey("reader_navigation_smaller_tap_zone")
         
         // --- Webtoon Settings ---
         val WEBTOON_SIDE_PADDING = intPreferencesKey("reader_webtoon_side_padding")
