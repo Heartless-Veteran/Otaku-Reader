@@ -548,6 +548,7 @@ fun ReaderScreen(
                     viewModel.onEvent(ReaderEvent.OnOrientationChange(next))
                 },
                 onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+                onToggleThumbnailStrip = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_PAGE_THUMBNAIL_STRIP)) },
                 onSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
                 isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             )

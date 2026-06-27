@@ -158,6 +158,7 @@
     <!-- Filmstrip / slider toggle -->
     <string name="reader_switch_to_slider">Switch to slider</string>
     <string name="reader_switch_to_filmstrip">Switch to filmstrip</string>
+    <string name="reader_toggle_thumbnail_strip">Toggle thumbnail strip</string>
 
     <!-- Reader settings dialog — tab labels -->
     <string name="reader_settings_tab_reading_mode">Reading mode</string>
