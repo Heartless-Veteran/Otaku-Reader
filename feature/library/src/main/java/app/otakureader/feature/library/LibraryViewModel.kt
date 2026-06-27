@@ -87,6 +87,10 @@ class LibraryViewModel @Inject constructor(
     /** Atomic selection manager — keys are manga IDs. */
     private val selection = SelectionManager<Long>()
 
+    /** Stable seed for RANDOM sort — fixed for the lifetime of this ViewModel so items don't
+     *  re-shuffle on unrelated state changes (e.g. download count updates). */
+    private val randomSeed: Long = System.currentTimeMillis()
+
     private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
     val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
 
@@ -129,7 +133,10 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.FilterHasNotes, is LibraryEvent.SetSortMode, is LibraryEvent.SetFilterMode,
             is LibraryEvent.SetFilterSource, is LibraryEvent.ToggleNsfw, is LibraryEvent.SetFilterReadingList,
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
-            is LibraryEvent.ClearAllFilters -> handleFilterSortEvent(event)
+            is LibraryEvent.ClearAllFilters,
+            is LibraryEvent.SetFilterDownloaded, is LibraryEvent.SetFilterUnread,
+            is LibraryEvent.SetFilterStarted, is LibraryEvent.SetFilterTracking,
+            is LibraryEvent.SetFilterCompleted -> handleFilterSortEvent(event)
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
@@ -156,28 +163,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
             is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
             is LibraryEvent.ApplySavedView, is LibraryEvent.DeleteSavedView -> handleSavedViewEvent(event)
-            is LibraryEvent.ShowContextMenu, is LibraryEvent.DismissContextMenu,
-            is LibraryEvent.ResumeFromContextMenu, is LibraryEvent.MarkMangaAsReadFromMenu,
-            is LibraryEvent.ShareMangaFromMenu, is LibraryEvent.MigrateMangaFromMenu,
-            is LibraryEvent.SelectMangaFromMenu -> handleContextMenuEvent(event)
-        }
-    }
-
-    private fun handleContextMenuEvent(event: LibraryEvent) {
-        when (event) {
-            is LibraryEvent.ShowContextMenu ->
-                _state.update { it.copy(contextMenuMangaId = event.mangaId) }
-            is LibraryEvent.DismissContextMenu ->
-                _state.update { it.copy(contextMenuMangaId = null) }
-            is LibraryEvent.ResumeFromContextMenu -> resumeFromContextMenu(event.mangaId)
-            is LibraryEvent.MarkMangaAsReadFromMenu -> markMangaAsReadFromMenu(event.mangaId)
-            is LibraryEvent.ShareMangaFromMenu -> shareMangaFromMenu(event.mangaId)
-            is LibraryEvent.MigrateMangaFromMenu -> migrateMangaFromMenu(event.mangaId)
-            is LibraryEvent.SelectMangaFromMenu -> {
-                selection.toggle(event.mangaId)
-                _state.update { it.copy(contextMenuMangaId = null) }
-            }
-            else -> Unit
+            is LibraryEvent.SelectMangaFromMenu -> selection.toggle(event.mangaId)
         }
     }
 
@@ -230,14 +216,25 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
             is LibraryEvent.SetGenreFilter -> _state.update { it.copy(filterGenres = event.genres) }
             is LibraryEvent.SetSortAscending -> _state.update { it.copy(sortAscending = event.ascending) }
+            is LibraryEvent.SetFilterDownloaded -> _state.update { it.copy(filterDownloaded = event.state) }
+            is LibraryEvent.SetFilterUnread -> _state.update { it.copy(filterUnread = event.state) }
+            is LibraryEvent.SetFilterStarted -> _state.update { it.copy(filterStarted = event.state) }
+            is LibraryEvent.SetFilterTracking -> _state.update { it.copy(filterTracking = event.state) }
+            is LibraryEvent.SetFilterCompleted -> _state.update { it.copy(filterCompleted = event.state) }
             is LibraryEvent.ClearAllFilters -> _state.update {
                 it.copy(
+                    selectedCategory = null,
                     filterMode = LibraryFilterMode.ALL,
                     filterGenres = emptySet(),
                     filterHasNotes = false,
                     filterSourceId = null,
                     filterReadingListId = null,
                     sortAscending = true,
+                    filterDownloaded = LibraryTriState.DISABLED,
+                    filterUnread = LibraryTriState.DISABLED,
+                    filterStarted = LibraryTriState.DISABLED,
+                    filterTracking = LibraryTriState.DISABLED,
+                    filterCompleted = LibraryTriState.DISABLED,
                 )
             }
             else -> Unit
@@ -634,6 +631,12 @@ class LibraryViewModel @Inject constructor(
                     readingListMangaIds = it.readingListMangaIds,
                     filterGenres = it.filterGenres,
                     sortAscending = it.sortAscending,
+                    filterDownloaded = it.filterDownloaded,
+                    filterUnread = it.filterUnread,
+                    filterStarted = it.filterStarted,
+                    filterTracking = it.filterTracking,
+                    filterCompleted = it.filterCompleted,
+                    randomSeed = randomSeed,
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
@@ -661,7 +664,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaLongClick(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = mangaId) }
+        selection.toggle(mangaId)
     }
 
     private fun onSearchQueryChange(query: String) {
@@ -805,49 +808,6 @@ class LibraryViewModel @Inject constructor(
         val mangaId = _state.value.selectedManga.singleOrNull() ?: return
         selection.clear()
         viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(mangaId)) }
-    }
-
-    private fun resumeFromContextMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        val continueItem = _state.value.continueReadingItems.find { it.mangaId == mangaId }
-        viewModelScope.launch {
-            if (continueItem != null) {
-                _effect.send(LibraryEffect.NavigateToReader(continueItem.mangaId, continueItem.chapterId))
-            } else {
-                _effect.send(LibraryEffect.NavigateToManga(mangaId))
-            }
-        }
-    }
-
-    private fun markMangaAsReadFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            try {
-                val chapters = chapterRepository.getChaptersByMangaIdSync(mangaId)
-                val ids = chapters.map { it.id }
-                if (ids.isNotEmpty()) {
-                    chapterRepository.updateChapterProgress(ids, read = true, lastPageRead = 0)
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun shareMangaFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
-            val url = manga.url.takeIf {
-                it.startsWith("http://") || it.startsWith("https://")
-            } ?: ""
-            _effect.send(LibraryEffect.ShareManga(title = manga.title, url = url))
-        }
-    }
-
-    private fun migrateMangaFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            _effect.send(LibraryEffect.NavigateToMigration(listOf(mangaId)))
-        }
     }
 
     private fun toggleFavorite(mangaId: Long) {

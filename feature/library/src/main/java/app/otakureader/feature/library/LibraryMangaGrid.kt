@@ -66,16 +66,6 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
 import java.util.Calendar
@@ -120,12 +110,12 @@ internal fun MangaGrid(
         stringResource(R.string.library_content_tab_manhwa),
     )
 
-    // Long-press opens the quick context menu. Fire haptic so the gesture is felt (#L7).
+    // Long-press enters selection mode directly (Komikku parity) — no context-menu indirection.
     val haptic = LocalHapticFeedback.current
     val onMangaLongClick: (Long) -> Unit = remember(haptic, onEvent) {
         { mangaId ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onEvent(LibraryEvent.ShowContextMenu(mangaId))
+            onEvent(LibraryEvent.OnMangaLongClick(mangaId))
         }
     }
     // Taps open the detail pane only in two-pane mode with no active selection; otherwise route
@@ -305,7 +295,6 @@ internal fun MangaGrid(
                 displayedManga = displayedManga,
                 onMangaTap = onMangaTap,
                 onMangaLongClick = onMangaLongClick,
-                onEvent = onEvent,
             )
         }
     }
@@ -318,7 +307,6 @@ private fun LibraryMangaPageContent(
     displayedManga: List<LibraryMangaItem>,
     onMangaTap: (LibraryMangaItem) -> Unit,
     onMangaLongClick: (Long) -> Unit,
-    onEvent: (LibraryEvent) -> Unit,
 ) {
     if (state.displayMode == LibraryDisplayMode.LIST) {
         LazyColumn(
@@ -331,24 +319,18 @@ private fun LibraryMangaPageContent(
                 contentType = { "manga_row" },
             ) { manga ->
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                Box {
-                    LibraryListRow(
-                        manga = manga,
-                        isSelected = manga.id in state.selectedManga,
-                        unreadCount = if (state.showBadges) manga.unreadCount else 0,
-                        downloadCount = if (state.showDownloadBadge) downloadCount else 0,
-                        onClick = { onMangaTap(manga) },
-                        onLongClick = { onMangaLongClick(manga.id) },
-                    )
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
-                }
+                LibraryListRow(
+                    manga = manga,
+                    isSelected = manga.id in state.selectedManga,
+                    unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                    downloadCount = if (state.showDownloadBadge) downloadCount else 0,
+                    onClick = { onMangaTap(manga) },
+                    onLongClick = { onMangaLongClick(manga.id) },
+                )
             }
         }
-    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID) {
+    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID &&
+        state.displayMode != LibraryDisplayMode.COVER_ONLY) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
             contentPadding = PaddingValues(8.dp),
@@ -430,11 +412,6 @@ private fun LibraryMangaPageContent(
                     } else {
                         cardContent()
                     }
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
                 }
             }
         }
@@ -458,9 +435,9 @@ private fun LibraryMangaPageContent(
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                 val continueReading = manga.lastRead != null && manga.unreadCount > 0
-                // Comfortable grid (#Komikku parity): cover with the title shown as a caption
-                // below it rather than overlaid on the cover.
+                // Comfortable grid: cover with title caption below; Cover-only: no title at all.
                 val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
+                val coverOnly = state.displayMode == LibraryDisplayMode.COVER_ONLY
                 val card: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
@@ -471,7 +448,7 @@ private fun LibraryMangaPageContent(
                         readProgress = readProgress,
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
-                        showTitle = if (comfortable) false else state.showTitle,
+                        showTitle = if (comfortable || coverOnly) false else state.showTitle,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 &&
                                 state.showDownloadBadge && downloadCount > 0 -> {
@@ -526,6 +503,7 @@ private fun LibraryMangaPageContent(
                             )
                         }
                     } else {
+                        // Cover-only and default grid modes — just the card, no extra caption.
                         card()
                     }
                 }
@@ -543,11 +521,6 @@ private fun LibraryMangaPageContent(
                     } else {
                         cardContent()
                     }
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
                 }
             }
         }
@@ -610,54 +583,6 @@ private fun LibraryListRow(
         if (unreadCount > 0) {
             UnreadBadge(count = unreadCount)
         }
-    }
-}
-
-@Composable
-private fun MangaContextMenu(
-    expanded: Boolean,
-    mangaId: Long,
-    onEvent: (LibraryEvent) -> Unit,
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { onEvent(LibraryEvent.DismissContextMenu) },
-    ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_open)) },
-            leadingIcon = {
-                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
-            },
-            onClick = {
-                onEvent(LibraryEvent.DismissContextMenu)
-                onEvent(LibraryEvent.OnMangaClick(mangaId))
-            },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_resume)) },
-            leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.ResumeFromContextMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_mark_read)) },
-            leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.MarkMangaAsReadFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_share)) },
-            leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.ShareMangaFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_migrate)) },
-            leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.MigrateMangaFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_select)) },
-            leadingIcon = { Icon(Icons.Default.TouchApp, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.SelectMangaFromMenu(mangaId)) },
-        )
     }
 }
 

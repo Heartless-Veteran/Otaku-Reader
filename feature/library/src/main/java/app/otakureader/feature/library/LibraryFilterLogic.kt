@@ -2,6 +2,7 @@ package app.otakureader.feature.library
 
 import app.otakureader.domain.model.ContentRating
 import app.otakureader.domain.model.Manga
+import kotlin.random.Random
 
 internal fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
     val filtered = items
@@ -12,8 +13,11 @@ internal fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSo
         .let { applySourceFilter(it, params) }
         .let { applyReadingListFilter(it, params) }
         .let { applyGenreFilter(it, params.filterGenres) }
+        // Legacy single-select filter: drives the quick-access chips in the search bar.
         .let { applyFilterMode(it, params.filterMode) }
-    return applySort(filtered, params.sortMode, params.sortAscending)
+        // Independent tristate filters: drives the per-attribute toggles in the filter sheet.
+        .let { applyTriStateFilters(it, params) }
+    return applySort(filtered, params)
 }
 
 internal fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> =
@@ -49,8 +53,31 @@ internal fun applyFilterMode(items: List<LibraryMangaItem>, filterMode: LibraryF
         LibraryFilterMode.READING_LIST, LibraryFilterMode.ALL -> items
     }
 
-internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode, ascending: Boolean): List<LibraryMangaItem> {
-    val sorted = when (sortMode) {
+/** Applies independent tristate filters (Komikku parity) in a single pass. */
+internal fun applyTriStateFilters(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+    val anyActive = params.filterDownloaded != LibraryTriState.DISABLED ||
+        params.filterUnread != LibraryTriState.DISABLED ||
+        params.filterStarted != LibraryTriState.DISABLED ||
+        params.filterTracking != LibraryTriState.DISABLED ||
+        params.filterCompleted != LibraryTriState.DISABLED
+    if (!anyActive) return items
+    return items.filter { item ->
+        triStateMatches(params.filterDownloaded, item.isDownloaded) &&
+            triStateMatches(params.filterUnread, item.unreadCount > 0) &&
+            triStateMatches(params.filterStarted, item.lastRead != null) &&
+            triStateMatches(params.filterTracking, item.hasTracking) &&
+            triStateMatches(params.filterCompleted, item.userCompleted)
+    }
+}
+
+private fun triStateMatches(state: LibraryTriState, value: Boolean): Boolean = when (state) {
+    LibraryTriState.DISABLED -> true
+    LibraryTriState.ENABLED_IS -> value
+    LibraryTriState.ENABLED_NOT -> !value
+}
+
+internal fun applySort(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+    val sorted = when (params.sortMode) {
         LibrarySortMode.ALPHABETICAL -> items.sortedBy { it.title }
         LibrarySortMode.LAST_READ -> items.sortedByDescending { it.lastRead ?: 0L }
         LibrarySortMode.DATE_ADDED -> items.sortedByDescending { it.dateAdded }
@@ -58,8 +85,13 @@ internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode,
         LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         LibrarySortMode.LAST_UPDATED -> items.sortedByDescending { it.lastUpdate }
         LibrarySortMode.TOTAL_CHAPTERS -> items.sortedByDescending { it.totalChapterCount }
+        // Both LATEST_CHAPTER and LAST_UPDATED use the same lastUpdate field; a dedicated
+        // latestChapterUpload field would be needed to distinguish them in the data model.
+        LibrarySortMode.LATEST_CHAPTER -> items.sortedByDescending { it.lastUpdate }
+        // Seeded with the ViewModel's session seed so items don't re-shuffle on every emission.
+        LibrarySortMode.RANDOM -> items.shuffled(Random(params.randomSeed))
     }
-    return if (ascending) sorted else sorted.reversed()
+    return if (params.sortAscending) sorted else sorted.reversed()
 }
 
 internal fun Manga.toLibraryItem(

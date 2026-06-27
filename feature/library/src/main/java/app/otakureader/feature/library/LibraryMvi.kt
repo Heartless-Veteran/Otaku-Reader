@@ -12,7 +12,10 @@ enum class LibrarySortMode {
     UNREAD_COUNT,
     SOURCE,
     LAST_UPDATED,
-    TOTAL_CHAPTERS
+    TOTAL_CHAPTERS,
+    // Appended for stable persisted ordinals — never reorder above entries.
+    LATEST_CHAPTER,
+    RANDOM,
 }
 
 enum class LibraryFilterMode {
@@ -23,6 +26,27 @@ enum class LibraryFilterMode {
     DROPPED,
     TRACKING,
     READING_LIST
+}
+
+/**
+ * Three-state filter for independent per-attribute library filtering.
+ *
+ * - [DISABLED]: filter is off (include all items).
+ * - [ENABLED_IS]: include only items that match.
+ * - [ENABLED_NOT]: exclude items that match.
+ *
+ * Cycles DISABLED → ENABLED_IS → ENABLED_NOT → DISABLED on each tap.
+ */
+enum class LibraryTriState {
+    DISABLED,
+    ENABLED_IS,
+    ENABLED_NOT;
+
+    fun next(): LibraryTriState = when (this) {
+        DISABLED -> ENABLED_IS
+        ENABLED_IS -> ENABLED_NOT
+        ENABLED_NOT -> DISABLED
+    }
 }
 
 enum class LibraryBottomSheetTab {
@@ -48,6 +72,8 @@ enum class LibraryDisplayMode {
     GRID,
     LIST,
     COMFORTABLE_GRID,
+    // Appended for stable persisted ordinals — never reorder above entries.
+    COVER_ONLY,
 }
 
 data class LibraryState(
@@ -74,6 +100,12 @@ data class LibraryState(
     val filterHasNotes: Boolean = false,
     val sortMode: LibrarySortMode = LibrarySortMode.ALPHABETICAL,
     val filterMode: LibraryFilterMode = LibraryFilterMode.ALL,
+    // Independent tristate filters (Komikku parity) — each can be DISABLED/ENABLED_IS/ENABLED_NOT
+    val filterDownloaded: LibraryTriState = LibraryTriState.DISABLED,
+    val filterUnread: LibraryTriState = LibraryTriState.DISABLED,
+    val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
+    val filterTracking: LibraryTriState = LibraryTriState.DISABLED,
+    val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
     val filterSourceId: Long? = null,
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
@@ -103,8 +135,6 @@ data class LibraryState(
     val savedViews: List<SavedLibraryView> = emptyList(),
     val showSaveViewDialog: Boolean = false,
     val saveViewName: String = "",
-    // L2/L3: long-press context menu — holds the id of the manga whose popup is open
-    val contextMenuMangaId: Long? = null,
     val displayName: String = "",
     // Move to category bulk action (GAP 2)
     val showMoveToCategoryDialog: Boolean = false,
@@ -182,6 +212,12 @@ sealed class LibraryEvent {
     data class SetGenreFilter(val genres: Set<String>) : LibraryEvent()
     data class SetSortAscending(val ascending: Boolean) : LibraryEvent()
     data object ClearAllFilters : LibraryEvent()
+    // Independent tristate filter events (Komikku parity)
+    data class SetFilterDownloaded(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterUnread(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterStarted(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterTracking(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterCompleted(val state: LibraryTriState) : LibraryEvent()
     data object ToggleBottomSheet : LibraryEvent()
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
     data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
@@ -207,13 +243,7 @@ sealed class LibraryEvent {
     data class DeleteSavedView(val id: String) : LibraryEvent()
     // EH favorites sync (#1024)
     data object SyncEhFavorites : LibraryEvent()
-    // L2/L3: long-press context menu
-    data class ShowContextMenu(val mangaId: Long) : LibraryEvent()
-    data object DismissContextMenu : LibraryEvent()
-    data class ResumeFromContextMenu(val mangaId: Long) : LibraryEvent()
-    data class MarkMangaAsReadFromMenu(val mangaId: Long) : LibraryEvent()
-    data class ShareMangaFromMenu(val mangaId: Long) : LibraryEvent()
-    data class MigrateMangaFromMenu(val mangaId: Long) : LibraryEvent()
+    // Selection via context menu (used by tests and selection-mode entry)
     data class SelectMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class UndoLibraryDelete(val mangaIds: Set<Long>) : LibraryEvent()
     // Move to category bulk action (GAP 2)

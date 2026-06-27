@@ -384,14 +384,22 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
+                        val hasActiveFilter = state.filterGenres.isNotEmpty() ||
+                            state.filterMode != LibraryFilterMode.ALL ||
+                            state.filterHasNotes ||
+                            state.filterSourceId != null ||
+                            state.filterReadingListId != null ||
+                            state.filterDownloaded != LibraryTriState.DISABLED ||
+                            state.filterUnread != LibraryTriState.DISABLED ||
+                            state.filterStarted != LibraryTriState.DISABLED ||
+                            state.filterTracking != LibraryTriState.DISABLED ||
+                            state.filterCompleted != LibraryTriState.DISABLED
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
-                                tint = if (state.filterGenres.isNotEmpty() || state.filterMode != LibraryFilterMode.ALL)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface,
+                                tint = if (hasActiveFilter) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         IconButton(onClick = { showMenu = true }) {
@@ -599,7 +607,15 @@ private fun LibraryContent(
 
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL ||
             state.filterGenres.isNotEmpty() ||
-            state.sortMode != LibrarySortMode.ALPHABETICAL
+            state.sortMode != LibrarySortMode.ALPHABETICAL ||
+            state.filterHasNotes ||
+            state.filterSourceId != null ||
+            state.filterReadingListId != null ||
+            state.filterDownloaded != LibraryTriState.DISABLED ||
+            state.filterUnread != LibraryTriState.DISABLED ||
+            state.filterStarted != LibraryTriState.DISABLED ||
+            state.filterTracking != LibraryTriState.DISABLED ||
+            state.filterCompleted != LibraryTriState.DISABLED
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier
@@ -633,6 +649,100 @@ private fun LibraryContent(
                                     R.string.library_sort_chip,
                                     state.sortMode.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')
                                 )
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterHasNotes) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.FilterHasNotes(false)) },
+                        label = { Text(stringResource(R.string.library_filter_has_notes)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterSourceId != null) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterSource(null)) },
+                        label = { Text(stringResource(R.string.filter_source)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterReadingListId != null) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterReadingList(null)) },
+                        label = { Text(stringResource(R.string.filter_reading_list)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterDownloaded != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterDownloaded(LibraryTriState.DISABLED)) },
+                        label = {
+                            Text(
+                                if (state.filterDownloaded == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_downloaded)
+                                else stringResource(R.string.filter_downloaded)
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterUnread != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.DISABLED)) },
+                        label = {
+                            Text(
+                                if (state.filterUnread == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_unread)
+                                else stringResource(R.string.filter_unread)
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterStarted != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterStarted(LibraryTriState.DISABLED)) },
+                        label = {
+                            Text(
+                                if (state.filterStarted == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_started)
+                                else stringResource(R.string.filter_started)
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterTracking != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterTracking(LibraryTriState.DISABLED)) },
+                        label = {
+                            Text(
+                                if (state.filterTracking == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_tracking)
+                                else stringResource(R.string.filter_tracking)
+                            )
+                        },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterCompleted != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterCompleted(LibraryTriState.DISABLED)) },
+                        label = {
+                            Text(
+                                if (state.filterCompleted == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_completed)
+                                else stringResource(R.string.filter_completed)
                             )
                         },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },

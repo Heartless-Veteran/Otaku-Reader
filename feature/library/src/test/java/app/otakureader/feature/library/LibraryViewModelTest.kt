@@ -255,7 +255,7 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_opensContextMenu() = runTest {
+    fun onEvent_OnMangaLongClick_selectsManga() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
@@ -264,12 +264,12 @@ class LibraryViewModelTest {
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Long-press now opens the context menu popup, not direct selection (L2 feature).
-        assertEquals(1L, viewModel.state.value.contextMenuMangaId)
+        // Long-press directly toggles selection (Komikku parity — no context menu indirection).
+        assertTrue(viewModel.state.value.selectedManga.contains(1L))
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_twice_opensMenuBothTimes() = runTest {
+    fun onEvent_OnMangaLongClick_twice_selectsBoth() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
@@ -277,9 +277,10 @@ class LibraryViewModelTest {
 
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        // Second long-click on a different manga replaces the context menu target
-        assertEquals(2L, viewModel.state.value.contextMenuMangaId)
+        // Each long-press toggles its own manga into selection.
+        assertEquals(setOf(1L, 2L), viewModel.state.value.selectedManga)
     }
 
     @Test
@@ -465,42 +466,70 @@ class LibraryViewModelTest {
         assertTrue(sourceIds.first() < sourceIds.last())
     }
 
-    // --- Filter mode tests ---
+    // --- Tristate filter tests (Komikku parity) ---
 
     @Test
-    fun filterMode_UNREAD_showsOnlyUnreadManga() = runTest {
-        every { libraryPreferences.libraryFilterMode } returns flowOf(LibraryFilterMode.UNREAD.ordinal)
+    fun triStateFilter_unread_ENABLED_IS_showsOnlyUnreadManga() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
+        viewModel.onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.ENABLED_IS))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Only Naruto(3) and One Piece(7) have unread > 0
+        // Only Naruto(unread=3) and One Piece(unread=7) have unread > 0
         assertEquals(2, viewModel.state.value.mangaList.size)
         assertTrue(viewModel.state.value.mangaList.none { it.id == 2L })
     }
 
     @Test
-    fun filterMode_COMPLETED_showsOnlyCompletedManga() = runTest {
-        every { libraryPreferences.libraryFilterMode } returns flowOf(LibraryFilterMode.COMPLETED.ordinal)
+    fun triStateFilter_unread_ENABLED_NOT_excludesUnreadManga() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
+        viewModel.onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.ENABLED_NOT))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Only Bleach has status COMPLETED
+        // Only Bleach has unreadCount = 0
         assertEquals(1, viewModel.state.value.mangaList.size)
         assertEquals(2L, viewModel.state.value.mangaList.first().id)
     }
 
     @Test
-    fun filterMode_ALL_showsAllManga() = runTest {
-        every { libraryPreferences.libraryFilterMode } returns flowOf(LibraryFilterMode.ALL.ordinal)
+    fun triStateFilter_completed_ENABLED_IS_showsOnlyCompletedManga() = runTest {
+        every { getLibraryManga() } returns flowOf(sampleMangas)
+
+        val viewModel = createViewModel()
+        viewModel.onEvent(LibraryEvent.SetFilterCompleted(LibraryTriState.ENABLED_IS))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Only Bleach has userCompleted = true
+        assertEquals(1, viewModel.state.value.mangaList.size)
+        assertEquals(2L, viewModel.state.value.mangaList.first().id)
+    }
+
+    @Test
+    fun triStateFilter_DISABLED_showsAllManga() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
+        // All filters DISABLED by default — all 3 items shown
+        assertEquals(3, viewModel.state.value.mangaList.size)
+    }
+
+    @Test
+    fun triStateFilter_clearAll_resetsAllTristates() = runTest {
+        every { getLibraryManga() } returns flowOf(sampleMangas)
+
+        val viewModel = createViewModel()
+        viewModel.onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.ENABLED_IS))
+        viewModel.onEvent(LibraryEvent.SetFilterCompleted(LibraryTriState.ENABLED_NOT))
+        viewModel.onEvent(LibraryEvent.ClearAllFilters)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(LibraryTriState.DISABLED, viewModel.state.value.filterUnread)
+        assertEquals(LibraryTriState.DISABLED, viewModel.state.value.filterCompleted)
         assertEquals(3, viewModel.state.value.mangaList.size)
     }
 

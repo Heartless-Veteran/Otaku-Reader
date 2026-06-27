@@ -9,11 +9,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -169,12 +175,12 @@ private fun DisplayTab(
             horizontalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
             verticalArrangement = Arrangement.spacedBy(DISPLAY_MODE_CHIP_SPACING),
         ) {
-            // Explicit display order (Grid → Comfortable → List), independent of the enum's
-            // declaration/ordinal order, which keeps COMFORTABLE_GRID appended for stable
-            // persisted ordinals.
+            // Explicit display order (Grid → Comfortable → Cover-only → List), independent of the
+            // enum's declaration/ordinal order, which keeps appended entries stable.
             listOf(
                 LibraryDisplayMode.GRID,
                 LibraryDisplayMode.COMFORTABLE_GRID,
+                LibraryDisplayMode.COVER_ONLY,
                 LibraryDisplayMode.LIST,
             ).forEach { mode ->
                 FilterChip(
@@ -264,7 +270,7 @@ private fun FilterTab(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         // Header row with clear all
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -281,23 +287,32 @@ private fun FilterTab(
             }
         }
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LibraryFilterMode.entries.forEach { mode ->
-                if (mode != LibraryFilterMode.READING_LIST) {
-                    FilterChip(
-                        selected = state.filterMode == mode,
-                        onClick = {
-                            onEvent(
-                                LibraryEvent.SetFilterMode(
-                                    if (state.filterMode == mode) LibraryFilterMode.ALL else mode
-                                )
-                            )
-                        },
-                        label = { Text(mode.label()) },
-                    )
-                }
-            }
-        }
+        // Independent tristate filters — each cycles DISABLED → IS → NOT on click.
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_downloaded),
+            state = state.filterDownloaded,
+            onClick = { onEvent(LibraryEvent.SetFilterDownloaded(state.filterDownloaded.next())) },
+        )
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_unread),
+            state = state.filterUnread,
+            onClick = { onEvent(LibraryEvent.SetFilterUnread(state.filterUnread.next())) },
+        )
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_started),
+            state = state.filterStarted,
+            onClick = { onEvent(LibraryEvent.SetFilterStarted(state.filterStarted.next())) },
+        )
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_tracking),
+            state = state.filterTracking,
+            onClick = { onEvent(LibraryEvent.SetFilterTracking(state.filterTracking.next())) },
+        )
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_completed),
+            state = state.filterCompleted,
+            onClick = { onEvent(LibraryEvent.SetFilterCompleted(state.filterCompleted.next())) },
+        )
 
         if (state.availableGenres.isNotEmpty()) {
             Spacer(modifier = Modifier.height(4.dp))
@@ -324,6 +339,59 @@ private fun FilterTab(
                         label = { Text(genre) },
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * A single row that shows a filter label and a cycling tristate icon button.
+ * Tapping it advances DISABLED → ENABLED_IS → ENABLED_NOT → DISABLED.
+ */
+@Composable
+private fun TriStateFilterRow(
+    label: String,
+    state: LibraryTriState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            when (state) {
+                LibraryTriState.DISABLED -> Icon(
+                    imageVector = Icons.Default.Remove,
+                    contentDescription = stringResource(R.string.tristate_disabled),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                LibraryTriState.ENABLED_IS -> Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = stringResource(R.string.tristate_include),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                LibraryTriState.ENABLED_NOT -> Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.tristate_exclude),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
     }
@@ -378,6 +446,7 @@ private fun LibraryDisplayMode.label(): String = when (this) {
     LibraryDisplayMode.GRID -> stringResource(R.string.display_mode_grid)
     LibraryDisplayMode.COMFORTABLE_GRID -> stringResource(R.string.display_mode_comfortable)
     LibraryDisplayMode.LIST -> stringResource(R.string.display_mode_list)
+    LibraryDisplayMode.COVER_ONLY -> stringResource(R.string.display_mode_cover_only)
 }
 
 @Composable
@@ -389,6 +458,8 @@ private fun LibrarySortMode.label(): String = when (this) {
     LibrarySortMode.SOURCE -> stringResource(R.string.sort_source)
     LibrarySortMode.LAST_UPDATED -> stringResource(R.string.sort_last_updated)
     LibrarySortMode.TOTAL_CHAPTERS -> stringResource(R.string.sort_total_chapters)
+    LibrarySortMode.LATEST_CHAPTER -> stringResource(R.string.sort_latest_chapter)
+    LibrarySortMode.RANDOM -> stringResource(R.string.sort_random)
 }
 
 @Composable
