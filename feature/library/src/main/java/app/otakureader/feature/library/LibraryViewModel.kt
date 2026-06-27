@@ -221,21 +221,24 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterStarted -> _state.update { it.copy(filterStarted = event.state) }
             is LibraryEvent.SetFilterTracking -> _state.update { it.copy(filterTracking = event.state) }
             is LibraryEvent.SetFilterCompleted -> _state.update { it.copy(filterCompleted = event.state) }
-            is LibraryEvent.ClearAllFilters -> _state.update {
-                it.copy(
-                    selectedCategory = null,
-                    filterMode = LibraryFilterMode.ALL,
-                    filterGenres = emptySet(),
-                    filterHasNotes = false,
-                    filterSourceId = null,
-                    filterReadingListId = null,
-                    sortAscending = true,
-                    filterDownloaded = LibraryTriState.DISABLED,
-                    filterUnread = LibraryTriState.DISABLED,
-                    filterStarted = LibraryTriState.DISABLED,
-                    filterTracking = LibraryTriState.DISABLED,
-                    filterCompleted = LibraryTriState.DISABLED,
-                )
+            is LibraryEvent.ClearAllFilters -> {
+                viewModelScope.launch { generalPreferences.setDownloadedOnly(false) }
+                _state.update {
+                    it.copy(
+                        selectedCategory = null,
+                        filterMode = LibraryFilterMode.ALL,
+                        filterGenres = emptySet(),
+                        filterHasNotes = false,
+                        filterSourceId = null,
+                        filterReadingListId = null,
+                        sortAscending = true,
+                        filterDownloaded = LibraryTriState.DISABLED,
+                        filterUnread = LibraryTriState.DISABLED,
+                        filterStarted = LibraryTriState.DISABLED,
+                        filterTracking = LibraryTriState.DISABLED,
+                        filterCompleted = LibraryTriState.DISABLED,
+                    )
+                }
             }
             else -> Unit
         }

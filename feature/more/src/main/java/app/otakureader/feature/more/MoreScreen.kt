@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudUpload
@@ -82,6 +83,7 @@ fun MoreScreen(
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToUpdateErrors: () -> Unit = {},
     onNavigateToReadingLists: () -> Unit = {},
+    onNavigateToCategories: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -137,7 +139,7 @@ fun MoreScreen(
                 trailingContent = {
                     Switch(
                         checked = state.downloadedOnly,
-                        onCheckedChange = { viewModel.onEvent(MoreEvent.ToggleDownloadedOnly) },
+                        onCheckedChange = { checked -> viewModel.onEvent(MoreEvent.SetDownloadedOnly(checked)) },
                     )
                 },
             )
@@ -156,7 +158,7 @@ fun MoreScreen(
                 trailingContent = {
                     Switch(
                         checked = state.incognitoMode,
-                        onCheckedChange = { viewModel.onEvent(MoreEvent.ToggleIncognitoMode) },
+                        onCheckedChange = { checked -> viewModel.onEvent(MoreEvent.SetIncognitoMode(checked)) },
                     )
                 },
             )
@@ -181,6 +183,15 @@ fun MoreScreen(
                 headline = stringResource(R.string.more_reading_lists),
                 supporting = stringResource(R.string.more_reading_lists_desc),
                 onClick = onNavigateToReadingLists,
+            )
+            HorizontalDivider()
+            MoreListItem(
+                icon = Icons.AutoMirrored.Filled.Label,
+                iconContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                headline = stringResource(R.string.more_categories),
+                supporting = stringResource(R.string.more_categories_desc),
+                onClick = onNavigateToCategories,
             )
             HorizontalDivider()
             MoreListItem(

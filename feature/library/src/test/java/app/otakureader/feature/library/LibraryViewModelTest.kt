@@ -118,6 +118,7 @@ class LibraryViewModelTest {
             every { lastUpdatesViewedAt } returns flowOf(0L)
             every { visualEffectsEnabled } returns flowOf(true)
             every { displayName } returns flowOf("")
+            every { downloadedOnly } returns flowOf(false)
         }
         chapterRepository = mockk { every { countNewUpdatesSince(any()) } returns flowOf(0) }
         mangaRepository = mockk(relaxed = true)

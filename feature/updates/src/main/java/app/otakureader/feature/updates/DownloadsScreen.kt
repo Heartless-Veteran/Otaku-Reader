@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -213,6 +214,7 @@ fun DownloadsScreen(
                     .padding(padding)
                     .fillMaxSize()
                     .nestedScroll(nestedScrollConnection),
+                contentPadding = PaddingValues(bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(

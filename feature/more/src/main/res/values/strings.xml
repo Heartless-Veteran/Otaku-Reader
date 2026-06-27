@@ -120,6 +120,10 @@
     <string name="bookmarks_export_requested">%1$d bookmark(s) queued — image export coming in v1.1</string>
     <string name="bookmarks_share_text_line">%1$s · %2$s · Page %3$d</string>
 
+    <!-- Categories -->
+    <string name="more_categories">Categories</string>
+    <string name="more_categories_desc">Manage library categories</string>
+
     <!-- Downloaded only / Incognito mode quick toggles -->
     <string name="more_downloaded_only">Downloaded only</string>
     <string name="more_downloaded_only_desc">Only show manga with downloaded chapters</string>

@@ -288,7 +288,11 @@ class HistoryViewModel @Inject constructor(
 
     private fun toggleFavorite(mangaId: Long) {
         viewModelScope.launch {
-            runCatching { toggleFavoriteManga(mangaId) }
+            try {
+                toggleFavoriteManga(mangaId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) { }
         }
     }
 

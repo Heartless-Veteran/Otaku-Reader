@@ -26,8 +26,8 @@ data class MoreState(
 )
 
 sealed interface MoreEvent {
-    data object ToggleIncognitoMode : MoreEvent
-    data object ToggleDownloadedOnly : MoreEvent
+    data class SetIncognitoMode(val enabled: Boolean) : MoreEvent
+    data class SetDownloadedOnly(val enabled: Boolean) : MoreEvent
 }
 
 private data class MoreParams(
@@ -79,15 +79,11 @@ class MoreViewModel @Inject constructor(
 
     fun onEvent(event: MoreEvent) {
         when (event) {
-            MoreEvent.ToggleIncognitoMode -> {
-                viewModelScope.launch {
-                    readerSettingsRepository.setIncognitoMode(!state.value.incognitoMode)
-                }
+            is MoreEvent.SetIncognitoMode -> viewModelScope.launch {
+                readerSettingsRepository.setIncognitoMode(event.enabled)
             }
-            MoreEvent.ToggleDownloadedOnly -> {
-                viewModelScope.launch {
-                    generalPreferences.setDownloadedOnly(!state.value.downloadedOnly)
-                }
+            is MoreEvent.SetDownloadedOnly -> viewModelScope.launch {
+                generalPreferences.setDownloadedOnly(event.enabled)
             }
         }
     }

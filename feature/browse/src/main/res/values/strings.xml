@@ -123,7 +123,8 @@
     <!-- GlobalSearchScreen -->
     <string name="browse_global_search_placeholder">Search all sources&#8230;</string>
     <string name="browse_global_search_idle_hint">Enter a query to search all sources</string>
-    <string name="browse_global_only_has_results">Only show has results</string>
+    <string name="browse_global_only_has_results">Only show sources with results</string>
+    <string name="browse_global_no_filter_results">No sources matched your filter</string>
 
     <!-- ExtensionsBottomSheet -->
     <string name="extensions_tab_installed">Installed</string>

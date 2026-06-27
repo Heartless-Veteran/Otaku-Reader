@@ -192,6 +192,18 @@ private fun GlobalSearchContent(
             }
         }
 
+        state.filteredSourceResults.isEmpty() && !state.isSearching -> {
+            Box(
+                modifier = modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(R.string.browse_global_no_filter_results),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+
         else -> {
             LazyColumn(
                 modifier = modifier.fillMaxSize(),

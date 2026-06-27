@@ -539,6 +539,9 @@ fun OtakuReaderNavHost(
             onNavigateToBookmarks = {
                 navController.navigate(Route.Bookmarks)
             },
+            onNavigateToCategories = {
+                navController.navigate(Route.CategoryManagement)
+            },
         )
 
         readingListsScreen(

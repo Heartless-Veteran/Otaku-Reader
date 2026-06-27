@@ -44,6 +44,7 @@ import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -614,7 +615,7 @@ private fun HistoryItem(
         // Action icons (hidden while selecting)
         if (!isSelected) {
             // Add to library / in-library indicator — matches Komikku's favorite button per row
-            IconButton(onClick = onFavoriteClick) {
+            IconToggleButton(checked = entry.mangaFavorite, onCheckedChange = { onFavoriteClick() }) {
                 if (entry.mangaFavorite) {
                     Icon(
                         Icons.Default.Favorite,
