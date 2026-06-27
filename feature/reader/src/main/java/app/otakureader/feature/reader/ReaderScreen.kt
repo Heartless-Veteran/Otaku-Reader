@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
@@ -85,7 +86,7 @@ import app.otakureader.feature.reader.ui.PageSlider
 import app.otakureader.feature.reader.ui.PageThumbnailStrip
 import app.otakureader.feature.reader.ui.ReadingTimerOverlay
 import app.otakureader.feature.reader.ui.ReaderContentOverlay
-import app.otakureader.feature.reader.ui.ReaderMenuOverlay
+import app.otakureader.feature.reader.ui.ReaderBottomBar
 import app.otakureader.feature.reader.ui.ChapterListOverlay
 import app.otakureader.feature.reader.ui.ReaderSettingsOverlay
 import app.otakureader.feature.reader.ui.NavigationOverlay
@@ -401,45 +402,12 @@ fun ReaderScreen(
             chapterTitle = state.chapterTitle,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             onDismiss = onNavigateBack,
-            onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+            onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
             isCurrentPageBookmarked = state.isCurrentPageBookmarked,
             modifier = Modifier.align(Alignment.TopCenter)
-        )
-
-        // Menu overlay
-        ReaderMenuOverlay(
-            isVisible = state.isMenuVisible,
-            chapterTitle = state.chapterTitle,
-            currentPage = state.displayPageNumber,
-            totalPages = state.totalPages,
-            currentMode = state.mode,
-            zoomLevel = state.zoomLevel,
-            brightness = state.brightness,
-            colorFilterMode = state.colorFilterMode,
-            customTintColor = state.customTintColor,
-            readerBackgroundColor = state.readerBackgroundColor,
-            pageRotation = state.pageRotation,
-            onBrightnessChange = { viewModel.onEvent(ReaderEvent.OnBrightnessChange(it)) },
-            onModeChange = { viewModel.onEvent(ReaderEvent.OnModeChange(it)) },
-            onColorFilterChange = { viewModel.onEvent(ReaderEvent.SetColorFilterMode(it)) },
-            onCustomTintColorChange = { viewModel.onEvent(ReaderEvent.SetCustomTintColor(it)) },
-            onReaderBackgroundColorChange = { viewModel.onEvent(ReaderEvent.SetReaderBackgroundColor(it)) },
-            onRotateCW = { viewModel.onEvent(ReaderEvent.RotateCW) },
-            onResetRotation = { viewModel.onEvent(ReaderEvent.ResetRotation) },
-            onZoomIn = { viewModel.onEvent(ReaderEvent.ZoomIn) },
-            onZoomOut = { viewModel.onEvent(ReaderEvent.ZoomOut) },
-            onResetZoom = { viewModel.onEvent(ReaderEvent.ResetZoom) },
-            onToggleGallery = { viewModel.onEvent(ReaderEvent.ToggleGallery) },
-            onNavigateBack = onNavigateBack,
-            onToggleFullscreen = { viewModel.onEvent(ReaderEvent.ToggleFullscreen) },
-            onToggleChapterFilter = { showChapterFilterSheet = true },
-            onToggleChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
-            onToggleComments = { viewModel.onEvent(ReaderEvent.ToggleCommentsOverlay) },
-            presets = state.presets,
-            onApplyPreset = { viewModel.onEvent(ReaderEvent.ApplyPreset(it)) },
         )
 
         if (state.isCommentsOverlayVisible) {
@@ -471,15 +439,6 @@ fun ReaderScreen(
             )
         }
         
-        // Bottom thumbnail strip — shows alongside menu/controls
-        PageThumbnailStrip(
-            pages = state.pages,
-            currentPage = state.currentPage,
-            onPageClick = { viewModel.jumpToPage(it) },
-            isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-        
         // Full page gallery
         FullPageGallery(
             pages = state.pages,
@@ -490,14 +449,14 @@ fun ReaderScreen(
             onColumnsChange = { viewModel.onEvent(ReaderEvent.SetGalleryColumns(it)) },
             isVisible = state.isGalleryOpen
         )
-        
+
         // Zoom indicator
         ZoomIndicator(
             zoomLevel = state.zoomLevel,
             isVisible = showZoomIndicator,
             modifier = Modifier.align(Alignment.Center)
         )
-        
+
         // Brightness slider overlay
         BrightnessSliderOverlay(
             brightness = state.brightness,
@@ -506,28 +465,58 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.CenterStart)
         )
 
-        // Page slider — shown when the menu is visible so users can quickly scrub pages, flanked
-        // by previous/next-chapter buttons (Komikku's ChapterNavigator). Adjacent-chapter
-        // availability is derived from the manga's chapter list in reading order.
-        val (hasPreviousChapter, hasNextChapter) = remember(chapters, state.currentChapterId) {
-            val ordered = chapters.sortedBy { it.chapterNumber }
-            val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
-            val hasPrev = currentIndex > FIRST_CHAPTER_INDEX
-            val hasNext = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex
-            hasPrev to hasNext
+        // Bottom section: thumbnail strip → chapter navigator/slider → icon bar
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .animateContentSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PageThumbnailStrip(
+                pages = state.pages,
+                currentPage = state.currentPage,
+                onPageClick = { viewModel.jumpToPage(it) },
+                isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+                modifier = Modifier,
+            )
+            val (hasPreviousChapter, hasNextChapter) = remember(chapters, state.currentChapterId) {
+                val ordered = chapters.sortedBy { it.chapterNumber }
+                val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
+                val hasPrev = currentIndex > FIRST_CHAPTER_INDEX
+                val hasNext = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex
+                hasPrev to hasNext
+            }
+            PageSlider(
+                currentPage = state.currentPage,
+                totalPages = state.totalPages,
+                onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
+                onPreviousChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
+                onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
+                hasPreviousChapter = hasPreviousChapter,
+                hasNextChapter = hasNextChapter,
+                readingDirection = state.readingDirection,
+                isVisible = state.isMenuVisible && state.pages.isNotEmpty() && !state.isGalleryOpen && !state.isLoading,
+                modifier = Modifier,
+            )
+            ReaderBottomBar(
+                state = state,
+                onChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
+                onModeClick = {
+                    val modes = ReaderMode.entries
+                    val next = modes[(state.mode.ordinal + 1) % modes.size]
+                    viewModel.onEvent(ReaderEvent.OnModeChange(next))
+                },
+                onOrientationClick = {
+                    val orientations = ReaderOrientation.entries
+                    val next = orientations[(state.readerOrientation.ordinal + 1) % orientations.size]
+                    viewModel.onEvent(ReaderEvent.OnOrientationChange(next))
+                },
+                onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+                onSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+                isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
+            )
         }
-        PageSlider(
-            currentPage = state.currentPage,
-            totalPages = state.totalPages,
-            onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
-            onPreviousChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
-            onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
-            hasPreviousChapter = hasPreviousChapter,
-            hasNextChapter = hasNextChapter,
-            readingDirection = state.readingDirection,
-            isVisible = state.isMenuVisible && state.pages.isNotEmpty(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
 
         // Overlays in the top-right corner (stacked vertically)
         Column(
