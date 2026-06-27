@@ -19,10 +19,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
@@ -40,6 +42,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -123,6 +126,41 @@ fun MoreScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
             )
+
+            // ── Quick toggles (Downloaded Only + Incognito) ────────────────────
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.more_downloaded_only)) },
+                supportingContent = { Text(stringResource(R.string.more_downloaded_only_desc)) },
+                leadingContent = {
+                    Icon(Icons.Default.CloudOff, contentDescription = null)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = state.downloadedOnly,
+                        onCheckedChange = { viewModel.onEvent(MoreEvent.ToggleDownloadedOnly) },
+                    )
+                },
+            )
+            HorizontalDivider()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.more_incognito_mode)) },
+                supportingContent = { Text(stringResource(R.string.more_incognito_mode_desc)) },
+                leadingContent = {
+                    Icon(
+                        Icons.Default.VisibilityOff,
+                        contentDescription = null,
+                        tint = if (state.incognitoMode) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = state.incognitoMode,
+                        onCheckedChange = { viewModel.onEvent(MoreEvent.ToggleIncognitoMode) },
+                    )
+                },
+            )
+            HorizontalDivider()
             Spacer(modifier = Modifier.height(4.dp))
 
             // ── Library Tools ──────────────────────────────────────────────────
