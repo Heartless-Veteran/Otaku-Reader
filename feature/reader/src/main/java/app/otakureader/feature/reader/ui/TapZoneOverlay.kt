@@ -38,7 +38,11 @@ private data class NavRegion(
     }
 }
 
-private val CONSTANT_MENU_REGION = NavRegion(0f, 0f, 1f, 0.05f, NavAction.MENU)
+private const val MENU_REGION_HEIGHT = 0.05f
+private const val ZONE_SIZE_NORMAL = 0.33f
+private const val ZONE_SIZE_SMALLER = 0.25f
+
+private val CONSTANT_MENU_REGION = NavRegion(0f, 0f, 1f, MENU_REGION_HEIGHT, NavAction.MENU)
 
 private fun buildRegions(navigationMode: Int, regionSize1: Float): List<NavRegion> {
     val s2 = 1f - regionSize1
@@ -118,7 +122,7 @@ fun NavigationOverlay(
     showDebugOverlay: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val regionSize1 = if (smallerTapZone) 0.25f else 0.33f
+    val regionSize1 = if (smallerTapZone) ZONE_SIZE_SMALLER else ZONE_SIZE_NORMAL
 
     val regions = remember(navigationMode, tapInvertMode, smallerTapZone) {
         buildRegions(navigationMode, regionSize1).map { it.invert(tapInvertMode) }
@@ -189,9 +193,6 @@ fun SimpleTapZoneOverlay(
     onCenterTap: () -> Unit,
     onRightTap: () -> Unit,
     onCenterLongPress: () -> Unit = {},
-    leftZoneWidth: Float = 0.25f,
-    centerZoneWidth: Float = 0.5f,
-    rightZoneWidth: Float = 0.25f,
     isRtl: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
