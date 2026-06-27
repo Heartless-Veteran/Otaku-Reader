@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,21 +22,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import app.otakureader.core.ui.theme.LocalOtakuColors
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.feature.reader.R
 
-// Reader-overlay layout tokens.
-private const val OVERLAY_BACKGROUND_ALPHA = 0.93f
-private val OVERLAY_BACKGROUND = Color(0xFF0A0A0F)
+private val readerTopBarSlide = tween<IntOffset>(200)
+private val readerTopBarFade = tween<Float>(150)
 
 /**
  * Reader top app bar shown while the menu is visible: back, manga title + chapter subtitle, and
@@ -73,16 +73,22 @@ fun ReaderContentOverlay(
 ) {
     AnimatedVisibility(
         visible = isVisible,
-        enter = fadeIn(tween(200)) + slideInVertically(initialOffsetY = { -it / 4 }),
-        exit = fadeOut(tween(200)) + slideOutVertically(targetOffsetY = { -it / 4 }),
+        enter = slideInVertically(initialOffsetY = { -it }, animationSpec = readerTopBarSlide) +
+            fadeIn(animationSpec = readerTopBarFade),
+        exit = slideOutVertically(targetOffsetY = { -it }, animationSpec = readerTopBarSlide) +
+            fadeOut(animationSpec = readerTopBarFade),
         modifier = modifier
     ) {
-        val mutedColor = LocalOtakuColors.current.unselectedPageIndicator
+        val backgroundColor = MaterialTheme.colorScheme
+            .surfaceColorAtElevation(3.dp)
+            .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+        val onSurface = MaterialTheme.colorScheme.onSurface
+        val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(OVERLAY_BACKGROUND.copy(alpha = OVERLAY_BACKGROUND_ALPHA))
+                .background(backgroundColor)
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -90,21 +96,21 @@ fun ReaderContentOverlay(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.reader_back),
-                    tint = Color.White
+                    tint = onSurface
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
+                    color = onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     chapterTitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = mutedColor,
+                    color = onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -114,7 +120,7 @@ fun ReaderContentOverlay(
                     Icon(
                         Icons.Default.Download,
                         contentDescription = stringResource(R.string.reader_download_chapter),
-                        tint = mutedColor
+                        tint = onSurfaceVariant
                     )
                 }
             }
@@ -130,7 +136,7 @@ fun ReaderContentOverlay(
                         tint = if (isCurrentPageBookmarked) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            mutedColor
+                            onSurfaceVariant
                         }
                     )
                 }
@@ -139,14 +145,14 @@ fun ReaderContentOverlay(
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = stringResource(R.string.reader_settings),
-                    tint = mutedColor
+                    tint = onSurfaceVariant
                 )
             }
         }
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFF0A0A0F)
+@Preview(showBackground = true)
 @Composable
 private fun ReaderContentOverlayPreview() {
     OtakuReaderTheme {
