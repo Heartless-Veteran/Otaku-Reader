@@ -2,6 +2,7 @@
 package app.otakureader.feature.details
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
@@ -18,13 +19,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -42,17 +41,18 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,8 +62,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -73,7 +71,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -123,6 +120,10 @@ private const val SINGLE_CHAPTER_SELECTION = 1
 
 // Action labels in the selection bottom bar are kept to a single line so the row stays compact.
 private const val CHAPTER_ACTION_LABEL_MAX_LINES = 1
+
+// Bottom content padding for the phone single-scroll list — enough to clear the FAB
+// (56 dp FAB height + 16 dp bottom margin + 16 dp list breathing room).
+private val FAB_CONTENT_PADDING_BOTTOM = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -245,6 +246,9 @@ fun DetailsScreen(
     }
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
+        BackHandler(enabled = state.selectedChapters.isNotEmpty()) {
+            viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
+        }
         Scaffold(
             topBar = {
             if (selectedVisibleChapters.isNotEmpty()) {
@@ -413,6 +417,35 @@ fun DetailsScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            if (state.canStartReading && selectedVisibleChapters.isEmpty()) {
+                val isFabExpanded by remember(isExpanded) {
+                    derivedStateOf { isExpanded || !listState.canScrollBackward }
+                }
+                ExtendedFloatingActionButton(
+                    text = {
+                        Text(
+                            if (state.hasUnreadChapters) stringResource(R.string.details_resume_reading)
+                            else stringResource(R.string.details_start_reading)
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = if (state.hasUnreadChapters)
+                                stringResource(R.string.details_resume_reading)
+                            else
+                                stringResource(R.string.details_start_reading),
+                        )
+                    },
+                    onClick = {
+                        if (state.hasUnreadChapters) viewModel.onEvent(DetailsContract.Event.ContinueReading)
+                        else viewModel.onEvent(DetailsContract.Event.StartReading)
+                    },
+                    expanded = isFabExpanded,
+                )
+            }
+        },
     ) { paddingValues ->
         when {
             state.isLoading -> LoadingScreen(modifier = Modifier.padding(paddingValues))
@@ -618,22 +651,13 @@ private fun DetailsContent(
             }
         }
     } else {
-        // Phone / small tablet: header above sticky tab bar, tab content below.
-        var selectedTab by remember { mutableIntStateOf(0) }
-        val tabTitles = listOf(
-            stringResource(R.string.details_tab_info),
-            stringResource(R.string.details_tab_chapters),
-            stringResource(R.string.details_tab_tracker),
-            stringResource(R.string.details_tab_related),
-        )
+        // Phone: single scrolling LazyColumn — Komikku parity (no tabs)
         LazyColumn(
             state = listState,
             modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp),
+            contentPadding = PaddingValues(bottom = FAB_CONTENT_PADDING_BOTTOM),
         ) {
-            // Manga hero (always visible above tabs)
-            item {
+            item(key = "header") {
                 MangaHeader(
                     manga = manga,
                     isFavorite = state.isFavorite,
@@ -643,46 +667,12 @@ private fun DetailsContent(
                     scrollOffset = scrollOffset,
                 )
             }
-            // Stats row
-            item { DetailsStatsRow(state = state) }
-            // Inline continue reading row
-            if (state.canStartReading) {
-                item { DetailsContinueReadingRow(state = state, onEvent = onEvent) }
+            item(key = "stats") { DetailsStatsRow(state = state) }
+            detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
+            item(key = "chapter_divider") {
+                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }
-            // Sticky tab bar
-            stickyHeader {
-                TabRow(selectedTabIndex = selectedTab) {
-                    tabTitles.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = { Text(title) },
-                        )
-                    }
-                }
-            }
-            // Tab content
-            when (selectedTab) {
-                0 -> detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
-                1 -> detailsChapterItems(state = state, onEvent = onEvent)
-                2 -> item {
-                    TrackerTabContent(
-                        onManageTracking = { onEvent(DetailsContract.Event.OpenTracking) }
-                    )
-                }
-                3 -> item {
-                    SourceSuggestionsSection(
-                        suggestions = state.sourceSuggestions,
-                        isLoading = state.isLoadingSourceSuggestions,
-                        error = state.sourceSuggestionsError,
-                        onSuggestionClick = { suggestion ->
-                            onEvent(DetailsContract.Event.OnSourceSuggestionClick(suggestion))
-                        },
-                        onLoadClick = { onEvent(DetailsContract.Event.LoadSourceSuggestions) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
-                }
-            }
+            detailsChapterItems(state = state, onEvent = onEvent)
         }
     }
 
@@ -865,40 +855,6 @@ private fun DetailsStatColumn(label: String, value: String, modifier: Modifier =
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-    }
-}
-
-@Composable
-private fun DetailsContinueReadingRow(
-    state: DetailsContract.State,
-    onEvent: (DetailsContract.Event) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val buttonLabel = if (state.hasUnreadChapters) {
-        state.nextUnreadChapter?.name?.let { stringResource(R.string.details_continue_with, it) }
-            ?: stringResource(R.string.details_continue_reading)
-    } else {
-        stringResource(R.string.details_start_reading)
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    ) {
-        Button(
-            onClick = {
-                if (state.hasUnreadChapters) onEvent(DetailsContract.Event.ContinueReading)
-                else onEvent(DetailsContract.Event.StartReading)
-            },
-            modifier = Modifier.weight(1f),
-        ) {
-            Text(text = buttonLabel, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        }
-        Spacer(modifier = Modifier.width(8.dp))
-        IconButton(onClick = { onEvent(DetailsContract.Event.DownloadUnreadChapters) }) {
-            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.details_inline_download))
-        }
     }
 }
 
@@ -1085,40 +1041,6 @@ private fun MangaDescription(
     }
 }
 
-
-/**
- * Tracker tab content: an informational card prompting the user to manage their tracking
- * entries via the tracking feature. Tapping the button fires [OpenTracking] which the
- * ViewModel converts into a [NavigateToTracking] effect.
- */
-@Composable
-private fun TrackerTabContent(
-    onManageTracking: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Default.QueryStats,
-            contentDescription = null,
-            modifier = Modifier.size(48.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = stringResource(R.string.details_tracker_tab_description),
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-        Button(onClick = onManageTracking) {
-            Text(stringResource(R.string.details_tracker_tab_manage_button))
-        }
-    }
-}
 
 @Preview(showBackground = true, backgroundColor = 0xFF12121A)
 @Composable
