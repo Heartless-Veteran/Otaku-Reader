@@ -496,7 +496,7 @@ fun ReaderScreen(
                 hasPreviousChapter = hasPreviousChapter,
                 hasNextChapter = hasNextChapter,
                 readingDirection = state.readingDirection,
-                isVisible = state.isMenuVisible && state.pages.isNotEmpty(),
+                isVisible = state.isMenuVisible && state.pages.isNotEmpty() && !state.isGalleryOpen && !state.isLoading,
                 modifier = Modifier,
             )
             ReaderBottomBar(
