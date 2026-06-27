@@ -5,6 +5,7 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.feature.reader.PageRotation
 import app.otakureader.feature.reader.ReaderSetting
 import app.otakureader.feature.reader.ReaderState
@@ -264,6 +265,11 @@ class ReaderDisplayDelegate @Inject constructor(
                 update { it.copy(isFullscreen = new) }
                 launchSave { setFullscreen(new) }
             }
+            ReaderSetting.SMALLER_TAP_ZONE -> {
+                val new = !stateFlow.value.smallerTapZone
+                update { it.copy(smallerTapZone = new) }
+                launchSave { setSmallerTapZone(new) }
+            }
         }
     }
 
@@ -284,6 +290,26 @@ class ReaderDisplayDelegate @Inject constructor(
 
     fun updateTapZones(config: TapZoneConfig) {
         scope.launch { settingsRepository.setTapZoneConfig(config) }
+    }
+
+    fun updateNavigationModePager(mode: Int) {
+        update { it.copy(navigationModePager = mode.coerceIn(0, 5)) }
+        launchSave { setNavigationModePager(mode) }
+    }
+
+    fun updateNavigationModeWebtoon(mode: Int) {
+        update { it.copy(navigationModeWebtoon = mode.coerceIn(0, 5)) }
+        launchSave { setNavigationModeWebtoon(mode) }
+    }
+
+    fun updateTapInvertModePager(mode: TapInvertMode) {
+        update { it.copy(tapInvertModePager = mode) }
+        launchSave { setTapInvertModePager(mode) }
+    }
+
+    fun updateTapInvertModeWebtoon(mode: TapInvertMode) {
+        update { it.copy(tapInvertModeWebtoon = mode) }
+        launchSave { setTapInvertModeWebtoon(mode) }
     }
 
     // ── Tap zone handling ────────────────────────────────────────────────────

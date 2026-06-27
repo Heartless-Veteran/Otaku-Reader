@@ -5,6 +5,7 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.feature.reader.model.ReaderPage
 import app.otakureader.domain.model.TapZoneConfig
 
@@ -164,6 +165,16 @@ data class ReaderState(
     val tapZoneConfig: TapZoneConfig = TapZoneConfig(),
     /** Invert tap zone actions (swap prev/next) */
     val invertTapZones: Boolean = false,
+    /** Tap navigation layout for pager modes (0=Default, 1=L, 2=Kindlish, 3=Edge, 4=RightLeft, 5=Disabled) */
+    val navigationModePager: Int = 0,
+    /** Tap navigation layout for webtoon mode */
+    val navigationModeWebtoon: Int = 0,
+    /** Axis inversion for tap zones in pager modes */
+    val tapInvertModePager: TapInvertMode = TapInvertMode.NONE,
+    /** Axis inversion for tap zones in webtoon mode */
+    val tapInvertModeWebtoon: TapInvertMode = TapInvertMode.NONE,
+    /** Whether to use the smaller (25%) tap zone size instead of the default (33%) */
+    val smallerTapZone: Boolean = false,
 
     // --- Webtoon Settings ---
     /** Side padding for webtoon: 0 = None, 1 = Small, 2 = Medium, 3 = Large */
@@ -588,6 +599,18 @@ sealed interface ReaderEvent {
     /** Set webtoon side padding: 0=None, 1=Small, 2=Medium, 3=Large. */
     data class SetWebtoonSidePadding(val padding: Int) : SettingsControl
 
+    /** Set tap navigation layout for pager modes (0-5). */
+    data class SetNavigationModePager(val mode: Int) : SettingsControl
+
+    /** Set tap navigation layout for webtoon mode (0-5). */
+    data class SetNavigationModeWebtoon(val mode: Int) : SettingsControl
+
+    /** Set tap-zone inversion axis for pager modes. */
+    data class SetTapInvertModePager(val mode: TapInvertMode) : SettingsControl
+
+    /** Set tap-zone inversion axis for webtoon mode. */
+    data class SetTapInvertModeWebtoon(val mode: TapInvertMode) : SettingsControl
+
     // ──────────────────────────────────────────────────────────────────────────
     // Color filter
     // ──────────────────────────────────────────────────────────────────────────
@@ -688,6 +711,7 @@ enum class ReaderSetting {
     AUTO_ZOOM_WIDE_IMAGES,
     SHOW_CONTENT_IN_CUTOUT,
     FULLSCREEN,
+    SMALLER_TAP_ZONE,
 }
 
 /**

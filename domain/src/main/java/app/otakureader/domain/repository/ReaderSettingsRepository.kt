@@ -5,6 +5,7 @@ import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReaderOrientation
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.domain.model.TapZoneConfig
 import kotlinx.coroutines.flow.Flow
 
@@ -50,6 +51,11 @@ interface ReaderSettingsRepository {
     val autoZoomWideImages: Flow<Boolean>
     val invertTapZones: Flow<Boolean>
     val tapZoneConfig: Flow<TapZoneConfig>
+    val navigationModePager: Flow<Int>
+    val navigationModeWebtoon: Flow<Int>
+    val tapInvertModePager: Flow<TapInvertMode>
+    val tapInvertModeWebtoon: Flow<TapInvertMode>
+    val smallerTapZone: Flow<Boolean>
     val webtoonSidePadding: Flow<Int>
     val webtoonGapDp: Flow<Int>
     val webtoonMenuHideSensitivity: Flow<Int>
@@ -108,6 +114,11 @@ interface ReaderSettingsRepository {
     suspend fun setReaderScale(scale: Int)
     suspend fun setWebtoonSidePadding(padding: Int)
     suspend fun setShowContentInCutout(enabled: Boolean)
+    suspend fun setNavigationModePager(mode: Int)
+    suspend fun setNavigationModeWebtoon(mode: Int)
+    suspend fun setTapInvertModePager(mode: TapInvertMode)
+    suspend fun setTapInvertModeWebtoon(mode: TapInvertMode)
+    suspend fun setSmallerTapZone(enabled: Boolean)
 
     companion object {
         const val DEFAULT_PRELOAD_PAGES = 3

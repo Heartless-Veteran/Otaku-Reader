@@ -6,6 +6,7 @@ import app.otakureader.domain.model.ColorFilterMode
 import app.otakureader.domain.model.ImageQuality
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.domain.model.ReadingDirection
+import app.otakureader.domain.model.TapInvertMode
 import app.otakureader.domain.model.VolumeKeyBehavior
 import app.otakureader.domain.repository.ReaderSettingsRepository
 import app.otakureader.feature.reader.ReaderState
@@ -182,6 +183,36 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
                 VolumeKeyBehavior.INHERIT
             }
         }
+        val navigationModePagerD = async {
+            try { settingsRepository.navigationModePager.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
+            }
+        }
+        val navigationModeWebtoonD = async {
+            try { settingsRepository.navigationModeWebtoon.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
+            }
+        }
+        val tapInvertModePagerD = async {
+            try { settingsRepository.tapInvertModePager.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                TapInvertMode.NONE
+            }
+        }
+        val tapInvertModeWebtoonD = async {
+            try { settingsRepository.tapInvertModeWebtoon.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                TapInvertMode.NONE
+            }
+        }
+        val smallerTapZoneD = async {
+            try { settingsRepository.smallerTapZone.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                false
+            }
+        }
 
         val mode = modeD.await()
         val direction = directionD.await()
@@ -271,6 +302,11 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             savePagesToSeparateFolders = savePagesToSeparateFoldersD.await(),
             autoScrollSpeed = autoScrollSpeedD.await(),
             secureScreen = secureScreenD.await(),
+            navigationModePager = navigationModePagerD.await(),
+            navigationModeWebtoon = navigationModeWebtoonD.await(),
+            tapInvertModePager = tapInvertModePagerD.await(),
+            tapInvertModeWebtoon = tapInvertModeWebtoonD.await(),
+            smallerTapZone = smallerTapZoneD.await(),
         )
     }
 }

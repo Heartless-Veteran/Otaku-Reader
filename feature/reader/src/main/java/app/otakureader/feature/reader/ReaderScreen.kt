@@ -88,12 +88,11 @@ import app.otakureader.feature.reader.ui.ReaderContentOverlay
 import app.otakureader.feature.reader.ui.ReaderMenuOverlay
 import app.otakureader.feature.reader.ui.ChapterListOverlay
 import app.otakureader.feature.reader.ui.ReaderSettingsOverlay
-import app.otakureader.feature.reader.ui.SimpleTapZoneOverlay
+import app.otakureader.feature.reader.ui.NavigationOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
 import app.otakureader.feature.reader.ReaderEffect
 import app.otakureader.feature.reader.ReaderEvent
 import app.otakureader.feature.reader.ReaderSetting
-import app.otakureader.feature.reader.TapZone
 import app.otakureader.feature.reader.ReaderViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -378,13 +377,19 @@ fun ReaderScreen(
         
         // Tap zone overlay for navigation
         if (!state.isLoading && state.pages.isNotEmpty() && !state.isMenuVisible) {
-            SimpleTapZoneOverlay(
-                onLeftTap = { viewModel.onEvent(ReaderEvent.PrevPage) },
-                onCenterTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
-                onCenterLongPress = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
-                onRightTap = { viewModel.onEvent(ReaderEvent.NextPage) },
-                isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL,
-                modifier = Modifier.fillMaxSize()
+            val isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL
+            val isWebtoon = state.mode == app.otakureader.domain.model.ReaderMode.WEBTOON
+            NavigationOverlay(
+                onPrev = { viewModel.onEvent(if (isRtl) ReaderEvent.NextPage else ReaderEvent.PrevPage) },
+                onNext = { viewModel.onEvent(if (isRtl) ReaderEvent.PrevPage else ReaderEvent.NextPage) },
+                onToggleMenu = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+                onLongPress = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+                navigationMode = if (isWebtoon) state.navigationModeWebtoon else state.navigationModePager,
+                tapInvertMode = if (isWebtoon) state.tapInvertModeWebtoon else state.tapInvertModePager,
+                smallerTapZone = state.smallerTapZone,
+                isRtl = isRtl,
+                showDebugOverlay = state.showTapZonesOverlay,
+                modifier = Modifier.fillMaxSize(),
             )
         }
         

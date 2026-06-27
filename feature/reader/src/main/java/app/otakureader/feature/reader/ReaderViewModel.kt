@@ -564,6 +564,10 @@ class ReaderViewModel @Inject constructor(
             is ReaderEvent.SetBackgroundColor -> displayDelegate.updateBackgroundColor(event.color)
             is ReaderEvent.SetReaderScale -> displayDelegate.updateReaderScale(event.scale)
             is ReaderEvent.SetWebtoonSidePadding -> displayDelegate.updateWebtoonSidePadding(event.padding)
+            is ReaderEvent.SetNavigationModePager -> displayDelegate.updateNavigationModePager(event.mode)
+            is ReaderEvent.SetNavigationModeWebtoon -> displayDelegate.updateNavigationModeWebtoon(event.mode)
+            is ReaderEvent.SetTapInvertModePager -> displayDelegate.updateTapInvertModePager(event.mode)
+            is ReaderEvent.SetTapInvertModeWebtoon -> displayDelegate.updateTapInvertModeWebtoon(event.mode)
         }
     }
 
