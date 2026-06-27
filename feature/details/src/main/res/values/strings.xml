@@ -20,6 +20,7 @@
     <string name="details_tracking">Manage tracking</string>
     <string name="details_continue_reading">Continue Reading</string>
     <string name="details_start_reading">Start Reading</string>
+    <string name="details_resume_reading">Resume</string>
     <string name="details_unknown_error">Unknown error</string>
     <string name="details_author">Author: %1$s</string>
     <string name="details_artist">Artist: %1$s</string>
