@@ -246,7 +246,7 @@ fun DetailsScreen(
     }
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
-        BackHandler(enabled = selectedVisibleChapters.isNotEmpty()) {
+        BackHandler(enabled = state.selectedChapters.isNotEmpty()) {
             viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
         }
         Scaffold(
@@ -429,7 +429,15 @@ fun DetailsScreen(
                             else stringResource(R.string.details_start_reading)
                         )
                     },
-                    icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
+                    icon = {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = if (state.hasUnreadChapters)
+                                stringResource(R.string.details_resume_reading)
+                            else
+                                stringResource(R.string.details_start_reading),
+                        )
+                    },
                     onClick = {
                         if (state.hasUnreadChapters) viewModel.onEvent(DetailsContract.Event.ContinueReading)
                         else viewModel.onEvent(DetailsContract.Event.StartReading)
