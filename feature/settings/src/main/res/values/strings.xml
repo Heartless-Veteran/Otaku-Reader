@@ -4,6 +4,21 @@
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>
 
+    <!-- Settings category subtitles -->
+    <string name="settings_appearance_summary">Theme, date &amp; time format</string>
+    <string name="settings_library_summary">Categories, global update, chapter swipe</string>
+    <string name="settings_reader_summary">Reading mode, display, navigation</string>
+    <string name="settings_downloads_summary">Automatic download, download ahead</string>
+    <string name="settings_tracking_summary">MAL, AniList, Kitsu, MangaUpdates</string>
+    <string name="settings_backup_summary">Manual &amp; automatic backups, storage space</string>
+    <string name="settings_discord_summary">Rich Presence, activity status</string>
+    <string name="settings_security_summary">App lock, secure screen</string>
+    <string name="settings_notifications_summary">Chapter updates, alerts</string>
+    <string name="settings_widgets_summary">Home screen widgets</string>
+    <string name="settings_local_source_summary">Browse local manga files</string>
+    <string name="settings_sync_summary">Cross-device reading progress</string>
+    <string name="settings_nav_order_summary">Customize bottom navigation</string>
+
     <!-- Appearance -->
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
