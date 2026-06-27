@@ -128,21 +128,21 @@ fun NavigationOverlay(
         buildRegions(navigationMode, regionSize1).map { it.invert(tapInvertMode) }
     }
 
-    val onLeft: () -> Unit = if (isRtl) onNext else onPrev
-    val onRight: () -> Unit = if (isRtl) onPrev else onNext
-
     fun resolveAction(x: Float, y: Float) {
+        if (CONSTANT_MENU_REGION.contains(x, y)) { onToggleMenu(); return }
         val region = regions.find { it.contains(x, y) }
-        when {
-            region != null -> when (region.action) {
+        if (region != null) {
+            when (region.action) {
                 NavAction.PREV -> onPrev()
                 NavAction.NEXT -> onNext()
-                NavAction.LEFT -> onLeft()
-                NavAction.RIGHT -> onRight()
+                // LEFT/RIGHT map directly to onPrev/onNext; RTL inversion is already
+                // baked into those callbacks at the call site (ReaderScreen).
+                NavAction.LEFT -> onPrev()
+                NavAction.RIGHT -> onNext()
                 NavAction.MENU -> onToggleMenu()
             }
-            CONSTANT_MENU_REGION.contains(x, y) -> onToggleMenu()
-            else -> onToggleMenu()
+        } else {
+            onToggleMenu()
         }
     }
 
@@ -151,9 +151,10 @@ fun NavigationOverlay(
         val h = constraints.maxHeight.toFloat()
 
         if (showDebugOverlay) {
-            val allRegions = regions + CONSTANT_MENU_REGION
             Canvas(modifier = Modifier.fillMaxSize()) {
-                allRegions.forEach { r ->
+                // Draw constant menu region first so navigation regions paint on top,
+                // matching the actual hit-test priority (CONSTANT_MENU_REGION checked first).
+                listOf(CONSTANT_MENU_REGION).plus(regions).forEach { r ->
                     drawRect(
                         color = r.action.debugColor(),
                         topLeft = Offset(r.left * w, r.top * h),
@@ -169,7 +170,7 @@ fun NavigationOverlay(
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(regions, isRtl) {
+                .pointerInput(regions) {
                     detectTapGestures(
                         onTap = { offset ->
                             if (w > 0f && h > 0f) {

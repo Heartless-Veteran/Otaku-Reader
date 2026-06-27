@@ -26,6 +26,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -505,14 +506,16 @@ private fun NavigationModeSection(
     smallerTapZone: Boolean,
     onSmallerTapZoneToggle: () -> Unit,
 ) {
-    val navLabels = listOf(
-        stringResource(R.string.reader_nav_mode_default),
-        stringResource(R.string.reader_nav_mode_l),
-        stringResource(R.string.reader_nav_mode_kindlish),
-        stringResource(R.string.reader_nav_mode_edge),
-        stringResource(R.string.reader_nav_mode_right_and_left),
-        stringResource(R.string.reader_nav_mode_disabled),
-    )
+    val navLabels = remember {
+        listOf(
+            stringResource(R.string.reader_nav_mode_default),
+            stringResource(R.string.reader_nav_mode_l),
+            stringResource(R.string.reader_nav_mode_kindlish),
+            stringResource(R.string.reader_nav_mode_edge),
+            stringResource(R.string.reader_nav_mode_right_and_left),
+            stringResource(R.string.reader_nav_mode_disabled),
+        )
+    }
 
     SettingsSectionLabel(sectionLabel)
     FlowRow(modifier = Modifier.fillMaxWidth()) {
