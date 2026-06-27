@@ -120,6 +120,12 @@
     <string name="bookmarks_export_requested">%1$d bookmark(s) queued — image export coming in v1.1</string>
     <string name="bookmarks_share_text_line">%1$s · %2$s · Page %3$d</string>
 
+    <!-- Downloaded only / Incognito mode quick toggles -->
+    <string name="more_downloaded_only">Downloaded only</string>
+    <string name="more_downloaded_only_desc">Only show manga with downloaded chapters</string>
+    <string name="more_incognito_mode">Incognito mode</string>
+    <string name="more_incognito_mode_desc">Browsing and reading history will not be recorded</string>
+
     <!-- Bookmark error messages (#1128) -->
     <string name="bookmarks_share_error">Unable to open share sheet</string>
     <string name="bookmarks_error_delete_bookmark">Failed to delete bookmark</string>

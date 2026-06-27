@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import app.otakureader.core.common.mvi.UiEvent
 import app.otakureader.core.common.mvi.UiState
 import app.otakureader.domain.model.DownloadItem
+import app.otakureader.domain.model.DownloadStatus
 
 data class DownloadsState(
     val items: List<DownloadItem> = emptyList(),
@@ -10,6 +11,11 @@ data class DownloadsState(
 ) : UiState {
     val hasDownloads: Boolean
         get() = items.isNotEmpty()
+
+    val isDownloaderRunning: Boolean
+        get() = items.any {
+            it.status == DownloadStatus.DOWNLOADING || it.status == DownloadStatus.QUEUED
+        }
 }
 
 sealed interface DownloadsEvent : UiEvent {

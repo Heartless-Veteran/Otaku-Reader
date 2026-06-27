@@ -1,6 +1,7 @@
 package app.otakureader.feature.browse
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,17 +18,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -52,6 +58,7 @@ import app.otakureader.sourceapi.SourceManga
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import java.util.Locale
 
 /**
  * Global search screen that queries all installed sources simultaneously and
@@ -91,30 +98,58 @@ fun GlobalSearchScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = {
-                    OutlinedTextField(
-                        value = state.query,
-                        onValueChange = { viewModel.onEvent(GlobalSearchEvent.OnQueryChange(it)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text(stringResource(R.string.browse_global_search_placeholder)) },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = { viewModel.onEvent(GlobalSearchEvent.Search) }) {
-                                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_global_search))
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                TopAppBar(
+                    title = {
+                        OutlinedTextField(
+                            value = state.query,
+                            onValueChange = { viewModel.onEvent(GlobalSearchEvent.OnQueryChange(it)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text(stringResource(R.string.browse_global_search_placeholder)) },
+                            singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = { viewModel.onEvent(GlobalSearchEvent.Search) }) {
+                                    Icon(Icons.Default.Search, contentDescription = stringResource(R.string.browse_global_search))
+                                }
                             }
-                        }
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.browse_global_back)
                         )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.browse_global_back)
+                            )
+                        }
                     }
+                )
+                if (state.searchProgress in 1..<state.searchTotal) {
+                    LinearProgressIndicator(
+                        progress = { state.searchProgress / state.searchTotal.toFloat() },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
-            )
+                Row(
+                    modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = state.onlyShowHasResults,
+                        onClick = { viewModel.onEvent(GlobalSearchEvent.OnToggleOnlyResults) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.FilterList,
+                                contentDescription = null,
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.browse_global_only_has_results)) }
+                    )
+                }
+                HorizontalDivider()
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -146,7 +181,6 @@ private fun GlobalSearchContent(
 ) {
     when {
         state.sourceResults.isEmpty() && !state.isSearching -> {
-            // Idle / no sources
             Box(
                 modifier = modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -163,7 +197,7 @@ private fun GlobalSearchContent(
                 modifier = modifier.fillMaxSize(),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                items(state.sourceResults, key = { it.sourceId }) { sourceResult ->
+                items(state.filteredSourceResults, key = { it.sourceId }) { sourceResult ->
                     SourceSection(
                         sourceResult = sourceResult,
                         onMangaClick = { manga -> onMangaClick(sourceResult.sourceId, manga) }
@@ -182,14 +216,27 @@ private fun SourceSection(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        // Source header
         Text(
             text = sourceResult.sourceName,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+        if (sourceResult.sourceLanguage.isNotEmpty()) {
+            val displayLang = remember(sourceResult.sourceLanguage) {
+                Locale(sourceResult.sourceLanguage).getDisplayLanguage(Locale.ENGLISH)
+                    .replaceFirstChar { it.uppercase() }
+            }
+            Text(
+                text = displayLang,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
 
         when {
             sourceResult.isLoading -> {

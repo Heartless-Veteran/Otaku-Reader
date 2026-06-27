@@ -4,6 +4,7 @@ import app.otakureader.domain.model.Chapter
 import app.otakureader.domain.model.ChapterWithHistory
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetHistoryUseCase
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.cash.turbine.test
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,6 +33,7 @@ class HistoryViewModelTest {
 
     private lateinit var getHistoryUseCase: GetHistoryUseCase
     private lateinit var chapterRepository: ChapterRepository
+    private lateinit var toggleFavoriteMangaUseCase: ToggleFavoriteMangaUseCase
 
     private fun chapter(id: Long, name: String = "Chapter $id") =
         Chapter(id = id, mangaId = 1L, url = "/c/$id", name = name, read = true)
@@ -50,6 +52,7 @@ class HistoryViewModelTest {
         Dispatchers.setMain(testDispatcher)
         getHistoryUseCase = mockk()
         chapterRepository = mockk()
+        toggleFavoriteMangaUseCase = mockk()
     }
 
     @After
@@ -58,7 +61,7 @@ class HistoryViewModelTest {
     }
 
     private fun createViewModel(): HistoryViewModel {
-        return HistoryViewModel(getHistoryUseCase, chapterRepository)
+        return HistoryViewModel(getHistoryUseCase, chapterRepository, toggleFavoriteMangaUseCase)
     }
 
     @Test

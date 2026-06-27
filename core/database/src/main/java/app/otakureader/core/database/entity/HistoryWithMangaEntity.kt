@@ -23,5 +23,6 @@ data class HistoryWithMangaEntity(
     @ColumnInfo(name = "read_at")        val readAt: Long,
     @ColumnInfo(name = "read_duration_ms") val readDurationMs: Long,
     @ColumnInfo(name = "manga_title")    val mangaTitle: String?,
-    @ColumnInfo(name = "manga_thumbnail") val mangaThumbnailUrl: String?
+    @ColumnInfo(name = "manga_thumbnail") val mangaThumbnailUrl: String?,
+    @ColumnInfo(name = "manga_favorite") val mangaFavorite: Boolean = false,
 )

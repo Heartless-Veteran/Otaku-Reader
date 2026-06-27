@@ -67,6 +67,9 @@ object DetailsContract {
         
         val hasUnreadChapters: Boolean
             get() = chapters.any { !it.read }
+
+        val hasStartedReading: Boolean
+            get() = chapters.any { it.read || it.lastPageRead > 0 }
         
         val sortedChapters: List<ChapterItem>
             get() {

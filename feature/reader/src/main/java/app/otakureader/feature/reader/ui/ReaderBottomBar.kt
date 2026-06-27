@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.outlined.BurstMode
 import androidx.compose.material.icons.outlined.Crop
 import androidx.compose.material.icons.outlined.FormatListNumbered
 import androidx.compose.material.icons.outlined.Settings
@@ -61,6 +62,7 @@ fun ReaderBottomBar(
     onModeClick: () -> Unit,
     onOrientationClick: () -> Unit,
     onToggleCropBorders: () -> Unit,
+    onToggleThumbnailStrip: () -> Unit,
     onSettings: () -> Unit,
     isVisible: Boolean,
     modifier: Modifier = Modifier,
@@ -113,6 +115,13 @@ fun ReaderBottomBar(
                     imageVector = Icons.Outlined.Crop,
                     contentDescription = stringResource(R.string.reader_crop_borders),
                     tint = if (state.cropBordersEnabled) iconColor else dimColor,
+                )
+            }
+            IconButton(onClick = onToggleThumbnailStrip) {
+                Icon(
+                    imageVector = Icons.Outlined.BurstMode,
+                    contentDescription = stringResource(R.string.reader_toggle_thumbnail_strip),
+                    tint = if (state.showPageThumbnailStrip) iconColor else dimColor,
                 )
             }
             IconButton(onClick = onSettings) {

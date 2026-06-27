@@ -110,6 +110,7 @@ data class LibraryState(
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
     val incognitoMode: Boolean = false,
+    val downloadedOnly: Boolean = false,
     val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
     // Reading list filter
     val readingLists: List<ReadingListFilterItem> = emptyList(),

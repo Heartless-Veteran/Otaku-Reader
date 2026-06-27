@@ -452,6 +452,11 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     suspend fun setCoilDiskCacheSizeMb(value: Int) =
         dataStore.edit { it[Keys.COIL_DISK_CACHE_SIZE_MB] = value.coerceIn(MIN_COIL_DISK_CACHE_MB, MAX_COIL_DISK_CACHE_MB) }
 
+    // --- Downloaded Only ---
+
+    val downloadedOnly: Flow<Boolean> = dataStore.data.map { it[Keys.DOWNLOADED_ONLY] ?: false }
+    suspend fun setDownloadedOnly(value: Boolean) = dataStore.edit { it[Keys.DOWNLOADED_ONLY] = value }
+
     private fun parseDaySet(raw: String): Set<Int> =
         raw.split(",").mapNotNull { it.trim().toIntOrNull() }.toSet()
 
@@ -507,6 +512,7 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
         val SAVED_SOURCE_SEARCHES_JSON = stringPreferencesKey("saved_source_searches_json")
         val EXTENSION_FIRST_SEEN_HASHES = stringPreferencesKey("extension_first_seen_hashes")
         val ENABLED_SOURCE_LANGUAGES = stringSetPreferencesKey("enabled_source_languages")
+        val DOWNLOADED_ONLY = booleanPreferencesKey("downloaded_only")
     }
 
     companion object {

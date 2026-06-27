@@ -712,6 +712,7 @@ enum class ReaderSetting {
     SHOW_CONTENT_IN_CUTOUT,
     FULLSCREEN,
     SMALLER_TAP_ZONE,
+    SHOW_PAGE_THUMBNAIL_STRIP,
 }
 
 /**

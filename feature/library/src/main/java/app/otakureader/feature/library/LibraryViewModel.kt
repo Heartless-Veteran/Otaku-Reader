@@ -484,6 +484,9 @@ class LibraryViewModel @Inject constructor(
         generalPreferences.showNsfwContent
             .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
             .launchIn(viewModelScope)
+        generalPreferences.downloadedOnly
+            .onEach { downloadedOnly -> _state.update { it.copy(downloadedOnly = downloadedOnly) } }
+            .launchIn(viewModelScope)
         libraryPreferences.isStaggeredGrid
             .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
             .launchIn(viewModelScope)
@@ -631,7 +634,7 @@ class LibraryViewModel @Inject constructor(
                     readingListMangaIds = it.readingListMangaIds,
                     filterGenres = it.filterGenres,
                     sortAscending = it.sortAscending,
-                    filterDownloaded = it.filterDownloaded,
+                    filterDownloaded = if (it.downloadedOnly) LibraryTriState.ENABLED_IS else it.filterDownloaded,
                     filterUnread = it.filterUnread,
                     filterStarted = it.filterStarted,
                     filterTracking = it.filterTracking,
