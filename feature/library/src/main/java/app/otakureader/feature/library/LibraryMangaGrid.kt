@@ -120,12 +120,12 @@ internal fun MangaGrid(
         stringResource(R.string.library_content_tab_manhwa),
     )
 
-    // Long-press opens the quick context menu. Fire haptic so the gesture is felt (#L7).
+    // Long-press enters selection mode directly (Komikku parity) — no context-menu indirection.
     val haptic = LocalHapticFeedback.current
     val onMangaLongClick: (Long) -> Unit = remember(haptic, onEvent) {
         { mangaId ->
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onEvent(LibraryEvent.ShowContextMenu(mangaId))
+            onEvent(LibraryEvent.OnMangaLongClick(mangaId))
         }
     }
     // Taps open the detail pane only in two-pane mode with no active selection; otherwise route
@@ -348,7 +348,8 @@ private fun LibraryMangaPageContent(
                 }
             }
         }
-    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID) {
+    } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID &&
+        state.displayMode != LibraryDisplayMode.COVER_ONLY) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(130.dp),
             contentPadding = PaddingValues(8.dp),
@@ -458,9 +459,9 @@ private fun LibraryMangaPageContent(
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
                 val continueReading = manga.lastRead != null && manga.unreadCount > 0
-                // Comfortable grid (#Komikku parity): cover with the title shown as a caption
-                // below it rather than overlaid on the cover.
+                // Comfortable grid: cover with title caption below; Cover-only: no title at all.
                 val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
+                val coverOnly = state.displayMode == LibraryDisplayMode.COVER_ONLY
                 val card: @Composable () -> Unit = {
                     MangaCard(
                         title = manga.title,
@@ -471,7 +472,7 @@ private fun LibraryMangaPageContent(
                         readProgress = readProgress,
                         continueReading = continueReading,
                         isNew = manga.unreadCount > 0,
-                        showTitle = if (comfortable) false else state.showTitle,
+                        showTitle = if (comfortable || coverOnly) false else state.showTitle,
                         badge = when {
                             state.showBadges && manga.unreadCount > 0 &&
                                 state.showDownloadBadge && downloadCount > 0 -> {
@@ -526,6 +527,7 @@ private fun LibraryMangaPageContent(
                             )
                         }
                     } else {
+                        // Cover-only and default grid modes — just the card, no extra caption.
                         card()
                     }
                 }

@@ -388,7 +388,13 @@ fun LibraryScreen(
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
-                                tint = if (state.filterGenres.isNotEmpty() || state.filterMode != LibraryFilterMode.ALL)
+                                tint = if (state.filterGenres.isNotEmpty() ||
+                                    state.filterMode != LibraryFilterMode.ALL ||
+                                    state.filterDownloaded != LibraryTriState.DISABLED ||
+                                    state.filterUnread != LibraryTriState.DISABLED ||
+                                    state.filterStarted != LibraryTriState.DISABLED ||
+                                    state.filterBookmarked != LibraryTriState.DISABLED ||
+                                    state.filterCompleted != LibraryTriState.DISABLED)
                                     MaterialTheme.colorScheme.primary
                                 else
                                     MaterialTheme.colorScheme.onSurface,
@@ -599,7 +605,12 @@ private fun LibraryContent(
 
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL ||
             state.filterGenres.isNotEmpty() ||
-            state.sortMode != LibrarySortMode.ALPHABETICAL
+            state.sortMode != LibrarySortMode.ALPHABETICAL ||
+            state.filterDownloaded != LibraryTriState.DISABLED ||
+            state.filterUnread != LibraryTriState.DISABLED ||
+            state.filterStarted != LibraryTriState.DISABLED ||
+            state.filterBookmarked != LibraryTriState.DISABLED ||
+            state.filterCompleted != LibraryTriState.DISABLED
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier

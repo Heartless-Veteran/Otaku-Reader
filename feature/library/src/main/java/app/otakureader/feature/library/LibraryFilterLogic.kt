@@ -12,7 +12,10 @@ internal fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSo
         .let { applySourceFilter(it, params) }
         .let { applyReadingListFilter(it, params) }
         .let { applyGenreFilter(it, params.filterGenres) }
+        // Legacy single-select filter: drives the quick-access chips in the search bar.
         .let { applyFilterMode(it, params.filterMode) }
+        // Independent tristate filters: drives the per-attribute toggles in the filter sheet.
+        .let { applyTriStateFilters(it, params) }
     return applySort(filtered, params.sortMode, params.sortAscending)
 }
 
@@ -49,6 +52,27 @@ internal fun applyFilterMode(items: List<LibraryMangaItem>, filterMode: LibraryF
         LibraryFilterMode.READING_LIST, LibraryFilterMode.ALL -> items
     }
 
+/** Applies independent tristate filters (Komikku parity). Each filter is additive. */
+internal fun applyTriStateFilters(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+    var result = items
+    result = applyTriState(result, params.filterDownloaded) { it.isDownloaded }
+    result = applyTriState(result, params.filterUnread) { it.unreadCount > 0 }
+    result = applyTriState(result, params.filterStarted) { it.lastRead != null }
+    result = applyTriState(result, params.filterBookmarked) { it.hasTracking }
+    result = applyTriState(result, params.filterCompleted) { it.userCompleted }
+    return result
+}
+
+private fun applyTriState(
+    items: List<LibraryMangaItem>,
+    state: LibraryTriState,
+    predicate: (LibraryMangaItem) -> Boolean,
+): List<LibraryMangaItem> = when (state) {
+    LibraryTriState.DISABLED -> items
+    LibraryTriState.ENABLED_IS -> items.filter(predicate)
+    LibraryTriState.ENABLED_NOT -> items.filterNot(predicate)
+}
+
 internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode, ascending: Boolean): List<LibraryMangaItem> {
     val sorted = when (sortMode) {
         LibrarySortMode.ALPHABETICAL -> items.sortedBy { it.title }
@@ -58,6 +82,8 @@ internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode,
         LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         LibrarySortMode.LAST_UPDATED -> items.sortedByDescending { it.lastUpdate }
         LibrarySortMode.TOTAL_CHAPTERS -> items.sortedByDescending { it.totalChapterCount }
+        LibrarySortMode.LATEST_CHAPTER -> items.sortedByDescending { it.lastUpdate }
+        LibrarySortMode.RANDOM -> items.shuffled()
     }
     return if (ascending) sorted else sorted.reversed()
 }

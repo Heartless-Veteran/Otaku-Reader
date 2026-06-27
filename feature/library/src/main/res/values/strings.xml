@@ -205,6 +205,7 @@
     <string name="display_mode_grid">Grid</string>
     <string name="display_mode_comfortable">Comfortable</string>
     <string name="display_mode_list">List</string>
+    <string name="display_mode_cover_only">Cover only</string>
     <string name="group_category_label">Category</string>
     <string name="group_by_category">Group by category</string>
     <!-- Filter sheet -->
@@ -222,11 +223,18 @@
     <string name="sort_source">Source</string>
     <string name="sort_last_updated">Last updated</string>
     <string name="sort_total_chapters">Total chapters</string>
+    <string name="sort_latest_chapter">Latest chapter</string>
+    <string name="sort_random">Random</string>
     <string name="filter_all">All</string>
     <string name="filter_downloaded">Downloaded</string>
     <string name="filter_unread">Unread</string>
+    <string name="filter_started">Started</string>
+    <string name="filter_bookmarked">Bookmarked</string>
     <string name="filter_completed">Completed</string>
     <string name="filter_dropped">Dropped</string>
+    <string name="tristate_disabled">Filter disabled</string>
+    <string name="tristate_include">Include</string>
+    <string name="tristate_exclude">Exclude</string>
     <string name="filter_tracking">Tracking</string>
     <string name="filter_reading_list">Reading list</string>
     <string name="library_active_filters">Active filters</string>

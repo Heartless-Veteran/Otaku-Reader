@@ -129,7 +129,10 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.FilterHasNotes, is LibraryEvent.SetSortMode, is LibraryEvent.SetFilterMode,
             is LibraryEvent.SetFilterSource, is LibraryEvent.ToggleNsfw, is LibraryEvent.SetFilterReadingList,
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
-            is LibraryEvent.ClearAllFilters -> handleFilterSortEvent(event)
+            is LibraryEvent.ClearAllFilters,
+            is LibraryEvent.SetFilterDownloaded, is LibraryEvent.SetFilterUnread,
+            is LibraryEvent.SetFilterStarted, is LibraryEvent.SetFilterBookmarked,
+            is LibraryEvent.SetFilterCompleted -> handleFilterSortEvent(event)
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
@@ -230,6 +233,11 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterReadingList -> onSetFilterReadingList(event.listId)
             is LibraryEvent.SetGenreFilter -> _state.update { it.copy(filterGenres = event.genres) }
             is LibraryEvent.SetSortAscending -> _state.update { it.copy(sortAscending = event.ascending) }
+            is LibraryEvent.SetFilterDownloaded -> _state.update { it.copy(filterDownloaded = event.state) }
+            is LibraryEvent.SetFilterUnread -> _state.update { it.copy(filterUnread = event.state) }
+            is LibraryEvent.SetFilterStarted -> _state.update { it.copy(filterStarted = event.state) }
+            is LibraryEvent.SetFilterBookmarked -> _state.update { it.copy(filterBookmarked = event.state) }
+            is LibraryEvent.SetFilterCompleted -> _state.update { it.copy(filterCompleted = event.state) }
             is LibraryEvent.ClearAllFilters -> _state.update {
                 it.copy(
                     filterMode = LibraryFilterMode.ALL,
@@ -238,6 +246,11 @@ class LibraryViewModel @Inject constructor(
                     filterSourceId = null,
                     filterReadingListId = null,
                     sortAscending = true,
+                    filterDownloaded = LibraryTriState.DISABLED,
+                    filterUnread = LibraryTriState.DISABLED,
+                    filterStarted = LibraryTriState.DISABLED,
+                    filterBookmarked = LibraryTriState.DISABLED,
+                    filterCompleted = LibraryTriState.DISABLED,
                 )
             }
             else -> Unit
@@ -634,6 +647,11 @@ class LibraryViewModel @Inject constructor(
                     readingListMangaIds = it.readingListMangaIds,
                     filterGenres = it.filterGenres,
                     sortAscending = it.sortAscending,
+                    filterDownloaded = it.filterDownloaded,
+                    filterUnread = it.filterUnread,
+                    filterStarted = it.filterStarted,
+                    filterBookmarked = it.filterBookmarked,
+                    filterCompleted = it.filterCompleted,
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
@@ -661,7 +679,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun onMangaLongClick(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = mangaId) }
+        selection.toggle(mangaId)
     }
 
     private fun onSearchQueryChange(query: String) {

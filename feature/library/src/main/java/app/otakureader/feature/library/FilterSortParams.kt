@@ -15,4 +15,10 @@ internal data class FilterSortParams(
     val readingListMangaIds: Set<Long> = emptySet(),
     val filterGenres: Set<String> = emptySet(),
     val sortAscending: Boolean = true,
+    // Independent tristate filters (Komikku parity)
+    val filterDownloaded: LibraryTriState = LibraryTriState.DISABLED,
+    val filterUnread: LibraryTriState = LibraryTriState.DISABLED,
+    val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
+    val filterBookmarked: LibraryTriState = LibraryTriState.DISABLED,
+    val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
 )
