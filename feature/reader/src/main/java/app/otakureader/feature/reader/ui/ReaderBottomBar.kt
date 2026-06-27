@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.R
@@ -43,7 +44,7 @@ private val READER_BAR_ELEVATION = 3.dp
 private const val BAR_ALPHA_DARK = 0.9f
 private const val BAR_ALPHA_LIGHT = 0.95f
 
-private val readerBarSlide = tween<Int>(READER_BAR_SLIDE_MS)
+private val readerBarSlide = tween<IntOffset>(READER_BAR_SLIDE_MS)
 private val readerBarFade = tween<Float>(READER_BAR_FADE_MS)
 
 private val ReaderMode.icon: ImageVector get() = when (this) {
