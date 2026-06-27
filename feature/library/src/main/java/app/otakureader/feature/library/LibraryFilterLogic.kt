@@ -58,7 +58,7 @@ internal fun applyTriStateFilters(items: List<LibraryMangaItem>, params: FilterS
     result = applyTriState(result, params.filterDownloaded) { it.isDownloaded }
     result = applyTriState(result, params.filterUnread) { it.unreadCount > 0 }
     result = applyTriState(result, params.filterStarted) { it.lastRead != null }
-    result = applyTriState(result, params.filterBookmarked) { it.hasTracking }
+    result = applyTriState(result, params.filterTracking) { it.hasTracking }
     result = applyTriState(result, params.filterCompleted) { it.userCompleted }
     return result
 }
@@ -82,6 +82,8 @@ internal fun applySort(items: List<LibraryMangaItem>, sortMode: LibrarySortMode,
         LibrarySortMode.SOURCE -> items.sortedBy { it.sourceId }
         LibrarySortMode.LAST_UPDATED -> items.sortedByDescending { it.lastUpdate }
         LibrarySortMode.TOTAL_CHAPTERS -> items.sortedByDescending { it.totalChapterCount }
+        // Both LATEST_CHAPTER and LAST_UPDATED use the same lastUpdate field; a dedicated
+        // latestChapterUpload field would be needed to distinguish them in the data model.
         LibrarySortMode.LATEST_CHAPTER -> items.sortedByDescending { it.lastUpdate }
         LibrarySortMode.RANDOM -> items.shuffled()
     }

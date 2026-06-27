@@ -19,6 +19,6 @@ internal data class FilterSortParams(
     val filterDownloaded: LibraryTriState = LibraryTriState.DISABLED,
     val filterUnread: LibraryTriState = LibraryTriState.DISABLED,
     val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
-    val filterBookmarked: LibraryTriState = LibraryTriState.DISABLED,
+    val filterTracking: LibraryTriState = LibraryTriState.DISABLED,
     val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
 )

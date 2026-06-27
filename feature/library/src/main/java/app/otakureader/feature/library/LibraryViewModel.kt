@@ -131,7 +131,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetGenreFilter, is LibraryEvent.SetSortAscending,
             is LibraryEvent.ClearAllFilters,
             is LibraryEvent.SetFilterDownloaded, is LibraryEvent.SetFilterUnread,
-            is LibraryEvent.SetFilterStarted, is LibraryEvent.SetFilterBookmarked,
+            is LibraryEvent.SetFilterStarted, is LibraryEvent.SetFilterTracking,
             is LibraryEvent.SetFilterCompleted -> handleFilterSortEvent(event)
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
@@ -236,7 +236,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterDownloaded -> _state.update { it.copy(filterDownloaded = event.state) }
             is LibraryEvent.SetFilterUnread -> _state.update { it.copy(filterUnread = event.state) }
             is LibraryEvent.SetFilterStarted -> _state.update { it.copy(filterStarted = event.state) }
-            is LibraryEvent.SetFilterBookmarked -> _state.update { it.copy(filterBookmarked = event.state) }
+            is LibraryEvent.SetFilterTracking -> _state.update { it.copy(filterTracking = event.state) }
             is LibraryEvent.SetFilterCompleted -> _state.update { it.copy(filterCompleted = event.state) }
             is LibraryEvent.ClearAllFilters -> _state.update {
                 it.copy(
@@ -249,7 +249,7 @@ class LibraryViewModel @Inject constructor(
                     filterDownloaded = LibraryTriState.DISABLED,
                     filterUnread = LibraryTriState.DISABLED,
                     filterStarted = LibraryTriState.DISABLED,
-                    filterBookmarked = LibraryTriState.DISABLED,
+                    filterTracking = LibraryTriState.DISABLED,
                     filterCompleted = LibraryTriState.DISABLED,
                 )
             }
@@ -650,7 +650,7 @@ class LibraryViewModel @Inject constructor(
                     filterDownloaded = it.filterDownloaded,
                     filterUnread = it.filterUnread,
                     filterStarted = it.filterStarted,
-                    filterBookmarked = it.filterBookmarked,
+                    filterTracking = it.filterTracking,
                     filterCompleted = it.filterCompleted,
                 )
             }.distinctUntilChanged()

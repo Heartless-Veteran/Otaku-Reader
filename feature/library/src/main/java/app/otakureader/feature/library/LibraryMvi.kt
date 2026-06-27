@@ -104,7 +104,7 @@ data class LibraryState(
     val filterDownloaded: LibraryTriState = LibraryTriState.DISABLED,
     val filterUnread: LibraryTriState = LibraryTriState.DISABLED,
     val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
-    val filterBookmarked: LibraryTriState = LibraryTriState.DISABLED,
+    val filterTracking: LibraryTriState = LibraryTriState.DISABLED,
     val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
     val filterSourceId: Long? = null,
     val showNsfw: Boolean = false,
@@ -218,7 +218,7 @@ sealed class LibraryEvent {
     data class SetFilterDownloaded(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterUnread(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterStarted(val state: LibraryTriState) : LibraryEvent()
-    data class SetFilterBookmarked(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterTracking(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterCompleted(val state: LibraryTriState) : LibraryEvent()
     data object ToggleBottomSheet : LibraryEvent()
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()

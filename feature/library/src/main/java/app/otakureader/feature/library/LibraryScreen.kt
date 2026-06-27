@@ -384,20 +384,19 @@ fun LibraryScreen(
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleSearchBar) }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.library_search))
                         }
+                        val hasActiveFilter = state.filterGenres.isNotEmpty() ||
+                            state.filterMode != LibraryFilterMode.ALL ||
+                            state.filterDownloaded != LibraryTriState.DISABLED ||
+                            state.filterUnread != LibraryTriState.DISABLED ||
+                            state.filterStarted != LibraryTriState.DISABLED ||
+                            state.filterTracking != LibraryTriState.DISABLED ||
+                            state.filterCompleted != LibraryTriState.DISABLED
                         IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
-                                tint = if (state.filterGenres.isNotEmpty() ||
-                                    state.filterMode != LibraryFilterMode.ALL ||
-                                    state.filterDownloaded != LibraryTriState.DISABLED ||
-                                    state.filterUnread != LibraryTriState.DISABLED ||
-                                    state.filterStarted != LibraryTriState.DISABLED ||
-                                    state.filterBookmarked != LibraryTriState.DISABLED ||
-                                    state.filterCompleted != LibraryTriState.DISABLED)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface,
+                                tint = if (hasActiveFilter) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
                             )
                         }
                         IconButton(onClick = { showMenu = true }) {
@@ -609,7 +608,7 @@ private fun LibraryContent(
             state.filterDownloaded != LibraryTriState.DISABLED ||
             state.filterUnread != LibraryTriState.DISABLED ||
             state.filterStarted != LibraryTriState.DISABLED ||
-            state.filterBookmarked != LibraryTriState.DISABLED ||
+            state.filterTracking != LibraryTriState.DISABLED ||
             state.filterCompleted != LibraryTriState.DISABLED
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
@@ -646,6 +645,46 @@ private fun LibraryContent(
                                 )
                             )
                         },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterDownloaded != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterDownloaded(LibraryTriState.DISABLED)) },
+                        label = { Text(stringResource(R.string.filter_downloaded)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterUnread != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.DISABLED)) },
+                        label = { Text(stringResource(R.string.filter_unread)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterStarted != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterStarted(LibraryTriState.DISABLED)) },
+                        label = { Text(stringResource(R.string.filter_started)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterTracking != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterTracking(LibraryTriState.DISABLED)) },
+                        label = { Text(stringResource(R.string.filter_tracking)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterCompleted != LibraryTriState.DISABLED) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterCompleted(LibraryTriState.DISABLED)) },
+                        label = { Text(stringResource(R.string.filter_completed)) },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }

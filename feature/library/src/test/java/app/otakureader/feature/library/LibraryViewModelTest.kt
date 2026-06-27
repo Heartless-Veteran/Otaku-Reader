@@ -255,7 +255,7 @@ class LibraryViewModelTest {
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_opensContextMenu() = runTest {
+    fun onEvent_OnMangaLongClick_selectsManga() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
@@ -264,12 +264,12 @@ class LibraryViewModelTest {
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // Long-press now opens the context menu popup, not direct selection (L2 feature).
-        assertEquals(1L, viewModel.state.value.contextMenuMangaId)
+        // Long-press directly toggles selection (Komikku parity — no context menu indirection).
+        assertTrue(viewModel.state.value.selectedManga.contains(1L))
     }
 
     @Test
-    fun onEvent_OnMangaLongClick_twice_opensMenuBothTimes() = runTest {
+    fun onEvent_OnMangaLongClick_twice_selectsBoth() = runTest {
         every { getLibraryManga() } returns flowOf(sampleMangas)
 
         val viewModel = createViewModel()
@@ -277,9 +277,10 @@ class LibraryViewModelTest {
 
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(1L))
         viewModel.onEvent(LibraryEvent.OnMangaLongClick(2L))
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        // Second long-click on a different manga replaces the context menu target
-        assertEquals(2L, viewModel.state.value.contextMenuMangaId)
+        // Each long-press toggles its own manga into selection.
+        assertEquals(setOf(1L, 2L), viewModel.state.value.selectedManga)
     }
 
     @Test

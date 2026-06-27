@@ -66,16 +66,6 @@ import app.otakureader.core.ui.theme.LocalOtakuColors
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material.icons.filled.TouchApp
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
 import java.util.Calendar
@@ -331,21 +321,14 @@ private fun LibraryMangaPageContent(
                 contentType = { "manga_row" },
             ) { manga ->
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                Box {
-                    LibraryListRow(
-                        manga = manga,
-                        isSelected = manga.id in state.selectedManga,
-                        unreadCount = if (state.showBadges) manga.unreadCount else 0,
-                        downloadCount = if (state.showDownloadBadge) downloadCount else 0,
-                        onClick = { onMangaTap(manga) },
-                        onLongClick = { onMangaLongClick(manga.id) },
-                    )
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
-                }
+                LibraryListRow(
+                    manga = manga,
+                    isSelected = manga.id in state.selectedManga,
+                    unreadCount = if (state.showBadges) manga.unreadCount else 0,
+                    downloadCount = if (state.showDownloadBadge) downloadCount else 0,
+                    onClick = { onMangaTap(manga) },
+                    onLongClick = { onMangaLongClick(manga.id) },
+                )
             }
         }
     } else if (state.isStaggeredGrid && state.displayMode != LibraryDisplayMode.COMFORTABLE_GRID &&
@@ -431,11 +414,6 @@ private fun LibraryMangaPageContent(
                     } else {
                         cardContent()
                     }
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
                 }
             }
         }
@@ -545,11 +523,6 @@ private fun LibraryMangaPageContent(
                     } else {
                         cardContent()
                     }
-                    MangaContextMenu(
-                        expanded = state.contextMenuMangaId == manga.id,
-                        mangaId = manga.id,
-                        onEvent = onEvent,
-                    )
                 }
             }
         }
@@ -612,54 +585,6 @@ private fun LibraryListRow(
         if (unreadCount > 0) {
             UnreadBadge(count = unreadCount)
         }
-    }
-}
-
-@Composable
-private fun MangaContextMenu(
-    expanded: Boolean,
-    mangaId: Long,
-    onEvent: (LibraryEvent) -> Unit,
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { onEvent(LibraryEvent.DismissContextMenu) },
-    ) {
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_open)) },
-            leadingIcon = {
-                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
-            },
-            onClick = {
-                onEvent(LibraryEvent.DismissContextMenu)
-                onEvent(LibraryEvent.OnMangaClick(mangaId))
-            },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_resume)) },
-            leadingIcon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.ResumeFromContextMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_mark_read)) },
-            leadingIcon = { Icon(Icons.Default.CheckCircle, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.MarkMangaAsReadFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_share)) },
-            leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.ShareMangaFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_migrate)) },
-            leadingIcon = { Icon(Icons.Default.SwapHoriz, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.MigrateMangaFromMenu(mangaId)) },
-        )
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.library_context_menu_select)) },
-            leadingIcon = { Icon(Icons.Default.TouchApp, contentDescription = null) },
-            onClick = { onEvent(LibraryEvent.SelectMangaFromMenu(mangaId)) },
-        )
     }
 }
 

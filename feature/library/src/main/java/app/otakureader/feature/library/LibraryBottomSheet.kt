@@ -13,15 +13,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -302,9 +304,9 @@ private fun FilterTab(
             onClick = { onEvent(LibraryEvent.SetFilterStarted(state.filterStarted.next())) },
         )
         TriStateFilterRow(
-            label = stringResource(R.string.filter_bookmarked),
-            state = state.filterBookmarked,
-            onClick = { onEvent(LibraryEvent.SetFilterBookmarked(state.filterBookmarked.next())) },
+            label = stringResource(R.string.filter_tracking),
+            state = state.filterTracking,
+            onClick = { onEvent(LibraryEvent.SetFilterTracking(state.filterTracking.next())) },
         )
         TriStateFilterRow(
             label = stringResource(R.string.filter_completed),
@@ -356,6 +358,7 @@ private fun TriStateFilterRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .clickable(onClick = onClick)
             .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -364,7 +367,12 @@ private fun TriStateFilterRow(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
         )
-        IconButton(onClick = onClick) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .padding(12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
             when (state) {
                 LibraryTriState.DISABLED -> Icon(
                     imageVector = Icons.Default.Remove,
@@ -379,7 +387,7 @@ private fun TriStateFilterRow(
                     modifier = Modifier.size(20.dp),
                 )
                 LibraryTriState.ENABLED_NOT -> Icon(
-                    imageVector = Icons.Default.Check,
+                    imageVector = Icons.Default.Close,
                     contentDescription = stringResource(R.string.tristate_exclude),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp),
