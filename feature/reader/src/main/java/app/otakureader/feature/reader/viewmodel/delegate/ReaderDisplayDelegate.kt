@@ -293,13 +293,13 @@ class ReaderDisplayDelegate @Inject constructor(
     }
 
     fun updateNavigationModePager(mode: Int) {
-        val coerced = mode.coerceIn(0, 5)
+        val coerced = mode.coerceIn(0, MAX_NAVIGATION_MODE)
         update { it.copy(navigationModePager = coerced) }
         launchSave { setNavigationModePager(coerced) }
     }
 
     fun updateNavigationModeWebtoon(mode: Int) {
-        val coerced = mode.coerceIn(0, 5)
+        val coerced = mode.coerceIn(0, MAX_NAVIGATION_MODE)
         update { it.copy(navigationModeWebtoon = coerced) }
         launchSave { setNavigationModeWebtoon(coerced) }
     }
@@ -340,5 +340,6 @@ class ReaderDisplayDelegate @Inject constructor(
     companion object {
         private const val MIN_ZOOM = 0.5f
         private const val MAX_ZOOM = 5f
+        private const val MAX_NAVIGATION_MODE = 5
     }
 }

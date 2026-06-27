@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -123,21 +124,28 @@ fun NavigationOverlay(
         buildRegions(navigationMode, regionSize1).map { it.invert(tapInvertMode) }
     }
 
+    // rememberUpdatedState ensures pointerInput always invokes the latest callbacks
+    // even when regions haven't changed (e.g. RTL flip mid-session).
+    val onPrevState = rememberUpdatedState(onPrev)
+    val onNextState = rememberUpdatedState(onNext)
+    val onToggleMenuState = rememberUpdatedState(onToggleMenu)
+    val onLongPressState = rememberUpdatedState(onLongPress)
+
     fun resolveAction(x: Float, y: Float) {
-        if (CONSTANT_MENU_REGION.contains(x, y)) { onToggleMenu(); return }
+        if (CONSTANT_MENU_REGION.contains(x, y)) { onToggleMenuState.value(); return }
         val region = regions.find { it.contains(x, y) }
         if (region != null) {
             when (region.action) {
-                NavAction.PREV -> onPrev()
-                NavAction.NEXT -> onNext()
+                NavAction.PREV -> onPrevState.value()
+                NavAction.NEXT -> onNextState.value()
                 // LEFT/RIGHT map directly to onPrev/onNext; RTL inversion is already
                 // baked into those callbacks at the call site (ReaderScreen).
-                NavAction.LEFT -> onPrev()
-                NavAction.RIGHT -> onNext()
-                NavAction.MENU -> onToggleMenu()
+                NavAction.LEFT -> onPrevState.value()
+                NavAction.RIGHT -> onNextState.value()
+                NavAction.MENU -> onToggleMenuState.value()
             }
         } else {
-            onToggleMenu()
+            onToggleMenuState.value()
         }
     }
 
@@ -172,7 +180,7 @@ fun NavigationOverlay(
                                 resolveAction(offset.x / w, offset.y / h)
                             }
                         },
-                        onLongPress = onLongPress?.let { cb -> { _ -> cb() } },
+                        onLongPress = { _ -> onLongPressState.value?.invoke() },
                     )
                 },
         )
