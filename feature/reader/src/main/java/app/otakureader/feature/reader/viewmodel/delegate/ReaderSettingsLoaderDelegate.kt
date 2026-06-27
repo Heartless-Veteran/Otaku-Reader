@@ -421,10 +421,10 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
     }
 
     private data class VolumeKeySettings(
-        val single: VolumeKeyBehavior,
-        val dual: VolumeKeyBehavior,
-        val webtoon: VolumeKeyBehavior,
-        val smart: VolumeKeyBehavior,
+        val single: Int,
+        val dual: Int,
+        val webtoon: Int,
+        val smart: Int,
     )
 
     @Suppress("InstanceOfCheckForException", "CognitiveComplexMethod")
