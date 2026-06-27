@@ -135,8 +135,6 @@ data class LibraryState(
     val savedViews: List<SavedLibraryView> = emptyList(),
     val showSaveViewDialog: Boolean = false,
     val saveViewName: String = "",
-    // L2/L3: long-press context menu — holds the id of the manga whose popup is open
-    val contextMenuMangaId: Long? = null,
     val displayName: String = "",
     // Move to category bulk action (GAP 2)
     val showMoveToCategoryDialog: Boolean = false,
@@ -245,13 +243,7 @@ sealed class LibraryEvent {
     data class DeleteSavedView(val id: String) : LibraryEvent()
     // EH favorites sync (#1024)
     data object SyncEhFavorites : LibraryEvent()
-    // L2/L3: long-press context menu
-    data class ShowContextMenu(val mangaId: Long) : LibraryEvent()
-    data object DismissContextMenu : LibraryEvent()
-    data class ResumeFromContextMenu(val mangaId: Long) : LibraryEvent()
-    data class MarkMangaAsReadFromMenu(val mangaId: Long) : LibraryEvent()
-    data class ShareMangaFromMenu(val mangaId: Long) : LibraryEvent()
-    data class MigrateMangaFromMenu(val mangaId: Long) : LibraryEvent()
+    // Selection via context menu (used by tests and selection-mode entry)
     data class SelectMangaFromMenu(val mangaId: Long) : LibraryEvent()
     data class UndoLibraryDelete(val mangaIds: Set<Long>) : LibraryEvent()
     // Move to category bulk action (GAP 2)

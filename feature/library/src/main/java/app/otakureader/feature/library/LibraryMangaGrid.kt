@@ -295,7 +295,6 @@ internal fun MangaGrid(
                 displayedManga = displayedManga,
                 onMangaTap = onMangaTap,
                 onMangaLongClick = onMangaLongClick,
-                onEvent = onEvent,
             )
         }
     }
@@ -308,7 +307,6 @@ private fun LibraryMangaPageContent(
     displayedManga: List<LibraryMangaItem>,
     onMangaTap: (LibraryMangaItem) -> Unit,
     onMangaLongClick: (Long) -> Unit,
-    onEvent: (LibraryEvent) -> Unit,
 ) {
     if (state.displayMode == LibraryDisplayMode.LIST) {
         LazyColumn(

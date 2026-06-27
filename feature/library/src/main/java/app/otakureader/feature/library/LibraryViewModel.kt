@@ -87,6 +87,10 @@ class LibraryViewModel @Inject constructor(
     /** Atomic selection manager — keys are manga IDs. */
     private val selection = SelectionManager<Long>()
 
+    /** Stable seed for RANDOM sort — fixed for the lifetime of this ViewModel so items don't
+     *  re-shuffle on unrelated state changes (e.g. download count updates). */
+    private val randomSeed: Long = System.currentTimeMillis()
+
     private val _effect = Channel<LibraryEffect>(Channel.BUFFERED)
     val effect: Flow<LibraryEffect> = _effect.receiveAsFlow()
 
@@ -159,28 +163,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ShowSaveViewDialog, is LibraryEvent.HideSaveViewDialog,
             is LibraryEvent.UpdateSaveViewName, is LibraryEvent.ConfirmSaveView,
             is LibraryEvent.ApplySavedView, is LibraryEvent.DeleteSavedView -> handleSavedViewEvent(event)
-            is LibraryEvent.ShowContextMenu, is LibraryEvent.DismissContextMenu,
-            is LibraryEvent.ResumeFromContextMenu, is LibraryEvent.MarkMangaAsReadFromMenu,
-            is LibraryEvent.ShareMangaFromMenu, is LibraryEvent.MigrateMangaFromMenu,
-            is LibraryEvent.SelectMangaFromMenu -> handleContextMenuEvent(event)
-        }
-    }
-
-    private fun handleContextMenuEvent(event: LibraryEvent) {
-        when (event) {
-            is LibraryEvent.ShowContextMenu ->
-                _state.update { it.copy(contextMenuMangaId = event.mangaId) }
-            is LibraryEvent.DismissContextMenu ->
-                _state.update { it.copy(contextMenuMangaId = null) }
-            is LibraryEvent.ResumeFromContextMenu -> resumeFromContextMenu(event.mangaId)
-            is LibraryEvent.MarkMangaAsReadFromMenu -> markMangaAsReadFromMenu(event.mangaId)
-            is LibraryEvent.ShareMangaFromMenu -> shareMangaFromMenu(event.mangaId)
-            is LibraryEvent.MigrateMangaFromMenu -> migrateMangaFromMenu(event.mangaId)
-            is LibraryEvent.SelectMangaFromMenu -> {
-                selection.toggle(event.mangaId)
-                _state.update { it.copy(contextMenuMangaId = null) }
-            }
-            else -> Unit
+            is LibraryEvent.SelectMangaFromMenu -> selection.toggle(event.mangaId)
         }
     }
 
@@ -240,6 +223,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetFilterCompleted -> _state.update { it.copy(filterCompleted = event.state) }
             is LibraryEvent.ClearAllFilters -> _state.update {
                 it.copy(
+                    selectedCategory = null,
                     filterMode = LibraryFilterMode.ALL,
                     filterGenres = emptySet(),
                     filterHasNotes = false,
@@ -652,6 +636,7 @@ class LibraryViewModel @Inject constructor(
                     filterStarted = it.filterStarted,
                     filterTracking = it.filterTracking,
                     filterCompleted = it.filterCompleted,
+                    randomSeed = randomSeed,
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
@@ -823,49 +808,6 @@ class LibraryViewModel @Inject constructor(
         val mangaId = _state.value.selectedManga.singleOrNull() ?: return
         selection.clear()
         viewModelScope.launch { _effect.send(LibraryEffect.NavigateToManga(mangaId)) }
-    }
-
-    private fun resumeFromContextMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        val continueItem = _state.value.continueReadingItems.find { it.mangaId == mangaId }
-        viewModelScope.launch {
-            if (continueItem != null) {
-                _effect.send(LibraryEffect.NavigateToReader(continueItem.mangaId, continueItem.chapterId))
-            } else {
-                _effect.send(LibraryEffect.NavigateToManga(mangaId))
-            }
-        }
-    }
-
-    private fun markMangaAsReadFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            try {
-                val chapters = chapterRepository.getChaptersByMangaIdSync(mangaId)
-                val ids = chapters.map { it.id }
-                if (ids.isNotEmpty()) {
-                    chapterRepository.updateChapterProgress(ids, read = true, lastPageRead = 0)
-                }
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun shareMangaFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
-            val url = manga.url.takeIf {
-                it.startsWith("http://") || it.startsWith("https://")
-            } ?: ""
-            _effect.send(LibraryEffect.ShareManga(title = manga.title, url = url))
-        }
-    }
-
-    private fun migrateMangaFromMenu(mangaId: Long) {
-        _state.update { it.copy(contextMenuMangaId = null) }
-        viewModelScope.launch {
-            _effect.send(LibraryEffect.NavigateToMigration(listOf(mangaId)))
-        }
     }
 
     private fun toggleFavorite(mangaId: Long) {

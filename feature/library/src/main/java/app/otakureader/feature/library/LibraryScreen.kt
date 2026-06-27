@@ -386,6 +386,9 @@ fun LibraryScreen(
                         }
                         val hasActiveFilter = state.filterGenres.isNotEmpty() ||
                             state.filterMode != LibraryFilterMode.ALL ||
+                            state.filterHasNotes ||
+                            state.filterSourceId != null ||
+                            state.filterReadingListId != null ||
                             state.filterDownloaded != LibraryTriState.DISABLED ||
                             state.filterUnread != LibraryTriState.DISABLED ||
                             state.filterStarted != LibraryTriState.DISABLED ||
@@ -605,6 +608,9 @@ private fun LibraryContent(
         val hasActiveFilters = state.filterMode != LibraryFilterMode.ALL ||
             state.filterGenres.isNotEmpty() ||
             state.sortMode != LibrarySortMode.ALPHABETICAL ||
+            state.filterHasNotes ||
+            state.filterSourceId != null ||
+            state.filterReadingListId != null ||
             state.filterDownloaded != LibraryTriState.DISABLED ||
             state.filterUnread != LibraryTriState.DISABLED ||
             state.filterStarted != LibraryTriState.DISABLED ||
@@ -648,11 +654,41 @@ private fun LibraryContent(
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }
+                if (state.filterHasNotes) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.FilterHasNotes(false)) },
+                        label = { Text(stringResource(R.string.library_filter_has_notes)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterSourceId != null) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterSource(null)) },
+                        label = { Text(stringResource(R.string.filter_source)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
+                if (state.filterReadingListId != null) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onEvent(LibraryEvent.SetFilterReadingList(null)) },
+                        label = { Text(stringResource(R.string.filter_reading_list)) },
+                        trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
+                    )
+                }
                 if (state.filterDownloaded != LibraryTriState.DISABLED) {
                     FilterChip(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetFilterDownloaded(LibraryTriState.DISABLED)) },
-                        label = { Text(stringResource(R.string.filter_downloaded)) },
+                        label = {
+                            Text(
+                                if (state.filterDownloaded == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_downloaded)
+                                else stringResource(R.string.filter_downloaded)
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }
@@ -660,7 +696,13 @@ private fun LibraryContent(
                     FilterChip(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetFilterUnread(LibraryTriState.DISABLED)) },
-                        label = { Text(stringResource(R.string.filter_unread)) },
+                        label = {
+                            Text(
+                                if (state.filterUnread == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_unread)
+                                else stringResource(R.string.filter_unread)
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }
@@ -668,7 +710,13 @@ private fun LibraryContent(
                     FilterChip(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetFilterStarted(LibraryTriState.DISABLED)) },
-                        label = { Text(stringResource(R.string.filter_started)) },
+                        label = {
+                            Text(
+                                if (state.filterStarted == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_started)
+                                else stringResource(R.string.filter_started)
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }
@@ -676,7 +724,13 @@ private fun LibraryContent(
                     FilterChip(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetFilterTracking(LibraryTriState.DISABLED)) },
-                        label = { Text(stringResource(R.string.filter_tracking)) },
+                        label = {
+                            Text(
+                                if (state.filterTracking == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_tracking)
+                                else stringResource(R.string.filter_tracking)
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }
@@ -684,7 +738,13 @@ private fun LibraryContent(
                     FilterChip(
                         selected = true,
                         onClick = { onEvent(LibraryEvent.SetFilterCompleted(LibraryTriState.DISABLED)) },
-                        label = { Text(stringResource(R.string.filter_completed)) },
+                        label = {
+                            Text(
+                                if (state.filterCompleted == LibraryTriState.ENABLED_NOT)
+                                    stringResource(R.string.filter_not_completed)
+                                else stringResource(R.string.filter_completed)
+                            )
+                        },
                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null) },
                     )
                 }

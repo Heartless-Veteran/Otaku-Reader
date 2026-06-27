@@ -21,4 +21,5 @@ internal data class FilterSortParams(
     val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
     val filterTracking: LibraryTriState = LibraryTriState.DISABLED,
     val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
+    val randomSeed: Long = 0L,
 )
