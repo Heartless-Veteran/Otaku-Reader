@@ -388,7 +388,6 @@ fun ReaderScreen(
                 navigationMode = if (isWebtoon) state.navigationModeWebtoon else state.navigationModePager,
                 tapInvertMode = if (isWebtoon) state.tapInvertModeWebtoon else state.tapInvertModePager,
                 smallerTapZone = state.smallerTapZone,
-                isRtl = isRtl,
                 showDebugOverlay = state.showTapZonesOverlay,
                 modifier = Modifier.fillMaxSize(),
             )

@@ -118,7 +118,6 @@ fun NavigationOverlay(
     navigationMode: Int = 0,
     tapInvertMode: TapInvertMode = TapInvertMode.NONE,
     smallerTapZone: Boolean = false,
-    isRtl: Boolean = false,
     showDebugOverlay: Boolean = false,
     modifier: Modifier = Modifier,
 ) {

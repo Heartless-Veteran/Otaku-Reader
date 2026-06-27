@@ -295,30 +295,36 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val smallerTapZone: Boolean = false,
     )
 
+    @Suppress("CognitiveComplexMethod", "InstanceOfCheckForException")
     private suspend fun loadNavigationSettings(): NavigationSettings = kotlinx.coroutines.coroutineScope {
         val modePagerD = async {
             try { settingsRepository.navigationModePager.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e; 0
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
             }
         }
         val modeWebtoonD = async {
             try { settingsRepository.navigationModeWebtoon.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e; 0
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
             }
         }
         val invertPagerD = async {
             try { settingsRepository.tapInvertModePager.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e; TapInvertMode.NONE
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                TapInvertMode.NONE
             }
         }
         val invertWebtoonD = async {
             try { settingsRepository.tapInvertModeWebtoon.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e; TapInvertMode.NONE
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                TapInvertMode.NONE
             }
         }
         val smallerD = async {
             try { settingsRepository.smallerTapZone.first() } catch (e: Exception) {
-                if (e is kotlinx.coroutines.CancellationException) throw e; false
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                false
             }
         }
         NavigationSettings(
