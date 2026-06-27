@@ -425,21 +425,21 @@ fun DetailsScreen(
                 ExtendedFloatingActionButton(
                     text = {
                         Text(
-                            if (state.hasUnreadChapters) stringResource(R.string.details_resume_reading)
+                            if (state.hasStartedReading) stringResource(R.string.details_resume_reading)
                             else stringResource(R.string.details_start_reading)
                         )
                     },
                     icon = {
                         Icon(
                             Icons.Default.PlayArrow,
-                            contentDescription = if (state.hasUnreadChapters)
+                            contentDescription = if (state.hasStartedReading)
                                 stringResource(R.string.details_resume_reading)
                             else
                                 stringResource(R.string.details_start_reading),
                         )
                     },
                     onClick = {
-                        if (state.hasUnreadChapters) viewModel.onEvent(DetailsContract.Event.ContinueReading)
+                        if (state.hasStartedReading) viewModel.onEvent(DetailsContract.Event.ContinueReading)
                         else viewModel.onEvent(DetailsContract.Event.StartReading)
                     },
                     expanded = isFabExpanded,

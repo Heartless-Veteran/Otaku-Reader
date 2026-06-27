@@ -44,6 +44,10 @@ private val TRANSITION_CONTENT_PADDING = 24.dp
 private val TRANSITION_SPACER_HEIGHT = 24.dp
 private val TRANSITION_CARD_HORIZONTAL_PADDING = 16.dp
 private val TRANSITION_CARD_VERTICAL_PADDING = 12.dp
+private val TRANSITION_ROW_ITEM_SPACING = 16.dp
+private val CHAPTER_TEXT_HEADER_BOTTOM_PADDING = 4.dp
+private val CHAPTER_TEXT_ICON_END_PADDING = 6.dp
+private val CHAPTER_TITLE_FONT_SIZE = 20.sp
 private const val TRANSITION_BG_ALPHA = 0.92f
 private const val CHAPTER_TITLE_MAX_LINES = 5
 
@@ -75,6 +79,7 @@ fun ChapterTransition(
     adjacentChapterTitle: String?,
     adjacentChapterNumber: Float?,
     isAdjacentChapterDownloaded: Boolean = false,
+    onTap: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -87,7 +92,7 @@ fun ChapterTransition(
             color = MaterialTheme.colorScheme.background.copy(alpha = TRANSITION_BG_ALPHA),
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) { detectTapGestures { } },
+                .pointerInput(onTap) { detectTapGestures { onTap() } },
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -178,7 +183,7 @@ private fun ChapterText(
     Column {
         Text(
             text = header,
-            modifier = Modifier.padding(bottom = 4.dp),
+            modifier = Modifier.padding(bottom = CHAPTER_TEXT_HEADER_BOTTOM_PADDING),
             style = MaterialTheme.typography.titleMedium,
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -187,12 +192,12 @@ private fun ChapterText(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(end = 6.dp),
+                    modifier = Modifier.padding(end = CHAPTER_TEXT_ICON_END_PADDING),
                 )
             }
             Text(
                 text = name,
-                fontSize = 20.sp,
+                fontSize = CHAPTER_TITLE_FONT_SIZE,
                 maxLines = CHAPTER_TITLE_MAX_LINES,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.titleLarge,
@@ -212,7 +217,7 @@ private fun NoChapterNotification(
                 horizontal = TRANSITION_CARD_HORIZONTAL_PADDING,
                 vertical = TRANSITION_CARD_VERTICAL_PADDING,
             ),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(TRANSITION_ROW_ITEM_SPACING),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -236,7 +241,7 @@ private fun ChapterGapWarning(
                 horizontal = TRANSITION_CARD_HORIZONTAL_PADDING,
                 vertical = TRANSITION_CARD_VERTICAL_PADDING,
             ),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(TRANSITION_ROW_ITEM_SPACING),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(

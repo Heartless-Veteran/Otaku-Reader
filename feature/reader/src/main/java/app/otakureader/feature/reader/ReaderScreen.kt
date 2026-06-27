@@ -115,6 +115,7 @@ import kotlinx.coroutines.launch
 private const val VOLUME_HOLD_SKIP_PAGES = 5
 // Index of the first chapter in reading order; used to gate the previous/next-chapter buttons.
 private const val FIRST_CHAPTER_INDEX = 0
+private const val UNKNOWN_CHAPTER_NUMBER = -1f
 private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
 private val DIRECTION_INDICATOR_BOTTOM_PADDING = 80.dp
 private val DIRECTION_INDICATOR_CORNER_RADIUS = 8.dp
@@ -398,7 +399,7 @@ fun ReaderScreen(
                 hasPreviousChapter = currentIndex > FIRST_CHAPTER_INDEX,
                 hasNextChapter = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex,
                 currentChapterName = current?.name ?: state.chapterTitle,
-                currentChapterNumber = current?.chapterNumber ?: -1f,
+                currentChapterNumber = current?.chapterNumber ?: UNKNOWN_CHAPTER_NUMBER,
                 prevChapterName = prev?.name,
                 prevChapterNumber = prev?.chapterNumber,
                 nextChapterName = next?.name,
@@ -434,6 +435,7 @@ fun ReaderScreen(
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             adjacentChapterTitle = if (state.isLastPage) chapterNavData.nextChapterName else chapterNavData.prevChapterName,
             adjacentChapterNumber = if (state.isLastPage) chapterNavData.nextChapterNumber else chapterNavData.prevChapterNumber,
+            onTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
             modifier = Modifier.fillMaxSize(),
         )
 

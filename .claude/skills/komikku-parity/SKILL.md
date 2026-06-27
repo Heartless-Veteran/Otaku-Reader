@@ -76,7 +76,7 @@ See `session-rules` skill for complete rules. Summary:
 
 ## Key Komikku File Paths (reference)
 
-```
+```text
 komikku-HV/app/src/main/java/eu/kanade/presentation/
   library/          LibraryTab.kt, LibraryContent.kt, LibraryPager.kt
   manga/            MangaScreen.kt, components/

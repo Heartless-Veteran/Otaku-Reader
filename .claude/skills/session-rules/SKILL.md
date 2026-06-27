@@ -14,7 +14,7 @@ Model identity is for chat replies only — never in code artifacts.
 
 ## Commit Message Format
 
-```
+```text
 <imperative sentence describing what changed>
 
 <optional body paragraph explaining why, if non-obvious>

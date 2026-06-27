@@ -12,7 +12,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -227,7 +226,21 @@ fun PageSlider(
                             }
                         }
                     } else {
-                        Spacer(Modifier.weight(1f))
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(NAV_PILL_CORNER))
+                                .background(backgroundColor)
+                                .padding(horizontal = NAV_PILL_HORIZONTAL_PADDING),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.reader_page_of_total, PAGE_DISPLAY_OFFSET, totalPages),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
 
                     FilledIconButton(onClick = rightClick, enabled = rightEnabled, colors = buttonColors) {
