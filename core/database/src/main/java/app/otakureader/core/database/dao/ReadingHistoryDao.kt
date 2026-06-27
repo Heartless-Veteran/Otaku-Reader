@@ -97,8 +97,9 @@ interface ReadingHistoryDao {
                ch.dateUpload,
                rh.read_at,
                rh.read_duration_ms,
-               m.title  AS manga_title,
-               m.thumbnailUrl AS manga_thumbnail
+               m.title      AS manga_title,
+               m.thumbnailUrl AS manga_thumbnail,
+               m.favorite   AS manga_favorite
         FROM   chapters        ch
         INNER JOIN reading_history rh ON ch.id        = rh.chapter_id
         INNER JOIN manga           m  ON ch.mangaId   = m.id
@@ -173,7 +174,8 @@ interface ReadingHistoryDao {
                rh.read_at           AS read_at,
                rh.read_duration_ms  AS read_duration_ms,
                m.title              AS manga_title,
-               m.thumbnailUrl       AS manga_thumbnail
+               m.thumbnailUrl       AS manga_thumbnail,
+               m.favorite           AS manga_favorite
         FROM   reading_history rh
         INNER JOIN chapters ch ON ch.id = rh.chapter_id
         INNER JOIN manga    m  ON m.id  = ch.mangaId

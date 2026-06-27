@@ -24,7 +24,9 @@ data class ChapterWithHistory(
     /** The parent manga's title. Populated when loaded via a manga-joined query. */
     val mangaTitle: String? = null,
     /** The parent manga's cover URL. Populated when loaded via a manga-joined query. */
-    val mangaThumbnailUrl: String? = null
+    val mangaThumbnailUrl: String? = null,
+    /** Whether the parent manga is in the user's library. Populated when loaded via a manga-joined query. */
+    val mangaFavorite: Boolean = false,
 )
 
 /** Manga with its latest chapter for the Updates screen. */

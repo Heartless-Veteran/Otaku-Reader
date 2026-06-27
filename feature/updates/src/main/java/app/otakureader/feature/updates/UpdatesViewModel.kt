@@ -90,6 +90,13 @@ class UpdatesViewModel @Inject constructor(
             UpdatesEvent.ShowPendingUpdates,
             UpdatesEvent.HidePendingUpdates -> handleOverlayEvent(event)
             is UpdatesEvent.ClearUpdateError -> handleOverlayEvent(event)
+            is UpdatesEvent.ToggleMangaGroupExpansion -> _state.update { state ->
+                val expanded = state.expandedMangaGroups
+                state.copy(
+                    expandedMangaGroups = if (event.mangaId in expanded) expanded - event.mangaId
+                                         else expanded + event.mangaId,
+                )
+            }
         }
     }
 

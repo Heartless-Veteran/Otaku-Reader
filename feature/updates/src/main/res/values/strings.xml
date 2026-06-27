@@ -107,4 +107,10 @@
     <string name="updates_more_options">More options</string>
     <string name="updates_group_by_manga">Group by manga</string>
     <string name="updates_group_by_date">Group by date</string>
+    <!-- Manga group expand/collapse -->
+    <plurals name="updates_more_chapters">
+        <item quantity="one">+%1$d more chapter</item>
+        <item quantity="other">+%1$d more chapters</item>
+    </plurals>
+    <string name="updates_collapse_chapters">Show less</string>
 </resources>

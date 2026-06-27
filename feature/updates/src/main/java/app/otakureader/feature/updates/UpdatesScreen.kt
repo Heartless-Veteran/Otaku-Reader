@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveDone
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.foundation.horizontalScroll
@@ -73,6 +75,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -393,6 +396,8 @@ fun UpdatesScreen(
                                 selectedItems = state.selectedItems,
                                 activeDownloads = state.activeDownloads,
                                 lastRunSummary = state.lastRunSummary,
+                                expandedMangaGroups = state.expandedMangaGroups,
+                                onToggleGroupExpansion = { viewModel.onEvent(UpdatesEvent.ToggleMangaGroupExpansion(it)) },
                                 onChapterClick = onChapterClick,
                                 onChapterLongClick = onChapterLongClick,
                                 onDownloadClick = onDownloadClick,
@@ -449,6 +454,8 @@ private fun MangaGroupedUpdatesList(
     selectedItems: Set<Long>,
     activeDownloads: Map<Long, DownloadItem>,
     lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
+    expandedMangaGroups: Set<Long>,
+    onToggleGroupExpansion: (Long) -> Unit,
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
     onDownloadClick: (MangaUpdate) -> Unit,
@@ -467,12 +474,20 @@ private fun MangaGroupedUpdatesList(
             }
         }
         groups.forEach { group ->
+            val isExpanded = group.manga.id in expandedMangaGroups
+            val visibleChapters = if (group.chapters.size > 1 && !isExpanded) {
+                group.chapters.take(1)
+            } else {
+                group.chapters
+            }
+            val hiddenCount = group.chapters.size - visibleChapters.size
+
             // Manga header row: cover + title + chapter count chip
             item(key = "manga_header_${group.manga.id}") {
                 MangaGroupHeader(manga = group.manga, chapterCount = group.chapters.size)
             }
             // Chapter rows (no cover thumbnail — the group header provides context)
-            items(group.chapters, key = { it.chapter.id }) { update ->
+            items(visibleChapters, key = { it.chapter.id }) { update ->
                 val dismissState = rememberSwipeToDismissBoxState(
                     confirmValueChange = { value ->
                         if (value == SwipeToDismissBoxValue.EndToStart) {
@@ -511,6 +526,20 @@ private fun MangaGroupedUpdatesList(
                     )
                 }
                 HorizontalDivider()
+            }
+            // Expand / collapse affordance for multi-chapter groups
+            if (group.chapters.size > 1) {
+                item(key = "expand_${group.manga.id}") {
+                    MangaGroupExpandRow(
+                        label = if (isExpanded) {
+                            stringResource(R.string.updates_collapse_chapters)
+                        } else {
+                            pluralStringResource(R.plurals.updates_more_chapters, hiddenCount, hiddenCount)
+                        },
+                        isExpanded = isExpanded,
+                        onClick = { onToggleGroupExpansion(group.manga.id) },
+                    )
+                }
             }
         }
     }
@@ -569,6 +598,36 @@ private fun MangaGroupHeader(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun MangaGroupExpandRow(
+    label: String,
+    isExpanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(start = 62.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp),
+        )
     }
 }
 

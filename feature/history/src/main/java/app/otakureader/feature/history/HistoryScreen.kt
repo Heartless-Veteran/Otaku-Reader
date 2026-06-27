@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
@@ -189,7 +191,12 @@ fun HistoryScreen(
                         }
                     } else {
                         IconButton(onClick = { showDateRangePicker = true }) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = stringResource(R.string.history_filter_calendar))
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = stringResource(R.string.history_filter_calendar),
+                                tint = if (state.hasActiveFilters) MaterialTheme.colorScheme.primary
+                                       else MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                         if (state.history.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onEvent(HistoryEvent.SelectAll) }) {
@@ -340,7 +347,10 @@ fun HistoryScreen(
                         },
                         onRemoveClick = { entry ->
                             viewModel.onEvent(HistoryEvent.RemoveFromHistory(entry.chapter.id))
-                        }
+                        },
+                        onFavoriteClick = { entry ->
+                            viewModel.onEvent(HistoryEvent.ToggleMangaFavorite(entry.chapter.mangaId))
+                        },
                     )
                 }
             }
@@ -438,6 +448,7 @@ private fun HistoryList(
     onItemClick: (ChapterWithHistory) -> Unit,
     onItemLongClick: (ChapterWithHistory) -> Unit,
     onRemoveClick: (ChapterWithHistory) -> Unit,
+    onFavoriteClick: (ChapterWithHistory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Build the flat list with injected date-group headers
@@ -497,7 +508,8 @@ private fun HistoryList(
                             isSelected = selectedItems.contains(item.entry.chapter.id),
                             onItemClick = { onItemClick(item.entry) },
                             onItemLongClick = { onItemLongClick(item.entry) },
-                            onRemoveClick = { onRemoveClick(item.entry) }
+                            onRemoveClick = { onRemoveClick(item.entry) },
+                            onFavoriteClick = { onFavoriteClick(item.entry) },
                         )
                     }
                     HorizontalDivider()
@@ -531,6 +543,7 @@ private fun HistoryItem(
     onItemClick: () -> Unit,
     onItemLongClick: () -> Unit,
     onRemoveClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -600,20 +613,35 @@ private fun HistoryItem(
 
         // Action icons (hidden while selecting)
         if (!isSelected) {
+            // Add to library / in-library indicator — matches Komikku's favorite button per row
+            IconButton(onClick = onFavoriteClick) {
+                if (entry.mangaFavorite) {
+                    Icon(
+                        Icons.Default.Favorite,
+                        contentDescription = stringResource(R.string.history_in_library),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                } else {
+                    Icon(
+                        Icons.Default.FavoriteBorder,
+                        contentDescription = stringResource(R.string.history_add_to_library),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             // Resume reading button (matches Mihon's "play" icon)
             IconButton(onClick = onItemClick) {
                 Icon(
                     Icons.Default.PlayArrow,
                     contentDescription = stringResource(R.string.history_resume),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
-            Spacer(modifier = Modifier.width(4.dp))
             IconButton(onClick = onRemoveClick) {
                 Icon(
                     Icons.Default.Delete,
                     contentDescription = stringResource(R.string.history_remove),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

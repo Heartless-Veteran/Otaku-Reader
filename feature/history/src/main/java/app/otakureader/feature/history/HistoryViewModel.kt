@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.usecase.GetHistoryUseCase
+import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -26,7 +27,8 @@ import app.otakureader.feature.history.R
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val getHistoryUseCase: GetHistoryUseCase,
-    private val chapterRepository: ChapterRepository
+    private val chapterRepository: ChapterRepository,
+    private val toggleFavoriteManga: ToggleFavoriteMangaUseCase,
 ) : ViewModel() {
 
     companion object {
@@ -104,6 +106,7 @@ class HistoryViewModel @Inject constructor(
                     _state.update { it.copy(isPullRefreshing = false) }
                 }
             }
+            is HistoryEvent.ToggleMangaFavorite -> toggleFavorite(event.mangaId)
         }
     }
 
@@ -281,6 +284,12 @@ class HistoryViewModel @Inject constructor(
         pendingBatchDeleteJob = null
         pendingBatchDeleteIds = null
         pendingDeleteIds.update { it - chapterIds }
+    }
+
+    private fun toggleFavorite(mangaId: Long) {
+        viewModelScope.launch {
+            runCatching { toggleFavoriteManga(mangaId) }
+        }
     }
 
     private fun navigateToReader(mangaId: Long, chapterId: Long) {

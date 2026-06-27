@@ -49,6 +49,8 @@ data class UpdatesState(
     val error: String? = null,
     /** Selected chapter IDs for bulk operations. */
     val selectedItems: Set<Long> = emptySet(),
+    /** Manga IDs whose chapter groups are expanded in GROUPED_BY_MANGA mode. */
+    val expandedMangaGroups: Set<Long> = emptySet(),
     /** List of failed updates for the Update Error Screen. */
     val updateErrors: List<UpdateErrorEntry> = emptyList(),
     /** Whether the update error screen is visible. */
@@ -104,6 +106,8 @@ sealed interface UpdatesEvent : UiEvent {
     data object ClearDateFilter : UpdatesEvent
     /** Toggle between GROUPED_BY_MANGA and GROUPED_BY_DATE display modes. */
     data object ToggleDisplayMode : UpdatesEvent
+    /** Expand or collapse a manga's chapter group in GROUPED_BY_MANGA mode. */
+    data class ToggleMangaGroupExpansion(val mangaId: Long) : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {

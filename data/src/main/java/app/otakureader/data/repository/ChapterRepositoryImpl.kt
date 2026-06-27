@@ -184,7 +184,8 @@ class ChapterRepositoryImpl @Inject constructor(
         readAt = readAt,
         readDurationMs = readDurationMs,
         mangaTitle = mangaTitle,
-        mangaThumbnailUrl = mangaThumbnailUrl
+        mangaThumbnailUrl = mangaThumbnailUrl,
+        mangaFavorite = mangaFavorite,
     )
 
     private fun ChapterWithMangaEntity.toDomain() = MangaUpdate(
