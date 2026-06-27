@@ -388,7 +388,7 @@ fun ReaderScreen(
             }
         }
         
-        val chapterNavData = remember(chapters, state.currentChapterId) {
+        val chapterNavData = remember(chapters, state.currentChapterId, state.chapterTitle) {
             val ordered = chapters.sortedBy { it.chapterNumber }
             val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
             val current = ordered.getOrNull(currentIndex)
