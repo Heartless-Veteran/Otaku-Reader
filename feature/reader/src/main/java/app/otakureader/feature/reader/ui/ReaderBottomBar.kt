@@ -32,14 +32,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.otakureader.domain.model.ReaderMode
 import app.otakureader.feature.reader.R
 import app.otakureader.feature.reader.ReaderState
 
-private val readerBarSlide = tween<IntOffset>(200)
-private val readerBarFade = tween<Float>(150)
+private const val READER_BAR_SLIDE_MS = 200
+private const val READER_BAR_FADE_MS = 150
+private val READER_BAR_ELEVATION = 3.dp
+private const val BAR_ALPHA_DARK = 0.9f
+private const val BAR_ALPHA_LIGHT = 0.95f
+
+private val readerBarSlide = tween<Int>(READER_BAR_SLIDE_MS)
+private val readerBarFade = tween<Float>(READER_BAR_FADE_MS)
 
 private val ReaderMode.icon: ImageVector get() = when (this) {
     ReaderMode.SINGLE_PAGE -> Icons.Default.MenuBook
@@ -52,8 +57,10 @@ private val ReaderMode.icon: ImageVector get() = when (this) {
 fun ReaderBottomBar(
     state: ReaderState,
     onChapterList: () -> Unit,
-    onSettings: () -> Unit,
+    onModeClick: () -> Unit,
+    onOrientationClick: () -> Unit,
     onToggleCropBorders: () -> Unit,
+    onSettings: () -> Unit,
     isVisible: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -66,8 +73,8 @@ fun ReaderBottomBar(
         modifier = modifier,
     ) {
         val backgroundColor = MaterialTheme.colorScheme
-            .surfaceColorAtElevation(3.dp)
-            .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+            .surfaceColorAtElevation(READER_BAR_ELEVATION)
+            .copy(alpha = if (isSystemInDarkTheme()) BAR_ALPHA_DARK else BAR_ALPHA_LIGHT)
         val iconColor = MaterialTheme.colorScheme.primary
         val dimColor = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -86,14 +93,14 @@ fun ReaderBottomBar(
                     tint = iconColor,
                 )
             }
-            IconButton(onClick = onSettings) {
+            IconButton(onClick = onModeClick) {
                 Icon(
                     imageVector = state.mode.icon,
                     contentDescription = stringResource(R.string.reader_mode_title),
                     tint = iconColor,
                 )
             }
-            IconButton(onClick = onSettings) {
+            IconButton(onClick = onOrientationClick) {
                 Icon(
                     imageVector = Icons.Default.ScreenRotation,
                     contentDescription = stringResource(R.string.reader_orientation_title),

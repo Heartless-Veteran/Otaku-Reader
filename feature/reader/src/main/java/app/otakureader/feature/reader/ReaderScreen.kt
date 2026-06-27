@@ -11,6 +11,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
@@ -468,7 +469,8 @@ fun ReaderScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .animateContentSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PageThumbnailStrip(
@@ -500,8 +502,18 @@ fun ReaderScreen(
             ReaderBottomBar(
                 state = state,
                 onChapterList = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
-                onSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
+                onModeClick = {
+                    val modes = ReaderMode.entries
+                    val next = modes[(state.mode.ordinal + 1) % modes.size]
+                    viewModel.onEvent(ReaderEvent.OnModeChange(next))
+                },
+                onOrientationClick = {
+                    val orientations = ReaderOrientation.entries
+                    val next = orientations[(state.readerOrientation.ordinal + 1) % orientations.size]
+                    viewModel.onEvent(ReaderEvent.OnOrientationChange(next))
+                },
                 onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+                onSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
                 isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             )
         }

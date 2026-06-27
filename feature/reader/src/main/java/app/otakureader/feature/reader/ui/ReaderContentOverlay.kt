@@ -29,13 +29,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.otakureader.core.ui.theme.OtakuReaderTheme
 import app.otakureader.feature.reader.R
 
-private val readerTopBarSlide = tween<IntOffset>(200)
-private val readerTopBarFade = tween<Float>(150)
+private const val READER_TOP_BAR_SLIDE_MS = 200
+private const val READER_TOP_BAR_FADE_MS = 150
+private val READER_TOP_BAR_ELEVATION = 3.dp
+private const val BAR_ALPHA_DARK = 0.9f
+private const val BAR_ALPHA_LIGHT = 0.95f
+
+private val readerTopBarSlide = tween<Int>(READER_TOP_BAR_SLIDE_MS)
+private val readerTopBarFade = tween<Float>(READER_TOP_BAR_FADE_MS)
 
 /**
  * Reader top app bar shown while the menu is visible: back, manga title + chapter subtitle, and
@@ -80,8 +85,8 @@ fun ReaderContentOverlay(
         modifier = modifier
     ) {
         val backgroundColor = MaterialTheme.colorScheme
-            .surfaceColorAtElevation(3.dp)
-            .copy(alpha = if (isSystemInDarkTheme()) 0.9f else 0.95f)
+            .surfaceColorAtElevation(READER_TOP_BAR_ELEVATION)
+            .copy(alpha = if (isSystemInDarkTheme()) BAR_ALPHA_DARK else BAR_ALPHA_LIGHT)
         val onSurface = MaterialTheme.colorScheme.onSurface
         val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
 
