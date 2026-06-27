@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import app.otakureader.domain.model.TapInvertMode
@@ -102,9 +101,6 @@ private fun NavAction.debugColor() = when (this) {
  *
  * [tapInvertMode] mirrors region coordinates on the chosen axis.
  * [smallerTapZone] shrinks side/corner regions from 33% to 25%.
- *
- * [isRtl] maps the LEFT/RIGHT actions from RightAndLeft mode to the
- * correct prev/next callbacks for the current reading direction.
  *
  * [showDebugOverlay] draws colored region overlays (matches Komikku's
  * NavigationOverlay that appears when the feature is first enabled).

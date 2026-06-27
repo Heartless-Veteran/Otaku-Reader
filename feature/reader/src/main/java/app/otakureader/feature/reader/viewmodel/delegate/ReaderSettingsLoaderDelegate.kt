@@ -23,7 +23,7 @@ import javax.inject.Inject
  * Extracted from [app.otakureader.feature.reader.ReaderViewModel]
  * to keep the ViewModel focused on event routing and state aggregation.
  *
- * Settings are loaded in six parallel groups so that [load] itself stays under the
+ * Settings are loaded in seven parallel groups so that [load] itself stays under the
  * JVM 64 KB per-method bytecode limit. Each group runs its own [coroutineScope] with
  * internal parallel reads, so the total wall-clock time is still bounded by the single
  * slowest DataStore read across all groups.

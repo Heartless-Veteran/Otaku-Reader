@@ -293,13 +293,15 @@ class ReaderDisplayDelegate @Inject constructor(
     }
 
     fun updateNavigationModePager(mode: Int) {
-        update { it.copy(navigationModePager = mode.coerceIn(0, 5)) }
-        launchSave { setNavigationModePager(mode) }
+        val coerced = mode.coerceIn(0, 5)
+        update { it.copy(navigationModePager = coerced) }
+        launchSave { setNavigationModePager(coerced) }
     }
 
     fun updateNavigationModeWebtoon(mode: Int) {
-        update { it.copy(navigationModeWebtoon = mode.coerceIn(0, 5)) }
-        launchSave { setNavigationModeWebtoon(mode) }
+        val coerced = mode.coerceIn(0, 5)
+        update { it.copy(navigationModeWebtoon = coerced) }
+        launchSave { setNavigationModeWebtoon(coerced) }
     }
 
     fun updateTapInvertModePager(mode: TapInvertMode) {
