@@ -89,6 +89,24 @@ object DetailsContract {
                 DeleteAfterReadMode.DISABLED -> false
                 DeleteAfterReadMode.INHERIT -> globalDeleteAfterRead
             }
+
+        val missingChapterCount: Int
+            get() {
+                val nums = chapters
+                    .map { it.chapterNumber }
+                    .filter { it >= 0 }
+                    .map { it.toInt() }
+                    .distinct()
+                    .sorted()
+                if (nums.isEmpty()) return 0
+                var missing = 0
+                var prev = 0
+                for (curr in nums) {
+                    if (curr > prev + 1) missing += curr - prev - 1
+                    prev = curr
+                }
+                return missing
+            }
     }
 
     /**

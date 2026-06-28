@@ -19,9 +19,11 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -33,12 +35,15 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
@@ -52,8 +57,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -80,8 +85,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.otakureader.core.ui.adaptive.isExpanded
@@ -418,11 +425,11 @@ fun DetailsScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (state.canStartReading && selectedVisibleChapters.isEmpty()) {
+            if (state.hasUnreadChapters && selectedVisibleChapters.isEmpty()) {
                 val isFabExpanded by remember(isExpanded) {
                     derivedStateOf { isExpanded || !listState.canScrollBackward }
                 }
-                ExtendedFloatingActionButton(
+                SmallExtendedFloatingActionButton(
                     text = {
                         Text(
                             if (state.hasStartedReading) stringResource(R.string.details_resume_reading)
@@ -432,10 +439,7 @@ fun DetailsScreen(
                     icon = {
                         Icon(
                             Icons.Default.PlayArrow,
-                            contentDescription = if (state.hasStartedReading)
-                                stringResource(R.string.details_resume_reading)
-                            else
-                                stringResource(R.string.details_start_reading),
+                            contentDescription = null,
                         )
                     },
                     onClick = {
@@ -660,11 +664,16 @@ private fun DetailsContent(
             item(key = "header") {
                 MangaHeader(
                     manga = manga,
-                    isFavorite = state.isFavorite,
                     showPanoramaCover = state.showPanoramaCover,
-                    onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
                     onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) },
                     scrollOffset = scrollOffset,
+                )
+            }
+            item(key = "action_row") {
+                MangaActionRow(
+                    isFavorite = state.isFavorite,
+                    onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
+                    onOpenTracking = { onEvent(DetailsContract.Event.OpenTracking) },
                 )
             }
             item(key = "stats") { DetailsStatsRow(state = state) }
@@ -736,11 +745,16 @@ private fun LazyListScope.detailsInfoItems(
     item {
         MangaHeader(
             manga = manga,
-            isFavorite = state.isFavorite,
             showPanoramaCover = state.showPanoramaCover,
-            onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
             onTogglePanoramaCover = { onEvent(DetailsContract.Event.TogglePanoramaCover) },
             scrollOffset = scrollOffset,
+        )
+    }
+    item {
+        MangaActionRow(
+            isFavorite = state.isFavorite,
+            onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
+            onOpenTracking = { onEvent(DetailsContract.Event.OpenTracking) },
         )
     }
     detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
@@ -819,6 +833,66 @@ private fun LazyListScope.detailsInfoTabItems(
 }
 
 @Composable
+private fun MangaActionRow(
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    onOpenTracking: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    ) {
+        MangaActionButton(
+            title = if (isFavorite) stringResource(R.string.details_in_library)
+                    else stringResource(R.string.details_add_to_library),
+            icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            color = if (isFavorite) MaterialTheme.colorScheme.primary else inactiveColor,
+            onClick = onToggleFavorite,
+        )
+        MangaActionButton(
+            title = stringResource(R.string.details_action_tracking),
+            icon = Icons.Default.QueryStats,
+            color = inactiveColor,
+            onClick = onOpenTracking,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.MangaActionButton(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.weight(1f),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = title,
+                color = color,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 private fun DetailsStatsRow(state: DetailsContract.State, modifier: Modifier = Modifier) {
     val totalChapters = state.chapters.size
     val unreadCount = state.chapters.count { !it.read }
@@ -869,6 +943,7 @@ private fun LazyListScope.detailsChapterItems(
             sortOrder = state.chapterSortOrder,
             isFilterActive = state.chapterFilter.isActive,
             estimatedRemainingTimeMs = state.estimatedRemainingTimeMs,
+            missingChapterCount = state.missingChapterCount,
             chapterSearchQuery = state.chapterFilter.chapterSearchQuery,
             onSearchQueryChange = { q -> onEvent(DetailsContract.Event.SetChapterSearchQuery(q)) },
             onToggleSort = { onEvent(DetailsContract.Event.ToggleSortOrder) },
