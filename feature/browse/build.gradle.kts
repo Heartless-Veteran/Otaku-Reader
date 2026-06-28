@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.activity.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

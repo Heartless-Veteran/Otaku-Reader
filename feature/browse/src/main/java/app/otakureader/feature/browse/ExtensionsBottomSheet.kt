@@ -1,7 +1,10 @@
 @file:Suppress("MaxLineLength")
 package app.otakureader.feature.browse
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,11 +21,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.filled.Visibility
@@ -38,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -279,66 +285,113 @@ private fun ExtensionsContent(
     onNavigateToRepositories: () -> Unit = {},
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
+    var searchActive by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(searchActive) {
+        if (searchActive) {
+            focusRequester.requestFocus()
+        }
+    }
+
+    BackHandler(enabled = searchActive) {
+        searchActive = false
+        onEvent(ExtensionsEvent.OnSearchQueryChange(""))
+    }
+
     Scaffold(
         topBar = {
             var overflowExpanded by remember { mutableStateOf(false) }
             TopAppBar(
-                title = { Text(stringResource(R.string.extensions_sheet_title)) },
+                title = {
+                    if (searchActive) {
+                        OutlinedTextField(
+                            value = state.searchQuery,
+                            onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
+                            placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
+                            singleLine = true,
+                        )
+                    } else {
+                        Text(stringResource(R.string.extensions_sheet_title))
+                    }
+                },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.extensions_close))
+                    IconButton(onClick = {
+                        if (searchActive) {
+                            searchActive = false
+                            onEvent(ExtensionsEvent.OnSearchQueryChange(""))
+                        } else {
+                            onClose()
+                        }
+                    }) {
+                        Icon(
+                            if (searchActive) {
+                                Icons.AutoMirrored.Filled.ArrowBack
+                            } else {
+                                Icons.Default.Close
+                            },
+                            contentDescription = stringResource(R.string.extensions_close),
+                        )
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onEvent(ExtensionsEvent.Refresh) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.extensions_refresh))
-                    }
-                    Box {
-                        IconButton(onClick = { overflowExpanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.browse_more_options))
+                    if (!searchActive) {
+                        IconButton(onClick = { searchActive = true }) {
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.extensions_search_cd))
                         }
-                        DropdownMenu(
-                            expanded = overflowExpanded,
-                            onDismissRequest = { overflowExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.extensions_manage_repositories)) },
-                                onClick = {
-                                    overflowExpanded = false
-                                    onNavigateToRepositories()
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (state.showNsfw) {
-                                            stringResource(R.string.browse_hide_nsfw)
-                                        } else {
-                                            stringResource(R.string.browse_show_nsfw)
-                                        },
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    onEvent(ExtensionsEvent.ToggleNsfw(!state.showNsfw))
-                                    overflowExpanded = false
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.extensions_settings)) },
-                                onClick = {
-                                    overflowExpanded = false
-                                    onNavigateToSettings()
-                                },
-                            )
+                        IconButton(onClick = { onEvent(ExtensionsEvent.Refresh) }) {
+                            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.extensions_refresh))
+                        }
+                        Box {
+                            IconButton(onClick = { overflowExpanded = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.browse_more_options))
+                            }
+                            DropdownMenu(
+                                expanded = overflowExpanded,
+                                onDismissRequest = { overflowExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.extensions_manage_repositories)) },
+                                    onClick = {
+                                        overflowExpanded = false
+                                        onNavigateToRepositories()
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (state.showNsfw) {
+                                                stringResource(R.string.browse_hide_nsfw)
+                                            } else {
+                                                stringResource(R.string.browse_show_nsfw)
+                                            },
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (state.showNsfw) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    onClick = {
+                                        onEvent(ExtensionsEvent.ToggleNsfw(!state.showNsfw))
+                                        overflowExpanded = false
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.extensions_settings)) },
+                                    onClick = {
+                                        overflowExpanded = false
+                                        onNavigateToSettings()
+                                    },
+                                )
+                            }
                         }
                     }
-                }
+                },
             )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
