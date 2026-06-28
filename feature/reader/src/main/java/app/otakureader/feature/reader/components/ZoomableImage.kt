@@ -117,7 +117,10 @@ fun ZoomableImage(
                             val cancelled = event.changes.any { it.isConsumed }
 
                             if (!cancelled) {
-                                val zoomChange = event.calculateZoom()
+                                // When pinch-to-zoom is disabled, treat zoom as 1f so scale never
+                                // changes via pinch, but still allow pan for images already zoomed
+                                // (e.g. after a double-tap zoom).
+                                val zoomChange = if (pinchToZoomEnabled) event.calculateZoom() else 1f
                                 val panChange = event.calculatePan()
                                 val centroid = event.calculateCentroid(useCurrent = false)
 
