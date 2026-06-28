@@ -114,6 +114,7 @@ fun NavGraphBuilder.extensionInstallScreen(
 fun NavGraphBuilder.globalSearchScreen(
     onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToSource: (sourceId: String, query: String) -> Unit = { _, _ -> },
 ) {
     composable<Route.Search> { backStackEntry ->
         val route = backStackEntry.toRoute<Route.Search>()
@@ -121,6 +122,7 @@ fun NavGraphBuilder.globalSearchScreen(
             initialQuery = route.query,
             onMangaClick = onMangaClick,
             onNavigateBack = onNavigateBack,
+            onNavigateToSource = onNavigateToSource,
             viewModel = hiltViewModel()
         )
     }

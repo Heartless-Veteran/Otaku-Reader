@@ -125,6 +125,8 @@
     <string name="browse_global_search_idle_hint">Enter a query to search all sources</string>
     <string name="browse_global_only_has_results">Only show sources with results</string>
     <string name="browse_global_no_filter_results">No sources matched your filter</string>
+    <string name="browse_global_filter_pinned">Pinned</string>
+    <string name="browse_global_filter_all">All</string>
 
     <!-- ExtensionsBottomSheet -->
     <string name="extensions_tab_installed">Installed</string>

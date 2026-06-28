@@ -1,6 +1,7 @@
 package app.otakureader.feature.browse
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -70,6 +72,7 @@ fun GlobalSearchScreen(
     initialQuery: String = "",
     onMangaClick: (sourceId: String, mangaUrl: String) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToSource: (sourceId: String, query: String) -> Unit = { _, _ -> },
     viewModel: GlobalSearchViewModel,
     modifier: Modifier = Modifier
 ) {
@@ -90,6 +93,9 @@ fun GlobalSearchScreen(
                 }
                 is GlobalSearchEffect.ShowSnackbar -> {
                     snackbarHostState.showSnackbar(effect.message)
+                }
+                is GlobalSearchEffect.NavigateToSource -> {
+                    onNavigateToSource(effect.sourceId, effect.query)
                 }
             }
         }
@@ -133,8 +139,32 @@ fun GlobalSearchScreen(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
                         .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (state.hasPinnedSources) {
+                        FilterChip(
+                            selected = state.sourceFilter == GlobalSearchSourceFilter.PinnedOnly,
+                            onClick = {
+                                viewModel.onEvent(
+                                    GlobalSearchEvent.SetSourceFilter(GlobalSearchSourceFilter.PinnedOnly)
+                                )
+                            },
+                            label = { Text(stringResource(R.string.browse_global_filter_pinned)) }
+                        )
+                    }
+                    FilterChip(
+                        selected = state.sourceFilter == GlobalSearchSourceFilter.All || !state.hasPinnedSources,
+                        onClick = {
+                            viewModel.onEvent(
+                                GlobalSearchEvent.SetSourceFilter(GlobalSearchSourceFilter.All)
+                            )
+                        },
+                        label = { Text(stringResource(R.string.browse_global_filter_all)) }
+                    )
+                    if (state.hasPinnedSources) {
+                        VerticalDivider(modifier = Modifier.height(32.dp))
+                    }
                     FilterChip(
                         selected = state.onlyShowHasResults,
                         onClick = { viewModel.onEvent(GlobalSearchEvent.OnToggleOnlyResults) },
@@ -167,7 +197,10 @@ fun GlobalSearchScreen(
                 state = state,
                 onMangaClick = { sourceId, manga ->
                     viewModel.onEvent(GlobalSearchEvent.OnMangaClick(sourceId, manga))
-                }
+                },
+                onClickSource = { sourceId ->
+                    viewModel.onEvent(GlobalSearchEvent.ClickSource(sourceId))
+                },
             )
         }
     }
@@ -177,6 +210,7 @@ fun GlobalSearchScreen(
 private fun GlobalSearchContent(
     state: GlobalSearchState,
     onMangaClick: (sourceId: String, manga: SourceManga) -> Unit,
+    onClickSource: (sourceId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when {
@@ -212,7 +246,8 @@ private fun GlobalSearchContent(
                 items(state.filteredSourceResults, key = { it.sourceId }) { sourceResult ->
                     SourceSection(
                         sourceResult = sourceResult,
-                        onMangaClick = { manga -> onMangaClick(sourceResult.sourceId, manga) }
+                        onMangaClick = { manga -> onMangaClick(sourceResult.sourceId, manga) },
+                        onClickSource = { onClickSource(sourceResult.sourceId) },
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 }
@@ -225,13 +260,16 @@ private fun GlobalSearchContent(
 private fun SourceSection(
     sourceResult: SourceSearchResult,
     onMangaClick: (SourceManga) -> Unit,
+    onClickSource: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = sourceResult.sourceName,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp),
+            modifier = Modifier
+                .clickable(onClick = onClickSource)
+                .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 2.dp),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

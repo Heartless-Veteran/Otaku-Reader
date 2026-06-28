@@ -264,7 +264,10 @@ fun OtakuReaderNavHost(
             },
             onNavigateBack = {
                 navController.popBackStack()
-            }
+            },
+            onNavigateToSource = { sourceId, query ->
+                navController.navigate(Route.SourceListing(sourceId, query))
+            },
         )
 
         // Source detail — manga listing from a specific source

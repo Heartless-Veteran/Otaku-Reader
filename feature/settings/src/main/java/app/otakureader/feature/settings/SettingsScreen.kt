@@ -2,6 +2,7 @@ package app.otakureader.feature.settings
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -145,152 +146,200 @@ fun SettingsScreen(
             )
         },
     } { paddingValues ->
-        val allCategories = listOf(
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_appearance),
-                subtitle = stringResource(R.string.settings_appearance_summary),
-                icon = Icons.Outlined.Palette,
-                onClick = onNavigateToAppearance,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_library),
-                subtitle = stringResource(R.string.settings_library_summary),
-                icon = Icons.Outlined.CollectionsBookmark,
-                onClick = onNavigateToLibrary,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_reader),
-                subtitle = stringResource(R.string.settings_reader_summary),
-                icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
-                onClick = onNavigateToReader,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_downloads),
-                subtitle = stringResource(R.string.settings_downloads_summary),
-                icon = Icons.Outlined.GetApp,
-                onClick = onNavigateToDownloads,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_tracking),
-                subtitle = stringResource(R.string.settings_tracking_summary),
-                icon = Icons.Outlined.Sync,
-                onClick = onNavigateToTracking,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_browse),
-                subtitle = stringResource(R.string.settings_browse_summary),
-                icon = Icons.Outlined.Explore,
-                onClick = onNavigateToBrowse,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_backup),
-                subtitle = stringResource(R.string.settings_backup_summary),
-                icon = Icons.Outlined.Backup,
-                onClick = onNavigateToBackup,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_discord),
-                subtitle = stringResource(R.string.settings_discord_summary),
-                icon = Icons.Outlined.Forum,
-                onClick = onNavigateToDiscord,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_security),
-                subtitle = stringResource(R.string.settings_security_summary),
-                icon = Icons.Outlined.Security,
-                onClick = onNavigateToSecurity,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_notifications),
-                subtitle = stringResource(R.string.settings_notifications_summary),
-                icon = Icons.Outlined.Notifications,
-                onClick = onNavigateToNotifications,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_widgets),
-                subtitle = stringResource(R.string.settings_widgets_summary),
-                icon = Icons.Outlined.Widgets,
-                onClick = onNavigateToWidgetConfiguration,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_local_source),
-                subtitle = stringResource(R.string.settings_local_source_summary),
-                icon = Icons.Outlined.Folder,
-                onClick = onNavigateToLocalSourceBrowser,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.settings_sync),
-                subtitle = stringResource(R.string.settings_sync_summary),
-                icon = Icons.Outlined.CloudSync,
-                onClick = onNavigateToSync,
-            ),
-            SettingsCategoryItem(
-                title = stringResource(R.string.nav_order_title),
-                subtitle = stringResource(R.string.settings_nav_order_summary),
-                icon = Icons.Outlined.Reorder,
-                onClick = onNavigateToNavOrder,
-            ),
+        SettingsBody(
+            paddingValues = paddingValues,
+            state = state,
+            searchActive = searchActive,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            onEvent = viewModel::onEvent,
+            onNavigateToAppearance = onNavigateToAppearance,
+            onNavigateToLibrary = onNavigateToLibrary,
+            onNavigateToReader = onNavigateToReader,
+            onNavigateToDownloads = onNavigateToDownloads,
+            onNavigateToTracking = onNavigateToTracking,
+            onNavigateToBrowse = onNavigateToBrowse,
+            onNavigateToBackup = onNavigateToBackup,
+            onNavigateToDiscord = onNavigateToDiscord,
+            onNavigateToSecurity = onNavigateToSecurity,
+            onNavigateToNotifications = onNavigateToNotifications,
+            onNavigateToWidgetConfiguration = onNavigateToWidgetConfiguration,
+            onNavigateToLocalSourceBrowser = onNavigateToLocalSourceBrowser,
+            onNavigateToSync = onNavigateToSync,
+            onNavigateToNavOrder = onNavigateToNavOrder,
         )
-        val displayCategories = if (searchQuery.isNotBlank()) {
-            allCategories.filter { cat ->
-                cat.title.contains(searchQuery, ignoreCase = true) ||
-                    cat.subtitle.contains(searchQuery, ignoreCase = true)
-            }
-        } else {
-            allCategories
+    }
+}
+
+@Composable
+@Suppress("LongParameterList")
+private fun SettingsBody(
+    paddingValues: PaddingValues,
+    state: SettingsState,
+    searchActive: Boolean,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onEvent: (SettingsEvent) -> Unit,
+    onNavigateToAppearance: () -> Unit = {},
+    onNavigateToLibrary: () -> Unit = {},
+    onNavigateToReader: () -> Unit = {},
+    onNavigateToDownloads: () -> Unit = {},
+    onNavigateToTracking: () -> Unit = {},
+    onNavigateToBrowse: () -> Unit = {},
+    onNavigateToBackup: () -> Unit = {},
+    onNavigateToDiscord: () -> Unit = {},
+    onNavigateToSecurity: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToWidgetConfiguration: () -> Unit = {},
+    onNavigateToLocalSourceBrowser: () -> Unit = {},
+    onNavigateToSync: () -> Unit = {},
+    onNavigateToNavOrder: () -> Unit = {},
+) {
+    val allCategories = listOf(
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_appearance),
+            subtitle = stringResource(R.string.settings_appearance_summary),
+            icon = Icons.Outlined.Palette,
+            onClick = onNavigateToAppearance,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_library),
+            subtitle = stringResource(R.string.settings_library_summary),
+            icon = Icons.Outlined.CollectionsBookmark,
+            onClick = onNavigateToLibrary,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_reader),
+            subtitle = stringResource(R.string.settings_reader_summary),
+            icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
+            onClick = onNavigateToReader,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_downloads),
+            subtitle = stringResource(R.string.settings_downloads_summary),
+            icon = Icons.Outlined.GetApp,
+            onClick = onNavigateToDownloads,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_tracking),
+            subtitle = stringResource(R.string.settings_tracking_summary),
+            icon = Icons.Outlined.Sync,
+            onClick = onNavigateToTracking,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_browse),
+            subtitle = stringResource(R.string.settings_browse_summary),
+            icon = Icons.Outlined.Explore,
+            onClick = onNavigateToBrowse,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_backup),
+            subtitle = stringResource(R.string.settings_backup_summary),
+            icon = Icons.Outlined.Backup,
+            onClick = onNavigateToBackup,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_discord),
+            subtitle = stringResource(R.string.settings_discord_summary),
+            icon = Icons.Outlined.Forum,
+            onClick = onNavigateToDiscord,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_security),
+            subtitle = stringResource(R.string.settings_security_summary),
+            icon = Icons.Outlined.Security,
+            onClick = onNavigateToSecurity,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_notifications),
+            subtitle = stringResource(R.string.settings_notifications_summary),
+            icon = Icons.Outlined.Notifications,
+            onClick = onNavigateToNotifications,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_widgets),
+            subtitle = stringResource(R.string.settings_widgets_summary),
+            icon = Icons.Outlined.Widgets,
+            onClick = onNavigateToWidgetConfiguration,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_local_source),
+            subtitle = stringResource(R.string.settings_local_source_summary),
+            icon = Icons.Outlined.Folder,
+            onClick = onNavigateToLocalSourceBrowser,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.settings_sync),
+            subtitle = stringResource(R.string.settings_sync_summary),
+            icon = Icons.Outlined.CloudSync,
+            onClick = onNavigateToSync,
+        ),
+        SettingsCategoryItem(
+            title = stringResource(R.string.nav_order_title),
+            subtitle = stringResource(R.string.settings_nav_order_summary),
+            icon = Icons.Outlined.Reorder,
+            onClick = onNavigateToNavOrder,
+        ),
+    )
+    val displayCategories = if (searchQuery.isNotBlank()) {
+        allCategories.filter { cat ->
+            cat.title.contains(searchQuery, ignoreCase = true) ||
+                cat.subtitle.contains(searchQuery, ignoreCase = true)
         }
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            if (searchActive) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text(stringResource(R.string.settings_search_hint)) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(28.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-            // ── Sub-screen navigation categories ──────────────────────
-            displayCategories.forEach { category ->
-                SettingsCategoryRow(
-                    title = category.title,
-                    subtitle = category.subtitle,
-                    onClick = category.onClick,
-                    icon = category.icon,
-                )
-            }
+    } else {
+        allCategories
+    }
+    Column(
+        modifier = Modifier
+            .padding(paddingValues)
+            .verticalScroll(rememberScrollState()),
+    ) {
+        if (searchActive) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text(stringResource(R.string.settings_search_hint)) },
+                singleLine = true,
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            )
+        }
+        // ── Sub-screen navigation categories ──────────────────────
+        displayCategories.forEach { category ->
+            SettingsCategoryRow(
+                title = category.title,
+                subtitle = category.subtitle,
+                onClick = category.onClick,
+                icon = category.icon,
+            )
+        }
 
-            if (!searchActive) {
-                // ── Local source ──────────────────────────────────────────
-                HorizontalDivider()
-                LocalSourceSection(state = state, onEvent = viewModel::onEvent)
+        if (!searchActive) {
+            // ── Local source ──────────────────────────────────────────
+            HorizontalDivider()
+            LocalSourceSection(state = state, onEvent = onEvent)
 
-                // ── Reading goals ─────────────────────────────────────────
-                HorizontalDivider()
-                ReadingGoalsSection(state = state, onEvent = viewModel::onEvent)
+            // ── Reading goals ─────────────────────────────────────────
+            HorizontalDivider()
+            ReadingGoalsSection(state = state, onEvent = onEvent)
 
-                // ── Crash reporting (#952) ────────────────────────────────
-                HorizontalDivider()
-                CrashReportingSection()
+            // ── Crash reporting (#952) ────────────────────────────────
+            HorizontalDivider()
+            CrashReportingSection()
 
-                // ── Data management ───────────────────────────────────────
-                HorizontalDivider()
-                DataManagementSection(state = state, onEvent = viewModel::onEvent)
+            // ── Data management ───────────────────────────────────────
+            HorizontalDivider()
+            DataManagementSection(state = state, onEvent = onEvent)
 
-                // ── Migration settings ────────────────────────────────────
-                HorizontalDivider()
-                MigrationSection(state = state, onEvent = viewModel::onEvent)
+            // ── Migration settings ────────────────────────────────────
+            HorizontalDivider()
+            MigrationSection(state = state, onEvent = onEvent)
 
-                // ── About ─────────────────────────────────────────────────
-                HorizontalDivider()
-                AboutSection(onEvent = viewModel::onEvent)
-            }
+            // ── About ─────────────────────────────────────────────────
+            HorizontalDivider()
+            AboutSection(onEvent = onEvent)
         }
     }
 }
