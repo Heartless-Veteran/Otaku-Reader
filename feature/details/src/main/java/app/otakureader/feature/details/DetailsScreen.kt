@@ -44,7 +44,9 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FlipToBack
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QueryStats
@@ -84,6 +86,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -197,6 +200,17 @@ fun DetailsScreen(
                 is DetailsContract.Effect.NavigateToSourceSearch -> {
                     onNavigateToSourceSearch(effect.sourceId, effect.query)
                 }
+                is DetailsContract.Effect.OpenInBrowser -> {
+                    runCatching {
+                        val intent = android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            android.net.Uri.parse(effect.url),
+                        )
+                        context.startActivity(intent)
+                    }.onFailure {
+                        snackbarHostState.showSnackbar(context.getString(R.string.details_no_browser))
+                    }
+                }
                 is DetailsContract.Effect.OpenDownloadFolder -> {
                     val externalFilesDir = context.getExternalFilesDir(null)
                     if (externalFilesDir != null) {
@@ -282,16 +296,23 @@ fun DetailsScreen(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = topBarAlpha),
                 ),
                 actions = {
+                    val filterActive = state.chapterFilter.isActive
+                    IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShowChapterFilter) }) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = stringResource(R.string.details_filter_chapters),
+                            tint = if (filterActive) MaterialTheme.colorScheme.primary
+                                   else androidx.compose.ui.graphics.Color.Unspecified,
+                        )
+                    }
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.details_refresh))
                     }
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShareManga) }) {
                         Icon(Icons.Default.Share, contentDescription = stringResource(R.string.details_share))
                     }
-                    IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.OpenTracking) }) {
-                        Icon(Icons.Default.QueryStats, contentDescription = stringResource(R.string.details_tracking))
-                    }
                     var overflowExpanded by remember { mutableStateOf(false) }
+
                     // System image picker for custom cover art. The picked content:// URI is
                     // passed to the ViewModel, which copies the image into app storage.
                     val coverPickerLauncher = rememberLauncherForActivityResult(
@@ -672,8 +693,11 @@ private fun DetailsContent(
             item(key = "action_row") {
                 MangaActionRow(
                     isFavorite = state.isFavorite,
+                    trackingCount = state.trackingCount,
+                    webUrl = state.mangaWebUrl,
                     onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
                     onOpenTracking = { onEvent(DetailsContract.Event.OpenTracking) },
+                    onOpenWebView = { onEvent(DetailsContract.Event.OpenWebView) },
                 )
             }
             item(key = "stats") { DetailsStatsRow(state = state) }
@@ -753,8 +777,11 @@ private fun LazyListScope.detailsInfoItems(
     item {
         MangaActionRow(
             isFavorite = state.isFavorite,
+            trackingCount = state.trackingCount,
+            webUrl = state.mangaWebUrl,
             onToggleFavorite = { onEvent(DetailsContract.Event.ToggleFavorite) },
             onOpenTracking = { onEvent(DetailsContract.Event.OpenTracking) },
+            onOpenWebView = { onEvent(DetailsContract.Event.OpenWebView) },
         )
     }
     detailsInfoTabItems(manga = manga, state = state, onEvent = onEvent)
@@ -835,11 +862,15 @@ private fun LazyListScope.detailsInfoTabItems(
 @Composable
 private fun MangaActionRow(
     isFavorite: Boolean,
+    trackingCount: Int,
+    webUrl: String?,
     onToggleFavorite: () -> Unit,
     onOpenTracking: () -> Unit,
+    onOpenWebView: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val primaryColor = MaterialTheme.colorScheme.primary
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -849,15 +880,26 @@ private fun MangaActionRow(
             title = if (isFavorite) stringResource(R.string.details_in_library)
                     else stringResource(R.string.details_add_to_library),
             icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            color = if (isFavorite) MaterialTheme.colorScheme.primary else inactiveColor,
+            color = if (isFavorite) primaryColor else inactiveColor,
             onClick = onToggleFavorite,
         )
         MangaActionButton(
-            title = stringResource(R.string.details_action_tracking),
-            icon = Icons.Default.QueryStats,
-            color = inactiveColor,
+            title = if (trackingCount > 0)
+                pluralStringResource(R.plurals.details_tracking_count, trackingCount, trackingCount)
+            else
+                stringResource(R.string.details_action_tracking),
+            icon = if (trackingCount > 0) Icons.Default.Done else Icons.Default.QueryStats,
+            color = if (trackingCount > 0) primaryColor else inactiveColor,
             onClick = onOpenTracking,
         )
+        if (webUrl != null) {
+            MangaActionButton(
+                title = stringResource(R.string.details_action_webview),
+                icon = Icons.Default.Language,
+                color = inactiveColor,
+                onClick = onOpenWebView,
+            )
+        }
     }
 }
 

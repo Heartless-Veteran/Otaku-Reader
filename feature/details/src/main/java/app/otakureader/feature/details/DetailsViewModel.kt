@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.sourceapi.SourceChapter
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -55,6 +56,7 @@ class DetailsViewModel @Inject constructor(
     private val updateMangaNote: UpdateMangaNoteUseCase,
     private val setMangaNotifications: SetMangaNotificationsUseCase,
     private val statisticsRepository: StatisticsRepository,
+    private val trackRepository: TrackRepository,
 ) : ViewModel() {
 
     private val mangaId: Long = savedStateHandle.get<Long>(MANGA_ID_ARG) 
@@ -86,6 +88,8 @@ class DetailsViewModel @Inject constructor(
         loadChapters()
         loadNextUnreadChapter()
         observeStaticSettings()
+        observeTrackingCount()
+        loadMangaWebUrl()
     }
 
     @Suppress("CyclomaticComplexMethod", "LongMethod")
@@ -176,6 +180,7 @@ class DetailsViewModel @Inject constructor(
 
             is DetailsContract.Event.GenreClick -> searchGenreInSource(event.genre)
             is DetailsContract.Event.GenreLongClick -> searchGenreGlobally(event.genre)
+            is DetailsContract.Event.OpenWebView -> openInWebView()
         }
     }
 
@@ -208,6 +213,32 @@ class DetailsViewModel @Inject constructor(
     private fun searchGenreGlobally(genre: String) {
         viewModelScope.launch {
             _effect.send(DetailsContract.Effect.NavigateToGlobalSearch(query = genre))
+        }
+    }
+
+    private fun observeTrackingCount() {
+        trackRepository.observeEntriesForManga(mangaId)
+            .onEach { entries -> _state.update { it.copy(trackingCount = entries.size) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun loadMangaWebUrl() {
+        viewModelScope.launch {
+            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+            val source = sourceRepository.getSource(manga.sourceId.toString()) ?: return@launch
+            val baseUrl = source.baseUrl.trimEnd('/')
+            if (baseUrl.isNotEmpty() && manga.url.isNotEmpty()) {
+                val fullUrl = if (manga.url.startsWith("http")) manga.url
+                              else "$baseUrl${manga.url}"
+                _state.update { it.copy(mangaWebUrl = fullUrl) }
+            }
+        }
+    }
+
+    private fun openInWebView() {
+        val url = _state.value.mangaWebUrl ?: return
+        viewModelScope.launch {
+            _effect.send(DetailsContract.Effect.OpenInBrowser(url))
         }
     }
 
