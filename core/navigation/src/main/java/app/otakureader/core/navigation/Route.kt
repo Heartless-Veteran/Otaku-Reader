@@ -155,6 +155,9 @@ sealed interface Route {
     data object SettingsNotifications : Route
 
     @Serializable
+    data object SettingsBrowse : Route
+
+    @Serializable
     data object WidgetConfiguration : Route
 
     @Serializable

@@ -386,6 +386,9 @@ fun OtakuReaderNavHost(
             onNavigateToTracking = {
                 navController.navigate(Route.SettingsTracking)
             },
+            onNavigateToBrowse = {
+                navController.navigate(Route.SettingsBrowse)
+            },
             onNavigateToBackup = {
                 navController.navigate(Route.SettingsBackup)
             },
@@ -421,6 +424,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToStorageAnalytics = {
                 navController.navigate(Route.StorageAnalytics)
+            },
+            onNavigateToExtensionRepos = {
+                navController.navigate(Route.ExtensionRepositories)
             },
         )
 

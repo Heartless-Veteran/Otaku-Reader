@@ -72,8 +72,15 @@
 
     <!-- Browse -->
     <string name="settings_browse">Browse</string>
+    <string name="settings_browse_summary">Sources, extensions, NSFW content</string>
+    <string name="settings_browse_sources">Sources</string>
+    <string name="settings_extension_repos">Extension Repositories</string>
+    <string name="settings_extension_repos_description">Manage external extension repository URLs</string>
+    <string name="settings_nsfw_content">NSFW Content</string>
     <string name="settings_show_nsfw_sources">Show NSFW Sources</string>
     <string name="settings_show_nsfw_sources_description">Display adult (18+) extensions and sources in Browse</string>
+    <string name="settings_nsfw_requires_restart">Requires app restart to take effect</string>
+    <string name="settings_nsfw_parental_note">Use device parental controls to restrict access to adult content</string>
 
     <!-- Downloads (settings section) -->
     <string name="settings_downloads">Downloads</string>

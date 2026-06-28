@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Info
@@ -85,6 +86,7 @@ fun SettingsScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToWidgetConfiguration: () -> Unit = {},
     onNavigateToLocalSourceBrowser: () -> Unit = {},
+    onNavigateToBrowse: () -> Unit = {},
     onNavigateToSync: () -> Unit = {},
     onNavigateToNavOrder: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -156,6 +158,12 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_tracking_summary),
                 onClick = onNavigateToTracking,
                 icon = Icons.Filled.Sync,
+            )
+            SettingsCategoryRow(
+                title = stringResource(R.string.settings_browse),
+                subtitle = stringResource(R.string.settings_browse_summary),
+                onClick = onNavigateToBrowse,
+                icon = Icons.Filled.Explore,
             )
             SettingsCategoryRow(
                 title = stringResource(R.string.settings_backup),

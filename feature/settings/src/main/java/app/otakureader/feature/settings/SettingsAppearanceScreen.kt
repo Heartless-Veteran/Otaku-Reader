@@ -101,8 +101,6 @@ fun SettingsAppearanceScreen(
             HorizontalDivider()
             NotificationsContent(state = state, onEvent = viewModel::onEvent)
             HorizontalDivider()
-            BrowseContent(state = state, onEvent = viewModel::onEvent)
-            HorizontalDivider()
             DiscordContent(state = state, onEvent = viewModel::onEvent)
         }
     }
@@ -387,22 +385,6 @@ private fun NotificationsContent(state: SettingsState, onEvent: (SettingsEvent) 
                     }
                 }
             }
-        },
-    )
-}
-
-@Composable
-private fun BrowseContent(state: SettingsState, onEvent: (SettingsEvent) -> Unit) {
-    SectionHeader(title = stringResource(R.string.settings_browse))
-
-    ListItem(
-        headlineContent = { Text(stringResource(R.string.settings_show_nsfw_sources)) },
-        supportingContent = { Text(stringResource(R.string.settings_show_nsfw_sources_description)) },
-        trailingContent = {
-            Switch(
-                checked = state.showNsfwContent,
-                onCheckedChange = { onEvent(SettingsEvent.SetShowNsfwContent(it)) },
-            )
         },
     )
 }
