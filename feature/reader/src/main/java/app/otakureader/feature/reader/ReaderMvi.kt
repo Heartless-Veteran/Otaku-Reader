@@ -264,15 +264,35 @@ data class ReaderState(
     val displayPageNumber: Int
         get() = currentPage + 1
 
-    /** Check if dual page mode should show spread */
+    /** Check if dual page mode should show spread, accounting for pageLayout override. */
     val isDualPageSpread: Boolean
-        get() = mode == ReaderMode.DUAL_PAGE && currentPage % 2 == 0
+        get() {
+            if (mode == ReaderMode.WEBTOON || mode == ReaderMode.SMART_PANELS) return false
+            val isDual = when (pageLayout) {
+                PAGE_LAYOUT_SINGLE -> false
+                PAGE_LAYOUT_DUAL -> true
+                else -> mode == ReaderMode.DUAL_PAGE
+            }
+            return isDual && currentPage % 2 == 0
+        }
 
-    /** Get companion page for dual page mode */
+    /** Get companion page for dual page mode, accounting for pageLayout override. */
     val companionPage: ReaderPage?
-        get() = if (mode == ReaderMode.DUAL_PAGE && currentPage + 1 < pages.size) {
-            pages[currentPage + 1]
-        } else null
+        get() {
+            if (mode == ReaderMode.WEBTOON || mode == ReaderMode.SMART_PANELS) return null
+            val isDual = when (pageLayout) {
+                PAGE_LAYOUT_SINGLE -> false
+                PAGE_LAYOUT_DUAL -> true
+                else -> mode == ReaderMode.DUAL_PAGE
+            }
+            return if (isDual && currentPage + 1 < pages.size) pages[currentPage + 1] else null
+        }
+
+    companion object {
+        const val PAGE_LAYOUT_SINGLE = 0
+        const val PAGE_LAYOUT_DUAL = 1
+        const val PAGE_LAYOUT_AUTOMATIC = 2
+    }
 
     // ── Sub-state views ───────────────────────────────────────────────────────
     // These are lightweight projections of the monolithic state. They allow

@@ -690,9 +690,9 @@ private fun ReaderContent(
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val effectiveMode = if (state.mode != ReaderMode.WEBTOON && state.mode != ReaderMode.SMART_PANELS) {
         when (state.pageLayout) {
-            0 -> ReaderMode.SINGLE_PAGE
-            1 -> ReaderMode.DUAL_PAGE
-            2 -> if (isLandscape) ReaderMode.DUAL_PAGE else ReaderMode.SINGLE_PAGE
+            ReaderState.PAGE_LAYOUT_SINGLE -> ReaderMode.SINGLE_PAGE
+            ReaderState.PAGE_LAYOUT_DUAL -> ReaderMode.DUAL_PAGE
+            ReaderState.PAGE_LAYOUT_AUTOMATIC -> if (isLandscape) ReaderMode.DUAL_PAGE else ReaderMode.SINGLE_PAGE
             else -> state.mode
         }
     } else {
