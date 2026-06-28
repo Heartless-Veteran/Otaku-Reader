@@ -1,8 +1,14 @@
 package app.otakureader.feature.updates
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -149,6 +155,14 @@ fun UpdatesScreen(
 
     Scaffold(
         modifier = modifier,
+        bottomBar = {
+            UpdatesSelectionBottomBar(
+                visible = state.selectedItems.isNotEmpty(),
+                onDownloadClicked = { viewModel.onEvent(UpdatesEvent.DownloadSelected) },
+                onMarkAsReadClicked = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsRead) },
+                onMarkAsUnreadClicked = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsUnread) },
+            )
+        },
         snackbarHost = { androidx.compose.material3.SnackbarHost(snackbarHostState) },
         topBar = {
             if (state.selectedItems.isNotEmpty()) {
@@ -167,15 +181,6 @@ fun UpdatesScreen(
                         }
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.InvertSelection) }) {
                             Icon(Icons.Default.FlipToBack, contentDescription = stringResource(R.string.updates_invert_selection))
-                        }
-                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.DownloadSelected) }) {
-                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.updates_download_selected))
-                        }
-                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsRead) }) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.updates_mark_selected_read))
-                        }
-                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.MarkSelectedAsUnread) }) {
-                            Icon(Icons.Default.RemoveDone, contentDescription = stringResource(R.string.updates_mark_selected_unread))
                         }
                     }
                 )
@@ -1225,4 +1230,77 @@ private fun PendingUpdateItem(
             }
         }
     }
+}
+
+@Composable
+private fun UpdatesSelectionBottomBar(
+    visible: Boolean,
+    onDownloadClicked: () -> Unit,
+    onMarkAsReadClicked: () -> Unit,
+    onMarkAsUnreadClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(animationSpec = tween(delayMillis = 300)),
+        exit = shrinkVertically(animationSpec = tween()),
+        modifier = modifier,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onDownloadClicked) {
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = stringResource(R.string.updates_download_selected),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.updates_download_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMarkAsReadClicked) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = stringResource(R.string.updates_mark_selected_read),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.updates_mark_selected_read),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMarkAsUnreadClicked) {
+                        Icon(
+                            Icons.Default.RemoveDone,
+                            contentDescription = stringResource(R.string.updates_mark_selected_unread),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.updates_mark_selected_unread),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
 }
