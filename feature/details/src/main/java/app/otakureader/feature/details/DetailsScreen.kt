@@ -302,7 +302,7 @@ fun DetailsScreen(
                             Icons.Default.FilterList,
                             contentDescription = stringResource(R.string.details_filter_chapters),
                             tint = if (filterActive) MaterialTheme.colorScheme.primary
-                                   else androidx.compose.ui.graphics.Color.Unspecified,
+                                   else androidx.compose.material3.LocalContentColor.current,
                         )
                     }
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.Refresh) }) {

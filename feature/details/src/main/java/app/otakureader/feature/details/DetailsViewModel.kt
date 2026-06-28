@@ -229,7 +229,7 @@ class DetailsViewModel @Inject constructor(
             val baseUrl = source.baseUrl.trimEnd('/')
             if (baseUrl.isNotEmpty() && manga.url.isNotEmpty()) {
                 val fullUrl = if (manga.url.startsWith("http")) manga.url
-                              else "$baseUrl${manga.url}"
+                              else "$baseUrl/${manga.url.removePrefix("/")}"
                 _state.update { it.copy(mangaWebUrl = fullUrl) }
             }
         }

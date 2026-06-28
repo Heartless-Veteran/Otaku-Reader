@@ -10,6 +10,7 @@ import app.otakureader.domain.repository.ChapterRepository
 import app.otakureader.domain.repository.MangaRepository
 import app.otakureader.domain.repository.DownloadRepository
 import app.otakureader.domain.repository.SourceRepository
+import app.otakureader.domain.tracking.TrackRepository
 import app.otakureader.domain.usecase.SetMangaNotificationsUseCase
 import app.otakureader.domain.usecase.UpdateMangaNoteUseCase
 import app.cash.turbine.test
@@ -48,6 +49,7 @@ class DetailsViewModelTest {
     private lateinit var updateMangaNote: UpdateMangaNoteUseCase
     private lateinit var setMangaNotifications: SetMangaNotificationsUseCase
     private lateinit var statisticsRepository: app.otakureader.domain.repository.StatisticsRepository
+    private lateinit var trackRepository: TrackRepository
     private lateinit var savedStateHandle: SavedStateHandle
 
     private val sampleManga = Manga(
@@ -78,6 +80,7 @@ class DetailsViewModelTest {
         updateMangaNote = mockk()
         setMangaNotifications = mockk()
         statisticsRepository = mockk(relaxed = true)
+        trackRepository = mockk(relaxed = true)
         savedStateHandle = SavedStateHandle(mapOf(DetailsViewModel.MANGA_ID_ARG to mangaId))
     }
 
@@ -98,11 +101,13 @@ class DetailsViewModelTest {
             updateMangaNote,
             setMangaNotifications,
             statisticsRepository,
+            trackRepository,
         )
     }
 
     private fun setUpDefaultMocks() {
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(sampleManga)
+        coEvery { mangaRepository.getMangaById(mangaId) } returns sampleManga
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(sampleChapters)
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
