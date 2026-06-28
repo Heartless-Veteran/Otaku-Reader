@@ -682,4 +682,9 @@
     <string name="nav_tab_browse">Browse</string>
     <string name="nav_tab_history">History</string>
     <string name="nav_tab_more">More</string>
+
+    <!-- Settings search -->
+    <string name="settings_search">Search settings</string>
+    <string name="settings_search_hint">Search settings</string>
+    <string name="settings_search_close">Close search</string>
 </resources>
