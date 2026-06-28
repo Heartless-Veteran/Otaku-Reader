@@ -684,11 +684,17 @@ private fun ReaderContent(
         else -> 0
     }
 
-    // pageLayout=2 (Automatic): switch to DUAL_PAGE when device is landscape, otherwise honour stored mode.
+    // Apply pageLayout to pager modes: Single forces SINGLE_PAGE, Double forces DUAL_PAGE,
+    // Automatic picks based on orientation. Webtoon/SmartPanels are unaffected.
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val effectiveMode = if (state.pageLayout == 2 && state.mode != ReaderMode.WEBTOON && state.mode != ReaderMode.SMART_PANELS) {
-        if (isLandscape) ReaderMode.DUAL_PAGE else ReaderMode.SINGLE_PAGE
+    val effectiveMode = if (state.mode != ReaderMode.WEBTOON && state.mode != ReaderMode.SMART_PANELS) {
+        when (state.pageLayout) {
+            0 -> ReaderMode.SINGLE_PAGE
+            1 -> ReaderMode.DUAL_PAGE
+            2 -> if (isLandscape) ReaderMode.DUAL_PAGE else ReaderMode.SINGLE_PAGE
+            else -> state.mode
+        }
     } else {
         state.mode
     }

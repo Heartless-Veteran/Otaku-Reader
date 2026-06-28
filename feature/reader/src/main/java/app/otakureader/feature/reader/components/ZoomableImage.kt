@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,6 +90,10 @@ fun ZoomableImage(
     resetOnChange: Boolean = true
 ) {
     val scope = rememberCoroutineScope()
+    // Wrap in rememberUpdatedState so the pointerInput block always calls the latest lambda
+    // without needing onZoomChange in the pointerInput keys (which would restart the gesture
+    // detector on every recomposition that produces a new lambda instance).
+    val currentOnZoomChange by rememberUpdatedState(onZoomChange)
 
     var containerSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -140,7 +145,7 @@ fun ZoomableImage(
                                             zoomState.onPan(panChange)
                                         }
                                     }
-                                    onZoomChange?.invoke(newScale)
+                                    currentOnZoomChange?.invoke(newScale)
 
                                     event.changes.forEach { it.consume() }
                                 }
