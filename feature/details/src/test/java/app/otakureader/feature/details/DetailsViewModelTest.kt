@@ -258,6 +258,7 @@ class DetailsViewModelTest {
     @Test
     fun onEvent_StartReading_withNoChapters_emitsErrorEffect() = runTest {
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(sampleManga)
+        coEvery { mangaRepository.getMangaById(mangaId) } returns sampleManga
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(emptyList())
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
@@ -422,6 +423,7 @@ class DetailsViewModelTest {
     @Test
     fun onEvent_ShareManga_whenMangaIsNull_emitsNoEffect() = runTest {
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(null)
+        coEvery { mangaRepository.getMangaById(mangaId) } returns null
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(emptyList())
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
@@ -466,6 +468,7 @@ class DetailsViewModelTest {
     fun onEvent_ToggleNotifications_enablesNotifications_whenCurrentlyMuted() = runTest {
         val mutedManga = sampleManga.copy(notifyNewChapters = false)
         every { mangaRepository.getMangaByIdFlow(mangaId) } returns flowOf(mutedManga)
+        coEvery { mangaRepository.getMangaById(mangaId) } returns mutedManga
         every { chapterRepository.getChaptersByMangaId(mangaId) } returns flowOf(sampleChapters)
         every { mangaRepository.isFavorite(mangaId) } returns flowOf(false)
         every { downloadRepository.observeDownloads() } returns flowOf(emptyList())
