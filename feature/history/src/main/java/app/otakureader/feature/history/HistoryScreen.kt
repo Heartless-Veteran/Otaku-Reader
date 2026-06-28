@@ -109,6 +109,7 @@ private object HistoryEmptyStateDefaults {
 fun HistoryScreen(
     onChapterClick: (mangaId: Long, chapterId: Long) -> Unit,
     onNavigateBack: () -> Unit,
+    onMangaClick: (mangaId: Long) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = hiltViewModel()
 ) {
@@ -360,6 +361,7 @@ fun HistoryScreen(
                         onFavoriteClick = { entry ->
                             viewModel.onEvent(HistoryEvent.ToggleMangaFavorite(entry.chapter.mangaId))
                         },
+                        onMangaClick = { entry -> onMangaClick(entry.chapter.mangaId) },
                     )
                 }
             }
@@ -458,6 +460,7 @@ private fun HistoryList(
     onItemLongClick: (ChapterWithHistory) -> Unit,
     onRemoveClick: (ChapterWithHistory) -> Unit,
     onFavoriteClick: (ChapterWithHistory) -> Unit,
+    onMangaClick: (ChapterWithHistory) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // Build the flat list with injected date-group headers
@@ -519,6 +522,7 @@ private fun HistoryList(
                             onItemLongClick = { onItemLongClick(item.entry) },
                             onRemoveClick = { onRemoveClick(item.entry) },
                             onFavoriteClick = { onFavoriteClick(item.entry) },
+                            onMangaCoverClick = { onMangaClick(item.entry) },
                         )
                     }
                     HorizontalDivider()
@@ -553,6 +557,7 @@ private fun HistoryItem(
     onItemLongClick: () -> Unit,
     onRemoveClick: () -> Unit,
     onFavoriteClick: () -> Unit,
+    onMangaCoverClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -576,17 +581,17 @@ private fun HistoryItem(
         } else {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                // Tonal backdrop so a failed/missing thumbnail shows a neutral block
-                // instead of an empty hole in the row.
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.size(width = 40.dp, height = 56.dp)
+                modifier = Modifier
+                    .size(width = 40.dp, height = 56.dp)
+                    .combinedClickable(onClick = onMangaCoverClick)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(entry.mangaThumbnailUrl)
                         .crossfade(true)
                         .build(),
-                    contentDescription = entry.mangaTitle,
+                    contentDescription = stringResource(R.string.history_open_manga),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -607,12 +612,33 @@ private fun HistoryItem(
                     maxLines = 1,
                 )
             }
+            // Chapter number ("Ch. 12" or "Ch. 12.5") — skipped when number is unknown (-1)
+            val chapterNum = entry.chapter.chapterNumber
+            val chapterNumText = if (chapterNum >= 0f) {
+                val formatted = if (chapterNum == chapterNum.toLong().toFloat()) {
+                    chapterNum.toLong().toString()
+                } else {
+                    chapterNum.toString()
+                }
+                stringResource(R.string.history_chapter_number, formatted)
+            } else {
+                entry.chapter.name
+            }
             Text(
-                text = entry.chapter.name,
+                text = chapterNumText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
+            // Read progress ("Page X") — only when partially read
+            val lastPage = entry.chapter.lastPageRead
+            if (lastPage > 0 && !entry.chapter.read) {
+                Text(
+                    text = stringResource(R.string.history_read_progress, lastPage + 1),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 text = formatReadAt(entry.readAt),
                 style = MaterialTheme.typography.labelSmall,
