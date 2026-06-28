@@ -3,6 +3,8 @@ package app.otakureader.feature.browse
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -284,6 +286,13 @@ private fun ExtensionsContent(
     onNavigateToExtensionDetail: (packageName: String) -> Unit = {},
 ) {
     var searchActive by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(searchActive) {
+        if (searchActive) {
+            focusRequester.requestFocus()
+        }
+    }
 
     BackHandler(enabled = searchActive) {
         searchActive = false
@@ -299,7 +308,9 @@ private fun ExtensionsContent(
                         OutlinedTextField(
                             value = state.searchQuery,
                             onValueChange = { onEvent(ExtensionsEvent.OnSearchQueryChange(it)) },
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester),
                             placeholder = { Text(stringResource(R.string.extensions_search_placeholder)) },
                             singleLine = true,
                         )
@@ -322,7 +333,7 @@ private fun ExtensionsContent(
                             } else {
                                 Icons.Default.Close
                             },
-                            contentDescription = if (searchActive) null else stringResource(R.string.extensions_close),
+                            contentDescription = stringResource(R.string.extensions_close),
                         )
                     }
                 },
