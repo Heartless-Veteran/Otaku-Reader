@@ -150,7 +150,9 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetShowTitle, is LibraryEvent.SetDisplayMode,
             is LibraryEvent.SetShowCategoryTabs,
             is LibraryEvent.SetShowCategoryItemCount,
-            is LibraryEvent.SetShowContinueReadingButton -> handleDisplayEvent(event)
+            is LibraryEvent.SetShowContinueReadingButton,
+            is LibraryEvent.SetPortraitColumns,
+            is LibraryEvent.SetLandscapeColumns -> handleDisplayEvent(event)
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
@@ -192,6 +194,10 @@ class LibraryViewModel @Inject constructor(
                 viewModelScope.launch { libraryPreferences.setShowCategoryItemCount(event.enabled) }
             is LibraryEvent.SetShowContinueReadingButton ->
                 viewModelScope.launch { libraryPreferences.setShowContinueReadingButton(event.enabled) }
+            is LibraryEvent.SetPortraitColumns ->
+                viewModelScope.launch { libraryPreferences.setPortraitColumns(event.count) }
+            is LibraryEvent.SetLandscapeColumns ->
+                viewModelScope.launch { libraryPreferences.setLandscapeColumns(event.count) }
             else -> Unit
         }
     }
@@ -506,6 +512,12 @@ class LibraryViewModel @Inject constructor(
     private fun observeDisplayPreferences() {
         libraryPreferences.gridSize
             .onEach { gridSize -> _state.update { it.copy(gridSize = gridSize) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.portraitColumns
+            .onEach { count -> _state.update { it.copy(portraitColumns = count) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.landscapeColumns
+            .onEach { count -> _state.update { it.copy(landscapeColumns = count) } }
             .launchIn(viewModelScope)
         libraryPreferences.showBadges
             .onEach { show -> _state.update { it.copy(showBadges = show) } }

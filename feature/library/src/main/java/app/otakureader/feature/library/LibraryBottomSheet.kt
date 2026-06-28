@@ -1,5 +1,7 @@
 package app.otakureader.feature.library
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -133,35 +135,47 @@ private fun DisplayTab(
             }
         }
 
-        // Grid size — hidden in List mode (Komikku parity: slider only relevant for grid layouts).
+        // Columns slider — hidden in List mode (Komikku parity). Orientation-aware: portrait
+        // and landscape each have their own column count; 0 = Auto (use window-size fallback).
         if (state.displayMode != LibraryDisplayMode.LIST) {
+            val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+            val currentColumns = if (isLandscape) state.landscapeColumns else state.portraitColumns
+            val columnLabel = stringResource(
+                if (isLandscape) R.string.display_columns_landscape else R.string.display_columns_portrait
+            )
             Column {
                 Text(
-                    text = stringResource(R.string.display_grid_size_label),
+                    text = columnLabel,
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                var sliderValue by remember(state.gridSize) { mutableFloatStateOf(state.gridSize.toFloat()) }
+                var sliderValue by remember(currentColumns) { mutableFloatStateOf(currentColumns.toFloat()) }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text("1", style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.display_columns_auto_short), style = MaterialTheme.typography.bodySmall)
                     Slider(
                         value = sliderValue,
                         onValueChange = { sliderValue = it },
-                        onValueChangeFinished = { onEvent(LibraryEvent.SetGridSize(sliderValue.toInt())) },
-                        valueRange = 1f..5f,
-                        steps = 3,
+                        onValueChangeFinished = {
+                            val count = sliderValue.toInt()
+                            if (isLandscape) onEvent(LibraryEvent.SetLandscapeColumns(count))
+                            else onEvent(LibraryEvent.SetPortraitColumns(count))
+                        },
+                        valueRange = 0f..10f,
+                        steps = 9,
                         modifier = Modifier.weight(1f),
                     )
-                    Text("5", style = MaterialTheme.typography.bodySmall)
+                    Text("10", style = MaterialTheme.typography.bodySmall)
                 }
-                Text(
-                    text = stringResource(R.string.display_grid_size_value, sliderValue.toInt()),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                val valueText = if (currentColumns == 0) {
+                    stringResource(R.string.display_columns_auto)
+                } else {
+                    stringResource(R.string.display_grid_size_value, currentColumns)
+                }
+                Text(text = valueText, style = MaterialTheme.typography.bodyMedium)
             }
 
             // Staggered grid (only meaningful in grid modes)

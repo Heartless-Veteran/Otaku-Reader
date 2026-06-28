@@ -147,6 +147,10 @@ class LibraryViewModelTest {
 
     private fun buildLibraryPreferencesMock(): LibraryPreferences = mockk {
         every { gridSize } returns flowOf(3)
+        every { portraitColumns } returns flowOf(0)
+        every { landscapeColumns } returns flowOf(0)
+        coEvery { setPortraitColumns(any()) } just Awaits
+        coEvery { setLandscapeColumns(any()) } just Awaits
         every { showBadges } returns flowOf(true)
         every { showDownloadBadge } returns flowOf(true)
         every { librarySortMode } returns flowOf(0)

@@ -77,6 +77,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -578,10 +580,15 @@ private fun LibraryContent(
 ) {
     val widthSizeClass = rememberWindowWidthSizeClass()
     val isExpandedWidth = widthSizeClass.isExpanded
-    val adaptiveColumns = when (widthSizeClass) {
-        WindowWidthSizeClass.Expanded -> (state.gridSize + 2).coerceAtLeast(5)
-        WindowWidthSizeClass.Medium -> (state.gridSize + 1).coerceAtLeast(4)
-        WindowWidthSizeClass.Compact -> state.gridSize
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val adaptiveColumns = when {
+        isLandscape && state.landscapeColumns > 0 -> state.landscapeColumns
+        !isLandscape && state.portraitColumns > 0 -> state.portraitColumns
+        else -> when (widthSizeClass) {
+            WindowWidthSizeClass.Expanded -> (state.gridSize + 2).coerceAtLeast(5)
+            WindowWidthSizeClass.Medium -> (state.gridSize + 1).coerceAtLeast(4)
+            WindowWidthSizeClass.Compact -> state.gridSize
+        }
     }
     var detailManga by remember { mutableStateOf<LibraryMangaItem?>(null) }
 

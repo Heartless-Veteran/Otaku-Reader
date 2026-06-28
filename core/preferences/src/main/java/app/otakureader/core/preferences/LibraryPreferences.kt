@@ -27,6 +27,14 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val gridSize: Flow<Int> = dataStore.data.map { it[Keys.GRID_SIZE] ?: 3 }
     suspend fun setGridSize(value: Int) = dataStore.edit { it[Keys.GRID_SIZE] = value }
 
+    /** Portrait column count (0 = auto / use gridSize fallback, 1–10 explicit). */
+    val portraitColumns: Flow<Int> = dataStore.data.map { it[Keys.PORTRAIT_COLUMNS] ?: 0 }
+    suspend fun setPortraitColumns(value: Int) = dataStore.edit { it[Keys.PORTRAIT_COLUMNS] = value }
+
+    /** Landscape column count (0 = auto / use gridSize fallback, 1–10 explicit). */
+    val landscapeColumns: Flow<Int> = dataStore.data.map { it[Keys.LANDSCAPE_COLUMNS] ?: 0 }
+    suspend fun setLandscapeColumns(value: Int) = dataStore.edit { it[Keys.LANDSCAPE_COLUMNS] = value }
+
     /** Whether to use a staggered (waterfall) grid layout instead of a uniform grid. */
     val isStaggeredGrid: Flow<Boolean> = dataStore.data.map { it[Keys.IS_STAGGERED_GRID] ?: false }
     suspend fun setStaggeredGrid(value: Boolean) = dataStore.edit { it[Keys.IS_STAGGERED_GRID] = value }
@@ -218,6 +226,8 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
     private object Keys {
         val GRID_SIZE = intPreferencesKey("library_grid_size")
+        val PORTRAIT_COLUMNS = intPreferencesKey("library_portrait_columns")
+        val LANDSCAPE_COLUMNS = intPreferencesKey("library_landscape_columns")
         val IS_STAGGERED_GRID = booleanPreferencesKey("is_staggered_grid")
         val SHOW_BADGES = booleanPreferencesKey("library_show_badges")
         val SHOW_DOWNLOAD_BADGE = booleanPreferencesKey("show_download_badge")

@@ -90,6 +90,8 @@ data class LibraryState(
     val categories: List<CategoryItem> = emptyList(),
     val selectedCategory: Long? = null,
     val gridSize: Int = 3,
+    val portraitColumns: Int = 0,
+    val landscapeColumns: Int = 0,
     val showBadges: Boolean = true,
     val showDownloadBadge: Boolean = true,
     val showTitle: Boolean = true,
@@ -230,6 +232,8 @@ sealed class LibraryEvent {
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
     data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
     data class SetGridSize(val size: Int) : LibraryEvent()
+    data class SetPortraitColumns(val count: Int) : LibraryEvent()
+    data class SetLandscapeColumns(val count: Int) : LibraryEvent()
     data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
     data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
     data class SetShowTitle(val show: Boolean) : LibraryEvent()

@@ -197,6 +197,10 @@
     <string name="group_tab">Group</string>
     <string name="display_grid_size_label">Grid size</string>
     <string name="display_grid_size_value">%1$d columns</string>
+    <string name="display_columns_portrait">Columns (portrait)</string>
+    <string name="display_columns_landscape">Columns (landscape)</string>
+    <string name="display_columns_auto">Auto</string>
+    <string name="display_columns_auto_short">A</string>
     <string name="display_show_badges">Show unread badges</string>
     <string name="display_show_download_badge">Show download badge</string>
     <string name="display_overlay_header">Overlay</string>
