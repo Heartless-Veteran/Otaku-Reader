@@ -289,7 +289,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun migrateSelected() {
-        val ids = _state.value.selectedManga.toList()
+        val ids = selection.snapshotAndClear().toList()
         if (ids.isEmpty()) return
         viewModelScope.launch {
             _effect.send(LibraryEffect.NavigateToMigration(ids))
