@@ -283,8 +283,8 @@ fun ReaderScreen(
         if (state.pages.isNotEmpty() && state.showReadingModeOverlay) {
             showModeOverlay = true
             delay(MODE_OVERLAY_DURATION_MS)
-            showModeOverlay = false
         }
+        showModeOverlay = false
     }
 
     // Handle zoom indicator visibility
