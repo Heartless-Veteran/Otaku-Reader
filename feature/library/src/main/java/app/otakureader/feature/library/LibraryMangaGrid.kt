@@ -363,7 +363,7 @@ private fun LibraryMangaPageContent(
                                 .toFloat() / manga.totalChapterCount
                         } else null
                         val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                        val continueReading = manga.lastRead != null && manga.unreadCount > 0
+                        val continueReading = state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0
                         MangaCard(
                             title = manga.title,
                             coverUrl = manga.thumbnailUrl,
@@ -437,7 +437,7 @@ private fun LibraryMangaPageContent(
                         .toFloat() / manga.totalChapterCount
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                val continueReading = manga.lastRead != null && manga.unreadCount > 0
+                val continueReading = state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0
                 // Comfortable grid: cover with title caption below; Cover-only: no title at all.
                 val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
                 val coverOnly = state.displayMode == LibraryDisplayMode.COVER_ONLY

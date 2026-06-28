@@ -149,7 +149,8 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetShowDownloadBadge, is LibraryEvent.SetStaggeredGrid,
             is LibraryEvent.SetShowTitle, is LibraryEvent.SetDisplayMode,
             is LibraryEvent.SetShowCategoryTabs,
-            is LibraryEvent.SetShowCategoryItemCount -> handleDisplayEvent(event)
+            is LibraryEvent.SetShowCategoryItemCount,
+            is LibraryEvent.SetShowContinueReadingButton -> handleDisplayEvent(event)
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
@@ -189,6 +190,8 @@ class LibraryViewModel @Inject constructor(
                 viewModelScope.launch { libraryPreferences.setShowCategoryTabs(event.enabled) }
             is LibraryEvent.SetShowCategoryItemCount ->
                 viewModelScope.launch { libraryPreferences.setShowCategoryItemCount(event.enabled) }
+            is LibraryEvent.SetShowContinueReadingButton ->
+                viewModelScope.launch { libraryPreferences.setShowContinueReadingButton(event.enabled) }
             else -> Unit
         }
     }
@@ -509,6 +512,9 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.showCategoryItemCount
             .onEach { show -> _state.update { it.copy(showCategoryItemCount = show) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showContinueReadingButton
+            .onEach { show -> _state.update { it.copy(showContinueReadingButton = show) } }
             .launchIn(viewModelScope)
         libraryPreferences.libraryDisplayMode
             .onEach { modeInt ->

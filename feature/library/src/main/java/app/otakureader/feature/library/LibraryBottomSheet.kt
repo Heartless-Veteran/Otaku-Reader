@@ -217,6 +217,19 @@ private fun DisplayTab(
             )
         }
 
+        // Show continue reading button (Komikku parity)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_continue_reading_button))
+            Switch(
+                checked = state.showContinueReadingButton,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowContinueReadingButton(enabled)) },
+            )
+        }
+
         HorizontalDivider()
 
         // Tabs section (Komikku parity)

@@ -137,6 +137,7 @@ data class LibraryState(
     // Category tab display (Komikku parity)
     val showCategoryTabs: Boolean = true,
     val showCategoryItemCount: Boolean = true,
+    val showContinueReadingButton: Boolean = true,
     // Saved views (#1039)
     val savedViews: List<SavedLibraryView> = emptyList(),
     val showSaveViewDialog: Boolean = false,
@@ -236,6 +237,7 @@ sealed class LibraryEvent {
     data class SetDisplayMode(val mode: LibraryDisplayMode) : LibraryEvent()
     data class SetShowCategoryTabs(val enabled: Boolean) : LibraryEvent()
     data class SetShowCategoryItemCount(val enabled: Boolean) : LibraryEvent()
+    data class SetShowContinueReadingButton(val enabled: Boolean) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
     data object ToggleAdvancedSearch : LibraryEvent()

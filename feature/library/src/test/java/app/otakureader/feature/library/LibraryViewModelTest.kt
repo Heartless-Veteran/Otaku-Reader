@@ -162,8 +162,10 @@ class LibraryViewModelTest {
         every { showTitle } returns flowOf(true)
         every { showCategoryTabs } returns flowOf(true)
         every { showCategoryItemCount } returns flowOf(true)
+        every { showContinueReadingButton } returns flowOf(true)
         coEvery { setShowCategoryTabs(any()) } just Awaits
         coEvery { setShowCategoryItemCount(any()) } just Awaits
+        coEvery { setShowContinueReadingButton(any()) } just Awaits
     }
 
     @After

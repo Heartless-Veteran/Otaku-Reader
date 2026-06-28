@@ -198,6 +198,10 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
     val showCategoryItemCount: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_CATEGORY_ITEM_COUNT] ?: true }
     suspend fun setShowCategoryItemCount(value: Boolean) = dataStore.edit { it[Keys.SHOW_CATEGORY_ITEM_COUNT] = value }
 
+    // --- Continue reading button (Komikku parity) ---
+    val showContinueReadingButton: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_CONTINUE_READING_BUTTON] ?: true }
+    suspend fun setShowContinueReadingButton(value: Boolean) = dataStore.edit { it[Keys.SHOW_CONTINUE_READING_BUTTON] = value }
+
     // --- Saved Views (#1039) ---
 
     /**
@@ -241,5 +245,6 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val SAVED_VIEWS = stringPreferencesKey("library_saved_views")
         val SHOW_CATEGORY_TABS = booleanPreferencesKey("library_show_category_tabs")
         val SHOW_CATEGORY_ITEM_COUNT = booleanPreferencesKey("library_show_category_item_count")
+        val SHOW_CONTINUE_READING_BUTTON = booleanPreferencesKey("library_show_continue_reading_button")
     }
 }
