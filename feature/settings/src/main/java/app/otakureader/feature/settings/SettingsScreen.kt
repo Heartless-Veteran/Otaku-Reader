@@ -12,7 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.automirrored.outlined.ChromeReaderMode
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudSync
@@ -146,20 +146,90 @@ fun SettingsScreen(
         },
     } { paddingValues ->
         val allCategories = listOf(
-            SettingsCategoryItem(stringResource(R.string.settings_appearance), stringResource(R.string.settings_appearance_summary), Icons.Outlined.Palette, onNavigateToAppearance),
-            SettingsCategoryItem(stringResource(R.string.settings_library), stringResource(R.string.settings_library_summary), Icons.Outlined.CollectionsBookmark, onNavigateToLibrary),
-            SettingsCategoryItem(stringResource(R.string.settings_reader), stringResource(R.string.settings_reader_summary), Icons.AutoMirrored.Outlined.MenuBook, onNavigateToReader),
-            SettingsCategoryItem(stringResource(R.string.settings_downloads), stringResource(R.string.settings_downloads_summary), Icons.Outlined.GetApp, onNavigateToDownloads),
-            SettingsCategoryItem(stringResource(R.string.settings_tracking), stringResource(R.string.settings_tracking_summary), Icons.Outlined.Sync, onNavigateToTracking),
-            SettingsCategoryItem(stringResource(R.string.settings_browse), stringResource(R.string.settings_browse_summary), Icons.Outlined.Explore, onNavigateToBrowse),
-            SettingsCategoryItem(stringResource(R.string.settings_backup), stringResource(R.string.settings_backup_summary), Icons.Outlined.Backup, onNavigateToBackup),
-            SettingsCategoryItem(stringResource(R.string.settings_discord), stringResource(R.string.settings_discord_summary), Icons.Outlined.Forum, onNavigateToDiscord),
-            SettingsCategoryItem(stringResource(R.string.settings_security), stringResource(R.string.settings_security_summary), Icons.Outlined.Security, onNavigateToSecurity),
-            SettingsCategoryItem(stringResource(R.string.settings_notifications), stringResource(R.string.settings_notifications_summary), Icons.Outlined.Notifications, onNavigateToNotifications),
-            SettingsCategoryItem(stringResource(R.string.settings_widgets), stringResource(R.string.settings_widgets_summary), Icons.Outlined.Widgets, onNavigateToWidgetConfiguration),
-            SettingsCategoryItem(stringResource(R.string.settings_local_source), stringResource(R.string.settings_local_source_summary), Icons.Outlined.Folder, onNavigateToLocalSourceBrowser),
-            SettingsCategoryItem(stringResource(R.string.settings_sync), stringResource(R.string.settings_sync_summary), Icons.Outlined.CloudSync, onNavigateToSync),
-            SettingsCategoryItem(stringResource(R.string.nav_order_title), stringResource(R.string.settings_nav_order_summary), Icons.Outlined.Reorder, onNavigateToNavOrder),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_appearance),
+                subtitle = stringResource(R.string.settings_appearance_summary),
+                icon = Icons.Outlined.Palette,
+                onClick = onNavigateToAppearance,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_library),
+                subtitle = stringResource(R.string.settings_library_summary),
+                icon = Icons.Outlined.CollectionsBookmark,
+                onClick = onNavigateToLibrary,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_reader),
+                subtitle = stringResource(R.string.settings_reader_summary),
+                icon = Icons.AutoMirrored.Outlined.ChromeReaderMode,
+                onClick = onNavigateToReader,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_downloads),
+                subtitle = stringResource(R.string.settings_downloads_summary),
+                icon = Icons.Outlined.GetApp,
+                onClick = onNavigateToDownloads,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_tracking),
+                subtitle = stringResource(R.string.settings_tracking_summary),
+                icon = Icons.Outlined.Sync,
+                onClick = onNavigateToTracking,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_browse),
+                subtitle = stringResource(R.string.settings_browse_summary),
+                icon = Icons.Outlined.Explore,
+                onClick = onNavigateToBrowse,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_backup),
+                subtitle = stringResource(R.string.settings_backup_summary),
+                icon = Icons.Outlined.Backup,
+                onClick = onNavigateToBackup,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_discord),
+                subtitle = stringResource(R.string.settings_discord_summary),
+                icon = Icons.Outlined.Forum,
+                onClick = onNavigateToDiscord,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_security),
+                subtitle = stringResource(R.string.settings_security_summary),
+                icon = Icons.Outlined.Security,
+                onClick = onNavigateToSecurity,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_notifications),
+                subtitle = stringResource(R.string.settings_notifications_summary),
+                icon = Icons.Outlined.Notifications,
+                onClick = onNavigateToNotifications,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_widgets),
+                subtitle = stringResource(R.string.settings_widgets_summary),
+                icon = Icons.Outlined.Widgets,
+                onClick = onNavigateToWidgetConfiguration,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_local_source),
+                subtitle = stringResource(R.string.settings_local_source_summary),
+                icon = Icons.Outlined.Folder,
+                onClick = onNavigateToLocalSourceBrowser,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.settings_sync),
+                subtitle = stringResource(R.string.settings_sync_summary),
+                icon = Icons.Outlined.CloudSync,
+                onClick = onNavigateToSync,
+            ),
+            SettingsCategoryItem(
+                title = stringResource(R.string.nav_order_title),
+                subtitle = stringResource(R.string.settings_nav_order_summary),
+                icon = Icons.Outlined.Reorder,
+                onClick = onNavigateToNavOrder,
+            ),
         )
         val displayCategories = if (searchQuery.isNotBlank()) {
             allCategories.filter { cat ->
