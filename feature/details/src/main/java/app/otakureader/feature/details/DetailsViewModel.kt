@@ -224,13 +224,22 @@ class DetailsViewModel @Inject constructor(
 
     private fun loadMangaWebUrl() {
         viewModelScope.launch {
-            val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
-            val source = sourceRepository.getSource(manga.sourceId.toString()) ?: return@launch
-            val baseUrl = source.baseUrl.trimEnd('/')
-            if (baseUrl.isNotEmpty() && manga.url.isNotEmpty()) {
-                val fullUrl = if (manga.url.startsWith("http")) manga.url
-                              else "$baseUrl/${manga.url.removePrefix("/")}"
+            try {
+                val manga = mangaRepository.getMangaById(mangaId) ?: return@launch
+                if (manga.url.isEmpty()) return@launch
+                val fullUrl = if (manga.url.startsWith("http")) {
+                    manga.url
+                } else {
+                    val source = sourceRepository.getSource(manga.sourceId.toString()) ?: return@launch
+                    val baseUrl = source.baseUrl.trimEnd('/')
+                    if (baseUrl.isEmpty()) return@launch
+                    "$baseUrl/${manga.url.removePrefix("/")}"
+                }
                 _state.update { it.copy(mangaWebUrl = fullUrl) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _state.update { it.copy(mangaWebUrl = null) }
             }
         }
     }

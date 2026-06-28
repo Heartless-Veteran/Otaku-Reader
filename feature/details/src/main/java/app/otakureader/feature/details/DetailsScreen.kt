@@ -131,6 +131,9 @@ private const val SINGLE_CHAPTER_SELECTION = 1
 // Action labels in the selection bottom bar are kept to a single line so the row stays compact.
 private const val CHAPTER_ACTION_LABEL_MAX_LINES = 1
 
+// Alpha for action buttons that represent a disabled/inactive state in MangaActionRow.
+private const val MANGA_ACTION_INACTIVE_ALPHA = 0.6f
+
 // Bottom content padding for the phone single-scroll list — enough to clear the FAB
 // (56 dp FAB height + 16 dp bottom margin + 16 dp list breathing room).
 private val FAB_CONTENT_PADDING_BOTTOM = 88.dp
@@ -201,13 +204,13 @@ fun DetailsScreen(
                     onNavigateToSourceSearch(effect.sourceId, effect.query)
                 }
                 is DetailsContract.Effect.OpenInBrowser -> {
-                    runCatching {
+                    try {
                         val intent = android.content.Intent(
                             android.content.Intent.ACTION_VIEW,
                             android.net.Uri.parse(effect.url),
                         )
                         context.startActivity(intent)
-                    }.onFailure {
+                    } catch (_: Exception) {
                         snackbarHostState.showSnackbar(context.getString(R.string.details_no_browser))
                     }
                 }
@@ -869,7 +872,7 @@ private fun MangaActionRow(
     onOpenWebView: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = MANGA_ACTION_INACTIVE_ALPHA)
     val primaryColor = MaterialTheme.colorScheme.primary
     Row(
         modifier = modifier

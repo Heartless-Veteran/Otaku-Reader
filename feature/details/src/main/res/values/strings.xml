@@ -235,6 +235,6 @@
         <item quantity="one">%1$d missing chapter</item>
         <item quantity="other">%1$d missing chapters</item>
     </plurals>
-    <string name="details_action_webview">WebView</string>
+    <string name="details_action_webview">Web</string>
     <string name="details_no_browser">No browser app found</string>
 </resources>
