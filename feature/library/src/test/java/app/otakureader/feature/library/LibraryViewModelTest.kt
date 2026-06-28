@@ -97,26 +97,7 @@ class LibraryViewModelTest {
         getLibraryManga = mockk()
         searchLibraryManga = mockk(relaxed = true)
         toggleFavoriteManga = mockk()
-        libraryPreferences = mockk {
-            every { gridSize } returns flowOf(3)
-            every { showBadges } returns flowOf(true)
-            every { showDownloadBadge } returns flowOf(true)
-            every { librarySortMode } returns flowOf(0)
-            every { libraryFilterMode } returns flowOf(0)
-            every { libraryFilterSourceId } returns flowOf(null)
-            every { isStaggeredGrid } returns flowOf(false)
-            every { libraryDisplayMode } returns flowOf(0)
-            every { showRecommendations } returns flowOf(false)
-            every { dismissedRecommendations } returns flowOf(emptySet())
-            every { groupByCategory } returns flowOf(false)
-            every { savedViewsJson } returns flowOf("[]")
-            coEvery { setSavedViewsJson(any()) } just Awaits
-            every { showTitle } returns flowOf(true)
-            every { showCategoryTabs } returns flowOf(true)
-            every { showCategoryItemCount } returns flowOf(true)
-            coEvery { setShowCategoryTabs(any()) } just Awaits
-            coEvery { setShowCategoryItemCount(any()) } just Awaits
-        }
+        libraryPreferences = buildLibraryPreferencesMock()
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
             every { lastUpdatesViewedAt } returns flowOf(0L)
@@ -158,6 +139,27 @@ class LibraryViewModelTest {
         getRecommendations = mockk {
             every { this@mockk.invoke() } returns flowOf(emptyList())
         }
+    }
+
+    private fun buildLibraryPreferencesMock(): LibraryPreferences = mockk {
+        every { gridSize } returns flowOf(3)
+        every { showBadges } returns flowOf(true)
+        every { showDownloadBadge } returns flowOf(true)
+        every { librarySortMode } returns flowOf(0)
+        every { libraryFilterMode } returns flowOf(0)
+        every { libraryFilterSourceId } returns flowOf(null)
+        every { isStaggeredGrid } returns flowOf(false)
+        every { libraryDisplayMode } returns flowOf(0)
+        every { showRecommendations } returns flowOf(false)
+        every { dismissedRecommendations } returns flowOf(emptySet())
+        every { groupByCategory } returns flowOf(false)
+        every { savedViewsJson } returns flowOf("[]")
+        coEvery { setSavedViewsJson(any()) } just Awaits
+        every { showTitle } returns flowOf(true)
+        every { showCategoryTabs } returns flowOf(true)
+        every { showCategoryItemCount } returns flowOf(true)
+        coEvery { setShowCategoryTabs(any()) } just Awaits
+        coEvery { setShowCategoryItemCount(any()) } just Awaits
     }
 
     @After
