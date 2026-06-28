@@ -1,7 +1,13 @@
 package app.otakureader.feature.history
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,6 +79,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -184,12 +191,6 @@ fun HistoryScreen(
                         IconButton(onClick = { viewModel.onEvent(HistoryEvent.InvertSelection) }) {
                             Icon(Icons.Default.FlipToBack, contentDescription = stringResource(R.string.history_invert_selection))
                         }
-                        IconButton(onClick = { viewModel.onEvent(HistoryEvent.MarkSelectedAsRead) }) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.history_mark_read))
-                        }
-                        IconButton(onClick = { viewModel.onEvent(HistoryEvent.RemoveSelectedFromHistory) }) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.history_delete_selected))
-                        }
                     } else {
                         IconButton(onClick = { showDateRangePicker = true }) {
                             Icon(
@@ -209,6 +210,13 @@ fun HistoryScreen(
                         }
                     }
                 }
+            )
+        },
+        bottomBar = {
+            HistorySelectionBottomBar(
+                visible = state.selectedItems.isNotEmpty(),
+                onMarkAsReadClicked = { viewModel.onEvent(HistoryEvent.MarkSelectedAsRead) },
+                onDeleteClicked = { viewModel.onEvent(HistoryEvent.RemoveSelectedFromHistory) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -656,5 +664,62 @@ private fun formatReadAt(timestamp: Long): String {
 
 private val DATE_FORMATTER: DateTimeFormatter =
     DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm", Locale.getDefault())
+
+@Composable
+private fun HistorySelectionBottomBar(
+    visible: Boolean,
+    onMarkAsReadClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(animationSpec = tween(delayMillis = 300)),
+        exit = shrinkVertically(animationSpec = tween()),
+        modifier = modifier,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMarkAsReadClicked) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = stringResource(R.string.history_mark_read),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.history_mark_read),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onDeleteClicked) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.history_delete_selected),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.history_delete_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
 
 
