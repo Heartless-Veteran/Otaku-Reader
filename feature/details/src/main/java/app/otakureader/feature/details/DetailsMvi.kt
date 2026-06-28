@@ -56,6 +56,10 @@ object DetailsContract {
         val averageChapterDurationMs: Long = 0L,
         /** Whether the Edit Manga Info bottom-sheet is open (#998). */
         val isEditInfoSheetVisible: Boolean = false,
+        /** Number of active tracker services for this manga. 0 = not tracked. */
+        val trackingCount: Int = 0,
+        /** Full web URL for this manga (source baseUrl + manga url). Null for local sources. */
+        val mangaWebUrl: String? = null,
     ) : UiState {
 
         /** Estimated time remaining to finish all unread chapters of this manga. */
@@ -283,6 +287,9 @@ object DetailsContract {
 
         /** Genre/tag chip long-press: search this tag across all sources (global search). */
         data class GenreLongClick(val genre: String) : Event
+
+        /** Opens the manga's source web page in the system browser. */
+        data object OpenWebView : Event
     }
 
     /**
