@@ -199,6 +199,7 @@
     <string name="display_grid_size_value">%1$d columns</string>
     <string name="display_show_badges">Show unread badges</string>
     <string name="display_show_download_badge">Show download badge</string>
+    <string name="display_overlay_header">Overlay</string>
     <string name="display_tabs_header">Tabs</string>
     <string name="display_show_category_tabs">Show category tabs</string>
     <string name="display_show_category_item_count">Show number of items</string>

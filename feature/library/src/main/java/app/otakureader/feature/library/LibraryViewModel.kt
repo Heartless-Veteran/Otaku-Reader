@@ -468,19 +468,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun observeLibraryPreferences() {
-        // Observe each preference independently to avoid 6-flow combine type-inference limitation
-        libraryPreferences.gridSize
-            .onEach { gridSize -> _state.update { it.copy(gridSize = gridSize) } }
-            .launchIn(viewModelScope)
-        libraryPreferences.showBadges
-            .onEach { showBadges -> _state.update { it.copy(showBadges = showBadges) } }
-            .launchIn(viewModelScope)
-        libraryPreferences.showDownloadBadge
-            .onEach { show -> _state.update { it.copy(showDownloadBadge = show) } }
-            .launchIn(viewModelScope)
-        libraryPreferences.showTitle
-            .onEach { show -> _state.update { it.copy(showTitle = show) } }
-            .launchIn(viewModelScope)
+        observeDisplayPreferences()
         libraryPreferences.librarySortMode
             .onEach { sortModeInt ->
                 _state.update {
@@ -496,16 +484,47 @@ class LibraryViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
         libraryPreferences.libraryFilterSourceId
-            .onEach { filterSourceId -> _state.update { it.copy(filterSourceId = filterSourceId) } }
+            .onEach { id -> _state.update { it.copy(filterSourceId = id) } }
             .launchIn(viewModelScope)
         generalPreferences.showNsfwContent
-            .onEach { showNsfw -> _state.update { it.copy(showNsfw = showNsfw) } }
+            .onEach { show -> _state.update { it.copy(showNsfw = show) } }
             .launchIn(viewModelScope)
         generalPreferences.downloadedOnly
-            .onEach { downloadedOnly -> _state.update { it.copy(downloadedOnly = downloadedOnly) } }
+            .onEach { v -> _state.update { it.copy(downloadedOnly = v) } }
+            .launchIn(viewModelScope)
+        generalPreferences.visualEffectsEnabled
+            .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
+            .launchIn(viewModelScope)
+        libraryUpdateScheduler.isUpdating()
+            .onEach { updating -> _state.update { it.copy(isLibraryUpdating = updating) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.groupByCategory
+            .onEach { v -> _state.update { it.copy(groupByCategory = v) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeDisplayPreferences() {
+        libraryPreferences.gridSize
+            .onEach { gridSize -> _state.update { it.copy(gridSize = gridSize) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showBadges
+            .onEach { show -> _state.update { it.copy(showBadges = show) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showDownloadBadge
+            .onEach { show -> _state.update { it.copy(showDownloadBadge = show) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showTitle
+            .onEach { show -> _state.update { it.copy(showTitle = show) } }
             .launchIn(viewModelScope)
         libraryPreferences.isStaggeredGrid
             .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.libraryDisplayMode
+            .onEach { modeInt ->
+                _state.update {
+                    it.copy(displayMode = LibraryDisplayMode.entries.getOrElse(modeInt) { LibraryDisplayMode.GRID })
+                }
+            }
             .launchIn(viewModelScope)
         libraryPreferences.showCategoryTabs
             .onEach { show -> _state.update { it.copy(showCategoryTabs = show) } }
@@ -515,22 +534,6 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.showContinueReadingButton
             .onEach { show -> _state.update { it.copy(showContinueReadingButton = show) } }
-            .launchIn(viewModelScope)
-        libraryPreferences.libraryDisplayMode
-            .onEach { modeInt ->
-                _state.update {
-                    it.copy(displayMode = LibraryDisplayMode.entries.getOrElse(modeInt) { LibraryDisplayMode.GRID })
-                }
-            }
-            .launchIn(viewModelScope)
-        generalPreferences.visualEffectsEnabled
-            .onEach { enabled -> _state.update { it.copy(visualEffectsEnabled = enabled) } }
-            .launchIn(viewModelScope)
-        libraryUpdateScheduler.isUpdating()
-            .onEach { updating -> _state.update { it.copy(isLibraryUpdating = updating) } }
-            .launchIn(viewModelScope)
-        libraryPreferences.groupByCategory
-            .onEach { groupByCategory -> _state.update { it.copy(groupByCategory = groupByCategory) } }
             .launchIn(viewModelScope)
     }
 
