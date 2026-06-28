@@ -580,18 +580,17 @@ private fun HistoryItem(
             )
         } else {
             Surface(
+                onClick = onMangaCoverClick,
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier
-                    .size(width = 40.dp, height = 56.dp)
-                    .combinedClickable(onClick = onMangaCoverClick)
+                modifier = Modifier.size(width = 40.dp, height = 56.dp)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
                         .data(entry.mangaThumbnailUrl)
                         .crossfade(true)
                         .build(),
-                    contentDescription = stringResource(R.string.history_open_manga),
+                    contentDescription = entry.mangaTitle,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -612,20 +611,8 @@ private fun HistoryItem(
                     maxLines = 1,
                 )
             }
-            // Chapter number ("Ch. 12" or "Ch. 12.5") — skipped when number is unknown (-1)
-            val chapterNum = entry.chapter.chapterNumber
-            val chapterNumText = if (chapterNum >= 0f) {
-                val formatted = if (chapterNum == chapterNum.toLong().toFloat()) {
-                    chapterNum.toLong().toString()
-                } else {
-                    chapterNum.toString()
-                }
-                stringResource(R.string.history_chapter_number, formatted)
-            } else {
-                entry.chapter.name
-            }
             Text(
-                text = chapterNumText,
+                text = entry.chapter.name,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
