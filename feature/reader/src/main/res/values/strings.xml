@@ -158,6 +158,8 @@
     <!-- Filmstrip / slider toggle -->
     <string name="reader_switch_to_slider">Switch to slider</string>
     <string name="reader_switch_to_filmstrip">Switch to filmstrip</string>
+    <string name="reader_toggle_thumbnail_strip">Toggle thumbnail strip</string>
+    <string name="reader_page_of_total">%1$d / %2$d</string>
 
     <!-- Reader settings dialog — tab labels -->
     <string name="reader_settings_tab_reading_mode">Reading mode</string>
@@ -253,6 +255,18 @@
     <string name="reader_page_cover_set">Cover updated</string>
     <string name="reader_page_cover_failed">Failed to set cover</string>
     <string name="reading_timer_format">%1$02d:%2$02d:%3$02d</string>
+
+    <!-- Chapter transition overlay -->
+    <string name="reader_transition_finished">Finished</string>
+    <string name="reader_transition_next">Next</string>
+    <string name="reader_transition_current">Current</string>
+    <string name="reader_transition_previous">Previous</string>
+    <string name="reader_transition_no_next">There\'s no next chapter</string>
+    <string name="reader_transition_no_previous">There\'s no previous chapter</string>
+    <plurals name="reader_transition_missing_chapters">
+        <item quantity="one">%1$d missing chapter</item>
+        <item quantity="other">%1$d missing chapters</item>
+    </plurals>
 
     <!-- Tap zone navigation modes (R3 parity) -->
     <string name="reader_nav_mode_title">Navigation Mode</string>

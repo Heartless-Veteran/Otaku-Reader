@@ -270,6 +270,11 @@ class ReaderDisplayDelegate @Inject constructor(
                 update { it.copy(smallerTapZone = new) }
                 launchSave { setSmallerTapZone(new) }
             }
+            ReaderSetting.SHOW_PAGE_THUMBNAIL_STRIP -> {
+                val new = !stateFlow.value.showPageThumbnailStrip
+                update { it.copy(showPageThumbnailStrip = new) }
+                launchSave { setShowPageThumbnailStrip(new) }
+            }
         }
     }
 

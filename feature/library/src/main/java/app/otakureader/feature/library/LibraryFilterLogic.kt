@@ -58,6 +58,7 @@ internal fun applyTriStateFilters(items: List<LibraryMangaItem>, params: FilterS
     val anyActive = params.filterDownloaded != LibraryTriState.DISABLED ||
         params.filterUnread != LibraryTriState.DISABLED ||
         params.filterStarted != LibraryTriState.DISABLED ||
+        params.filterBookmarked != LibraryTriState.DISABLED ||
         params.filterTracking != LibraryTriState.DISABLED ||
         params.filterCompleted != LibraryTriState.DISABLED
     if (!anyActive) return items
@@ -65,6 +66,7 @@ internal fun applyTriStateFilters(items: List<LibraryMangaItem>, params: FilterS
         triStateMatches(params.filterDownloaded, item.isDownloaded) &&
             triStateMatches(params.filterUnread, item.unreadCount > 0) &&
             triStateMatches(params.filterStarted, item.lastRead != null) &&
+            triStateMatches(params.filterBookmarked, item.id in params.bookmarkedMangaIds) &&
             triStateMatches(params.filterTracking, item.hasTracking) &&
             triStateMatches(params.filterCompleted, item.userCompleted)
     }

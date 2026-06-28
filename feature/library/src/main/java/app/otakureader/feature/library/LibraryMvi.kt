@@ -90,6 +90,8 @@ data class LibraryState(
     val categories: List<CategoryItem> = emptyList(),
     val selectedCategory: Long? = null,
     val gridSize: Int = 3,
+    val portraitColumns: Int = 0,
+    val landscapeColumns: Int = 0,
     val showBadges: Boolean = true,
     val showDownloadBadge: Boolean = true,
     val showTitle: Boolean = true,
@@ -104,12 +106,15 @@ data class LibraryState(
     val filterDownloaded: LibraryTriState = LibraryTriState.DISABLED,
     val filterUnread: LibraryTriState = LibraryTriState.DISABLED,
     val filterStarted: LibraryTriState = LibraryTriState.DISABLED,
+    val filterBookmarked: LibraryTriState = LibraryTriState.DISABLED,
     val filterTracking: LibraryTriState = LibraryTriState.DISABLED,
     val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
+    val bookmarkedMangaIds: Set<Long> = emptySet(),
     val filterSourceId: Long? = null,
     val showNsfw: Boolean = false,
     val newUpdatesCount: Int = 0,
     val incognitoMode: Boolean = false,
+    val downloadedOnly: Boolean = false,
     val categoryFilterMangaIds: Set<Long> = emptySet(), // Manga IDs in selected category
     // Reading list filter
     val readingLists: List<ReadingListFilterItem> = emptyList(),
@@ -131,6 +136,10 @@ data class LibraryState(
     val showRecommendations: Boolean = true,
     // Advanced search sheet
     val showAdvancedSearch: Boolean = false,
+    // Category tab display (Komikku parity)
+    val showCategoryTabs: Boolean = true,
+    val showCategoryItemCount: Boolean = true,
+    val showContinueReadingButton: Boolean = true,
     // Saved views (#1039)
     val savedViews: List<SavedLibraryView> = emptyList(),
     val showSaveViewDialog: Boolean = false,
@@ -216,17 +225,23 @@ sealed class LibraryEvent {
     data class SetFilterDownloaded(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterUnread(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterStarted(val state: LibraryTriState) : LibraryEvent()
+    data class SetFilterBookmarked(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterTracking(val state: LibraryTriState) : LibraryEvent()
     data class SetFilterCompleted(val state: LibraryTriState) : LibraryEvent()
     data object ToggleBottomSheet : LibraryEvent()
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
     data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
     data class SetGridSize(val size: Int) : LibraryEvent()
+    data class SetPortraitColumns(val count: Int) : LibraryEvent()
+    data class SetLandscapeColumns(val count: Int) : LibraryEvent()
     data class SetShowBadges(val enabled: Boolean) : LibraryEvent()
     data class SetShowDownloadBadge(val enabled: Boolean) : LibraryEvent()
     data class SetShowTitle(val show: Boolean) : LibraryEvent()
     data class SetStaggeredGrid(val enabled: Boolean) : LibraryEvent()
     data class SetDisplayMode(val mode: LibraryDisplayMode) : LibraryEvent()
+    data class SetShowCategoryTabs(val enabled: Boolean) : LibraryEvent()
+    data class SetShowCategoryItemCount(val enabled: Boolean) : LibraryEvent()
+    data class SetShowContinueReadingButton(val enabled: Boolean) : LibraryEvent()
     data object ToggleFilterSheet : LibraryEvent()
     data class DismissRecommendation(val mangaId: Long) : LibraryEvent()
     data object ToggleAdvancedSearch : LibraryEvent()

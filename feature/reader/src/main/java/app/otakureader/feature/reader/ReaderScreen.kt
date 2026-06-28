@@ -88,6 +88,7 @@ import app.otakureader.feature.reader.ui.ReadingTimerOverlay
 import app.otakureader.feature.reader.ui.ReaderContentOverlay
 import app.otakureader.feature.reader.ui.ReaderBottomBar
 import app.otakureader.feature.reader.ui.ChapterListOverlay
+import app.otakureader.feature.reader.ui.ChapterTransition
 import app.otakureader.feature.reader.ui.ReaderSettingsOverlay
 import app.otakureader.feature.reader.ui.NavigationOverlay
 import app.otakureader.feature.reader.ui.ZoomIndicator
@@ -114,6 +115,7 @@ import kotlinx.coroutines.launch
 private const val VOLUME_HOLD_SKIP_PAGES = 5
 // Index of the first chapter in reading order; used to gate the previous/next-chapter buttons.
 private const val FIRST_CHAPTER_INDEX = 0
+private const val UNKNOWN_CHAPTER_NUMBER = -1f
 private const val DIRECTION_INDICATOR_DURATION_MS = 2_000L
 private val DIRECTION_INDICATOR_BOTTOM_PADDING = 80.dp
 private val DIRECTION_INDICATOR_CORNER_RADIUS = 8.dp
@@ -133,6 +135,17 @@ private fun ReaderOrientation.toActivityInfo(): Int = when (this) {
     ReaderOrientation.LOCKED_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     ReaderOrientation.REVERSE_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
 }
+
+private data class ChapterNavData(
+    val hasPreviousChapter: Boolean,
+    val hasNextChapter: Boolean,
+    val currentChapterName: String,
+    val currentChapterNumber: Float,
+    val prevChapterName: String?,
+    val prevChapterNumber: Float?,
+    val nextChapterName: String?,
+    val nextChapterNumber: Float?,
+)
 
 @Composable
 @Suppress("UnusedParameter")
@@ -376,6 +389,24 @@ fun ReaderScreen(
             }
         }
         
+        val chapterNavData = remember(chapters, state.currentChapterId, state.chapterTitle) {
+            val ordered = chapters.sortedBy { it.chapterNumber }
+            val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
+            val current = ordered.getOrNull(currentIndex)
+            val prev = if (currentIndex > FIRST_CHAPTER_INDEX) ordered[currentIndex - 1] else null
+            val next = if (currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex) ordered[currentIndex + 1] else null
+            ChapterNavData(
+                hasPreviousChapter = currentIndex > FIRST_CHAPTER_INDEX,
+                hasNextChapter = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex,
+                currentChapterName = current?.name ?: state.chapterTitle,
+                currentChapterNumber = current?.chapterNumber ?: UNKNOWN_CHAPTER_NUMBER,
+                prevChapterName = prev?.name,
+                prevChapterNumber = prev?.chapterNumber,
+                nextChapterName = next?.name,
+                nextChapterNumber = next?.chapterNumber,
+            )
+        }
+
         // Tap zone overlay for navigation
         if (!state.isLoading && state.pages.isNotEmpty() && !state.isMenuVisible) {
             val isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL
@@ -394,6 +425,20 @@ fun ReaderScreen(
             )
         }
         
+        ChapterTransition(
+            isVisible = !state.isLoading && state.pages.isNotEmpty() &&
+                state.alwaysShowChapterTransition && !state.isMenuVisible &&
+                (state.isLastPage || state.isFirstPage),
+            isTransitionToNext = state.isLastPage,
+            currentChapterTitle = chapterNavData.currentChapterName,
+            currentChapterNumber = chapterNavData.currentChapterNumber,
+            isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
+            adjacentChapterTitle = if (state.isLastPage) chapterNavData.nextChapterName else chapterNavData.prevChapterName,
+            adjacentChapterNumber = if (state.isLastPage) chapterNavData.nextChapterNumber else chapterNavData.prevChapterNumber,
+            onTap = { viewModel.onEvent(ReaderEvent.ToggleMenu) },
+            modifier = Modifier.fillMaxSize(),
+        )
+
         // Clean Mihon/Komikku-style reader top app bar. Page scrubbing and chapter navigation
         // live in the bottom bar (PageSlider) and thumbnails in PageThumbnailStrip, so this
         // overlay deliberately carries only the top bar to avoid duplicating those controls.
@@ -402,7 +447,6 @@ fun ReaderScreen(
             chapterTitle = state.chapterTitle,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             onDismiss = onNavigateBack,
-            onSettingsClick = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
@@ -480,21 +524,14 @@ fun ReaderScreen(
                 isVisible = state.showPageThumbnailStrip && state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
                 modifier = Modifier,
             )
-            val (hasPreviousChapter, hasNextChapter) = remember(chapters, state.currentChapterId) {
-                val ordered = chapters.sortedBy { it.chapterNumber }
-                val currentIndex = ordered.indexOfFirst { it.id == state.currentChapterId }
-                val hasPrev = currentIndex > FIRST_CHAPTER_INDEX
-                val hasNext = currentIndex >= FIRST_CHAPTER_INDEX && currentIndex < ordered.lastIndex
-                hasPrev to hasNext
-            }
             PageSlider(
                 currentPage = state.currentPage,
                 totalPages = state.totalPages,
                 onPageSeek = { viewModel.onEvent(ReaderEvent.OnPageChange(it)) },
                 onPreviousChapter = { viewModel.onEvent(ReaderEvent.PrevChapter) },
                 onNextChapter = { viewModel.onEvent(ReaderEvent.NextChapter) },
-                hasPreviousChapter = hasPreviousChapter,
-                hasNextChapter = hasNextChapter,
+                hasPreviousChapter = chapterNavData.hasPreviousChapter,
+                hasNextChapter = chapterNavData.hasNextChapter,
                 readingDirection = state.readingDirection,
                 isVisible = state.isMenuVisible && state.pages.isNotEmpty() && !state.isGalleryOpen && !state.isLoading,
                 modifier = Modifier,
@@ -513,6 +550,7 @@ fun ReaderScreen(
                     viewModel.onEvent(ReaderEvent.OnOrientationChange(next))
                 },
                 onToggleCropBorders = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.CROP_BORDERS)) },
+                onToggleThumbnailStrip = { viewModel.onEvent(ReaderEvent.ToggleSetting(ReaderSetting.SHOW_PAGE_THUMBNAIL_STRIP)) },
                 onSettings = { viewModel.onEvent(ReaderEvent.ToggleSettingsOverlay) },
                 isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             )

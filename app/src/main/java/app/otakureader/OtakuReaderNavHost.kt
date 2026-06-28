@@ -264,7 +264,10 @@ fun OtakuReaderNavHost(
             },
             onNavigateBack = {
                 navController.popBackStack()
-            }
+            },
+            onNavigateToSource = { sourceId, query ->
+                navController.navigate(Route.SourceListing(sourceId, query))
+            },
         )
 
         // Source detail — manga listing from a specific source
@@ -386,6 +389,9 @@ fun OtakuReaderNavHost(
             onNavigateToTracking = {
                 navController.navigate(Route.SettingsTracking)
             },
+            onNavigateToBrowse = {
+                navController.navigate(Route.SettingsBrowse)
+            },
             onNavigateToBackup = {
                 navController.navigate(Route.SettingsBackup)
             },
@@ -421,6 +427,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToStorageAnalytics = {
                 navController.navigate(Route.StorageAnalytics)
+            },
+            onNavigateToExtensionRepos = {
+                navController.navigate(Route.ExtensionRepositories)
             },
         )
 
@@ -538,6 +547,9 @@ fun OtakuReaderNavHost(
             },
             onNavigateToBookmarks = {
                 navController.navigate(Route.Bookmarks)
+            },
+            onNavigateToCategories = {
+                navController.navigate(Route.CategoryManagement)
             },
         )
 

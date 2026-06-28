@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,7 +57,6 @@ private val readerTopBarFade = tween<Float>(READER_TOP_BAR_FADE_MS)
  * @param chapterTitle  Current chapter title displayed below the series title.
  * @param isVisible     Whether the overlay is shown.
  * @param onDismiss     Called when the back arrow is tapped — typically navigates back.
- * @param onSettingsClick Called when the settings icon is tapped.
  * @param onDownloadChapter Called when the download icon is tapped; null hides the button.
  * @param isCurrentChapterDownloaded When true, the download button is hidden.
  * @param onBookmarkPage Called when the bookmark icon is tapped; null hides the button.
@@ -70,7 +68,6 @@ fun ReaderContentOverlay(
     chapterTitle: String,
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
     onDownloadChapter: (() -> Unit)? = null,
     isCurrentChapterDownloaded: Boolean = false,
@@ -147,13 +144,6 @@ fun ReaderContentOverlay(
                     )
                 }
             }
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.reader_settings),
-                    tint = onSurfaceVariant
-                )
-            }
         }
     }
 }
@@ -167,7 +157,6 @@ private fun ReaderContentOverlayPreview() {
             chapterTitle = "Chapter 364: The Elf King",
             isVisible = true,
             onDismiss = {},
-            onSettingsClick = {},
             onDownloadChapter = {},
             onBookmarkPage = {}
         )

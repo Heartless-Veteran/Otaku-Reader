@@ -7,12 +7,12 @@ import app.otakureader.core.preferences.SearchHistoryPreferences
 import app.otakureader.domain.usecase.source.GetSourcesUseCase
 import app.otakureader.domain.usecase.source.GlobalSearchUseCase
 import app.otakureader.sourceapi.MangaSource
+import app.otakureader.sourceapi.toSourceId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -42,10 +42,14 @@ class GlobalSearchViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        // Load search history on init
         viewModelScope.launch {
             searchHistoryPreferences.recentSearches.collect { history ->
                 _state.update { it.copy(recentSearches = history) }
+            }
+        }
+        viewModelScope.launch {
+            generalPreferences.pinnedSourceIds.collect { ids ->
+                _state.update { it.copy(hasPinnedSources = ids.isNotEmpty()) }
             }
         }
     }
@@ -95,6 +99,19 @@ class GlobalSearchViewModel @Inject constructor(
                     searchHistoryPreferences.removeSearchQuery(event.query)
                 }
             }
+            is GlobalSearchEvent.OnToggleOnlyResults -> {
+                _state.update { it.copy(onlyShowHasResults = !it.onlyShowHasResults) }
+            }
+            is GlobalSearchEvent.SetSourceFilter -> {
+                _state.update { it.copy(sourceFilter = event.filter) }
+            }
+            is GlobalSearchEvent.ClickSource -> {
+                viewModelScope.launch {
+                    _effect.send(
+                        GlobalSearchEffect.NavigateToSource(event.sourceId, _state.value.query),
+                    )
+                }
+            }
         }
     }
 
@@ -102,13 +119,19 @@ class GlobalSearchViewModel @Inject constructor(
         // Cancel any in-flight search so stale results can't overwrite the new query's results
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            // Filter sources by NSFW preference
             val allSources: List<MangaSource> = getSourcesUseCase().first()
             val showNsfw = generalPreferences.showNsfwContent.first()
-            val sources = if (showNsfw) {
-                allSources
+            val nsfwFiltered = if (showNsfw) allSources else allSources.filter { !it.isNsfw }
+
+            // When PinnedOnly is selected and there are pinned sources, restrict to those
+            val sourceFilter = _state.value.sourceFilter
+            val pinnedIds = generalPreferences.pinnedSourceIds.first()
+            val sources = if (
+                sourceFilter == GlobalSearchSourceFilter.PinnedOnly && pinnedIds.isNotEmpty()
+            ) {
+                nsfwFiltered.filter { it.id.toSourceId() in pinnedIds }
             } else {
-                allSources.filter { !it.isNsfw }
+                nsfwFiltered
             }
 
             if (sources.isEmpty()) {
@@ -124,6 +147,7 @@ class GlobalSearchViewModel @Inject constructor(
                         SourceSearchResult(
                             sourceId = source.id,
                             sourceName = source.name,
+                            sourceLanguage = source.lang,
                             isLoading = true
                         )
                     }

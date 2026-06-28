@@ -15,15 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AspectRatio
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material3.FilledIconToggleButton
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,18 +61,13 @@ private const val HERO_BG_SCALE = 1.15f
 private const val HEADER_TITLE_MAX_LINES = 3
 private const val HEADER_SUBTITLE_MAX_LINES = 1
 private const val HEADER_SUBTITLE_ALPHA = 0.8f
-private val HEADER_ACTION_ICON_SIZE = 18.dp
 private val HEADER_SUBTITLE_TOP_SPACING = 6.dp
 private val HEADER_STATUS_TOP_SPACING = 4.dp
-private val HEADER_ACTION_TOP_SPACING = 10.dp
-private val HEADER_ACTION_CONTENT_SPACING = 8.dp
 
 @Composable
 internal fun MangaHeader(
     manga: app.otakureader.domain.model.Manga,
-    isFavorite: Boolean,
     showPanoramaCover: Boolean,
-    onToggleFavorite: () -> Unit,
     onTogglePanoramaCover: () -> Unit,
     scrollOffset: () -> Float = { 0f },
     modifier: Modifier = Modifier
@@ -275,24 +265,6 @@ internal fun MangaHeader(
                             color = Color.White.copy(alpha = HEADER_SUBTITLE_ALPHA),
                         )
 
-                        Spacer(modifier = Modifier.height(HEADER_ACTION_TOP_SPACING))
-
-                        FilledTonalButton(onClick = onToggleFavorite) {
-                            Icon(
-                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                modifier = Modifier.size(HEADER_ACTION_ICON_SIZE),
-                            )
-                            Spacer(Modifier.width(HEADER_ACTION_CONTENT_SPACING))
-                            Text(
-                                text = if (isFavorite) {
-                                    stringResource(R.string.details_remove_from_library)
-                                } else {
-                                    stringResource(R.string.details_add_to_library)
-                                },
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        }
                     }
                 }
             }
@@ -302,57 +274,37 @@ internal fun MangaHeader(
         if (showPanoramaCover) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                Text(
+                    text = manga.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                manga.author?.takeIf { it.isNotBlank() }?.let { author ->
                     Text(
-                        text = manga.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    manga.author?.let { author ->
-                        Text(
-                            text = stringResource(R.string.details_author, author),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    manga.artist?.let { artist ->
-                        Text(
-                            text = stringResource(R.string.details_artist, artist),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
+                        text = stringResource(R.string.details_author, author),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = manga.status.colorValue(LocalOtakuColors.current)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                FilledIconToggleButton(
-                    checked = isFavorite,
-                    onCheckedChange = { onToggleFavorite() }
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (isFavorite) {
-                            stringResource(R.string.details_remove_from_library)
-                        } else {
-                            stringResource(R.string.details_add_to_library)
-                        }
+                manga.artist?.takeIf { it.isNotBlank() && it != manga.author }?.let { artist ->
+                    Text(
+                        text = stringResource(R.string.details_artist, artist),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                Text(
+                    text = stringResource(R.string.details_status, stringResource(manga.status.displayTextResId())),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = manga.status.colorValue(LocalOtakuColors.current)
+                )
             }
         }
     }

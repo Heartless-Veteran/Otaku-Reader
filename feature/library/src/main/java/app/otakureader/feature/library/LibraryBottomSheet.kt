@@ -1,5 +1,7 @@
 package app.otakureader.feature.library
 
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -106,65 +108,7 @@ private fun DisplayTab(
     onEvent: (LibraryEvent) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Grid size
-        Column {
-            Text(
-                text = stringResource(R.string.display_grid_size_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            var sliderValue by remember(state.gridSize) { mutableFloatStateOf(state.gridSize.toFloat()) }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text("1", style = MaterialTheme.typography.bodySmall)
-                Slider(
-                    value = sliderValue,
-                    onValueChange = { sliderValue = it },
-                    onValueChangeFinished = { onEvent(LibraryEvent.SetGridSize(sliderValue.toInt())) },
-                    valueRange = 1f..5f,
-                    steps = 3,
-                    modifier = Modifier.weight(1f),
-                )
-                Text("5", style = MaterialTheme.typography.bodySmall)
-            }
-            Text(
-                text = stringResource(R.string.display_grid_size_value, sliderValue.toInt()),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-
-        HorizontalDivider()
-
-        // Show badges
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.display_show_badges))
-            Switch(
-                checked = state.showBadges,
-                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowBadges(enabled)) },
-            )
-        }
-
-        // Show download badge
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.display_show_download_badge))
-            Switch(
-                checked = state.showDownloadBadge,
-                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowDownloadBadge(enabled)) },
-            )
-        }
-
-        // Display mode picker (grid / comfortable / list) — matches Mihon/Komikku.
+        // Display mode picker — Komikku puts this first.
         Text(
             text = stringResource(R.string.display_mode_label),
             style = MaterialTheme.typography.labelLarge,
@@ -191,7 +135,99 @@ private fun DisplayTab(
             }
         }
 
-        // Show title on cover
+        // Columns slider — hidden in List mode (Komikku parity). Orientation-aware: portrait
+        // and landscape each have their own column count; 0 = Auto (use window-size fallback).
+        if (state.displayMode != LibraryDisplayMode.LIST) {
+            val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+            val currentColumns = if (isLandscape) state.landscapeColumns else state.portraitColumns
+            val columnLabel = stringResource(
+                if (isLandscape) R.string.display_columns_landscape else R.string.display_columns_portrait
+            )
+            Column {
+                Text(
+                    text = columnLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                var sliderValue by remember(currentColumns) { mutableFloatStateOf(currentColumns.toFloat()) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(stringResource(R.string.display_columns_auto_short), style = MaterialTheme.typography.bodySmall)
+                    Slider(
+                        value = sliderValue,
+                        onValueChange = { sliderValue = it },
+                        onValueChangeFinished = {
+                            val count = sliderValue.toInt()
+                            if (isLandscape) onEvent(LibraryEvent.SetLandscapeColumns(count))
+                            else onEvent(LibraryEvent.SetPortraitColumns(count))
+                        },
+                        valueRange = 0f..10f,
+                        steps = 9,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text("10", style = MaterialTheme.typography.bodySmall)
+                }
+                val valueText = if (currentColumns == 0) {
+                    stringResource(R.string.display_columns_auto)
+                } else {
+                    stringResource(R.string.display_grid_size_value, currentColumns)
+                }
+                Text(text = valueText, style = MaterialTheme.typography.bodyMedium)
+            }
+
+            // Staggered grid (only meaningful in grid modes)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(stringResource(R.string.display_staggered_grid))
+                Switch(
+                    checked = state.isStaggeredGrid,
+                    onCheckedChange = { enabled -> onEvent(LibraryEvent.SetStaggeredGrid(enabled)) },
+                )
+            }
+        }
+
+        HorizontalDivider()
+
+        // Overlay section (Komikku parity: groups all cover-overlay toggles under one heading)
+        Text(
+            text = stringResource(R.string.display_overlay_header),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+
+        // Show download badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_download_badge))
+            Switch(
+                checked = state.showDownloadBadge,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowDownloadBadge(enabled)) },
+            )
+        }
+
+        // Show unread badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_badges))
+            Switch(
+                checked = state.showBadges,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowBadges(enabled)) },
+            )
+        }
+
+        // Show title on cover (Otaku-exclusive: overlays the title text on the cover art)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -204,16 +240,47 @@ private fun DisplayTab(
             )
         }
 
-        // Staggered grid
+        // Show continue reading button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.display_staggered_grid))
+            Text(stringResource(R.string.display_show_continue_reading_button))
             Switch(
-                checked = state.isStaggeredGrid,
-                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetStaggeredGrid(enabled)) },
+                checked = state.showContinueReadingButton,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowContinueReadingButton(enabled)) },
+            )
+        }
+
+        HorizontalDivider()
+
+        // Tabs section (Komikku parity)
+        Text(
+            text = stringResource(R.string.display_tabs_header),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_category_tabs))
+            Switch(
+                checked = state.showCategoryTabs,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowCategoryTabs(enabled)) },
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_category_item_count))
+            Switch(
+                checked = state.showCategoryItemCount,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowCategoryItemCount(enabled)) },
             )
         }
     }
@@ -302,6 +369,11 @@ private fun FilterTab(
             label = stringResource(R.string.filter_started),
             state = state.filterStarted,
             onClick = { onEvent(LibraryEvent.SetFilterStarted(state.filterStarted.next())) },
+        )
+        TriStateFilterRow(
+            label = stringResource(R.string.filter_bookmarked),
+            state = state.filterBookmarked,
+            onClick = { onEvent(LibraryEvent.SetFilterBookmarked(state.filterBookmarked.next())) },
         )
         TriStateFilterRow(
             label = stringResource(R.string.filter_tracking),

@@ -223,4 +223,16 @@
     <!-- Tracker tab content -->
     <string name="details_tracker_tab_description">Track your reading progress across AniList, MyAnimeList, and more.</string>
     <string name="details_tracker_tab_manage_button">Manage Tracking</string>
+
+    <!-- Chapter list header -->
+    <string name="details_in_library">In library</string>
+    <string name="details_action_tracking">Tracking</string>
+    <plurals name="details_tracking_count">
+        <item quantity="one">%1$d tracker</item>
+        <item quantity="other">%1$d trackers</item>
+    </plurals>
+    <plurals name="details_missing_chapters">
+        <item quantity="one">%1$d missing chapter</item>
+        <item quantity="other">%1$d missing chapters</item>
+    </plurals>
 </resources>

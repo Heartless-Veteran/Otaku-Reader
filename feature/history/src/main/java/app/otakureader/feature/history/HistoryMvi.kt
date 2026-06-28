@@ -16,7 +16,10 @@ data class HistoryState(
     /** End of the active date filter (epoch-ms, inclusive), or null if no filter set. */
     val dateFilterEnd: Long? = null,
     val isPullRefreshing: Boolean = false,
-) : UiState
+) : UiState {
+    val hasActiveFilters: Boolean
+        get() = searchQuery.isNotBlank() || dateFilterStart != null || dateFilterEnd != null
+}
 
 sealed interface HistoryEvent : UiEvent {
     data class OnChapterClick(val mangaId: Long, val chapterId: Long) : HistoryEvent
@@ -38,6 +41,8 @@ sealed interface HistoryEvent : UiEvent {
     data object ClearDateFilter : HistoryEvent
     /** Triggered by pull-to-refresh; re-exposes current history after a brief spinner. */
     data object RefreshHistory : HistoryEvent
+    /** Toggle library membership for the manga associated with a history entry. */
+    data class ToggleMangaFavorite(val mangaId: Long) : HistoryEvent
 }
 
 sealed interface HistoryEffect : UiEffect {

@@ -43,4 +43,7 @@ interface PageBookmarkDao {
 
     @Query("SELECT * FROM page_bookmarks WHERE collection_id = :collectionId ORDER BY created_at DESC")
     fun getBookmarksByCollection(collectionId: Long): Flow<List<PageBookmarkEntity>>
+
+    @Query("SELECT DISTINCT manga_id FROM page_bookmarks")
+    fun getMangaIdsWithBookmarks(): Flow<List<Long>>
 }

@@ -3,6 +3,7 @@ package app.otakureader.feature.updates
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,20 +29,27 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +68,17 @@ fun DownloadsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    // Collapse FAB text while scrolling down; expand when at top or scrolling up.
+    var fabExpanded by remember { mutableStateOf(true) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                fabExpanded = available.y >= 0
+                return Offset.Zero
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -67,7 +86,29 @@ fun DownloadsScreen(
                     if (state.selectedItems.isNotEmpty()) {
                         Text(stringResource(R.string.downloads_selected_count, state.selectedItems.size))
                     } else {
-                        Text(stringResource(R.string.downloads_title))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.downloads_title),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            if (state.items.isNotEmpty()) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = MaterialTheme.shapes.small,
+                                ) {
+                                    Text(
+                                        text = "${state.items.size}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 },
                 navigationIcon = {
@@ -100,16 +141,6 @@ fun DownloadsScreen(
                         }
                     } else {
                         if (state.hasDownloads) {
-                            // Keep the two most-frequent actions (Pause/Resume) and Select All as
-                            // first-class icon buttons; the less-frequent Retry-failed and Clear-all
-                            // move into the overflow menu so the title doesn't truncate on phones
-                            // (5 actions in the action slot pushed the title off a 360dp screen).
-                            IconButton(onClick = { viewModel.onEvent(DownloadsEvent.PauseAll) }) {
-                                Icon(Icons.Default.Pause, contentDescription = stringResource(R.string.downloads_pause_all))
-                            }
-                            IconButton(onClick = { viewModel.onEvent(DownloadsEvent.ResumeAll) }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.downloads_resume_all))
-                            }
                             IconButton(onClick = { viewModel.onEvent(DownloadsEvent.SelectAll) }) {
                                 Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.downloads_select_all))
                             }
@@ -145,7 +176,31 @@ fun DownloadsScreen(
                     }
                 }
             )
-        }
+        },
+        floatingActionButton = {
+            if (state.hasDownloads) {
+                val isRunning = state.isDownloaderRunning
+                ExtendedFloatingActionButton(
+                    text = {
+                        Text(
+                            if (isRunning) stringResource(R.string.downloads_pause_all)
+                            else stringResource(R.string.downloads_resume_all)
+                        )
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = null,
+                        )
+                    },
+                    onClick = {
+                        if (isRunning) viewModel.onEvent(DownloadsEvent.PauseAll)
+                        else viewModel.onEvent(DownloadsEvent.ResumeAll)
+                    },
+                    expanded = fabExpanded,
+                )
+            }
+        },
     ) { padding ->
         if (state.items.isEmpty()) {
             EmptyDownloadsPlaceholder(
@@ -157,7 +212,9 @@ fun DownloadsScreen(
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .nestedScroll(nestedScrollConnection),
+                contentPadding = PaddingValues(bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(

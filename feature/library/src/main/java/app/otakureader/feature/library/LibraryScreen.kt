@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
-import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteForever
@@ -77,6 +76,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -95,10 +96,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import app.otakureader.domain.model.SavedLibraryView
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.outlined.FlipToBack
+import androidx.compose.material.icons.outlined.SelectAll
+import androidx.compose.material3.Badge
+import androidx.compose.material3.Surface
+import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,86 +234,17 @@ fun LibraryScreen(
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.MarkSelectedAsRead) }) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.library_mark_selected_read))
-                        }
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.MarkSelectedAsUnread) }) {
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.SelectAllManga) }) {
                             Icon(
-                                Icons.Default.RadioButtonUnchecked,
-                                contentDescription = stringResource(R.string.library_mark_selected_unread)
+                                Icons.Outlined.SelectAll,
+                                contentDescription = stringResource(R.string.library_select_all),
                             )
                         }
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.DownloadSelected) }) {
-                            Icon(Icons.Default.Download, contentDescription = stringResource(R.string.library_download_selected))
-                        }
-                        if (state.categories.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.onEvent(LibraryEvent.OpenMoveToCategoryDialog) }) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.DriveFileMove,
-                                    contentDescription = stringResource(R.string.library_move_to_category),
-                                )
-                            }
-                        }
-                        IconButton(onClick = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary }) {
-                            Icon(Icons.Default.DeleteForever, contentDescription = stringResource(R.string.library_remove_selected))
-                        }
-                        var selectionOverflowExpanded by remember { mutableStateOf(false) }
-                        IconButton(onClick = { selectionOverflowExpanded = true }) {
+                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.InvertSelection) }) {
                             Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = stringResource(R.string.library_more_actions),
+                                Icons.Outlined.FlipToBack,
+                                contentDescription = stringResource(R.string.library_invert_selection),
                             )
-                        }
-                        DropdownMenu(
-                            expanded = selectionOverflowExpanded,
-                            onDismissRequest = { selectionOverflowExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_select_all)) },
-                                onClick = {
-                                    viewModel.onEvent(LibraryEvent.SelectAllManga)
-                                    selectionOverflowExpanded = false
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_invert_selection)) },
-                                onClick = {
-                                    viewModel.onEvent(LibraryEvent.InvertSelection)
-                                    selectionOverflowExpanded = false
-                                },
-                            )
-                            androidx.compose.material3.HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_mark_selected_completed)) },
-                                onClick = {
-                                    pendingBulkAction = LibraryEvent.MarkSelectedAsCompleted
-                                    selectionOverflowExpanded = false
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.library_mark_selected_dropped)) },
-                                onClick = {
-                                    pendingBulkAction = LibraryEvent.MarkSelectedAsDropped
-                                    selectionOverflowExpanded = false
-                                },
-                            )
-                            if (state.selectedManga.size == 1) {
-                                androidx.compose.material3.HorizontalDivider()
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_share_manga)) },
-                                    onClick = {
-                                        viewModel.onEvent(LibraryEvent.ShareSelectedManga)
-                                        selectionOverflowExpanded = false
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.library_view_details)) },
-                                    onClick = {
-                                        viewModel.onEvent(LibraryEvent.ViewSelectedManga)
-                                        selectionOverflowExpanded = false
-                                    },
-                                )
-                            }
                         }
                     }
                 )
@@ -344,17 +284,25 @@ fun LibraryScreen(
                 )
                 else -> TopAppBar(
                     title = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             Text(
-                                text = "Otaku",
-                                color = MaterialTheme.colorScheme.primary,
+                                text = stringResource(R.string.library_title),
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
-                            Text(
-                                text = "Reader",
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            )
+                            val mangaCount = state.mangaList.size
+                            if (mangaCount > 0) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                ) {
+                                    Text(text = mangaCount.toString())
+                                }
+                            }
                         }
                     },
                     actions = {
@@ -490,6 +438,16 @@ fun LibraryScreen(
                 )
             }
         },
+        bottomBar = {
+            LibrarySelectionBottomBar(
+                visible = state.selectedManga.isNotEmpty(),
+                onChangeCategoryClicked = { viewModel.onEvent(LibraryEvent.OpenMoveToCategoryDialog) },
+                onMarkAsReadClicked = { viewModel.onEvent(LibraryEvent.MarkSelectedAsRead) },
+                onMarkAsUnreadClicked = { viewModel.onEvent(LibraryEvent.MarkSelectedAsUnread) },
+                onDownloadClicked = { viewModel.onEvent(LibraryEvent.DownloadSelected) },
+                onDeleteClicked = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary },
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             // Resume FAB (Mihon/Komikku): continues the most recently read chapter. Shown only
@@ -578,10 +536,15 @@ private fun LibraryContent(
 ) {
     val widthSizeClass = rememberWindowWidthSizeClass()
     val isExpandedWidth = widthSizeClass.isExpanded
-    val adaptiveColumns = when (widthSizeClass) {
-        WindowWidthSizeClass.Expanded -> (state.gridSize + 2).coerceAtLeast(5)
-        WindowWidthSizeClass.Medium -> (state.gridSize + 1).coerceAtLeast(4)
-        WindowWidthSizeClass.Compact -> state.gridSize
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val adaptiveColumns = when {
+        isLandscape && state.landscapeColumns > 0 -> state.landscapeColumns
+        !isLandscape && state.portraitColumns > 0 -> state.portraitColumns
+        else -> when (widthSizeClass) {
+            WindowWidthSizeClass.Expanded -> (state.gridSize + 2).coerceAtLeast(5)
+            WindowWidthSizeClass.Medium -> (state.gridSize + 1).coerceAtLeast(4)
+            WindowWidthSizeClass.Compact -> state.gridSize
+        }
     }
     var detailManga by remember { mutableStateOf<LibraryMangaItem?>(null) }
 
@@ -1023,4 +986,106 @@ private fun MoveToCategoryDialog(
             }
         },
     )
+}
+
+@Composable
+private fun LibrarySelectionBottomBar(
+    visible: Boolean,
+    onChangeCategoryClicked: () -> Unit,
+    onMarkAsReadClicked: () -> Unit,
+    onMarkAsUnreadClicked: () -> Unit,
+    onDownloadClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = expandVertically(animationSpec = tween(delayMillis = 300)),
+        exit = shrinkVertically(animationSpec = tween()),
+        modifier = modifier,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onChangeCategoryClicked) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.DriveFileMove,
+                            contentDescription = stringResource(R.string.library_move_to_category),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_move_to_category),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMarkAsReadClicked) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = stringResource(R.string.library_mark_selected_read),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_mark_selected_read),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMarkAsUnreadClicked) {
+                        Icon(
+                            Icons.Default.RadioButtonUnchecked,
+                            contentDescription = stringResource(R.string.library_mark_selected_unread),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_mark_selected_unread),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onDownloadClicked) {
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = stringResource(R.string.library_download_selected),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_download_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onDeleteClicked) {
+                        Icon(
+                            Icons.Default.DeleteForever,
+                            contentDescription = stringResource(R.string.library_remove_selected),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_remove_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
 }

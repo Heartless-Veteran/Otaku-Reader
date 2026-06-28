@@ -46,6 +46,7 @@ internal fun ChapterListHeader(
     sortOrder: DetailsContract.ChapterSortOrder,
     isFilterActive: Boolean = false,
     estimatedRemainingTimeMs: Long = 0L,
+    missingChapterCount: Int = 0,
     chapterSearchQuery: String = "",
     onSearchQueryChange: (String) -> Unit = {},
     onToggleSort: () -> Unit,
@@ -66,6 +67,13 @@ internal fun ChapterListHeader(
                     text = pluralStringResource(R.plurals.details_chapter_count, chapterCount, chapterCount),
                     style = MaterialTheme.typography.titleMedium
                 )
+                if (missingChapterCount > 0) {
+                    Text(
+                        text = pluralStringResource(R.plurals.details_missing_chapters, missingChapterCount, missingChapterCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.74f),
+                    )
+                }
                 if (estimatedRemainingTimeMs > 0L) {
                     val minutes = (estimatedRemainingTimeMs / 60_000L).toInt()
                     Text(

@@ -67,6 +67,9 @@ object DetailsContract {
         
         val hasUnreadChapters: Boolean
             get() = chapters.any { !it.read }
+
+        val hasStartedReading: Boolean
+            get() = chapters.any { it.read || it.lastPageRead > 0 }
         
         val sortedChapters: List<ChapterItem>
             get() {
@@ -85,6 +88,24 @@ object DetailsContract {
                 DeleteAfterReadMode.ENABLED -> true
                 DeleteAfterReadMode.DISABLED -> false
                 DeleteAfterReadMode.INHERIT -> globalDeleteAfterRead
+            }
+
+        val missingChapterCount: Int
+            get() {
+                val nums = chapters
+                    .map { it.chapterNumber }
+                    .filter { it >= 0 }
+                    .map { it.toInt() }
+                    .distinct()
+                    .sorted()
+                if (nums.size < 2) return 0
+                var missing = 0
+                var prev = nums.first()
+                for (curr in nums.drop(1)) {
+                    if (curr > prev + 1) missing += curr - prev - 1
+                    prev = curr
+                }
+                return missing
             }
     }
 

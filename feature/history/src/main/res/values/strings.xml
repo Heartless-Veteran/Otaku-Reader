@@ -42,6 +42,12 @@
     <string name="history_filter_confirm">OK</string>
     <string name="history_filter_cancel">Cancel</string>
 
+    <!-- Add to library from history row -->
+    <string name="history_add_to_library">Add to library</string>
+    <string name="history_in_library">In library</string>
+    <!-- Active-filter indicator -->
+    <string name="history_filter_active_indicator">Filters active</string>
+
     <!-- Date group headers -->
     <string name="history_date_today">Today</string>
     <string name="history_date_yesterday">Yesterday</string>

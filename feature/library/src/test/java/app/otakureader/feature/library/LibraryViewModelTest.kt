@@ -27,6 +27,7 @@ import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.repository.EhFavoritesRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.repository.TrackerSyncRepository
@@ -84,6 +85,9 @@ class LibraryViewModelTest {
         every { isConfigured() } returns false
     }
     private val syncLibrary: SyncLibraryUseCase = mockk(relaxed = true)
+    private val pageBookmarkRepository: PageBookmarkRepository = mockk {
+        every { getMangaIdsWithBookmarks() } returns flowOf(emptySet())
+    }
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -97,27 +101,14 @@ class LibraryViewModelTest {
         getLibraryManga = mockk()
         searchLibraryManga = mockk(relaxed = true)
         toggleFavoriteManga = mockk()
-        libraryPreferences = mockk {
-            every { gridSize } returns flowOf(3)
-            every { showBadges } returns flowOf(true)
-            every { showDownloadBadge } returns flowOf(true)
-            every { librarySortMode } returns flowOf(0)
-            every { libraryFilterMode } returns flowOf(0)
-            every { libraryFilterSourceId } returns flowOf(null)
-            every { isStaggeredGrid } returns flowOf(false)
-            every { libraryDisplayMode } returns flowOf(0)
-            every { showRecommendations } returns flowOf(false)
-            every { dismissedRecommendations } returns flowOf(emptySet())
-            every { groupByCategory } returns flowOf(false)
-            every { savedViewsJson } returns flowOf("[]")
-            coEvery { setSavedViewsJson(any()) } just Awaits
-            every { showTitle } returns flowOf(true)
-        }
+        libraryPreferences = buildLibraryPreferencesMock()
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)
             every { lastUpdatesViewedAt } returns flowOf(0L)
             every { visualEffectsEnabled } returns flowOf(true)
             every { displayName } returns flowOf("")
+            every { downloadedOnly } returns flowOf(false)
+            coEvery { setDownloadedOnly(any()) } just Awaits
         }
         chapterRepository = mockk { every { countNewUpdatesSince(any()) } returns flowOf(0) }
         mangaRepository = mockk(relaxed = true)
@@ -154,6 +145,33 @@ class LibraryViewModelTest {
         }
     }
 
+    private fun buildLibraryPreferencesMock(): LibraryPreferences = mockk {
+        every { gridSize } returns flowOf(3)
+        every { portraitColumns } returns flowOf(0)
+        every { landscapeColumns } returns flowOf(0)
+        coEvery { setPortraitColumns(any()) } just Awaits
+        coEvery { setLandscapeColumns(any()) } just Awaits
+        every { showBadges } returns flowOf(true)
+        every { showDownloadBadge } returns flowOf(true)
+        every { librarySortMode } returns flowOf(0)
+        every { libraryFilterMode } returns flowOf(0)
+        every { libraryFilterSourceId } returns flowOf(null)
+        every { isStaggeredGrid } returns flowOf(false)
+        every { libraryDisplayMode } returns flowOf(0)
+        every { showRecommendations } returns flowOf(false)
+        every { dismissedRecommendations } returns flowOf(emptySet())
+        every { groupByCategory } returns flowOf(false)
+        every { savedViewsJson } returns flowOf("[]")
+        coEvery { setSavedViewsJson(any()) } just Awaits
+        every { showTitle } returns flowOf(true)
+        every { showCategoryTabs } returns flowOf(true)
+        every { showCategoryItemCount } returns flowOf(true)
+        every { showContinueReadingButton } returns flowOf(true)
+        coEvery { setShowCategoryTabs(any()) } just Awaits
+        coEvery { setShowCategoryItemCount(any()) } just Awaits
+        coEvery { setShowContinueReadingButton(any()) } just Awaits
+    }
+
     @After
     fun tearDown() {
         Dispatchers.resetMain()
@@ -183,6 +201,7 @@ class LibraryViewModelTest {
             syncEhFavorites,
             ehFavoritesRepository,
             syncLibrary,
+            pageBookmarkRepository,
         )
     }
 
