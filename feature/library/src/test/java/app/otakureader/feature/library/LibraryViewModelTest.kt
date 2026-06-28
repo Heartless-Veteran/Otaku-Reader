@@ -782,4 +782,30 @@ class LibraryViewModelTest {
             assertEquals(listOf(5), snackbar.formatArgs)
         }
     }
+
+    @Test
+    fun migrateSelected_emitsNavigateToMigrationWithSelectedIds_andClearsSelection() = runTest {
+        every { getLibraryManga() } returns flowOf(sampleMangas)
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(1L))
+        viewModel.onEvent(LibraryEvent.SelectMangaFromMenu(2L))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(LibraryEvent.MigrateSelected)
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is LibraryEffect.NavigateToMigration)
+            assertEquals(
+                listOf(1L, 2L),
+                (effect as LibraryEffect.NavigateToMigration).selectedMangaIds.sorted()
+            )
+        }
+
+        assertTrue(viewModel.state.value.selectedManga.isEmpty())
+    }
 }
