@@ -1303,4 +1303,3 @@ private fun UpdatesSelectionBottomBar(
         }
     }
 }
-}
