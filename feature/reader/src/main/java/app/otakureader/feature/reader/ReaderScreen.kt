@@ -125,6 +125,12 @@ private val DIRECTION_INDICATOR_ICON_SIZE = 18.dp
 private val DIRECTION_INDICATOR_ICON_SPACING = 6.dp
 private const val DIRECTION_INDICATOR_SCRIM_ALPHA = 0.7f
 
+private const val MODE_OVERLAY_DURATION_MS = 1_500L
+private val PAGE_NUMBER_BOTTOM_PADDING = 16.dp
+private val PAGE_NUMBER_CORNER_RADIUS = 16.dp
+private val PAGE_NUMBER_HORIZONTAL_PADDING = 12.dp
+private val PAGE_NUMBER_VERTICAL_PADDING = 6.dp
+
 /** Maps a domain [ReaderOrientation] to the matching Android `ActivityInfo` orientation flag. */
 private fun ReaderOrientation.toActivityInfo(): Int = when (this) {
     ReaderOrientation.DEFAULT -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -168,6 +174,7 @@ fun ReaderScreen(
     var showBrightnessSlider by remember { mutableStateOf(false) }
     var showChapterFilterSheet by remember { mutableStateOf(false) }
     var showDirectionIndicator by remember { mutableStateOf(false) }
+    var showModeOverlay by remember { mutableStateOf(false) }
     
     // Handle effects
     LaunchedEffect(Unit) {
@@ -269,6 +276,15 @@ fun ReaderScreen(
         showDirectionIndicator = true
         delay(DIRECTION_INDICATOR_DURATION_MS)
         showDirectionIndicator = false
+    }
+
+    // Guard on pages.isNotEmpty(): mode transitions from default→saved before pages load, causing a spurious flash without it.
+    LaunchedEffect(state.mode) {
+        if (state.pages.isNotEmpty() && state.showReadingModeOverlay) {
+            showModeOverlay = true
+            delay(MODE_OVERLAY_DURATION_MS)
+        }
+        showModeOverlay = false
     }
 
     // Handle zoom indicator visibility
@@ -499,6 +515,24 @@ fun ReaderScreen(
             zoomLevel = state.zoomLevel,
             isVisible = showZoomIndicator,
             modifier = Modifier.align(Alignment.Center)
+        )
+
+        // Reading mode overlay — fades in/out at center on mode change (Komikku parity)
+        ReadingModeOverlay(
+            mode = state.mode,
+            isVisible = showModeOverlay && !state.isMenuVisible,
+            modifier = Modifier.align(Alignment.Center)
+        )
+
+        // Page number indicator — persistent bottom-center pill; hidden when menu is open
+        PageNumberIndicator(
+            currentPage = state.displayPageNumber,
+            totalPages = state.totalPages,
+            isVisible = state.showPageNumber && !state.isMenuVisible &&
+                !state.isGalleryOpen && state.pages.isNotEmpty(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = PAGE_NUMBER_BOTTOM_PADDING)
         )
 
         // Brightness slider overlay
@@ -794,6 +828,71 @@ private fun ReadingDirectionIndicator(
             Spacer(Modifier.width(DIRECTION_INDICATOR_ICON_SPACING))
             Text(label, color = Color.White, style = MaterialTheme.typography.labelMedium)
         }
+    }
+}
+
+@Composable
+private fun ReadingModeOverlay(
+    mode: ReaderMode,
+    isVisible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier,
+    ) {
+        val label = when (mode) {
+            ReaderMode.SINGLE_PAGE -> stringResource(R.string.reader_mode_single)
+            ReaderMode.DUAL_PAGE -> stringResource(R.string.reader_mode_dual)
+            ReaderMode.WEBTOON -> stringResource(R.string.reader_mode_webtoon)
+            ReaderMode.SMART_PANELS -> stringResource(R.string.reader_mode_smart)
+        }
+        Text(
+            text = label,
+            color = Color.White,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier
+                .background(
+                    Color.Black.copy(alpha = DIRECTION_INDICATOR_SCRIM_ALPHA),
+                    RoundedCornerShape(DIRECTION_INDICATOR_CORNER_RADIUS),
+                )
+                .padding(
+                    horizontal = DIRECTION_INDICATOR_HORIZONTAL_PADDING,
+                    vertical = DIRECTION_INDICATOR_VERTICAL_PADDING,
+                )
+        )
+    }
+}
+
+@Composable
+private fun PageNumberIndicator(
+    currentPage: Int,
+    totalPages: Int,
+    isVisible: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier,
+    ) {
+        Text(
+            text = stringResource(R.string.reader_page_of_total, currentPage, totalPages),
+            color = Color.White,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier
+                .background(
+                    Color.Black.copy(alpha = DIRECTION_INDICATOR_SCRIM_ALPHA),
+                    RoundedCornerShape(PAGE_NUMBER_CORNER_RADIUS),
+                )
+                .padding(
+                    horizontal = PAGE_NUMBER_HORIZONTAL_PADDING,
+                    vertical = PAGE_NUMBER_VERTICAL_PADDING,
+                )
+        )
     }
 }
 
