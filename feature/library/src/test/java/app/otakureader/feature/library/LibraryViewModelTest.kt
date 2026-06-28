@@ -27,6 +27,7 @@ import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.repository.EhFavoritesRepository
+import app.otakureader.domain.repository.PageBookmarkRepository
 import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.repository.TrackerSyncRepository
@@ -84,6 +85,9 @@ class LibraryViewModelTest {
         every { isConfigured() } returns false
     }
     private val syncLibrary: SyncLibraryUseCase = mockk(relaxed = true)
+    private val pageBookmarkRepository: PageBookmarkRepository = mockk {
+        every { getMangaIdsWithBookmarks() } returns flowOf(emptySet())
+    }
 
     private val sampleMangas = listOf(
         Manga(id = 1L, sourceId = 10L, url = "/m/1", title = "Naruto", favorite = true, unreadCount = 3, lastRead = 1000L, status = MangaStatus.ONGOING),
@@ -191,6 +195,7 @@ class LibraryViewModelTest {
             syncEhFavorites,
             ehFavoritesRepository,
             syncLibrary,
+            pageBookmarkRepository,
         )
     }
 

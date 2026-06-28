@@ -62,6 +62,10 @@ class PageBookmarkRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun getMangaIdsWithBookmarks(): Flow<Set<Long>> {
+        return pageBookmarkDao.getMangaIdsWithBookmarks().map { it.toSet() }
+    }
+
     private fun PageBookmarkEntity.toDomain() = PageBookmark(
         id = id,
         mangaId = mangaId,

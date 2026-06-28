@@ -335,6 +335,11 @@ private fun FilterTab(
             onClick = { onEvent(LibraryEvent.SetFilterStarted(state.filterStarted.next())) },
         )
         TriStateFilterRow(
+            label = stringResource(R.string.filter_bookmarked),
+            state = state.filterBookmarked,
+            onClick = { onEvent(LibraryEvent.SetFilterBookmarked(state.filterBookmarked.next())) },
+        )
+        TriStateFilterRow(
             label = stringResource(R.string.filter_tracking),
             state = state.filterTracking,
             onClick = { onEvent(LibraryEvent.SetFilterTracking(state.filterTracking.next())) },
