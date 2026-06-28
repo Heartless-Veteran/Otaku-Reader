@@ -218,12 +218,15 @@ internal fun MangaGrid(
         }
 
         // Category selector — Mihon/Komikku-style swipeable tabs.
-        CategoryTabRow(
-            categories = state.categories,
-            selectedCategory = state.selectedCategory,
-            onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
+        if (state.showCategoryTabs) {
+            CategoryTabRow(
+                categories = state.categories,
+                selectedCategory = state.selectedCategory,
+                showItemCount = state.showCategoryItemCount,
+                onCategorySelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
 
         if (state.readingLists.isNotEmpty()) {
             ReadingListFilterChips(
@@ -591,7 +594,8 @@ internal fun CategoryTabRow(
     categories: List<CategoryItem>,
     selectedCategory: Long?,
     onCategorySelected: (Long?) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showItemCount: Boolean = true,
 ) {
     val totalCount = categories.sumOf { it.count }
     val categoryTabs = listOf(
@@ -618,8 +622,9 @@ internal fun CategoryTabRow(
                     else onCategorySelected(category.id)
                 },
                 text = {
+                    val label = if (showItemCount) "${category.name} ${category.count}" else category.name
                     Text(
-                        text = "${category.name} ${category.count}",
+                        text = label,
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

@@ -216,6 +216,37 @@ private fun DisplayTab(
                 onCheckedChange = { enabled -> onEvent(LibraryEvent.SetStaggeredGrid(enabled)) },
             )
         }
+
+        HorizontalDivider()
+
+        // Tabs section (Komikku parity)
+        Text(
+            text = stringResource(R.string.display_tabs_header),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_category_tabs))
+            Switch(
+                checked = state.showCategoryTabs,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowCategoryTabs(enabled)) },
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(stringResource(R.string.display_show_category_item_count))
+            Switch(
+                checked = state.showCategoryItemCount,
+                onCheckedChange = { enabled -> onEvent(LibraryEvent.SetShowCategoryItemCount(enabled)) },
+            )
+        }
     }
 }
 

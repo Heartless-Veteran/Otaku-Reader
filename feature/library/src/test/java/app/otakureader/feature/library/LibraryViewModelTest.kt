@@ -112,6 +112,10 @@ class LibraryViewModelTest {
             every { savedViewsJson } returns flowOf("[]")
             coEvery { setSavedViewsJson(any()) } just Awaits
             every { showTitle } returns flowOf(true)
+            every { showCategoryTabs } returns flowOf(true)
+            every { showCategoryItemCount } returns flowOf(true)
+            coEvery { setShowCategoryTabs(any()) } just Awaits
+            coEvery { setShowCategoryItemCount(any()) } just Awaits
         }
         generalPreferences = mockk {
             every { showNsfwContent } returns flowOf(true)

@@ -188,6 +188,16 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    // --- Category Tab Display ---
+
+    /** Whether to show the category tab row in the library screen. */
+    val showCategoryTabs: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_CATEGORY_TABS] ?: true }
+    suspend fun setShowCategoryTabs(value: Boolean) = dataStore.edit { it[Keys.SHOW_CATEGORY_TABS] = value }
+
+    /** Whether to show the manga count next to each category tab label. */
+    val showCategoryItemCount: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_CATEGORY_ITEM_COUNT] ?: true }
+    suspend fun setShowCategoryItemCount(value: Boolean) = dataStore.edit { it[Keys.SHOW_CATEGORY_ITEM_COUNT] = value }
+
     // --- Saved Views (#1039) ---
 
     /**
@@ -229,5 +239,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
         val GROUP_BY_CATEGORY = booleanPreferencesKey("library_group_by_category")
         val SAVED_VIEWS = stringPreferencesKey("library_saved_views")
+        val SHOW_CATEGORY_TABS = booleanPreferencesKey("library_show_category_tabs")
+        val SHOW_CATEGORY_ITEM_COUNT = booleanPreferencesKey("library_show_category_item_count")
     }
 }

@@ -143,8 +143,9 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
             is LibraryEvent.SetGridSize, is LibraryEvent.SetShowBadges,
             is LibraryEvent.SetShowDownloadBadge, is LibraryEvent.SetStaggeredGrid,
-            is LibraryEvent.SetShowTitle,
-            is LibraryEvent.SetDisplayMode -> handleDisplayEvent(event)
+            is LibraryEvent.SetShowTitle, is LibraryEvent.SetDisplayMode,
+            is LibraryEvent.SetShowCategoryTabs,
+            is LibraryEvent.SetShowCategoryItemCount -> handleDisplayEvent(event)
             is LibraryEvent.ToggleIncognito -> toggleIncognitoMode()
             is LibraryEvent.DismissRecommendation -> dismissRecommendation(event.mangaId)
             is LibraryEvent.ToggleAdvancedSearch -> _state.update { it.copy(showAdvancedSearch = !it.showAdvancedSearch) }
@@ -180,6 +181,10 @@ class LibraryViewModel @Inject constructor(
                 viewModelScope.launch { libraryPreferences.setStaggeredGrid(event.enabled) }
             is LibraryEvent.SetDisplayMode ->
                 viewModelScope.launch { libraryPreferences.setLibraryDisplayMode(event.mode.ordinal) }
+            is LibraryEvent.SetShowCategoryTabs ->
+                viewModelScope.launch { libraryPreferences.setShowCategoryTabs(event.enabled) }
+            is LibraryEvent.SetShowCategoryItemCount ->
+                viewModelScope.launch { libraryPreferences.setShowCategoryItemCount(event.enabled) }
             else -> Unit
         }
     }
@@ -492,6 +497,12 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         libraryPreferences.isStaggeredGrid
             .onEach { staggered -> _state.update { it.copy(isStaggeredGrid = staggered) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showCategoryTabs
+            .onEach { show -> _state.update { it.copy(showCategoryTabs = show) } }
+            .launchIn(viewModelScope)
+        libraryPreferences.showCategoryItemCount
+            .onEach { show -> _state.update { it.copy(showCategoryItemCount = show) } }
             .launchIn(viewModelScope)
         libraryPreferences.libraryDisplayMode
             .onEach { modeInt ->
