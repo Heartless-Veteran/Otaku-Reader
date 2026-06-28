@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -93,9 +94,15 @@ class GeneralPreferences(private val dataStore: DataStore<Preferences>) {
     val showNsfwContent: Flow<Boolean> = dataStore.data.map { it[Keys.SHOW_NSFW_CONTENT] ?: true }
     suspend fun setShowNsfwContent(value: Boolean) = dataStore.edit { it[Keys.SHOW_NSFW_CONTENT] = value }
 
-    /** Language codes (e.g. "en", "ja") the user wants to see in Browse. Default: all English sources. */
+    /**
+     * Language codes the user wants to see in Browse.
+     *
+     * Default matches Komikku: "all" (multi-language sources like MangaDex), "en" (English),
+     * and the device's current locale language. Without "all", multi-language sources are
+     * silently hidden on fresh installs — the user installs MangaDex and it never appears.
+     */
     val enabledSourceLanguages: Flow<Set<String>> = dataStore.data.map {
-        it[Keys.ENABLED_SOURCE_LANGUAGES] ?: setOf("en")
+        it[Keys.ENABLED_SOURCE_LANGUAGES] ?: setOf("all", "en", Locale.getDefault().language)
     }
     suspend fun setEnabledSourceLanguages(languages: Set<String>) = dataStore.edit {
         it[Keys.ENABLED_SOURCE_LANGUAGES] = languages
