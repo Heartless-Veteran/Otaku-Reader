@@ -146,7 +146,7 @@ fun SettingsScreen(
                 },
             )
         },
-    } { paddingValues ->
+    ) { paddingValues ->
         SettingsBody(
             paddingValues = paddingValues,
             state = state,
