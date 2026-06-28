@@ -83,7 +83,7 @@ fun MoreScreen(
     onNavigateToScanLibrary: () -> Unit = {},
     onNavigateToUpdateErrors: () -> Unit = {},
     onNavigateToReadingLists: () -> Unit = {},
-    onNavigateToCategories: () -> Unit = {},
+    onNavigateToCategories: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current

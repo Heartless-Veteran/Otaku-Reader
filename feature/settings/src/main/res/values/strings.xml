@@ -130,6 +130,9 @@
     <string name="settings_update_interval_6h">6 hours</string>
     <string name="settings_update_interval_12h">12 hours</string>
     <string name="settings_update_interval_24h">24 hours</string>
+    <string name="settings_update_interval_48h">Every 2 days</string>
+    <string name="settings_update_interval_72h">Every 3 days</string>
+    <string name="settings_update_interval_weekly">Weekly</string>
     <string name="settings_notif_batching">Smart batching</string>
     <string name="settings_notif_batching_description">Group new-chapter notifications to avoid spam</string>
     <string name="settings_notif_cooldown">Per-manga cooldown: %1$d min</string>

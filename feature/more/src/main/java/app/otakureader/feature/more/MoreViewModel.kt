@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,13 +29,6 @@ sealed interface MoreEvent {
     data class SetDownloadedOnly(val enabled: Boolean) : MoreEvent
 }
 
-private data class MoreParams(
-    val dailyGoal: Int,
-    val weeklyGoal: Int,
-    val incognitoMode: Boolean,
-    val downloadedOnly: Boolean,
-)
-
 @HiltViewModel
 class MoreViewModel @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
@@ -49,28 +41,29 @@ class MoreViewModel @Inject constructor(
         private const val SUBSCRIBE_STOP_TIMEOUT_MS = 5_000L
     }
 
+    private val goalProgress = combine(
+        readingGoalPreferences.dailyChapterGoal,
+        readingGoalPreferences.weeklyChapterGoal,
+    ) { daily, weekly -> daily to weekly }
+        .distinctUntilChanged()
+        .flatMapLatest { (daily, weekly) ->
+            statisticsRepository.getReadingGoalProgress(daily, weekly)
+        }
+
     val state: StateFlow<MoreState> =
         combine(
-            readingGoalPreferences.dailyChapterGoal,
-            readingGoalPreferences.weeklyChapterGoal,
+            goalProgress,
             readerSettingsRepository.incognitoMode,
             generalPreferences.downloadedOnly,
-        ) { dailyGoal, weeklyGoal, incognito, downloadedOnly ->
-            MoreParams(dailyGoal, weeklyGoal, incognito, downloadedOnly)
+        ) { goalProgress, incognito, downloadedOnly ->
+            MoreState(
+                currentStreak = goalProgress.currentStreak,
+                todayChaptersRead = goalProgress.dailyProgress,
+                dailyGoal = goalProgress.dailyGoal,
+                incognitoMode = incognito,
+                downloadedOnly = downloadedOnly,
+            )
         }
-            .distinctUntilChanged()
-            .flatMapLatest { params ->
-                statisticsRepository.getReadingGoalProgress(params.dailyGoal, params.weeklyGoal)
-                    .map { goalProgress ->
-                        MoreState(
-                            currentStreak = goalProgress.currentStreak,
-                            todayChaptersRead = goalProgress.dailyProgress,
-                            dailyGoal = goalProgress.dailyGoal,
-                            incognitoMode = params.incognitoMode,
-                            downloadedOnly = params.downloadedOnly,
-                        )
-                    }
-            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(SUBSCRIBE_STOP_TIMEOUT_MS),

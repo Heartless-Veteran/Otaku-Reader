@@ -366,6 +366,9 @@ private fun NotificationsContent(state: SettingsState, onEvent: (SettingsEvent) 
                     stringResource(R.string.settings_update_interval_6h) to 6,
                     stringResource(R.string.settings_update_interval_12h) to 12,
                     stringResource(R.string.settings_update_interval_24h) to 24,
+                    stringResource(R.string.settings_update_interval_48h) to 48,
+                    stringResource(R.string.settings_update_interval_72h) to 72,
+                    stringResource(R.string.settings_update_interval_weekly) to 168,
                 )
                 intervals.forEach { (label, hours) ->
                     Row(
