@@ -266,6 +266,7 @@ class ReaderViewModel @Inject constructor(
     /**
      * Load saved reader settings with per-manga overrides (#260, #264).
      */
+    @Suppress("LongMethod")
     private fun loadSettings() {
         viewModelScope.launch {
             // Load manga first to check for per-manga overrides.
