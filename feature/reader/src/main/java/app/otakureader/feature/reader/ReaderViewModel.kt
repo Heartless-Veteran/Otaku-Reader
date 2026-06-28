@@ -573,6 +573,9 @@ class ReaderViewModel @Inject constructor(
             is ReaderEvent.SetNavigationModeWebtoon -> displayDelegate.updateNavigationModeWebtoon(event.mode)
             is ReaderEvent.SetTapInvertModePager -> displayDelegate.updateTapInvertModePager(event.mode)
             is ReaderEvent.SetTapInvertModeWebtoon -> displayDelegate.updateTapInvertModeWebtoon(event.mode)
+            is ReaderEvent.SetWebtoonScaleType -> displayDelegate.updateWebtoonScaleType(event.scaleType)
+            is ReaderEvent.SetLandscapeZoomScaleType -> displayDelegate.updateLandscapeZoomScaleType(event.scaleType)
+            is ReaderEvent.SetPageLayout -> displayDelegate.updatePageLayout(event.layout)
         }
     }
 

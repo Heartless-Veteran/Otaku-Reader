@@ -501,6 +501,43 @@ class ReaderSettingsRepository @Inject constructor(
         safeEdit { it[Keys.WEBTOON_DISABLE_ZOOM_OUT] = enabled }
     }
 
+    override val webtoonPinchToZoomEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_PINCH_TO_ZOOM] ?: true
+    }
+
+    override suspend fun setWebtoonPinchToZoomEnabled(enabled: Boolean) {
+        safeEdit { it[Keys.WEBTOON_PINCH_TO_ZOOM] = enabled }
+    }
+
+    /** 0=Fit Width, 1=Stretch, 2=Fit Page */
+    override val webtoonScaleType: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.WEBTOON_SCALE_TYPE] ?: 0
+    }
+
+    override suspend fun setWebtoonScaleType(scaleType: Int) {
+        safeEdit { it[Keys.WEBTOON_SCALE_TYPE] = scaleType.coerceIn(0, 2) }
+    }
+
+    // ==================== Pager display ====================
+
+    /** 0=Fit Screen, 1=Zoom In (fill width in landscape) */
+    override val landscapeZoomScaleType: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.LANDSCAPE_ZOOM_SCALE_TYPE] ?: 0
+    }
+
+    override suspend fun setLandscapeZoomScaleType(scaleType: Int) {
+        safeEdit { it[Keys.LANDSCAPE_ZOOM_SCALE_TYPE] = scaleType.coerceIn(0, 1) }
+    }
+
+    /** 0=Single, 1=Double, 2=Automatic (dual when landscape) */
+    override val pageLayout: Flow<Int> = dataStore.data.map { prefs ->
+        prefs[Keys.PAGE_LAYOUT] ?: 0
+    }
+
+    override suspend fun setPageLayout(layout: Int) {
+        safeEdit { it[Keys.PAGE_LAYOUT] = layout.coerceIn(0, 2) }
+    }
+
     // ==================== Navigation Mode Settings ====================
 
     override val navigationModePager: Flow<Int> = dataStore.data.map { prefs ->
@@ -709,6 +746,10 @@ class ReaderSettingsRepository @Inject constructor(
         val WEBTOON_MENU_HIDE_SENSITIVITY = intPreferencesKey("reader_webtoon_menu_hide_sensitivity")
         val WEBTOON_DOUBLE_TAP_ZOOM = booleanPreferencesKey("reader_webtoon_double_tap_zoom")
         val WEBTOON_DISABLE_ZOOM_OUT = booleanPreferencesKey("reader_webtoon_disable_zoom_out")
+        val WEBTOON_PINCH_TO_ZOOM = booleanPreferencesKey("reader_webtoon_pinch_to_zoom")
+        val WEBTOON_SCALE_TYPE = intPreferencesKey("reader_webtoon_scale_type")
+        val LANDSCAPE_ZOOM_SCALE_TYPE = intPreferencesKey("reader_landscape_zoom_scale_type")
+        val PAGE_LAYOUT = intPreferencesKey("reader_page_layout")
         
         // --- E-ink Settings ---
         val EINK_FLASH_ON_PAGE_CHANGE = booleanPreferencesKey("reader_eink_flash_on_page_change")

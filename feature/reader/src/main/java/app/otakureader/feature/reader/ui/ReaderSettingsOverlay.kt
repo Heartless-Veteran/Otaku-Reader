@@ -190,6 +190,43 @@ private fun PagerViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> Un
 
     SettingsDivider()
 
+    SettingsSectionLabel(stringResource(R.string.reader_page_layout_title))
+    val pageLayoutLabels = listOf(
+        stringResource(R.string.reader_page_layout_single),
+        stringResource(R.string.reader_page_layout_double),
+        stringResource(R.string.reader_page_layout_automatic),
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        pageLayoutLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = state.pageLayout == index,
+                onClick = { onEvent(ReaderEvent.SetPageLayout(index)) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    SettingsDivider()
+
+    SettingsSectionLabel(stringResource(R.string.reader_landscape_zoom_title))
+    val landscapeZoomLabels = listOf(
+        stringResource(R.string.reader_landscape_zoom_fit),
+        stringResource(R.string.reader_landscape_zoom_in),
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        landscapeZoomLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = state.landscapeZoomScaleType == index,
+                onClick = { onEvent(ReaderEvent.SetLandscapeZoomScaleType(index)) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
+
+    SettingsDivider()
+
     NavigationModeSection(
         sectionLabel = stringResource(R.string.reader_nav_mode_title),
         selectedMode = state.navigationModePager,
@@ -238,6 +275,30 @@ private fun WebtoonViewerSettings(state: ReaderState, onEvent: (ReaderEvent) -> 
         checked = state.webtoonDisableZoomOut,
         onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.WEBTOON_DISABLE_ZOOM_OUT)) },
     )
+    SettingsToggleRow(
+        label = stringResource(R.string.reader_webtoon_pinch_to_zoom),
+        checked = state.webtoonPinchToZoomEnabled,
+        onToggle = { onEvent(ReaderEvent.ToggleSetting(ReaderSetting.WEBTOON_PINCH_TO_ZOOM)) },
+    )
+
+    SettingsDivider()
+
+    SettingsSectionLabel(stringResource(R.string.reader_webtoon_scale_type))
+    val webtoonScaleLabels = listOf(
+        stringResource(R.string.reader_webtoon_scale_fit_width),
+        stringResource(R.string.reader_webtoon_scale_stretch),
+        stringResource(R.string.reader_webtoon_scale_fit_page),
+    )
+    FlowRow(modifier = Modifier.fillMaxWidth()) {
+        webtoonScaleLabels.forEachIndexed { index, label ->
+            FilterChip(
+                selected = state.webtoonScaleType == index,
+                onClick = { onEvent(ReaderEvent.SetWebtoonScaleType(index)) },
+                label = { Text(label) },
+                modifier = Modifier.padding(end = 6.dp),
+            )
+        }
+    }
 
     SettingsDivider()
 

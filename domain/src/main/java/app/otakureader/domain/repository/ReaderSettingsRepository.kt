@@ -61,6 +61,11 @@ interface ReaderSettingsRepository {
     val webtoonMenuHideSensitivity: Flow<Int>
     val webtoonDoubleTapZoom: Flow<Boolean>
     val webtoonDisableZoomOut: Flow<Boolean>
+    val webtoonPinchToZoomEnabled: Flow<Boolean>
+    val webtoonScaleType: Flow<Int>
+    // ==================== Pager display ====================
+    val landscapeZoomScaleType: Flow<Int>
+    val pageLayout: Flow<Int>
     // ==================== Auto-Scroll Speed ====================
     val autoScrollSpeed: Flow<Float>
     
@@ -110,6 +115,10 @@ interface ReaderSettingsRepository {
     suspend fun setEinkBlackAndWhite(enabled: Boolean)
     suspend fun setWebtoonDoubleTapZoom(enabled: Boolean)
     suspend fun setWebtoonDisableZoomOut(enabled: Boolean)
+    suspend fun setWebtoonPinchToZoomEnabled(enabled: Boolean)
+    suspend fun setWebtoonScaleType(scaleType: Int)
+    suspend fun setLandscapeZoomScaleType(scaleType: Int)
+    suspend fun setPageLayout(layout: Int)
     suspend fun setAutoZoomWideImages(enabled: Boolean)
     suspend fun setReaderScale(scale: Int)
     suspend fun setWebtoonSidePadding(padding: Int)

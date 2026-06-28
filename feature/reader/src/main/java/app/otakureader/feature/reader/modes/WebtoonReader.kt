@@ -50,6 +50,8 @@ fun WebtoonReader(
     pageGapDp: Int = 4,
     sidePaddingDp: Int = 0,
     disableZoomOut: Boolean = false,
+    pinchToZoomEnabled: Boolean = true,
+    scaleType: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState(
@@ -90,10 +92,14 @@ fun WebtoonReader(
     }
     
     val normalizedRotation = ((rotation % 360f) + 360f) % 360f
-    val imageContentScale = if (normalizedRotation % 180f == 0f) {
-        ContentScale.FillWidth
-    } else {
+    val imageContentScale = if (normalizedRotation % 180f != 0f) {
         ContentScale.Fit
+    } else {
+        when (scaleType) {
+            1 -> ContentScale.FillBounds
+            2 -> ContentScale.Fit
+            else -> ContentScale.FillWidth
+        }
     }
 
     // OOM guard for very long single-strip webtoon panels (e.g. 1080×10000 px Korean/Chinese
@@ -147,6 +153,7 @@ fun WebtoonReader(
                     onTap = onTap,
                     onLongPress = onLongPress,
                     decoderFactory = webtoonDecoderFactory,
+                    pinchToZoomEnabled = pinchToZoomEnabled,
                     minScale = if (disableZoomOut) 1f else 0.5f,
                     modifier = Modifier.fillMaxWidth()
                 )

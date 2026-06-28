@@ -74,6 +74,7 @@ fun ZoomableImage(
     minScale: Float = 1f,
     maxScale: Float = 4f,
     doubleTapScale: Float = 2f,
+    pinchToZoomEnabled: Boolean = true,
     contentScale: ContentScale = ContentScale.Fit,
     rotation: Float = 0f,
     cropBordersEnabled: Boolean = false,
@@ -101,7 +102,8 @@ fun ZoomableImage(
     Box(
         modifier = modifier
             .onSizeChanged { containerSize = it }
-            .pointerInput(imageUrl, minScale, maxScale) {
+            .pointerInput(imageUrl, minScale, maxScale, pinchToZoomEnabled) {
+                if (!pinchToZoomEnabled) return@pointerInput
                 coroutineScope {
                     awaitEachGesture {
                         awaitFirstDown(requireUnconsumed = false)
