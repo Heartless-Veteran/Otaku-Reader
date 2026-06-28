@@ -278,9 +278,9 @@ fun ReaderScreen(
         showDirectionIndicator = false
     }
 
-    // Reading mode overlay — brief label when the reader mode changes (Komikku parity)
+    // Guard on pages.isNotEmpty(): mode transitions from default→saved before pages load, causing a spurious flash without it.
     LaunchedEffect(state.mode) {
-        if (state.showReadingModeOverlay) {
+        if (state.pages.isNotEmpty() && state.showReadingModeOverlay) {
             showModeOverlay = true
             delay(MODE_OVERLAY_DURATION_MS)
             showModeOverlay = false
