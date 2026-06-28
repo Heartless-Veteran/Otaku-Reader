@@ -163,7 +163,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.MarkSelectedAsDropped, is LibraryEvent.ShareSelectedManga,
             is LibraryEvent.ViewSelectedManga, is LibraryEvent.UndoLibraryDelete,
             is LibraryEvent.OpenMoveToCategoryDialog, is LibraryEvent.DismissMoveToCategoryDialog,
-            is LibraryEvent.MoveToCategory -> handleActionEvent(event)
+            is LibraryEvent.MoveToCategory, is LibraryEvent.MigrateSelected -> handleActionEvent(event)
             is LibraryEvent.UpdateLibrary, is LibraryEvent.UpdateCategory,
             is LibraryEvent.OpenRandomEntry, is LibraryEvent.ReindexDownloads,
             is LibraryEvent.SyncEhFavorites,
@@ -283,7 +283,16 @@ class LibraryViewModel @Inject constructor(
                 it.copy(showMoveToCategoryDialog = false, moveToCategoryMangaIds = emptySet())
             }
             is LibraryEvent.MoveToCategory -> moveMangaToCategory(event.mangaIds, event.categoryId)
+            is LibraryEvent.MigrateSelected -> migrateSelected()
             else -> Unit
+        }
+    }
+
+    private fun migrateSelected() {
+        val ids = _state.value.selectedManga.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            _effect.send(LibraryEffect.NavigateToMigration(ids))
         }
     }
 

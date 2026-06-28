@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -446,6 +447,7 @@ fun LibraryScreen(
                 onMarkAsUnreadClicked = { viewModel.onEvent(LibraryEvent.MarkSelectedAsUnread) },
                 onDownloadClicked = { viewModel.onEvent(LibraryEvent.DownloadSelected) },
                 onDeleteClicked = { pendingBulkAction = LibraryEvent.RemoveSelectedFromLibrary },
+                onMigrateClicked = { viewModel.onEvent(LibraryEvent.MigrateSelected) },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -996,6 +998,7 @@ private fun LibrarySelectionBottomBar(
     onMarkAsUnreadClicked: () -> Unit,
     onDownloadClicked: () -> Unit,
     onDeleteClicked: () -> Unit,
+    onMigrateClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -1080,6 +1083,20 @@ private fun LibrarySelectionBottomBar(
                     }
                     Text(
                         text = stringResource(R.string.library_remove_selected),
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = onMigrateClicked) {
+                        Icon(
+                            Icons.Default.SwapHoriz,
+                            contentDescription = stringResource(R.string.library_context_menu_migrate),
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.library_context_menu_migrate),
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

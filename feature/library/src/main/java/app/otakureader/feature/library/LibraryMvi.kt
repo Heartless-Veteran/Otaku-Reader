@@ -265,6 +265,7 @@ sealed class LibraryEvent {
     data object OpenMoveToCategoryDialog : LibraryEvent()
     data object DismissMoveToCategoryDialog : LibraryEvent()
     data class MoveToCategory(val mangaIds: Set<Long>, val categoryId: Long) : LibraryEvent()
+    data object MigrateSelected : LibraryEvent()
 }
 
 sealed class LibraryEffect {
