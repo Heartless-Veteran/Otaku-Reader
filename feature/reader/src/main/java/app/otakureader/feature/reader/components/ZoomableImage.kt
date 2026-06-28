@@ -108,7 +108,6 @@ fun ZoomableImage(
         modifier = modifier
             .onSizeChanged { containerSize = it }
             .pointerInput(imageUrl, minScale, maxScale, pinchToZoomEnabled) {
-                if (!pinchToZoomEnabled) return@pointerInput
                 coroutineScope {
                     awaitEachGesture {
                         awaitFirstDown(requireUnconsumed = false)
@@ -122,10 +121,19 @@ fun ZoomableImage(
                                 val panChange = event.calculatePan()
                                 val centroid = event.calculateCentroid(useCurrent = false)
 
-                                if (zoomChange != 1f || panChange != Offset.Zero) {
+                                // Gate pinch-zoom on the setting; always allow panning when
+                                // the image is already zoomed (e.g. after a double-tap zoom)
+                                // so the user is never stuck with an un-pannable zoomed image.
+                                val shouldZoom = pinchToZoomEnabled && zoomChange != 1f
+                                val shouldPan = panChange != Offset.Zero && zoomState.isZoomed
+
+                                if (shouldZoom || shouldPan) {
                                     val originalScale = zoomState.scale
-                                    val newScale = (originalScale * zoomChange)
-                                        .coerceIn(minScale, maxScale)
+                                    val newScale = if (shouldZoom) {
+                                        (originalScale * zoomChange).coerceIn(minScale, maxScale)
+                                    } else {
+                                        originalScale
+                                    }
 
                                     val centroidX = centroid.x
                                     val centroidY = centroid.y
@@ -136,16 +144,14 @@ fun ZoomableImage(
                                     // even under rapid repeated pinch input. See ZoomableState
                                     // KDoc for the full guarantee.
                                     scope.launch {
-                                        zoomState.onZoom(
-                                            newScale,
-                                            centroidX,
-                                            centroidY
-                                        )
-                                        if (panChange != Offset.Zero && zoomState.isZoomed) {
+                                        if (shouldZoom) {
+                                            zoomState.onZoom(newScale, centroidX, centroidY)
+                                        }
+                                        if (shouldPan) {
                                             zoomState.onPan(panChange)
                                         }
                                     }
-                                    currentOnZoomChange?.invoke(newScale)
+                                    if (shouldZoom) currentOnZoomChange?.invoke(newScale)
 
                                     event.changes.forEach { it.consume() }
                                 }
