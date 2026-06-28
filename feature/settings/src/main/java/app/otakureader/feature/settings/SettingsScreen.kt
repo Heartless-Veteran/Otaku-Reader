@@ -74,6 +74,7 @@ import kotlin.math.roundToInt
  * reading goals, data management, migration settings, about) remain inline here.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UnusedParameter")
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
