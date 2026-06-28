@@ -58,7 +58,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.SmallExtendedFloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -429,7 +429,7 @@ fun DetailsScreen(
                 val isFabExpanded by remember(isExpanded) {
                     derivedStateOf { isExpanded || !listState.canScrollBackward }
                 }
-                SmallExtendedFloatingActionButton(
+                ExtendedFloatingActionButton(
                     text = {
                         Text(
                             if (state.hasStartedReading) stringResource(R.string.details_resume_reading)

@@ -98,10 +98,10 @@ object DetailsContract {
                     .map { it.toInt() }
                     .distinct()
                     .sorted()
-                if (nums.isEmpty()) return 0
+                if (nums.size < 2) return 0
                 var missing = 0
-                var prev = 0
-                for (curr in nums) {
+                var prev = nums.first()
+                for (curr in nums.drop(1)) {
                     if (curr > prev + 1) missing += curr - prev - 1
                     prev = curr
                 }

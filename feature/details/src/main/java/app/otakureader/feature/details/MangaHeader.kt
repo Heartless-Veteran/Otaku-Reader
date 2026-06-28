@@ -284,7 +284,7 @@ internal fun MangaHeader(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                manga.author?.let { author ->
+                manga.author?.takeIf { it.isNotBlank() }?.let { author ->
                     Text(
                         text = stringResource(R.string.details_author, author),
                         style = MaterialTheme.typography.bodyMedium,
@@ -292,7 +292,7 @@ internal fun MangaHeader(
                     )
                 }
 
-                manga.artist?.let { artist ->
+                manga.artist?.takeIf { it.isNotBlank() && it != manga.author }?.let { artist ->
                     Text(
                         text = stringResource(R.string.details_artist, artist),
                         style = MaterialTheme.typography.bodyMedium,
