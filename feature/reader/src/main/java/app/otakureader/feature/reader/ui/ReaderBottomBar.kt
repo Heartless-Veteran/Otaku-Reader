@@ -71,10 +71,8 @@ fun ReaderBottomBar(
     onWebView: (() -> Unit)? = null,
     onBrowser: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
-    showPageLayoutButton: Boolean = false,
-    onPageLayout: () -> Unit = {},
-    showShiftPageButton: Boolean = false,
-    onShiftPage: () -> Unit = {},
+    onPageLayout: (() -> Unit)? = null,
+    onShiftPage: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -154,7 +152,7 @@ fun ReaderBottomBar(
                     tint = if (state.cropBordersEnabled) iconColor else dimColor,
                 )
             }
-            if (showPageLayoutButton) {
+            if (onPageLayout != null) {
                 IconButton(onClick = onPageLayout) {
                     Icon(
                         imageVector = Icons.Default.MenuBook,
@@ -163,7 +161,7 @@ fun ReaderBottomBar(
                     )
                 }
             }
-            if (showShiftPageButton) {
+            if (onShiftPage != null) {
                 IconButton(onClick = onShiftPage) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.NavigateNext,
