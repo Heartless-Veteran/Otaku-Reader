@@ -318,8 +318,8 @@ fun ChapterListItem(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
                 onToggleRead()
-                true
-            } else false
+            }
+            false
         },
     )
     SwipeToDismissBox(
@@ -350,7 +350,8 @@ fun ChapterListItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                    .clip(CardDefaults.shape)
                     .background(bgColor),
                 contentAlignment = Alignment.CenterEnd,
             ) {
