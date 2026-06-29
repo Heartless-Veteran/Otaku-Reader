@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,10 +58,11 @@ private val readerTopBarFade = tween<Float>(READER_TOP_BAR_FADE_MS)
  * @param chapterTitle  Current chapter title displayed below the series title.
  * @param isVisible     Whether the overlay is shown.
  * @param onDismiss     Called when the back arrow is tapped — typically navigates back.
+ * @param onTitleClick Called when the title/chapter area is tapped; null makes the area non-interactive.
  * @param onDownloadChapter Called when the download icon is tapped; null hides the button.
  * @param isCurrentChapterDownloaded When true, the download button is hidden.
  * @param onBookmarkPage Called when the bookmark icon is tapped; null hides the button.
- * @param isCurrentPageBookmarked When true, shows a filled bookmark icon.
+ * @param isCurrentPageBookmarked When true, shows a solid bookmark; when false, shows an outlined bookmark border.
  */
 @Composable
 fun ReaderContentOverlay(
@@ -69,6 +71,7 @@ fun ReaderContentOverlay(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    onTitleClick: (() -> Unit)? = null,
     onDownloadChapter: (() -> Unit)? = null,
     isCurrentChapterDownloaded: Boolean = false,
     onBookmarkPage: (() -> Unit)? = null,
@@ -102,7 +105,14 @@ fun ReaderContentOverlay(
                     tint = onSurface
                 )
             }
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (onTitleClick != null) Modifier.clickable(onClick = onTitleClick)
+                        else Modifier
+                    )
+            ) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleSmall,
@@ -131,7 +141,7 @@ fun ReaderContentOverlay(
                 IconButton(onClick = onBookmarkPage) {
                     Icon(
                         imageVector = if (isCurrentPageBookmarked) {
-                            Icons.Default.Bookmark
+                            Icons.Outlined.Bookmark
                         } else {
                             Icons.Outlined.BookmarkBorder
                         },

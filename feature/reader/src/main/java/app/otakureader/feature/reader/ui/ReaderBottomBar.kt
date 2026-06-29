@@ -22,8 +22,11 @@ import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.outlined.BurstMode
 import androidx.compose.material.icons.outlined.Crop
+import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.FormatListNumbered
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +68,11 @@ fun ReaderBottomBar(
     onToggleThumbnailStrip: () -> Unit,
     onSettings: () -> Unit,
     isVisible: Boolean,
+    onWebView: (() -> Unit)? = null,
+    onBrowser: (() -> Unit)? = null,
+    onShare: (() -> Unit)? = null,
+    onPageLayout: (() -> Unit)? = null,
+    onShiftPage: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
@@ -96,6 +104,33 @@ fun ReaderBottomBar(
                     tint = iconColor,
                 )
             }
+            if (onWebView != null) {
+                IconButton(onClick = onWebView) {
+                    Icon(
+                        imageVector = Icons.Outlined.Public,
+                        contentDescription = stringResource(R.string.reader_open_in_web_view),
+                        tint = iconColor,
+                    )
+                }
+            }
+            if (onBrowser != null) {
+                IconButton(onClick = onBrowser) {
+                    Icon(
+                        imageVector = Icons.Outlined.Explore,
+                        contentDescription = stringResource(R.string.reader_open_in_browser),
+                        tint = iconColor,
+                    )
+                }
+            }
+            if (onShare != null) {
+                IconButton(onClick = onShare) {
+                    Icon(
+                        imageVector = Icons.Outlined.Share,
+                        contentDescription = stringResource(R.string.reader_share),
+                        tint = iconColor,
+                    )
+                }
+            }
             IconButton(onClick = onModeClick) {
                 Icon(
                     imageVector = state.mode.icon,
@@ -116,6 +151,24 @@ fun ReaderBottomBar(
                     contentDescription = stringResource(R.string.reader_crop_borders),
                     tint = if (state.cropBordersEnabled) iconColor else dimColor,
                 )
+            }
+            if (onPageLayout != null) {
+                IconButton(onClick = onPageLayout) {
+                    Icon(
+                        imageVector = Icons.Default.MenuBook,
+                        contentDescription = stringResource(R.string.reader_page_layout),
+                        tint = iconColor,
+                    )
+                }
+            }
+            if (onShiftPage != null) {
+                IconButton(onClick = onShiftPage) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = stringResource(R.string.reader_shift_double_pages),
+                        tint = iconColor,
+                    )
+                }
             }
             IconButton(onClick = onToggleThumbnailStrip) {
                 Icon(

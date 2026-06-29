@@ -465,6 +465,7 @@ fun ReaderScreen(
             chapterTitle = state.chapterTitle,
             isVisible = state.isMenuVisible && !state.isGalleryOpen && !state.isLoading,
             onDismiss = onNavigateBack,
+            onTitleClick = { viewModel.onEvent(ReaderEvent.ToggleChapterListOverlay) },
             onDownloadChapter = { viewModel.onEvent(ReaderEvent.DownloadCurrentChapter) },
             isCurrentChapterDownloaded = state.isCurrentChapterDownloaded,
             onBookmarkPage = { viewModel.onEvent(ReaderEvent.ToggleBookmark) },
