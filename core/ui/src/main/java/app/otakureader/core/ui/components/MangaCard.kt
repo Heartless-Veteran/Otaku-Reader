@@ -207,7 +207,7 @@ fun MangaCard(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(6.dp)
-                        .padding(bottom = if (readProgress != null) 6.dp else 0.dp)
+                        .padding(bottom = if (readProgress != null && readProgress > 0f) 6.dp else 0.dp)
                 ) {
                     FilledIconButton(
                         onClick = onContinueClick,

@@ -930,8 +930,15 @@ class LibraryViewModel @Inject constructor(
 
     private fun onContinueReadingClick(mangaId: Long) {
         viewModelScope.launch {
-            val chapter = chapterRepository.getNextUnreadChapter(mangaId) ?: return@launch
-            _effect.send(LibraryEffect.NavigateToReader(mangaId, chapter.id))
+            // Prefer the exact chapter the user was reading (ContinueReadingItem has both chapterId
+            // and lastPageRead). Fall back to next unread in source order only when no history entry
+            // exists in state (e.g. on first read before the carousel has loaded).
+            val chapterId = _state.value.continueReadingItems
+                .firstOrNull { it.mangaId == mangaId }
+                ?.chapterId
+                ?: chapterRepository.getNextUnreadChapter(mangaId)?.id
+                ?: return@launch
+            _effect.send(LibraryEffect.NavigateToReader(mangaId, chapterId))
         }
     }
 

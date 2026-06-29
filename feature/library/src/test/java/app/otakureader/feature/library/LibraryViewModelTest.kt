@@ -4,6 +4,8 @@ package app.otakureader.feature.library
 import app.otakureader.core.preferences.GeneralPreferences
 import app.otakureader.core.preferences.LibraryPreferences
 import app.otakureader.core.preferences.ReadingGoalPreferences
+import app.otakureader.domain.model.Chapter
+import app.otakureader.domain.model.ContinueReadingItem
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.ReadingGoal
 import app.otakureader.domain.model.MangaStatus
@@ -807,5 +809,79 @@ class LibraryViewModelTest {
         }
 
         assertTrue(viewModel.state.value.selectedManga.isEmpty())
+    }
+
+    @Test
+    fun continueReadingClick_prefersHistoryChapter_whenContinueReadingItemPresent() = runTest {
+        val mangaId = 42L
+        val historyChapterId = 100L
+        val continueReadingItem = ContinueReadingItem(
+            mangaId = mangaId,
+            chapterId = historyChapterId,
+            mangaTitle = "Test Manga",
+            thumbnailUrl = null,
+            chapterName = "Chapter 5",
+            chapterNumber = 5f,
+            lastPageRead = 3,
+            readAt = System.currentTimeMillis(),
+        )
+        every { getLibraryManga() } returns flowOf(emptyList())
+        every { getContinueReading() } returns flowOf(listOf(continueReadingItem))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(LibraryEvent.ContinueReadingClick(mangaId))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is LibraryEffect.NavigateToReader)
+            val nav = effect as LibraryEffect.NavigateToReader
+            assertEquals(mangaId, nav.mangaId)
+            assertEquals(historyChapterId, nav.chapterId)
+        }
+    }
+
+    @Test
+    fun continueReadingClick_fallsBackToNextUnread_whenNoHistoryEntry() = runTest {
+        val mangaId = 42L
+        val nextUnreadChapterId = 200L
+        every { getLibraryManga() } returns flowOf(emptyList())
+        every { getContinueReading() } returns flowOf(emptyList())
+        coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns
+            Chapter(id = nextUnreadChapterId, mangaId = mangaId, url = "", name = "Chapter 1")
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(LibraryEvent.ContinueReadingClick(mangaId))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is LibraryEffect.NavigateToReader)
+            val nav = effect as LibraryEffect.NavigateToReader
+            assertEquals(mangaId, nav.mangaId)
+            assertEquals(nextUnreadChapterId, nav.chapterId)
+        }
+    }
+
+    @Test
+    fun continueReadingClick_sendsNoEffect_whenNeitherHistoryNorNextUnreadExists() = runTest {
+        val mangaId = 42L
+        every { getLibraryManga() } returns flowOf(emptyList())
+        every { getContinueReading() } returns flowOf(emptyList())
+        coEvery { chapterRepository.getNextUnreadChapter(mangaId) } returns null
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.effect.test {
+            viewModel.onEvent(LibraryEvent.ContinueReadingClick(mangaId))
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            expectNoEvents()
+        }
     }
 }
