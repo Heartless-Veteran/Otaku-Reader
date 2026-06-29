@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -101,6 +102,44 @@ internal fun EmptyLibrarySearchMessage(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+/**
+ * Shown when the library has manga but active filters hide all of them — matches
+ * Komikku/Mihon's "error_no_match" empty state. Offers a one-tap clear-filters action
+ * so the user doesn't have to navigate back into the settings sheet.
+ */
+@Composable
+internal fun EmptyLibraryFilterMessage(
+    onClearFilters: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(EmptyStateDefaults.ContentPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Default.FilterList,
+            contentDescription = null,
+            modifier = Modifier.size(EmptyStateDefaults.IconSize),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(EmptyStateDefaults.TitleSpacing))
+        Text(
+            text = stringResource(R.string.library_filter_no_results_title),
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Spacer(modifier = Modifier.height(EmptyStateDefaults.MessageSpacing))
+        Text(
+            text = stringResource(R.string.library_filter_no_results_message),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(EmptyStateDefaults.CtaSpacing))
+        Button(onClick = onClearFilters) {
+            Text(stringResource(R.string.library_filter_no_results_clear_cta))
+        }
     }
 }
 

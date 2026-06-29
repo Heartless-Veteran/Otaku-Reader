@@ -584,6 +584,17 @@ private fun LibraryContent(
             state.filterStarted != LibraryTriState.DISABLED ||
             state.filterTracking != LibraryTriState.DISABLED ||
             state.filterCompleted != LibraryTriState.DISABLED
+        // Sort doesn't hide items, so it must not trigger the filter-active empty state.
+        val hasActiveItemFilters = state.filterMode != LibraryFilterMode.ALL ||
+            state.filterGenres.isNotEmpty() ||
+            state.filterHasNotes ||
+            state.filterSourceId != null ||
+            state.filterReadingListId != null ||
+            state.filterDownloaded != LibraryTriState.DISABLED ||
+            state.filterUnread != LibraryTriState.DISABLED ||
+            state.filterStarted != LibraryTriState.DISABLED ||
+            state.filterTracking != LibraryTriState.DISABLED ||
+            state.filterCompleted != LibraryTriState.DISABLED
         if (hasActiveFilters && !state.showSearchBar) {
             FlowRow(
                 modifier = Modifier
@@ -744,6 +755,14 @@ private fun LibraryContent(
                         EmptyLibrarySearchMessage(
                             query = state.searchQuery,
                             modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+                state.mangaList.isEmpty() && hasActiveItemFilters -> {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        EmptyLibraryFilterMessage(
+                            onClearFilters = { onEvent(LibraryEvent.ClearAllFilters) },
+                            modifier = Modifier.align(Alignment.Center),
                         )
                     }
                 }

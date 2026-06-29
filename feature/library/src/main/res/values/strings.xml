@@ -365,6 +365,11 @@
     <string name="library_context_menu_share">Share</string>
     <string name="library_context_menu_migrate">Migrate</string>
     <string name="library_context_menu_select">Select</string>
+    <!-- Filter-active empty state (Komikku parity: error_no_match) -->
+    <string name="library_filter_no_results_title">No manga match</string>
+    <string name="library_filter_no_results_message">No manga in your library match the active filters</string>
+    <string name="library_filter_no_results_clear_cta">Clear filters</string>
+
     <!-- Bulk delete undo snackbar -->
     <string name="library_undo_action">Undo</string>
     <plurals name="library_removed_count_undo">
