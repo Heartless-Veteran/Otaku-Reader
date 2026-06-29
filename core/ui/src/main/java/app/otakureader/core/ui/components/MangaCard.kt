@@ -64,6 +64,10 @@ private object MangaCardDefaults {
     const val SCRIM_START_ALPHA = 0.0f
     const val SCRIM_END_ALPHA = 0.85f
     const val TITLE_MAX_LINES = 2
+    const val CONTINUE_READING_BUTTON_SIZE_DP = 28
+    const val CONTINUE_READING_BUTTON_PADDING_DP = 6
+    // button (28) + button padding (6) + breathing room (4)
+    const val TITLE_END_PADDING_WITH_BUTTON_DP = 38
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -150,7 +154,15 @@ fun MangaCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
-                        .padding(start = 8.dp, end = 8.dp, bottom = if (readProgress != null) 10.dp else 8.dp)
+                        .padding(
+                            start = 8.dp,
+                            end = if (onClickContinueReading != null) {
+                                MangaCardDefaults.TITLE_END_PADDING_WITH_BUTTON_DP.dp
+                            } else {
+                                8.dp
+                            },
+                            bottom = if (readProgress != null) 10.dp else 8.dp,
+                        )
                         .fillMaxWidth(),
                 )
             }
@@ -206,12 +218,18 @@ fun MangaCard(
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(6.dp)
-                        .padding(bottom = if (readProgress != null && readProgress > 0f) 6.dp else 0.dp)
+                        .padding(MangaCardDefaults.CONTINUE_READING_BUTTON_PADDING_DP.dp)
+                        .padding(
+                            bottom = if (readProgress != null && readProgress > 0f) {
+                                MangaCardDefaults.CONTINUE_READING_BUTTON_PADDING_DP.dp
+                            } else {
+                                0.dp
+                            }
+                        )
                 ) {
                     FilledIconButton(
                         onClick = onContinueClick,
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(MangaCardDefaults.CONTINUE_READING_BUTTON_SIZE_DP.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Filled.PlayArrow,
