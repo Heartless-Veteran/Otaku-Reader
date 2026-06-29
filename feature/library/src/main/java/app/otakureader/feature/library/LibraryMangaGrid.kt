@@ -185,8 +185,8 @@ internal fun MangaGrid(
         if (state.continueReadingItems.isNotEmpty()) {
             ContinueReadingSection(
                 items = state.continueReadingItems,
-                onItemClick = { mangaId, chapterId ->
-                    onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
+                onItemClick = { mangaId, _ ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId))
                 }
             )
         }
@@ -300,6 +300,9 @@ internal fun MangaGrid(
                 displayedManga = displayedManga,
                 onMangaTap = onMangaTap,
                 onMangaLongClick = onMangaLongClick,
+                onContinueReadingClick = { mangaId ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId))
+                },
             )
         }
     }
@@ -312,6 +315,7 @@ private fun LibraryMangaPageContent(
     displayedManga: List<LibraryMangaItem>,
     onMangaTap: (LibraryMangaItem) -> Unit,
     onMangaLongClick: (Long) -> Unit,
+    onContinueReadingClick: (mangaId: Long) -> Unit,
 ) {
     if (state.displayMode == LibraryDisplayMode.LIST) {
         LazyColumn(
@@ -365,7 +369,13 @@ private fun LibraryMangaPageContent(
                                 .toFloat() / manga.totalChapterCount
                         } else null
                         val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                        val continueReading = state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0
+                        val onClickContinueReading: (() -> Unit)? = if (
+                            state.showContinueReadingButton &&
+                            manga.lastRead != null &&
+                            manga.unreadCount > 0
+                        ) {
+                            { onContinueReadingClick(manga.id) }
+                        } else null
                         MangaCard(
                             title = manga.title,
                             coverUrl = manga.thumbnailUrl,
@@ -373,7 +383,7 @@ private fun LibraryMangaPageContent(
                             onLongClick = { onMangaLongClick(manga.id) },
                             isSelected = manga.id in state.selectedManga,
                             readProgress = readProgress,
-                            continueReading = continueReading,
+                            onClickContinueReading = onClickContinueReading,
                             isNew = manga.unreadCount > 0,
                             showTitle = state.showTitle,
                             badge = when {
@@ -439,7 +449,13 @@ private fun LibraryMangaPageContent(
                         .toFloat() / manga.totalChapterCount
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                val continueReading = state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0
+                val onClickContinueReading: (() -> Unit)? = if (
+                    state.showContinueReadingButton &&
+                    manga.lastRead != null &&
+                    manga.unreadCount > 0
+                ) {
+                    { onContinueReadingClick(manga.id) }
+                } else null
                 // Comfortable grid: cover with title caption below; Cover-only: no title at all.
                 val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID
                 val coverOnly = state.displayMode == LibraryDisplayMode.COVER_ONLY
@@ -451,7 +467,7 @@ private fun LibraryMangaPageContent(
                         onLongClick = { onMangaLongClick(manga.id) },
                         isSelected = manga.id in state.selectedManga,
                         readProgress = readProgress,
-                        continueReading = continueReading,
+                        onClickContinueReading = onClickContinueReading,
                         isNew = manga.unreadCount > 0,
                         showTitle = if (comfortable || coverOnly) false else state.showTitle,
                         badge = when {
