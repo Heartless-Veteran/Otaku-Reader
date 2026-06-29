@@ -108,6 +108,7 @@ private const val UNSET_FETCH_DATE = 0L
 
 /** Updates screen showing newly discovered chapters for library manga. */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UnusedParameter") // onNavigateBack/onNavigateToDownloads kept for nav contract; back arrow removed for Komikku parity
 @Composable
 fun UpdatesScreen(
     onMangaClick: (Long) -> Unit,
@@ -693,15 +694,23 @@ private fun buildJk2UiModel(
     dateFilterStart: Long?,
     dateFilterEnd: Long?,
 ): List<UpdatesUiModel> {
-    val filtered = updates.filter { update ->
-        val ts = update.chapter.dateFetch
-        if (ts <= 0L) return@filter false
-        (dateFilterStart == null || ts >= dateFilterStart) && (dateFilterEnd == null || ts <= dateFilterEnd)
+    val filtered = if (dateFilterStart != null || dateFilterEnd != null) {
+        updates.filter { update ->
+            val ts = update.chapter.dateFetch
+            if (ts <= 0L) return@filter true // unset date: keep, falls into today's bucket
+            (dateFilterStart == null || ts >= dateFilterStart) && (dateFilterEnd == null || ts <= dateFilterEnd)
+        }
+    } else {
+        updates
     }
     val result = mutableListOf<UpdatesUiModel>()
     val zoneId = ZoneId.systemDefault()
+    val today = LocalDate.now(zoneId)
     val byDate = filtered
-        .groupBy { Instant.ofEpochMilli(it.chapter.dateFetch).atZone(zoneId).toLocalDate() }
+        .groupBy { update ->
+            val ts = update.chapter.dateFetch
+            if (ts <= 0L) today else Instant.ofEpochMilli(ts).atZone(zoneId).toLocalDate()
+        }
         .entries.sortedByDescending { it.key }
 
     for ((date, dateUpdates) in byDate) {
@@ -893,8 +902,14 @@ private fun Jk2UpdateItem(
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Cover or spacer (leaders show cover; followers show an aligned spacer)
-        if (isLeader) {
+        // Cover (leader), checkbox (when selected), or spacer (follower)
+        if (isSelected) {
+            androidx.compose.material3.Checkbox(
+                checked = true,
+                onCheckedChange = { onClick() },
+                modifier = Modifier.size(48.dp),
+            )
+        } else if (isLeader) {
             Surface(
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -952,7 +967,7 @@ private fun Jk2UpdateItem(
                 )
                 if (update.chapter.lastPageRead > 0 && !update.chapter.read) {
                     Text(
-                        text = " · " + stringResource(R.string.updates_chapter_progress, update.chapter.lastPageRead + 1),
+                        text = stringResource(R.string.updates_chapter_progress, update.chapter.lastPageRead + 1),
                         maxLines = 1,
                         style = MaterialTheme.typography.bodySmall,
                         color = LocalContentColor.current.copy(alpha = 0.38f),
@@ -970,7 +985,11 @@ private fun Jk2UpdateItem(
             ) {
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
+                    contentDescription = if (isExpanded) {
+                        stringResource(R.string.updates_collapse_group)
+                    } else {
+                        stringResource(R.string.updates_expand_group)
+                    },
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
                 )

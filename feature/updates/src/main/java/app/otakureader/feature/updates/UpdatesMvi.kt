@@ -95,7 +95,7 @@ data class UpdatesState(
     val displayMode: UpdatesDisplayMode = UpdatesDisplayMode.GROUPED_BY_DATE,
     /** Per-date manga group keys that are currently expanded in the J2K date-grouped view. */
     val expandedDateMangaGroups: Set<String> = emptySet(),
-    /** Whether the filter bottom sheet is visible. */
+    /** Whether the filter dialog is visible. */
     val showFilterDialog: Boolean = false,
 ) : UiState
 
@@ -136,7 +136,7 @@ sealed interface UpdatesEvent : UiEvent {
     data class ToggleMangaGroupExpansion(val mangaId: Long) : UpdatesEvent
     /** Expand or collapse a per-date manga group in the J2K date-grouped view. */
     data class ToggleDateMangaGroup(val key: String) : UpdatesEvent
-    /** Show/hide the filter bottom sheet. */
+    /** Show/hide the filter dialog. */
     data object ShowFilterDialog : UpdatesEvent
     data object HideFilterDialog : UpdatesEvent
 }
