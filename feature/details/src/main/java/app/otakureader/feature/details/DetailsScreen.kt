@@ -80,6 +80,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -155,7 +156,13 @@ fun DetailsScreen(
     val context = LocalContext.current
     val isExpanded = rememberWindowWidthSizeClass().isExpanded
     val listState = rememberLazyListState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val selectedVisibleChapters = remember(state.sortedChapters, state.selectedChapters) {
+        state.sortedChapters.filter { it.id in state.selectedChapters }
+    }
+    val isScrollAllowed = rememberUpdatedState(!isExpanded && selectedVisibleChapters.isEmpty())
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+        canScroll = { isScrollAllowed.value },
+    )
     val heroScrollOffset by remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex == 0)
@@ -262,14 +269,6 @@ fun DetailsScreen(
         // Per-manga override (#947) takes precedence over the global autoThemeColor pref.
         enabled = state.manga?.mangaThemeOverride ?: state.autoThemeEnabled
     )
-
-    // Single source of truth for both selection bars: the selected chapters that are actually
-    // visible in the current (filtered/sorted) list. Deriving the top bar count and the bottom
-    // action menu from the same list keeps them in sync even if some selected IDs become stale
-    // after a list refresh or are hidden by a filter.
-    val selectedVisibleChapters = remember(state.sortedChapters, state.selectedChapters) {
-        state.sortedChapters.filter { it.id in state.selectedChapters }
-    }
 
     MangaDynamicTheme(colorScheme = dynamicScheme) {
         BackHandler(enabled = selectedVisibleChapters.isNotEmpty()) {
