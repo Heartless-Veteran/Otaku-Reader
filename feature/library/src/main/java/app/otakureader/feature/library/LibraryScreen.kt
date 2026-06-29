@@ -582,6 +582,7 @@ private fun LibraryContent(
             state.filterDownloaded != LibraryTriState.DISABLED ||
             state.filterUnread != LibraryTriState.DISABLED ||
             state.filterStarted != LibraryTriState.DISABLED ||
+            state.filterBookmarked != LibraryTriState.DISABLED ||
             state.filterTracking != LibraryTriState.DISABLED ||
             state.filterCompleted != LibraryTriState.DISABLED
         // Sort doesn't hide items, so it must not trigger the filter-active empty state.
@@ -593,6 +594,7 @@ private fun LibraryContent(
             state.filterDownloaded != LibraryTriState.DISABLED ||
             state.filterUnread != LibraryTriState.DISABLED ||
             state.filterStarted != LibraryTriState.DISABLED ||
+            state.filterBookmarked != LibraryTriState.DISABLED ||
             state.filterTracking != LibraryTriState.DISABLED ||
             state.filterCompleted != LibraryTriState.DISABLED
         if (hasActiveFilters && !state.showSearchBar) {
