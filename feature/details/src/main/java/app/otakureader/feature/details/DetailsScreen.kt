@@ -84,6 +84,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -154,6 +155,7 @@ fun DetailsScreen(
     val context = LocalContext.current
     val isExpanded = rememberWindowWidthSizeClass().isExpanded
     val listState = rememberLazyListState()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val heroScrollOffset by remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex == 0)
@@ -274,6 +276,7 @@ fun DetailsScreen(
             viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
         }
         Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
             if (selectedVisibleChapters.isNotEmpty()) {
                 ChapterSelectionTopBar(
@@ -297,7 +300,9 @@ fun DetailsScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = topBarAlpha),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
                 ),
+                scrollBehavior = scrollBehavior,
                 actions = {
                     val filterActive = state.chapterFilter.isActive
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShowChapterFilter) }) {
