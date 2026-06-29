@@ -50,9 +50,9 @@ enum class LibraryTriState {
 }
 
 enum class LibraryBottomSheetTab {
-    DISPLAY,
-    SORT,
     FILTER,
+    SORT,
+    DISPLAY,
     GROUP
 }
 
@@ -129,7 +129,7 @@ data class LibraryState(
     val sortAscending: Boolean = true,
     val availableGenres: List<String> = emptyList(),
     val showBottomSheet: Boolean = false,
-    val bottomSheetTab: LibraryBottomSheetTab = LibraryBottomSheetTab.DISPLAY,
+    val bottomSheetTab: LibraryBottomSheetTab = LibraryBottomSheetTab.FILTER,
     val groupByCategory: Boolean = false,
     // Recommendations carousel
     val recommendations: List<LibraryMangaItem> = emptyList(),

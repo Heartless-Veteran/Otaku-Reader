@@ -343,7 +343,10 @@ fun LibraryScreen(
                             state.filterStarted != LibraryTriState.DISABLED ||
                             state.filterTracking != LibraryTriState.DISABLED ||
                             state.filterCompleted != LibraryTriState.DISABLED
-                        IconButton(onClick = { viewModel.onEvent(LibraryEvent.ToggleBottomSheet) }) {
+                        IconButton(onClick = {
+                            viewModel.onEvent(LibraryEvent.SetBottomSheetTab(LibraryBottomSheetTab.FILTER))
+                            viewModel.onEvent(LibraryEvent.ToggleBottomSheet)
+                        }) {
                             Icon(
                                 Icons.Default.FilterList,
                                 contentDescription = stringResource(R.string.filter_sheet_title),
