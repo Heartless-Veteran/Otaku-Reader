@@ -113,4 +113,10 @@
         <item quantity="other">+%1$d more chapters</item>
     </plurals>
     <string name="updates_collapse_chapters">Show less</string>
+    <!-- J2K date-grouped list (Komikku parity) -->
+    <string name="updates_last_updated">Last updated: %1$s</string>
+    <string name="updates_filter">Filter</string>
+    <string name="updates_upcoming">Upcoming</string>
+    <string name="updates_chapter_progress">Page %1$d</string>
+    <string name="updates_clear_filter">Clear</string>
 </resources>
