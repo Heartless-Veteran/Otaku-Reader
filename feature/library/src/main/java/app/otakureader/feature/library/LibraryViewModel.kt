@@ -695,10 +695,10 @@ class LibraryViewModel @Inject constructor(
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
-            applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds))
+            applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds)) to items.size
         }
-            .onEach { filtered ->
-                _state.update { it.copy(mangaList = filtered) }
+            .onEach { (filtered, totalCount) ->
+                _state.update { it.copy(mangaList = filtered, totalMangaCount = totalCount) }
             }
             .launchIn(viewModelScope)
     }
