@@ -29,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -128,6 +129,7 @@ class BrowseViewModelTest {
 
     @After
     fun teardown() {
+        viewModel.viewModelScope.cancel()
         collectScope.cancel()
         Dispatchers.resetMain()
     }

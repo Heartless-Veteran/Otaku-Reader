@@ -80,11 +80,13 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -154,6 +156,13 @@ fun DetailsScreen(
     val context = LocalContext.current
     val isExpanded = rememberWindowWidthSizeClass().isExpanded
     val listState = rememberLazyListState()
+    val selectedVisibleChapters = remember(state.sortedChapters, state.selectedChapters) {
+        state.sortedChapters.filter { it.id in state.selectedChapters }
+    }
+    val isScrollAllowed = rememberUpdatedState(!isExpanded && selectedVisibleChapters.isEmpty())
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(
+        canScroll = { isScrollAllowed.value },
+    )
     val heroScrollOffset by remember {
         derivedStateOf {
             if (listState.firstVisibleItemIndex == 0)
@@ -261,19 +270,16 @@ fun DetailsScreen(
         enabled = state.manga?.mangaThemeOverride ?: state.autoThemeEnabled
     )
 
-    // Single source of truth for both selection bars: the selected chapters that are actually
-    // visible in the current (filtered/sorted) list. Deriving the top bar count and the bottom
-    // action menu from the same list keeps them in sync even if some selected IDs become stale
-    // after a list refresh or are hidden by a filter.
-    val selectedVisibleChapters = remember(state.sortedChapters, state.selectedChapters) {
-        state.sortedChapters.filter { it.id in state.selectedChapters }
-    }
-
     MangaDynamicTheme(colorScheme = dynamicScheme) {
         BackHandler(enabled = selectedVisibleChapters.isNotEmpty()) {
             viewModel.onEvent(DetailsContract.Event.ClearChapterSelection)
         }
         Scaffold(
+            modifier = if (selectedVisibleChapters.isEmpty()) {
+                Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+            } else {
+                Modifier
+            },
             topBar = {
             if (selectedVisibleChapters.isNotEmpty()) {
                 ChapterSelectionTopBar(
@@ -297,7 +303,9 @@ fun DetailsScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = topBarAlpha),
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface,
                 ),
+                scrollBehavior = scrollBehavior,
                 actions = {
                     val filterActive = state.chapterFilter.isActive
                     IconButton(onClick = { viewModel.onEvent(DetailsContract.Event.ShowChapterFilter) }) {
