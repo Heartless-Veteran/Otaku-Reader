@@ -760,7 +760,7 @@ private fun LibraryContent(
                         )
                     }
                 }
-                state.mangaList.isEmpty() && hasActiveItemFilters -> {
+                state.mangaList.isEmpty() && hasActiveItemFilters && state.totalMangaCount > 0 -> {
                     Box(modifier = Modifier.fillMaxSize()) {
                         EmptyLibraryFilterMessage(
                             onClearFilters = { onEvent(LibraryEvent.ClearAllFilters) },

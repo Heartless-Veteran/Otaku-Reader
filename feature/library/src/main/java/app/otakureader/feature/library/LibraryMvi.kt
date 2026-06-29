@@ -82,6 +82,7 @@ data class LibraryState(
     /** True while a background library update (the WorkManager job) is running. */
     val isLibraryUpdating: Boolean = false,
     val mangaList: List<LibraryMangaItem> = emptyList(),
+    val totalMangaCount: Int = 0,
     val selectedManga: Set<Long> = emptySet(),
     val searchQuery: String = "",
     val showSearchBar: Boolean = false,
