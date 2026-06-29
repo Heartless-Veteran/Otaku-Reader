@@ -185,8 +185,8 @@ internal fun MangaGrid(
         if (state.continueReadingItems.isNotEmpty()) {
             ContinueReadingSection(
                 items = state.continueReadingItems,
-                onItemClick = { mangaId, chapterId ->
-                    onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
+                onItemClick = { mangaId, _ ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId))
                 }
             )
         }
@@ -300,8 +300,8 @@ internal fun MangaGrid(
                 displayedManga = displayedManga,
                 onMangaTap = onMangaTap,
                 onMangaLongClick = onMangaLongClick,
-                onContinueReadingClick = { mangaId, chapterId ->
-                    onEvent(LibraryEvent.ContinueReadingClick(mangaId, chapterId))
+                onContinueReadingClick = { mangaId ->
+                    onEvent(LibraryEvent.ContinueReadingClick(mangaId))
                 },
             )
         }
@@ -315,12 +315,8 @@ private fun LibraryMangaPageContent(
     displayedManga: List<LibraryMangaItem>,
     onMangaTap: (LibraryMangaItem) -> Unit,
     onMangaLongClick: (Long) -> Unit,
-    onContinueReadingClick: (mangaId: Long, chapterId: Long) -> Unit,
+    onContinueReadingClick: (mangaId: Long) -> Unit,
 ) {
-    // Pre-compute mangaId → chapterId map so per-item lambda construction is O(1)
-    val continueReadingMap = remember(state.continueReadingItems) {
-        state.continueReadingItems.associate { it.mangaId to it.chapterId }
-    }
     if (state.displayMode == LibraryDisplayMode.LIST) {
         LazyColumn(
             contentPadding = PaddingValues(vertical = 8.dp),
@@ -373,10 +369,8 @@ private fun LibraryMangaPageContent(
                                 .toFloat() / manga.totalChapterCount
                         } else null
                         val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                        val onClickContinueReading: (() -> Unit)? = if (state.showContinueReadingButton && manga.unreadCount > 0) {
-                            continueReadingMap[manga.id]?.let { chapterId ->
-                                { onContinueReadingClick(manga.id, chapterId) }
-                            }
+                        val onClickContinueReading: (() -> Unit)? = if (state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0) {
+                            { onContinueReadingClick(manga.id) }
                         } else null
                         MangaCard(
                             title = manga.title,
@@ -451,10 +445,8 @@ private fun LibraryMangaPageContent(
                         .toFloat() / manga.totalChapterCount
                 } else null
                 val downloadCount = state.downloadCountByManga[manga.id] ?: 0
-                val onClickContinueReading: (() -> Unit)? = if (state.showContinueReadingButton && manga.unreadCount > 0) {
-                    continueReadingMap[manga.id]?.let { chapterId ->
-                        { onContinueReadingClick(manga.id, chapterId) }
-                    }
+                val onClickContinueReading: (() -> Unit)? = if (state.showContinueReadingButton && manga.lastRead != null && manga.unreadCount > 0) {
+                    { onContinueReadingClick(manga.id) }
                 } else null
                 // Comfortable grid: cover with title caption below; Cover-only: no title at all.
                 val comfortable = state.displayMode == LibraryDisplayMode.COMFORTABLE_GRID

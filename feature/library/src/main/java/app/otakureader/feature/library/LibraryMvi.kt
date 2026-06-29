@@ -215,7 +215,7 @@ sealed class LibraryEvent {
     data object MarkSelectedAsCompleted : LibraryEvent()
     data object MarkSelectedAsDropped : LibraryEvent()
     // Continue Reading
-    data class ContinueReadingClick(val mangaId: Long, val chapterId: Long) : LibraryEvent()
+    data class ContinueReadingClick(val mangaId: Long) : LibraryEvent()
     // Reading list filter (null = clear/show all)
     data class SetFilterReadingList(val listId: Long?) : LibraryEvent()
     data object ToggleIncognito : LibraryEvent()

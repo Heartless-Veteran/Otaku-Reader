@@ -207,7 +207,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.Refresh -> loadLibrary()
             is LibraryEvent.OnMangaClick -> onMangaClick(event.mangaId)
             is LibraryEvent.OnMangaLongClick -> onMangaLongClick(event.mangaId)
-            is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId, event.chapterId)
+            is LibraryEvent.ContinueReadingClick -> onContinueReadingClick(event.mangaId)
             else -> Unit
         }
     }
@@ -928,9 +928,10 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    private fun onContinueReadingClick(mangaId: Long, chapterId: Long) {
+    private fun onContinueReadingClick(mangaId: Long) {
         viewModelScope.launch {
-            _effect.send(LibraryEffect.NavigateToReader(mangaId, chapterId))
+            val chapter = chapterRepository.getNextUnreadChapter(mangaId) ?: return@launch
+            _effect.send(LibraryEffect.NavigateToReader(mangaId, chapter.id))
         }
     }
 

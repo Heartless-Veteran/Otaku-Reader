@@ -478,7 +478,7 @@ fun LibraryScreen(
                         icon = { Icon(Icons.Default.PlayArrow, contentDescription = null) },
                         onClick = {
                             viewModel.onEvent(
-                                LibraryEvent.ContinueReadingClick(resume.mangaId, resume.chapterId)
+                                LibraryEvent.ContinueReadingClick(resume.mangaId)
                             )
                         },
                     )
