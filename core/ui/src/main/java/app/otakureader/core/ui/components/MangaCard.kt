@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +55,7 @@ import app.otakureader.core.ui.modifiers.bottomGradientScrim
  * @param isSelected Whether the card is in selected state (shows checkmark overlay)
  * @param readProgress 0f–1f fraction of chapters read; null hides the progress bar
  * @param onLongClick Optional long-click callback (enables multi-select)
- * @param continueReading When true, shows a centered play button overlay on the cover
+ * @param onClickContinueReading When non-null, shows a play button at the bottom-end of the cover; invoked on tap
  * @param isNew When true, shows a "NEW" badge in the top-left corner
  * @param sourceIcon Optional composable for a small source favicon watermark (bottom-right corner)
  */
@@ -78,7 +79,7 @@ fun MangaCard(
     isSelected: Boolean = false,
     readProgress: Float? = null,
     onLongClick: (() -> Unit)? = null,
-    continueReading: Boolean = false,
+    onClickContinueReading: (() -> Unit)? = null,
     isNew: Boolean = false,
     sourceIcon: @Composable (() -> Unit)? = null,
     showTitle: Boolean = true,
@@ -200,21 +201,23 @@ fun MangaCard(
                 }
             }
 
-            // Continue reading — centered play button overlay
-            if (continueReading) {
+            // Continue reading — play button at bottom-end (Komikku parity)
+            onClickContinueReading?.let { onContinueClick ->
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(2f / 3f)
-                        .background(Color.Black.copy(alpha = 0.35f)),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomEnd)
+                        .padding(6.dp)
+                        .padding(bottom = if (readProgress != null) 6.dp else 0.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.PlayArrow,
-                        contentDescription = stringResource(R.string.manga_card_continue_reading),
-                        tint = Color.White,
-                        modifier = Modifier.size(40.dp)
-                    )
+                    FilledIconButton(
+                        onClick = onContinueClick,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.PlayArrow,
+                            contentDescription = stringResource(R.string.manga_card_continue_reading),
+                        )
+                    }
                 }
             }
 
