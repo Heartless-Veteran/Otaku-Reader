@@ -17,9 +17,9 @@ import kotlinx.coroutines.flow.map
  */
 class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
 
-    /** Whether to group library items by category visually. */
-    val groupByCategory: Flow<Boolean> = dataStore.data.map { it[Keys.GROUP_BY_CATEGORY] ?: false }
-    suspend fun setGroupByCategory(value: Boolean) = dataStore.edit { it[Keys.GROUP_BY_CATEGORY] = value }
+    /** Group type: 0=BY_DEFAULT, 1=BY_SOURCE, 2=BY_STATUS, 3=BY_TRACK_STATUS, 4=UNGROUPED */
+    val groupType: Flow<Int> = dataStore.data.map { it[Keys.LIBRARY_GROUP_TYPE] ?: 0 }
+    suspend fun setGroupType(value: Int) = dataStore.edit { it[Keys.LIBRARY_GROUP_TYPE] = value }
 
     // --- Grid ---
 
@@ -251,7 +251,7 @@ class LibraryPreferences(private val dataStore: DataStore<Preferences>) {
         val CATEGORY_LAST_UPDATE_MS = stringPreferencesKey("category_last_update_ms")
         val SHOW_RECOMMENDATIONS = booleanPreferencesKey("library_show_recommendations")
         val DISMISSED_RECOMMENDATIONS = stringSetPreferencesKey("library_dismissed_recommendations")
-        val GROUP_BY_CATEGORY = booleanPreferencesKey("library_group_by_category")
+        val LIBRARY_GROUP_TYPE = intPreferencesKey("library_group_type")
         val SAVED_VIEWS = stringPreferencesKey("library_saved_views")
         val SHOW_CATEGORY_TABS = booleanPreferencesKey("library_show_category_tabs")
         val SHOW_CATEGORY_ITEM_COUNT = booleanPreferencesKey("library_show_category_item_count")

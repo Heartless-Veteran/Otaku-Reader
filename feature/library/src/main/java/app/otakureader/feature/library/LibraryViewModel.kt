@@ -23,6 +23,7 @@ import app.otakureader.domain.usecase.SearchLibraryMangaUseCase
 import app.otakureader.domain.usecase.ToggleFavoriteMangaUseCase
 import app.otakureader.domain.repository.EhFavoritesRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
@@ -81,6 +82,7 @@ class LibraryViewModel @Inject constructor(
     private val ehFavoritesRepository: EhFavoritesRepository,
     private val syncLibrary: SyncLibraryUseCase,
     private val pageBookmarkRepository: PageBookmarkRepository,
+    private val sourceRepository: SourceRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LibraryState())
@@ -144,7 +146,7 @@ class LibraryViewModel @Inject constructor(
             is LibraryEvent.ToggleFilterSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.ToggleBottomSheet -> _state.update { it.copy(showBottomSheet = !it.showBottomSheet) }
             is LibraryEvent.SetBottomSheetTab -> _state.update { it.copy(bottomSheetTab = event.tab) }
-            is LibraryEvent.SetGroupByCategory -> viewModelScope.launch { libraryPreferences.setGroupByCategory(event.enabled) }
+            is LibraryEvent.SetGroupType -> viewModelScope.launch { libraryPreferences.setGroupType(event.type) }
             is LibraryEvent.SetGridSize, is LibraryEvent.SetShowBadges,
             is LibraryEvent.SetShowDownloadBadge, is LibraryEvent.SetStaggeredGrid,
             is LibraryEvent.SetShowTitle, is LibraryEvent.SetDisplayMode,
@@ -513,8 +515,8 @@ class LibraryViewModel @Inject constructor(
         libraryUpdateScheduler.isUpdating()
             .onEach { updating -> _state.update { it.copy(isLibraryUpdating = updating) } }
             .launchIn(viewModelScope)
-        libraryPreferences.groupByCategory
-            .onEach { v -> _state.update { it.copy(groupByCategory = v) } }
+        libraryPreferences.groupType
+            .onEach { v -> _state.update { it.copy(groupType = v) } }
             .launchIn(viewModelScope)
     }
 
@@ -572,6 +574,13 @@ class LibraryViewModel @Inject constructor(
         getLibraryManga()
             .map { mangaList ->
                 coroutineScope {
+                    // Build source name lookup in parallel
+                    val sourceNamesDeferred = async {
+                        sourceRepository.getSources().first()
+                            .mapNotNull { source -> source.id.toLongOrNull()?.let { it to source.name } }
+                            .toMap()
+                    }
+
                     // Build tracking lookup in parallel
                     val trackingDeferred = mangaList.map { manga ->
                         async {
@@ -592,13 +601,15 @@ class LibraryViewModel @Inject constructor(
                         }
                     }
 
+                    val sourceNames = sourceNamesDeferred.await()
                     val trackedMangaIds = trackingDeferred.awaitAll().filterNotNull().toSet()
                     val downloadedMangaIds = downloadDeferred.awaitAll().filterNotNull().toSet()
 
                     mangaList.map { manga ->
                         manga.toLibraryItem(
                             isDownloaded = manga.id in downloadedMangaIds,
-                            hasTracking = manga.id in trackedMangaIds
+                            hasTracking = manga.id in trackedMangaIds,
+                            sourceName = sourceNames[manga.sourceId] ?: "",
                         )
                     }
                 }
@@ -643,12 +654,12 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun observeFilteredItems() {
-        // When category selection changes, fetch the manga IDs in that category
+        // When category selection changes, fetch the manga IDs in that category (BY_DEFAULT mode only)
         viewModelScope.launch {
-            _state.map { it.selectedCategory }
+            _state.map { it.selectedCategory to it.groupType }
                 .distinctUntilChanged()
-                .collect { categoryId ->
-                    if (categoryId != null) {
+                .collect { (categoryId, groupType) ->
+                    if (categoryId != null && groupType == LibraryGroup.BY_DEFAULT) {
                         val mangaIds = getCategories.getMangaIdsForCategory(categoryId).first()
                         _state.update { it.copy(categoryFilterMangaIds = mangaIds.toSet()) }
                     } else {
@@ -698,13 +709,15 @@ class LibraryViewModel @Inject constructor(
                     filterCompleted = it.filterCompleted,
                     bookmarkedMangaIds = it.bookmarkedMangaIds,
                     randomSeed = randomSeed,
+                    groupType = it.groupType,
                 )
             }.distinctUntilChanged()
         ) { items, matchingIds, params ->
-            applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds)) to items.size
+            val filtered = applyFiltersAndSort(items, params.copy(searchMatchingIds = matchingIds))
+            Triple(filtered, items.size, items)
         }
-            .onEach { (filtered, totalCount) ->
-                _state.update { it.copy(mangaList = filtered, totalMangaCount = totalCount) }
+            .onEach { (filtered, totalCount, unfiltered) ->
+                _state.update { it.copy(mangaList = filtered, totalMangaCount = totalCount, allMangaList = unfiltered) }
             }
             .launchIn(viewModelScope)
     }

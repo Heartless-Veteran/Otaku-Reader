@@ -43,6 +43,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
@@ -475,40 +476,72 @@ private fun GroupTab(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val context = LocalContext.current
+    val groupOptions = remember(context) {
+        listOf(
+            LibraryGroup.BY_DEFAULT to context.getString(R.string.group_type_by_default),
+            LibraryGroup.BY_SOURCE to context.getString(R.string.group_type_by_source),
+            LibraryGroup.BY_STATUS to context.getString(R.string.group_type_by_status),
+            LibraryGroup.BY_TRACK_STATUS to context.getString(R.string.group_type_by_track_status),
+            LibraryGroup.UNGROUPED to context.getString(R.string.group_type_ungrouped),
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = stringResource(R.string.group_category_label),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 8.dp),
         )
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = state.selectedCategory == null,
-                onClick = { onEvent(LibraryEvent.OnCategorySelected(null)) },
-                label = { Text(stringResource(R.string.library_category_all)) },
-            )
-            state.categories.forEach { category ->
-                FilterChip(
-                    selected = state.selectedCategory == category.id,
-                    onClick = { onEvent(LibraryEvent.OnCategorySelected(category.id)) },
-                    label = { Text("${category.name} (${category.count})") },
-                )
+        groupOptions.forEach { (type, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onEvent(LibraryEvent.SetGroupType(type)) }
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(label, style = MaterialTheme.typography.bodyMedium)
+                if (state.groupType == type) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         }
 
-        HorizontalDivider()
+        if (state.groupType == LibraryGroup.BY_DEFAULT && state.categories.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stringResource(R.string.group_by_category))
-            Switch(
-                checked = state.groupByCategory,
-                onCheckedChange = { onEvent(LibraryEvent.SetGroupByCategory(it)) },
+            Text(
+                text = stringResource(R.string.group_category_label),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                FilterChip(
+                    selected = state.selectedCategory == null,
+                    onClick = { onEvent(LibraryEvent.OnCategorySelected(null)) },
+                    label = { Text(stringResource(R.string.library_category_all)) },
+                )
+                state.categories.forEach { category ->
+                    FilterChip(
+                        selected = state.selectedCategory == category.id,
+                        onClick = { onEvent(LibraryEvent.OnCategorySelected(category.id)) },
+                        label = { Text("${category.name} (${category.count})") },
+                    )
+                }
+            }
         }
     }
 }

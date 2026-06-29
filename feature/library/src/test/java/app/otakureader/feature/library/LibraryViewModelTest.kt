@@ -30,6 +30,7 @@ import app.otakureader.domain.usecase.downloads.ReindexDownloadsUseCase
 import app.otakureader.domain.model.ReindexResult
 import app.otakureader.domain.repository.EhFavoritesRepository
 import app.otakureader.domain.repository.PageBookmarkRepository
+import app.otakureader.domain.repository.SourceRepository
 import app.otakureader.domain.usecase.SyncEhFavoritesUseCase
 import app.otakureader.domain.usecase.SyncLibraryUseCase
 import app.otakureader.domain.repository.TrackerSyncRepository
@@ -90,6 +91,9 @@ class LibraryViewModelTest {
     private val syncLibrary: SyncLibraryUseCase = mockk(relaxed = true)
     private val pageBookmarkRepository: PageBookmarkRepository = mockk {
         every { getMangaIdsWithBookmarks() } returns flowOf(emptySet())
+    }
+    private val sourceRepository: SourceRepository = mockk {
+        every { getSources() } returns flowOf(emptyList())
     }
 
     private val sampleMangas = listOf(
@@ -163,7 +167,7 @@ class LibraryViewModelTest {
         every { libraryDisplayMode } returns flowOf(0)
         every { showRecommendations } returns flowOf(false)
         every { dismissedRecommendations } returns flowOf(emptySet())
-        every { groupByCategory } returns flowOf(false)
+        every { groupType } returns flowOf(LibraryGroup.BY_DEFAULT)
         every { savedViewsJson } returns flowOf("[]")
         coEvery { setSavedViewsJson(any()) } just Awaits
         every { showTitle } returns flowOf(true)
@@ -205,6 +209,7 @@ class LibraryViewModelTest {
             ehFavoritesRepository,
             syncLibrary,
             pageBookmarkRepository,
+            sourceRepository,
         )
     }
 
