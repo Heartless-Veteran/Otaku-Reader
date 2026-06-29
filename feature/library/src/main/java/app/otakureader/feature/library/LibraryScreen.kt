@@ -98,6 +98,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
+import app.otakureader.domain.model.MangaStatus
 import app.otakureader.domain.model.SavedLibraryView
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -749,9 +750,47 @@ private fun LibraryContent(
         }
 
         // Category tabs (Komikku parity): scrollable tab row with optional count badges.
-        if (state.showCategoryTabs && state.categories.isNotEmpty()) {
+        // For non-default group modes, derive synthetic tabs from the full unfiltered list.
+        val statusLabels = mapOf(
+            MangaStatus.UNKNOWN to stringResource(R.string.manga_status_unknown),
+            MangaStatus.ONGOING to stringResource(R.string.manga_status_ongoing),
+            MangaStatus.COMPLETED to stringResource(R.string.manga_status_completed),
+            MangaStatus.LICENSED to stringResource(R.string.manga_status_licensed),
+            MangaStatus.PUBLISHING_FINISHED to stringResource(R.string.manga_status_publishing_finished),
+            MangaStatus.CANCELLED to stringResource(R.string.manga_status_cancelled),
+            MangaStatus.ON_HIATUS to stringResource(R.string.manga_status_on_hiatus),
+        )
+        val displayCategories: List<CategoryItem> = remember(
+            state.groupType, state.allMangaList, state.categories
+        ) {
+            when (state.groupType) {
+                LibraryGroup.BY_SOURCE -> state.allMangaList
+                    .groupBy { it.sourceId }
+                    .map { (sourceId, items) ->
+                        CategoryItem(
+                            id = sourceId,
+                            name = items.first().sourceName.ifBlank { sourceId.toString() },
+                            count = items.size,
+                        )
+                    }
+                    .sortedBy { it.name }
+                LibraryGroup.BY_STATUS -> state.allMangaList
+                    .groupBy { it.status }
+                    .map { (status, items) ->
+                        CategoryItem(
+                            id = (status.ordinal + 1).toLong(),
+                            name = statusLabels[status] ?: status.name,
+                            count = items.size,
+                        )
+                    }
+                    .sortedBy { it.name }
+                LibraryGroup.UNGROUPED, LibraryGroup.BY_TRACK_STATUS -> emptyList()
+                else -> state.categories
+            }
+        }
+        if (state.showCategoryTabs && displayCategories.isNotEmpty()) {
             LibraryCategoryTabs(
-                categories = state.categories,
+                categories = displayCategories,
                 selectedCategoryId = state.selectedCategory,
                 showItemCount = state.showCategoryItemCount,
                 onTabSelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },

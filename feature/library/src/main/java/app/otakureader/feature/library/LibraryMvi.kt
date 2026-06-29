@@ -57,6 +57,20 @@ enum class LibraryBottomSheetTab {
 }
 
 /**
+ * Library grouping modes — mirrors Komikku's `LibraryGroup` constants.
+ *
+ * Ordinals are intentionally NOT used for persistence; use the named constants instead.
+ * Persisted as an `Int` via [LibraryPreferences.groupType].
+ */
+object LibraryGroup {
+    const val BY_DEFAULT = 0
+    const val BY_SOURCE = 1
+    const val BY_STATUS = 2
+    const val BY_TRACK_STATUS = 3
+    const val UNGROUPED = 4
+}
+
+/**
  * Top-level layout for the library grid.
  *
  * - [GRID]: cover-centric grid (the [LibraryState.isStaggeredGrid] flag further selects
@@ -131,7 +145,7 @@ data class LibraryState(
     val availableGenres: List<String> = emptyList(),
     val showBottomSheet: Boolean = false,
     val bottomSheetTab: LibraryBottomSheetTab = LibraryBottomSheetTab.FILTER,
-    val groupByCategory: Boolean = false,
+    val groupType: Int = LibraryGroup.BY_DEFAULT,
     // Recommendations carousel
     val recommendations: List<LibraryMangaItem> = emptyList(),
     val showRecommendations: Boolean = true,
@@ -149,6 +163,8 @@ data class LibraryState(
     // Move to category bulk action (GAP 2)
     val showMoveToCategoryDialog: Boolean = false,
     val moveToCategoryMangaIds: Set<Long> = emptySet(),
+    // Full unfiltered list — used by composable to compute synthetic group tabs
+    val allMangaList: List<LibraryMangaItem> = emptyList(),
 )
 
 data class LibraryMangaItem(
@@ -170,6 +186,7 @@ data class LibraryMangaItem(
     val userCompleted: Boolean = false,
     val userDropped: Boolean = false,
     val genres: List<String> = emptyList(),
+    val sourceName: String = "",
 )
 
 data class CategoryItem(
@@ -231,7 +248,7 @@ sealed class LibraryEvent {
     data class SetFilterCompleted(val state: LibraryTriState) : LibraryEvent()
     data object ToggleBottomSheet : LibraryEvent()
     data class SetBottomSheetTab(val tab: LibraryBottomSheetTab) : LibraryEvent()
-    data class SetGroupByCategory(val enabled: Boolean) : LibraryEvent()
+    data class SetGroupType(val type: Int) : LibraryEvent()
     data class SetGridSize(val size: Int) : LibraryEvent()
     data class SetPortraitColumns(val count: Int) : LibraryEvent()
     data class SetLandscapeColumns(val count: Int) : LibraryEvent()

@@ -20,8 +20,14 @@ internal fun applyFiltersAndSort(items: List<LibraryMangaItem>, params: FilterSo
     return applySort(filtered, params)
 }
 
-internal fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> =
-    if (params.selectedCategory != null) items.filter { it.id in params.categoryMangaIds } else items
+internal fun applyCategoryFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> {
+    val selected = params.selectedCategory ?: return items
+    return when (params.groupType) {
+        LibraryGroup.BY_SOURCE -> items.filter { it.sourceId == selected }
+        LibraryGroup.BY_STATUS -> items.filter { (it.status.ordinal + 1).toLong() == selected }
+        else -> items.filter { it.id in params.categoryMangaIds }
+    }
+}
 
 internal fun applyNsfwFilter(items: List<LibraryMangaItem>, params: FilterSortParams): List<LibraryMangaItem> =
     if (!params.showNsfw) items.filter { !it.isNsfw } else items
@@ -99,6 +105,7 @@ internal fun applySort(items: List<LibraryMangaItem>, params: FilterSortParams):
 internal fun Manga.toLibraryItem(
     isDownloaded: Boolean = false,
     hasTracking: Boolean = false,
+    sourceName: String = "",
 ) = LibraryMangaItem(
     id = id,
     title = title,
@@ -118,4 +125,5 @@ internal fun Manga.toLibraryItem(
     userCompleted = userCompleted,
     userDropped = userDropped,
     genres = genre,
+    sourceName = sourceName,
 )

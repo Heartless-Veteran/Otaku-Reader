@@ -215,8 +215,14 @@
     <string name="display_mode_comfortable">Comfortable</string>
     <string name="display_mode_list">List</string>
     <string name="display_mode_cover_only">Cover only</string>
-    <string name="group_category_label">Category</string>
+    <string name="group_category_label">Group by</string>
     <string name="group_by_category">Group by category</string>
+    <string name="group_type_by_default">By category</string>
+    <string name="group_type_by_source">By source</string>
+    <string name="group_type_by_status">By status</string>
+    <string name="group_type_by_track_status">By tracker status</string>
+    <string name="group_type_ungrouped">No grouping</string>
+    <string name="manga_status_unknown">Unknown</string>
     <!-- Filter sheet -->
     <string name="filter_sheet_title">Filters &amp; Sort</string>
     <string name="filter_sheet_clear_all">Clear all</string>

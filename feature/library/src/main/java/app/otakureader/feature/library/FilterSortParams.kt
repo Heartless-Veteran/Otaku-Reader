@@ -24,4 +24,5 @@ internal data class FilterSortParams(
     val filterCompleted: LibraryTriState = LibraryTriState.DISABLED,
     val bookmarkedMangaIds: Set<Long> = emptySet(),
     val randomSeed: Long = 0L,
+    val groupType: Int = LibraryGroup.BY_DEFAULT,
 )
