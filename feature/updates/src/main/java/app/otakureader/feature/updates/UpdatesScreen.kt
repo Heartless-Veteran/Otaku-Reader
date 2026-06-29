@@ -356,37 +356,57 @@ fun UpdatesScreen(
                                     }
                                     .filter { it.chapters.isNotEmpty() }
                             }
-                            MangaGroupedUpdatesList(
-                                groups = filteredGroups,
-                                selectedItems = state.selectedItems,
-                                activeDownloads = state.activeDownloads,
-                                lastRunSummary = state.lastRunSummary,
-                                expandedMangaGroups = state.expandedMangaGroups,
-                                onToggleGroupExpansion = { viewModel.onEvent(UpdatesEvent.ToggleMangaGroupExpansion(it)) },
-                                onChapterClick = onChapterClick,
-                                onChapterLongClick = onChapterLongClick,
-                                onDownloadClick = onDownloadClick,
-                                onMarkAsRead = onMarkAsRead,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            if (filteredGroups.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = stringResource(R.string.updates_empty),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                MangaGroupedUpdatesList(
+                                    groups = filteredGroups,
+                                    selectedItems = state.selectedItems,
+                                    activeDownloads = state.activeDownloads,
+                                    lastRunSummary = state.lastRunSummary,
+                                    expandedMangaGroups = state.expandedMangaGroups,
+                                    onToggleGroupExpansion = { viewModel.onEvent(UpdatesEvent.ToggleMangaGroupExpansion(it)) },
+                                    onChapterClick = onChapterClick,
+                                    onChapterLongClick = onChapterLongClick,
+                                    onDownloadClick = onDownloadClick,
+                                    onMarkAsRead = onMarkAsRead,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         } else {
                             // Komikku-parity: J2K date-grouped list with per-date manga collapsing
                             val uiModels = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
                                 buildJk2UiModel(state.updates, state.dateFilterStart, state.dateFilterEnd)
                             }
-                            UpdatesJk2List(
-                                uiModels = uiModels,
-                                expandedGroups = state.expandedDateMangaGroups,
-                                selectedItems = state.selectedItems,
-                                activeDownloads = state.activeDownloads,
-                                lastRunSummary = state.lastRunSummary,
-                                onToggleGroup = { viewModel.onEvent(UpdatesEvent.ToggleDateMangaGroup(it)) },
-                                onChapterClick = onChapterClick,
-                                onChapterLongClick = onChapterLongClick,
-                                onDownloadClick = onDownloadClick,
-                                onMarkAsRead = onMarkAsRead,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            if (uiModels.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = stringResource(R.string.updates_empty),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                UpdatesJk2List(
+                                    uiModels = uiModels,
+                                    expandedGroups = state.expandedDateMangaGroups,
+                                    selectedItems = state.selectedItems,
+                                    activeDownloads = state.activeDownloads,
+                                    lastRunSummary = state.lastRunSummary,
+                                    onToggleGroup = { viewModel.onEvent(UpdatesEvent.ToggleDateMangaGroup(it)) },
+                                    onChapterClick = onChapterClick,
+                                    onChapterLongClick = onChapterLongClick,
+                                    onDownloadClick = onDownloadClick,
+                                    onMarkAsRead = onMarkAsRead,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
@@ -697,7 +717,7 @@ private fun buildJk2UiModel(
     val filtered = if (dateFilterStart != null || dateFilterEnd != null) {
         updates.filter { update ->
             val ts = update.chapter.dateFetch
-            if (ts <= 0L) return@filter true // unset date: keep, falls into today's bucket
+            if (ts <= UNSET_FETCH_DATE) return@filter true // unset date: keep, falls into today's bucket
             (dateFilterStart == null || ts >= dateFilterStart) && (dateFilterEnd == null || ts <= dateFilterEnd)
         }
     } else {
@@ -709,7 +729,7 @@ private fun buildJk2UiModel(
     val byDate = filtered
         .groupBy { update ->
             val ts = update.chapter.dateFetch
-            if (ts <= 0L) today else Instant.ofEpochMilli(ts).atZone(zoneId).toLocalDate()
+            if (ts <= UNSET_FETCH_DATE) today else Instant.ofEpochMilli(ts).atZone(zoneId).toLocalDate()
         }
         .entries.sortedByDescending { it.key }
 
@@ -881,7 +901,6 @@ private fun Jk2UpdateItem(
     onDownloadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val haptic = LocalHapticFeedback.current
     val textAlpha = if (update.chapter.read) 0.38f else 1f
 
     Row(
@@ -889,10 +908,7 @@ private fun Jk2UpdateItem(
             .fillMaxWidth()
             .combinedClickable(
                 onClick = onClick,
-                onLongClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onLongClick()
-                },
+                onLongClick = onLongClick, // haptic handled by screen-level onChapterLongClick
             )
             .padding(
                 top = if (isLeader) 8.dp else 0.dp,
