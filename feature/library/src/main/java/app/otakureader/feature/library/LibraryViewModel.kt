@@ -631,7 +631,13 @@ class LibraryViewModel @Inject constructor(
                             count = category.mangaCount
                         )
                     }
-                    _state.update { it.copy(categories = items) }
+                    // If the previously selected category was deleted, clear the selection so
+                    // the tab row and filter both reflect the same "All" state.
+                    val validIds = items.mapTo(HashSet()) { it.id }
+                    _state.update { state ->
+                        val validatedCategory = state.selectedCategory?.takeIf { it in validIds }
+                        state.copy(categories = items, selectedCategory = validatedCategory)
+                    }
                 }
         }
     }
