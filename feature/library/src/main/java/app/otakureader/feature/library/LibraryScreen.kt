@@ -115,6 +115,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.zIndex
 
+private const val CATEGORY_TABS_Z_INDEX = 2f
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
@@ -1171,7 +1173,7 @@ private fun LibraryCategoryTabs(
         if (showItemCount) categories.sumOf { it.count } else null
     }
 
-    Column(modifier = modifier.zIndex(2f)) {
+    Column(modifier = modifier.zIndex(CATEGORY_TABS_Z_INDEX)) {
         PrimaryScrollableTabRow(
             selectedTabIndex = selectedIndex,
             edgePadding = 0.dp,
