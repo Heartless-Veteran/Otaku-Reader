@@ -1159,11 +1159,16 @@ private fun LibraryCategoryTabs(
     onTabSelected: (Long?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val selectedIndex = if (selectedCategoryId == null) {
-        0
-    } else {
-        val idx = categories.indexOfFirst { it.id == selectedCategoryId }
-        if (idx < 0) 0 else idx + 1
+    val selectedIndex = remember(categories, selectedCategoryId) {
+        if (selectedCategoryId == null) {
+            0
+        } else {
+            val idx = categories.indexOfFirst { it.id == selectedCategoryId }
+            if (idx < 0) 0 else idx + 1
+        }
+    }
+    val totalCount = remember(categories, showItemCount) {
+        if (showItemCount) categories.sumOf { it.count } else null
     }
 
     Column(modifier = modifier.zIndex(2f)) {
@@ -1178,7 +1183,7 @@ private fun LibraryCategoryTabs(
                 text = {
                     LibraryTabText(
                         text = stringResource(R.string.library_filter_all),
-                        badgeCount = if (showItemCount) categories.sumOf { it.count } else null,
+                        badgeCount = totalCount,
                     )
                 },
                 unselectedContentColor = MaterialTheme.colorScheme.onSurface,
@@ -1206,9 +1211,9 @@ private fun LibraryTabText(
     text: String,
     badgeCount: Int? = null,
 ) {
-    BadgedBox(
-        badge = {
-            if (badgeCount != null && badgeCount > 0) {
+    if (badgeCount != null && badgeCount > 0) {
+        BadgedBox(
+            badge = {
                 Badge(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1219,9 +1224,15 @@ private fun LibraryTabText(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-            }
-        },
-    ) {
+            },
+        ) {
+            Text(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    } else {
         Text(
             text = text,
             maxLines = 1,
