@@ -38,12 +38,16 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -287,6 +291,7 @@ private fun VolumeHeader(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChapterListItem(
     chapter: DetailsContract.ChapterItem,
@@ -309,15 +314,64 @@ fun ChapterListItem(
     val chapterNameFormat = stringResource(R.string.details_chapter_number_format)
     var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-            .alpha(alpha)
-            .combinedClickable(onClick = onClick, onLongClick = {
-                showMenu = true
-                onLongClick()
-            }),
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onToggleRead()
+                true
+            } else false
+        },
+    )
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            val bgColor = if (chapter.read) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.tertiaryContainer
+            }
+            val icon = if (chapter.read) {
+                Icons.Default.Circle
+            } else {
+                Icons.Default.CheckCircle
+            }
+            val iconTint = if (chapter.read) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            }
+            val contentDesc = if (chapter.read) {
+                stringResource(R.string.details_chapter_mark_as_unread)
+            } else {
+                stringResource(R.string.details_chapter_mark_as_read)
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp)
+                    .background(bgColor),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDesc,
+                    tint = iconTint,
+                    modifier = Modifier.padding(end = 16.dp),
+                )
+            }
+        },
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 2.dp)
+                .alpha(alpha)
+                .combinedClickable(onClick = onClick, onLongClick = {
+                    showMenu = true
+                    onLongClick()
+                }),
         colors = CardDefaults.cardColors(
             containerColor = if (chapter.read) {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -485,6 +539,8 @@ fun ChapterListItem(
             }
         }
     }
+
+    } // end SwipeToDismissBox content
 
     // Dropdown menu for chapter options
     DropdownMenu(
