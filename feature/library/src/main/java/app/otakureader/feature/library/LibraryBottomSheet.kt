@@ -43,6 +43,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
@@ -475,13 +476,16 @@ private fun GroupTab(
     state: LibraryState,
     onEvent: (LibraryEvent) -> Unit,
 ) {
-    val groupOptions = listOf(
-        LibraryGroup.BY_DEFAULT to stringResource(R.string.group_type_by_default),
-        LibraryGroup.BY_SOURCE to stringResource(R.string.group_type_by_source),
-        LibraryGroup.BY_STATUS to stringResource(R.string.group_type_by_status),
-        LibraryGroup.BY_TRACK_STATUS to stringResource(R.string.group_type_by_track_status),
-        LibraryGroup.UNGROUPED to stringResource(R.string.group_type_ungrouped),
-    )
+    val context = LocalContext.current
+    val groupOptions = remember(context) {
+        listOf(
+            LibraryGroup.BY_DEFAULT to context.getString(R.string.group_type_by_default),
+            LibraryGroup.BY_SOURCE to context.getString(R.string.group_type_by_source),
+            LibraryGroup.BY_STATUS to context.getString(R.string.group_type_by_status),
+            LibraryGroup.BY_TRACK_STATUS to context.getString(R.string.group_type_by_track_status),
+            LibraryGroup.UNGROUPED to context.getString(R.string.group_type_ungrouped),
+        )
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(

@@ -751,17 +751,20 @@ private fun LibraryContent(
 
         // Category tabs (Komikku parity): scrollable tab row with optional count badges.
         // For non-default group modes, derive synthetic tabs from the full unfiltered list.
-        val statusLabels = mapOf(
-            MangaStatus.UNKNOWN to stringResource(R.string.manga_status_unknown),
-            MangaStatus.ONGOING to stringResource(R.string.manga_status_ongoing),
-            MangaStatus.COMPLETED to stringResource(R.string.manga_status_completed),
-            MangaStatus.LICENSED to stringResource(R.string.manga_status_licensed),
-            MangaStatus.PUBLISHING_FINISHED to stringResource(R.string.manga_status_publishing_finished),
-            MangaStatus.CANCELLED to stringResource(R.string.manga_status_cancelled),
-            MangaStatus.ON_HIATUS to stringResource(R.string.manga_status_on_hiatus),
-        )
+        val context = LocalContext.current
+        val statusLabels = remember(context) {
+            mapOf(
+                MangaStatus.UNKNOWN to context.getString(R.string.manga_status_unknown),
+                MangaStatus.ONGOING to context.getString(R.string.manga_status_ongoing),
+                MangaStatus.COMPLETED to context.getString(R.string.manga_status_completed),
+                MangaStatus.LICENSED to context.getString(R.string.manga_status_licensed),
+                MangaStatus.PUBLISHING_FINISHED to context.getString(R.string.manga_status_publishing_finished),
+                MangaStatus.CANCELLED to context.getString(R.string.manga_status_cancelled),
+                MangaStatus.ON_HIATUS to context.getString(R.string.manga_status_on_hiatus),
+            )
+        }
         val displayCategories: List<CategoryItem> = remember(
-            state.groupType, state.allMangaList, state.categories
+            state.groupType, state.allMangaList, state.categories, statusLabels
         ) {
             when (state.groupType) {
                 LibraryGroup.BY_SOURCE -> state.allMangaList
