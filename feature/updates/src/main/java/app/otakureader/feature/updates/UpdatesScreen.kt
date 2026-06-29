@@ -699,8 +699,9 @@ private fun buildJk2UiModel(
         (dateFilterStart == null || ts >= dateFilterStart) && (dateFilterEnd == null || ts <= dateFilterEnd)
     }
     val result = mutableListOf<UpdatesUiModel>()
+    val zoneId = ZoneId.systemDefault()
     val byDate = filtered
-        .groupBy { Instant.ofEpochMilli(it.chapter.dateFetch).atZone(ZoneId.systemDefault()).toLocalDate() }
+        .groupBy { Instant.ofEpochMilli(it.chapter.dateFetch).atZone(zoneId).toLocalDate() }
         .entries.sortedByDescending { it.key }
 
     for ((date, dateUpdates) in byDate) {
@@ -1009,15 +1010,22 @@ private fun UpdatesFilterDialog(
     onClearFilter: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val now = System.currentTimeMillis()
+    val today = remember { LocalDate.now() }
+    val zoneId = remember { ZoneId.systemDefault() }
+    val last7DaysStart = remember(today, zoneId) {
+        today.minusDays(7).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    }
+    val last30DaysStart = remember(today, zoneId) {
+        today.minusDays(30).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.updates_filter)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(
-                    stringResource(R.string.updates_filter_last_7_days) to (now - 7L * 24 * 60 * 60 * 1000),
-                    stringResource(R.string.updates_filter_last_30_days) to (now - 30L * 24 * 60 * 60 * 1000),
+                    stringResource(R.string.updates_filter_last_7_days) to last7DaysStart,
+                    stringResource(R.string.updates_filter_last_30_days) to last30DaysStart,
                 ).forEach { (label, start) ->
                     val isSelected = dateFilterStart == start && dateFilterEnd == null
                     Surface(
