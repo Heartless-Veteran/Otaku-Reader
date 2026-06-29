@@ -106,6 +106,7 @@ internal fun Manga.toLibraryItem(
     isDownloaded: Boolean = false,
     hasTracking: Boolean = false,
     sourceName: String = "",
+    sourceLanguage: String = "",
 ) = LibraryMangaItem(
     id = id,
     title = title,
@@ -126,4 +127,5 @@ internal fun Manga.toLibraryItem(
     userDropped = userDropped,
     genres = genre,
     sourceName = sourceName,
+    sourceLanguage = sourceLanguage,
 )
