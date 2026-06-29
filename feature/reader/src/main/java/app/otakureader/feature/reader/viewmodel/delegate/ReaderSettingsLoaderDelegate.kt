@@ -136,11 +136,15 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
             autoZoomWideImages        = display.autoZoomWideImages,
             invertTapZones            = display.invertTapZones,
             tapZoneConfig             = display.tapZoneConfig,
+            landscapeZoomScaleType    = display.landscapeZoomScaleType,
+            pageLayout                = display.pageLayout,
             webtoonSidePadding        = webtoon.sidePadding,
             webtoonGapDp              = webtoon.gapDp,
             webtoonMenuHideSensitivity = webtoon.menuHideSensitivity,
             webtoonDoubleTapZoom      = webtoon.doubleTapZoom,
             webtoonDisableZoomOut     = webtoon.disableZoomOut,
+            webtoonPinchToZoomEnabled = webtoon.pinchToZoomEnabled,
+            webtoonScaleType          = webtoon.scaleType,
             einkFlashOnPageChange     = webtoon.einkFlashOnPageChange,
             einkBlackAndWhite         = webtoon.einkBlackAndWhite,
             skipReadChapters          = behavior.skipReadChapters,
@@ -258,30 +262,46 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val autoZoomWideImages: Boolean,
         val invertTapZones: Boolean,
         val tapZoneConfig: TapZoneConfig,
+        val landscapeZoomScaleType: Int,
+        val pageLayout: Int,
     )
 
     @Suppress("InstanceOfCheckForException")
     private suspend fun loadDisplaySettings(): DisplaySettings = coroutineScope {
-        val animateD           = async { settingsRepository.animatePageTransitions.first() }
-        val showModeOverlayD   = async { settingsRepository.showReadingModeOverlay.first() }
-        val showTapZonesD      = async { settingsRepository.showTapZonesOverlay.first() }
-        val readerScaleD       = async { settingsRepository.readerScale.first() }
-        val autoZoomD          = async { settingsRepository.autoZoomWideImages.first() }
-        val invertTapD         = async { settingsRepository.invertTapZones.first() }
-        val tapZoneConfigD     = async {
+        val animateD               = async { settingsRepository.animatePageTransitions.first() }
+        val showModeOverlayD       = async { settingsRepository.showReadingModeOverlay.first() }
+        val showTapZonesD          = async { settingsRepository.showTapZonesOverlay.first() }
+        val readerScaleD           = async { settingsRepository.readerScale.first() }
+        val autoZoomD              = async { settingsRepository.autoZoomWideImages.first() }
+        val invertTapD             = async { settingsRepository.invertTapZones.first() }
+        val tapZoneConfigD         = async {
             try { settingsRepository.tapZoneConfig.first() } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 TapZoneConfig()
             }
         }
+        val landscapeZoomScaleTypeD = async {
+            try { settingsRepository.landscapeZoomScaleType.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
+            }
+        }
+        val pageLayoutD             = async {
+            try { settingsRepository.pageLayout.first() } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                0
+            }
+        }
         DisplaySettings(
-            animatePageTransitions = animateD.await(),
-            showReadingModeOverlay = showModeOverlayD.await(),
-            showTapZonesOverlay    = showTapZonesD.await(),
-            readerScale            = readerScaleD.await(),
-            autoZoomWideImages     = autoZoomD.await(),
-            invertTapZones         = invertTapD.await(),
-            tapZoneConfig          = tapZoneConfigD.await(),
+            animatePageTransitions  = animateD.await(),
+            showReadingModeOverlay  = showModeOverlayD.await(),
+            showTapZonesOverlay     = showTapZonesD.await(),
+            readerScale             = readerScaleD.await(),
+            autoZoomWideImages      = autoZoomD.await(),
+            invertTapZones          = invertTapD.await(),
+            tapZoneConfig           = tapZoneConfigD.await(),
+            landscapeZoomScaleType  = landscapeZoomScaleTypeD.await(),
+            pageLayout              = pageLayoutD.await(),
         )
     }
 
@@ -291,6 +311,8 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val menuHideSensitivity: Int,
         val doubleTapZoom: Boolean,
         val disableZoomOut: Boolean,
+        val pinchToZoomEnabled: Boolean,
+        val scaleType: Int,
         val einkFlashOnPageChange: Boolean,
         val einkBlackAndWhite: Boolean,
     )
@@ -301,16 +323,20 @@ class ReaderSettingsLoaderDelegate @Inject constructor(
         val menuSensitivityD  = async { settingsRepository.webtoonMenuHideSensitivity.first() }
         val doubleTapZoomD    = async { settingsRepository.webtoonDoubleTapZoom.first() }
         val disableZoomOutD   = async { settingsRepository.webtoonDisableZoomOut.first() }
+        val pinchToZoomD      = async { settingsRepository.webtoonPinchToZoomEnabled.first() }
+        val scaleTypeD        = async { settingsRepository.webtoonScaleType.first() }
         val einkFlashD        = async { settingsRepository.einkFlashOnPageChange.first() }
         val einkBlackWhiteD   = async { settingsRepository.einkBlackAndWhite.first() }
         WebtoonSettings(
-            sidePadding         = sidePaddingD.await(),
-            gapDp               = gapDpD.await(),
-            menuHideSensitivity = menuSensitivityD.await(),
-            doubleTapZoom       = doubleTapZoomD.await(),
-            disableZoomOut      = disableZoomOutD.await(),
+            sidePadding           = sidePaddingD.await(),
+            gapDp                 = gapDpD.await(),
+            menuHideSensitivity   = menuSensitivityD.await(),
+            doubleTapZoom         = doubleTapZoomD.await(),
+            disableZoomOut        = disableZoomOutD.await(),
+            pinchToZoomEnabled    = pinchToZoomD.await(),
+            scaleType             = scaleTypeD.await(),
             einkFlashOnPageChange = einkFlashD.await(),
-            einkBlackAndWhite   = einkBlackWhiteD.await(),
+            einkBlackAndWhite     = einkBlackWhiteD.await(),
         )
     }
 

@@ -187,6 +187,16 @@ data class ReaderState(
     val webtoonDoubleTapZoom: Boolean = true,
     /** Disable zooming out past fit-width in webtoon */
     val webtoonDisableZoomOut: Boolean = false,
+    /** Enable pinch-to-zoom gesture in webtoon mode */
+    val webtoonPinchToZoomEnabled: Boolean = true,
+    /** Scale type for webtoon images: 0=Fit Width, 1=Stretch, 2=Fit Page */
+    val webtoonScaleType: Int = 0,
+
+    // --- Pager display ---
+    /** Scale type in landscape pager: 0=Fit Screen, 1=Zoom In */
+    val landscapeZoomScaleType: Int = 0,
+    /** Page layout mode: 0=Single, 1=Dual, 2=Automatic (dual on landscape) */
+    val pageLayout: Int = 0,
 
     // --- E-ink Settings ---
     /** Flash screen on page change for E-ink displays */
@@ -254,15 +264,35 @@ data class ReaderState(
     val displayPageNumber: Int
         get() = currentPage + 1
 
-    /** Check if dual page mode should show spread */
+    /** Check if dual page mode should show spread, accounting for pageLayout override. */
     val isDualPageSpread: Boolean
-        get() = mode == ReaderMode.DUAL_PAGE && currentPage % 2 == 0
+        get() {
+            if (mode == ReaderMode.WEBTOON || mode == ReaderMode.SMART_PANELS) return false
+            val isDual = when (pageLayout) {
+                PAGE_LAYOUT_SINGLE -> false
+                PAGE_LAYOUT_DUAL -> true
+                else -> mode == ReaderMode.DUAL_PAGE
+            }
+            return isDual && currentPage % 2 == 0
+        }
 
-    /** Get companion page for dual page mode */
+    /** Get companion page for dual page mode, accounting for pageLayout override. */
     val companionPage: ReaderPage?
-        get() = if (mode == ReaderMode.DUAL_PAGE && currentPage + 1 < pages.size) {
-            pages[currentPage + 1]
-        } else null
+        get() {
+            if (mode == ReaderMode.WEBTOON || mode == ReaderMode.SMART_PANELS) return null
+            val isDual = when (pageLayout) {
+                PAGE_LAYOUT_SINGLE -> false
+                PAGE_LAYOUT_DUAL -> true
+                else -> mode == ReaderMode.DUAL_PAGE
+            }
+            return if (isDual && currentPage + 1 < pages.size) pages[currentPage + 1] else null
+        }
+
+    companion object {
+        const val PAGE_LAYOUT_SINGLE = 0
+        const val PAGE_LAYOUT_DUAL = 1
+        const val PAGE_LAYOUT_AUTOMATIC = 2
+    }
 
     // ── Sub-state views ───────────────────────────────────────────────────────
     // These are lightweight projections of the monolithic state. They allow
@@ -326,7 +356,9 @@ data class ReaderState(
             webtoonGapDp = webtoonGapDp,
             webtoonMenuHideSensitivity = webtoonMenuHideSensitivity,
             webtoonDoubleTapZoom = webtoonDoubleTapZoom,
-            webtoonDisableZoomOut = webtoonDisableZoomOut
+            webtoonDisableZoomOut = webtoonDisableZoomOut,
+            webtoonPinchToZoomEnabled = webtoonPinchToZoomEnabled,
+            webtoonScaleType = webtoonScaleType
         )
 }
 
@@ -382,7 +414,9 @@ data class WebtoonState(
     val webtoonGapDp: Int,
     val webtoonMenuHideSensitivity: Int,
     val webtoonDoubleTapZoom: Boolean,
-    val webtoonDisableZoomOut: Boolean
+    val webtoonDisableZoomOut: Boolean,
+    val webtoonPinchToZoomEnabled: Boolean = true,
+    val webtoonScaleType: Int = 0,
 )
 
 /** An "Open <tracker>" button in the comments overlay, built from an existing tracker link. */
@@ -611,6 +645,15 @@ sealed interface ReaderEvent {
     /** Set tap-zone inversion axis for webtoon mode. */
     data class SetTapInvertModeWebtoon(val mode: TapInvertMode) : SettingsControl
 
+    /** Set webtoon scale type: 0=Fit Width, 1=Stretch, 2=Fit Page. */
+    data class SetWebtoonScaleType(val scaleType: Int) : SettingsControl
+
+    /** Set landscape zoom scale type: 0=Fit Screen, 1=Zoom In. */
+    data class SetLandscapeZoomScaleType(val scaleType: Int) : SettingsControl
+
+    /** Set page layout: 0=Single, 1=Dual, 2=Automatic. */
+    data class SetPageLayout(val layout: Int) : SettingsControl
+
     // ──────────────────────────────────────────────────────────────────────────
     // Color filter
     // ──────────────────────────────────────────────────────────────────────────
@@ -708,6 +751,7 @@ enum class ReaderSetting {
     EINK_BLACK_AND_WHITE,
     WEBTOON_DOUBLE_TAP_ZOOM,
     WEBTOON_DISABLE_ZOOM_OUT,
+    WEBTOON_PINCH_TO_ZOOM,
     AUTO_ZOOM_WIDE_IMAGES,
     SHOW_CONTENT_IN_CUTOUT,
     FULLSCREEN,

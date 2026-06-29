@@ -97,6 +97,8 @@ import app.otakureader.feature.reader.ReaderEvent
 import app.otakureader.feature.reader.ReaderSetting
 import app.otakureader.feature.reader.ReaderViewModel
 import kotlinx.coroutines.delay
+import androidx.compose.ui.platform.LocalConfiguration
+import android.content.res.Configuration
 import kotlinx.coroutines.launch
 
 
@@ -682,6 +684,25 @@ private fun ReaderContent(
         else -> 0
     }
 
+    // Apply pageLayout to pager modes: Single forces SINGLE_PAGE, Double forces DUAL_PAGE,
+    // Automatic picks based on orientation. Webtoon/SmartPanels are unaffected.
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val effectiveMode = if (state.mode != ReaderMode.WEBTOON && state.mode != ReaderMode.SMART_PANELS) {
+        when (state.pageLayout) {
+            ReaderState.PAGE_LAYOUT_SINGLE -> ReaderMode.SINGLE_PAGE
+            ReaderState.PAGE_LAYOUT_DUAL -> ReaderMode.DUAL_PAGE
+            ReaderState.PAGE_LAYOUT_AUTOMATIC -> if (isLandscape) ReaderMode.DUAL_PAGE else ReaderMode.SINGLE_PAGE
+            else -> state.mode
+        }
+    } else {
+        state.mode
+    }
+    // landscapeZoomScaleType=1 (Zoom In): override scale to FillWidth when in landscape pager mode.
+    val effectiveScaleType = if (state.landscapeZoomScaleType == 1 && isLandscape &&
+        (effectiveMode == ReaderMode.SINGLE_PAGE || effectiveMode == ReaderMode.DUAL_PAGE)) 1
+    else state.readerScale
+
     // CompositingStrategy.Offscreen ensures blend modes in the Canvas overlay work correctly
     // against the already-rendered page content below them.
     val boxModifier = Modifier
@@ -698,7 +719,7 @@ private fun ReaderContent(
     Box(
         modifier = boxModifier
     ) {
-        when (state.mode) {
+        when (effectiveMode) {
             ReaderMode.SINGLE_PAGE -> {
                 SinglePageReader(
                     pages = state.pages,
@@ -709,7 +730,7 @@ private fun ReaderContent(
                     onZoomChange = onZoomChange,
                     onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     rotation = state.pageRotation.degrees,
-                    scaleType = state.readerScale,
+                    scaleType = effectiveScaleType,
                     animatePageTransitions = state.animatePageTransitions,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
@@ -727,7 +748,7 @@ private fun ReaderContent(
                     onLongPress = if (state.showActionsOnLongTap) onLongPress else null,
                     isRtl = state.readingDirection == app.otakureader.domain.model.ReadingDirection.RTL,
                     rotation = state.pageRotation.degrees,
-                    scaleType = state.readerScale,
+                    scaleType = effectiveScaleType,
                     animatePageTransitions = state.animatePageTransitions,
                     cropBordersEnabled = state.cropBordersEnabled,
                     imageQuality = state.imageQuality,
@@ -750,6 +771,8 @@ private fun ReaderContent(
                     pageGapDp = state.webtoonGapDp,
                     sidePaddingDp = webtoonSidePaddingDp,
                     disableZoomOut = state.webtoonDisableZoomOut,
+                    pinchToZoomEnabled = state.webtoonPinchToZoomEnabled,
+                    scaleType = state.webtoonScaleType,
                     modifier = Modifier.fillMaxSize()
                 )
             }

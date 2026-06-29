@@ -266,6 +266,7 @@ class ReaderViewModel @Inject constructor(
     /**
      * Load saved reader settings with per-manga overrides (#260, #264).
      */
+    @Suppress("LongMethod")
     private fun loadSettings() {
         viewModelScope.launch {
             // Load manga first to check for per-manga overrides.
@@ -311,11 +312,15 @@ class ReaderViewModel @Inject constructor(
                     readerScale = settingsState.readerScale,
                     autoZoomWideImages = settingsState.autoZoomWideImages,
                     invertTapZones = settingsState.invertTapZones,
+                    landscapeZoomScaleType = settingsState.landscapeZoomScaleType,
+                    pageLayout = settingsState.pageLayout,
                     webtoonSidePadding = settingsState.webtoonSidePadding,
                     webtoonGapDp = settingsState.webtoonGapDp,
                     webtoonMenuHideSensitivity = settingsState.webtoonMenuHideSensitivity,
                     webtoonDoubleTapZoom = settingsState.webtoonDoubleTapZoom,
                     webtoonDisableZoomOut = settingsState.webtoonDisableZoomOut,
+                    webtoonPinchToZoomEnabled = settingsState.webtoonPinchToZoomEnabled,
+                    webtoonScaleType = settingsState.webtoonScaleType,
                     einkFlashOnPageChange = settingsState.einkFlashOnPageChange,
                     einkBlackAndWhite = settingsState.einkBlackAndWhite,
                     skipReadChapters = settingsState.skipReadChapters,
@@ -573,6 +578,9 @@ class ReaderViewModel @Inject constructor(
             is ReaderEvent.SetNavigationModeWebtoon -> displayDelegate.updateNavigationModeWebtoon(event.mode)
             is ReaderEvent.SetTapInvertModePager -> displayDelegate.updateTapInvertModePager(event.mode)
             is ReaderEvent.SetTapInvertModeWebtoon -> displayDelegate.updateTapInvertModeWebtoon(event.mode)
+            is ReaderEvent.SetWebtoonScaleType -> displayDelegate.updateWebtoonScaleType(event.scaleType)
+            is ReaderEvent.SetLandscapeZoomScaleType -> displayDelegate.updateLandscapeZoomScaleType(event.scaleType)
+            is ReaderEvent.SetPageLayout -> displayDelegate.updatePageLayout(event.layout)
         }
     }
 

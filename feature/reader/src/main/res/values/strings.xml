@@ -186,6 +186,19 @@
     <string name="reader_webtoon_side_padding_large">Large</string>
     <string name="reader_webtoon_double_tap_zoom">Double-tap to zoom</string>
     <string name="reader_webtoon_disable_zoom_out">Disable zoom out</string>
+    <string name="reader_webtoon_pinch_to_zoom">Pinch to zoom</string>
+    <string name="reader_webtoon_scale_type">Scale type</string>
+    <string name="reader_webtoon_scale_fit_width">Fit width</string>
+    <string name="reader_webtoon_scale_stretch">Stretch</string>
+    <string name="reader_webtoon_scale_fit_page">Fit page</string>
+    <!-- Reader settings dialog — pager layout -->
+    <string name="reader_page_layout_title">Page layout</string>
+    <string name="reader_page_layout_single">Single page</string>
+    <string name="reader_page_layout_double">Double page</string>
+    <string name="reader_page_layout_automatic">Automatic</string>
+    <string name="reader_landscape_zoom_title">Landscape zoom</string>
+    <string name="reader_landscape_zoom_fit">Fit screen</string>
+    <string name="reader_landscape_zoom_in">Zoom in</string>
 
     <!-- Reader settings dialog — general tab -->
     <string name="reader_bg_auto">Auto</string>

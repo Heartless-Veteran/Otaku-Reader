@@ -250,6 +250,11 @@ class ReaderDisplayDelegate @Inject constructor(
                 update { it.copy(webtoonDisableZoomOut = new) }
                 launchSave { setWebtoonDisableZoomOut(new) }
             }
+            ReaderSetting.WEBTOON_PINCH_TO_ZOOM -> {
+                val new = !stateFlow.value.webtoonPinchToZoomEnabled
+                update { it.copy(webtoonPinchToZoomEnabled = new) }
+                launchSave { setWebtoonPinchToZoomEnabled(new) }
+            }
             ReaderSetting.AUTO_ZOOM_WIDE_IMAGES -> {
                 val new = !stateFlow.value.autoZoomWideImages
                 update { it.copy(autoZoomWideImages = new) }
@@ -307,6 +312,24 @@ class ReaderDisplayDelegate @Inject constructor(
         val coerced = mode.coerceIn(0, MAX_NAVIGATION_MODE)
         update { it.copy(navigationModeWebtoon = coerced) }
         launchSave { setNavigationModeWebtoon(coerced) }
+    }
+
+    fun updateWebtoonScaleType(scaleType: Int) {
+        val coerced = scaleType.coerceIn(0, 2)
+        update { it.copy(webtoonScaleType = coerced) }
+        launchSave { setWebtoonScaleType(coerced) }
+    }
+
+    fun updateLandscapeZoomScaleType(scaleType: Int) {
+        val coerced = scaleType.coerceIn(0, 1)
+        update { it.copy(landscapeZoomScaleType = coerced) }
+        launchSave { setLandscapeZoomScaleType(coerced) }
+    }
+
+    fun updatePageLayout(layout: Int) {
+        val coerced = layout.coerceIn(0, 2)
+        update { it.copy(pageLayout = coerced) }
+        launchSave { setPageLayout(coerced) }
     }
 
     fun updateTapInvertModePager(mode: TapInvertMode) {
