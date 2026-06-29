@@ -334,7 +334,10 @@ fun OtakuReaderNavHost(
             },
             onNavigateBack = {
                 navController.popBackStack()
-            }
+            },
+            onMangaClick = { mangaId ->
+                navController.navigate(Route.MangaDetails(mangaId))
+            },
         )
 
         // Manga details

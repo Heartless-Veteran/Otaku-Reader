@@ -45,6 +45,9 @@
     <!-- Add to library from history row -->
     <string name="history_add_to_library">Add to library</string>
     <string name="history_in_library">In library</string>
+    <string name="history_open_manga">Open manga</string>
+    <!-- Read progress in history row -->
+    <string name="history_read_progress">Page %1$d</string>
     <!-- Active-filter indicator -->
     <string name="history_filter_active_indicator">Filters active</string>
 
