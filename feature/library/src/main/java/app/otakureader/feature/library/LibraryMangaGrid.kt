@@ -35,8 +35,10 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -589,6 +591,7 @@ private fun LibraryListRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CategoryTabRow(
     categories: List<CategoryItem>,
@@ -607,29 +610,51 @@ internal fun CategoryTabRow(
         else -> categoryTabs.indexOfFirst { it.id == selectedCategory }.coerceAtLeast(0)
     }
 
-    ScrollableTabRow(
-        selectedTabIndex = selectedIndex,
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        edgePadding = 16.dp,
-        modifier = modifier.fillMaxWidth()
-    ) {
-        categoryTabs.forEachIndexed { index, category ->
-            Tab(
-                selected = selectedIndex == index,
-                onClick = {
-                    if (category.id == -1L) onCategorySelected(null)
-                    else onCategorySelected(category.id)
-                },
-                text = {
-                    val label = if (showItemCount) "${category.name} ${category.count}" else category.name
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            )
+    Column(modifier = modifier.fillMaxWidth()) {
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            edgePadding = 0.dp,
+            divider = {},
+        ) {
+            categoryTabs.forEachIndexed { index, category ->
+                Tab(
+                    selected = selectedIndex == index,
+                    onClick = {
+                        if (category.id == -1L) onCategorySelected(null)
+                        else onCategorySelected(category.id)
+                    },
+                    text = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = category.name,
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                            if (showItemCount && category.count > 0) {
+                                val pillAlpha = if (selectedIndex == index) 0.08f else 0.12f
+                                Surface(
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = pillAlpha),
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
+                                    ) {
+                                        Text(
+                                            text = category.count.toString(),
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+            }
         }
+        HorizontalDivider()
     }
 }
 
