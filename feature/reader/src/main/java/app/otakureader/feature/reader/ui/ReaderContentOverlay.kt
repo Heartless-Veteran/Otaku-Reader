@@ -58,10 +58,11 @@ private val readerTopBarFade = tween<Float>(READER_TOP_BAR_FADE_MS)
  * @param chapterTitle  Current chapter title displayed below the series title.
  * @param isVisible     Whether the overlay is shown.
  * @param onDismiss     Called when the back arrow is tapped — typically navigates back.
+ * @param onTitleClick Called when the title/chapter area is tapped; null makes the area non-interactive.
  * @param onDownloadChapter Called when the download icon is tapped; null hides the button.
  * @param isCurrentChapterDownloaded When true, the download button is hidden.
  * @param onBookmarkPage Called when the bookmark icon is tapped; null hides the button.
- * @param isCurrentPageBookmarked When true, shows a filled bookmark icon.
+ * @param isCurrentPageBookmarked When true, shows a solid bookmark; when false, shows an outlined bookmark border.
  */
 @Composable
 fun ReaderContentOverlay(
