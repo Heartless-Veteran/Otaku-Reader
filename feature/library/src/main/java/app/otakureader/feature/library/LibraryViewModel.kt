@@ -633,9 +633,9 @@ class LibraryViewModel @Inject constructor(
                     }
                     // If the previously selected category was deleted, clear the selection so
                     // the tab row and filter both reflect the same "All" state.
+                    val validIds = items.mapTo(HashSet()) { it.id }
                     _state.update { state ->
-                        val validatedCategory = state.selectedCategory
-                            ?.takeIf { id -> items.any { it.id == id } }
+                        val validatedCategory = state.selectedCategory?.takeIf { it in validIds }
                         state.copy(categories = items, selectedCategory = validatedCategory)
                     }
                 }
