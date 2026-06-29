@@ -107,8 +107,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.FlipToBack
 import androidx.compose.material.icons.outlined.SelectAll
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.zIndex
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -741,6 +746,16 @@ private fun LibraryContent(
             )
         }
 
+        // Category tabs (Komikku parity): scrollable tab row with optional count badges.
+        if (state.showCategoryTabs && state.categories.isNotEmpty()) {
+            LibraryCategoryTabs(
+                categories = state.categories,
+                selectedCategoryId = state.selectedCategory,
+                showItemCount = state.showCategoryItemCount,
+                onTabSelected = { onEvent(LibraryEvent.OnCategorySelected(it)) },
+            )
+        }
+
         PullToRefreshBox(
             isRefreshing = state.isRefreshing,
             onRefresh = { onEvent(LibraryEvent.Refresh) },
@@ -1128,5 +1143,100 @@ private fun LibrarySelectionBottomBar(
                 }
             }
         }
+    }
+}
+
+/**
+ * Scrollable tab row showing each library category as a tab, matching Komikku's LibraryTabs.
+ * The leading "All" tab selects [selectedCategoryId] = null (no category filter).
+ * Item-count badges are shown when [showItemCount] is true.
+ */
+@Composable
+private fun LibraryCategoryTabs(
+    categories: List<CategoryItem>,
+    selectedCategoryId: Long?,
+    showItemCount: Boolean,
+    onTabSelected: (Long?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val selectedIndex = remember(categories, selectedCategoryId) {
+        if (selectedCategoryId == null) {
+            0
+        } else {
+            val idx = categories.indexOfFirst { it.id == selectedCategoryId }
+            if (idx < 0) 0 else idx + 1
+        }
+    }
+    val totalCount = remember(categories, showItemCount) {
+        if (showItemCount) categories.sumOf { it.count } else null
+    }
+
+    Column(modifier = modifier.zIndex(2f)) {
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedIndex,
+            edgePadding = 0.dp,
+            divider = {},
+        ) {
+            Tab(
+                selected = selectedCategoryId == null,
+                onClick = { onTabSelected(null) },
+                text = {
+                    LibraryTabText(
+                        text = stringResource(R.string.library_filter_all),
+                        badgeCount = totalCount,
+                    )
+                },
+                unselectedContentColor = MaterialTheme.colorScheme.onSurface,
+            )
+            categories.forEach { category ->
+                Tab(
+                    selected = selectedCategoryId == category.id,
+                    onClick = { onTabSelected(category.id) },
+                    text = {
+                        LibraryTabText(
+                            text = category.name,
+                            badgeCount = if (showItemCount) category.count else null,
+                        )
+                    },
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+        }
+        HorizontalDivider()
+    }
+}
+
+@Composable
+private fun LibraryTabText(
+    text: String,
+    badgeCount: Int? = null,
+) {
+    if (badgeCount != null && badgeCount > 0) {
+        BadgedBox(
+            badge = {
+                Badge(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ) {
+                    Text(
+                        text = badgeCount.toString(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            },
+        ) {
+            Text(
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    } else {
+        Text(
+            text = text,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
