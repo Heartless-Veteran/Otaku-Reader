@@ -1,5 +1,7 @@
 package app.otakureader.feature.updates
 
+import android.text.format.DateUtils
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -20,52 +22,51 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Circle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FlipToBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RemoveDone
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelectAll
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TopAppBar
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,9 +81,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import kotlinx.coroutines.launch
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -96,6 +97,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -106,6 +108,7 @@ private const val UNSET_FETCH_DATE = 0L
 
 /** Updates screen showing newly discovered chapters for library manga. */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("UnusedParameter") // onNavigateBack/onNavigateToDownloads kept for nav contract; back arrow removed for Komikku parity
 @Composable
 fun UpdatesScreen(
     onMangaClick: (Long) -> Unit,
@@ -119,6 +122,10 @@ fun UpdatesScreen(
     val scope = rememberCoroutineScope()
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+
+    BackHandler(enabled = state.selectedItems.isNotEmpty()) {
+        viewModel.onEvent(UpdatesEvent.ClearSelection)
+    }
 
     LaunchedEffect(viewModel.effect) {
         viewModel.effect.collectLatest { effect ->
@@ -188,27 +195,31 @@ fun UpdatesScreen(
                 var overflowMenuExpanded by remember { mutableStateOf(false) }
                 TopAppBar(
                     title = { Text(stringResource(R.string.updates_title)) },
-                    navigationIcon = {
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.updates_back))
-                        }
-                    },
                     actions = {
-                        // Trigger a manual library update right from the Updates screen.
+                        // Filter icon — tinted when any date filter is active
+                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.ShowFilterDialog) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.FilterList,
+                                contentDescription = stringResource(R.string.updates_filter),
+                                tint = if (state.hasActiveFilters) MaterialTheme.colorScheme.primary
+                                       else LocalContentColor.current,
+                            )
+                        }
+                        // Calendar / upcoming icon
+                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.ShowPendingUpdates) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.CalendarMonth,
+                                contentDescription = stringResource(R.string.updates_upcoming)
+                            )
+                        }
+                        // Trigger a manual library update
                         IconButton(onClick = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = stringResource(R.string.updates_refresh_now)
                             )
                         }
-                        // To-Be-Updated preview icon
-                        IconButton(onClick = { viewModel.onEvent(UpdatesEvent.ShowPendingUpdates) }) {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = stringResource(R.string.updates_view_pending)
-                            )
-                        }
-                        // Update errors icon with badge
+                        // Update errors badge (Otaku-exclusive)
                         if (state.updateErrors.isNotEmpty()) {
                             IconButton(onClick = { viewModel.onEvent(UpdatesEvent.ShowUpdateErrors) }) {
                                 BadgedBox(
@@ -223,13 +234,7 @@ fun UpdatesScreen(
                                 }
                             }
                         }
-                        IconButton(onClick = onNavigateToDownloads) {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = stringResource(R.string.updates_downloads)
-                            )
-                        }
-                        // Overflow menu — display mode toggle
+                        // Overflow menu — Otaku-exclusive display mode toggle
                         IconButton(onClick = { overflowMenuExpanded = true }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
@@ -266,56 +271,6 @@ fun UpdatesScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (state.selectedItems.isEmpty()) {
-                val now = System.currentTimeMillis()
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                ) {
-                    FilterChip(
-                        selected = state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
-                            state.dateFilterEnd == null,
-                        onClick = {
-                            if (state.dateFilterStart == now - 7L * 24 * 60 * 60 * 1000 &&
-                                state.dateFilterEnd == null
-                            ) {
-                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
-                            } else {
-                                viewModel.onEvent(
-                                    UpdatesEvent.SetDateFilter(now - 7L * 24 * 60 * 60 * 1000, null)
-                                )
-                            }
-                        },
-                        label = { Text(stringResource(R.string.updates_filter_last_7_days)) },
-                    )
-                    FilterChip(
-                        selected = state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
-                            state.dateFilterEnd == null,
-                        onClick = {
-                            if (state.dateFilterStart == now - 30L * 24 * 60 * 60 * 1000 &&
-                                state.dateFilterEnd == null
-                            ) {
-                                viewModel.onEvent(UpdatesEvent.ClearDateFilter)
-                            } else {
-                                viewModel.onEvent(
-                                    UpdatesEvent.SetDateFilter(now - 30L * 24 * 60 * 60 * 1000, null)
-                                )
-                            }
-                        },
-                        label = { Text(stringResource(R.string.updates_filter_last_30_days)) },
-                    )
-                }
-            }
-
-            val filteredUpdates = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
-                var result = state.updates
-                state.dateFilterStart?.let { start -> result = result.filter { it.chapter.dateFetch >= start } }
-                state.dateFilterEnd?.let { end -> result = result.filter { it.chapter.dateFetch <= end } }
-                result
-            }
-
             PullToRefreshBox(
                 isRefreshing = state.isRefreshing,
                 onRefresh = { viewModel.onEvent(UpdatesEvent.StartLibraryUpdate) },
@@ -339,7 +294,7 @@ fun UpdatesScreen(
                         )
                     }
 
-                    filteredUpdates.isEmpty() -> Box(
+                    state.updates.isEmpty() -> Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
@@ -387,7 +342,12 @@ fun UpdatesScreen(
                             viewModel.onEvent(UpdatesEvent.MarkChapterAsRead(chapterId))
                         }
                         if (state.displayMode == UpdatesDisplayMode.GROUPED_BY_MANGA) {
-                            // Compute the filtered manga groups from the flat filtered list
+                            val filteredUpdates = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
+                                var result = state.updates
+                                state.dateFilterStart?.let { start -> result = result.filter { it.chapter.dateFetch >= start } }
+                                state.dateFilterEnd?.let { end -> result = result.filter { it.chapter.dateFetch <= end } }
+                                result
+                            }
                             val filteredGroups = remember(state.groupedByManga, filteredUpdates) {
                                 val filteredIds = filteredUpdates.map { it.chapter.id }.toSet()
                                 state.groupedByManga
@@ -396,35 +356,72 @@ fun UpdatesScreen(
                                     }
                                     .filter { it.chapters.isNotEmpty() }
                             }
-                            MangaGroupedUpdatesList(
-                                groups = filteredGroups,
-                                selectedItems = state.selectedItems,
-                                activeDownloads = state.activeDownloads,
-                                lastRunSummary = state.lastRunSummary,
-                                expandedMangaGroups = state.expandedMangaGroups,
-                                onToggleGroupExpansion = { viewModel.onEvent(UpdatesEvent.ToggleMangaGroupExpansion(it)) },
-                                onChapterClick = onChapterClick,
-                                onChapterLongClick = onChapterLongClick,
-                                onDownloadClick = onDownloadClick,
-                                onMarkAsRead = onMarkAsRead,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            if (filteredGroups.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = stringResource(R.string.updates_empty),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                MangaGroupedUpdatesList(
+                                    groups = filteredGroups,
+                                    selectedItems = state.selectedItems,
+                                    activeDownloads = state.activeDownloads,
+                                    lastRunSummary = state.lastRunSummary,
+                                    expandedMangaGroups = state.expandedMangaGroups,
+                                    onToggleGroupExpansion = { viewModel.onEvent(UpdatesEvent.ToggleMangaGroupExpansion(it)) },
+                                    onChapterClick = onChapterClick,
+                                    onChapterLongClick = onChapterLongClick,
+                                    onDownloadClick = onDownloadClick,
+                                    onMarkAsRead = onMarkAsRead,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         } else {
-                            UpdatesList(
-                                updates = filteredUpdates,
-                                selectedItems = state.selectedItems,
-                                activeDownloads = state.activeDownloads,
-                                lastRunSummary = state.lastRunSummary,
-                                onChapterClick = onChapterClick,
-                                onChapterLongClick = onChapterLongClick,
-                                onDownloadClick = onDownloadClick,
-                                onMarkAsRead = onMarkAsRead,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            // Komikku-parity: J2K date-grouped list with per-date manga collapsing
+                            val uiModels = remember(state.updates, state.dateFilterStart, state.dateFilterEnd) {
+                                buildJk2UiModel(state.updates, state.dateFilterStart, state.dateFilterEnd)
+                            }
+                            if (uiModels.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = stringResource(R.string.updates_empty),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            } else {
+                                UpdatesJk2List(
+                                    uiModels = uiModels,
+                                    expandedGroups = state.expandedDateMangaGroups,
+                                    selectedItems = state.selectedItems,
+                                    activeDownloads = state.activeDownloads,
+                                    lastRunSummary = state.lastRunSummary,
+                                    onToggleGroup = { viewModel.onEvent(UpdatesEvent.ToggleDateMangaGroup(it)) },
+                                    onChapterClick = onChapterClick,
+                                    onChapterLongClick = onChapterLongClick,
+                                    onDownloadClick = onDownloadClick,
+                                    onMarkAsRead = onMarkAsRead,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
             }
+        }
+
+        // Filter dialog
+        if (state.showFilterDialog) {
+            UpdatesFilterDialog(
+                dateFilterStart = state.dateFilterStart,
+                dateFilterEnd = state.dateFilterEnd,
+                onSetFilter = { start, end -> viewModel.onEvent(UpdatesEvent.SetDateFilter(start, end)) },
+                onClearFilter = { viewModel.onEvent(UpdatesEvent.ClearDateFilter) },
+                onDismiss = { viewModel.onEvent(UpdatesEvent.HideFilterDialog) },
+            )
         }
 
         // Update Error Dialog
@@ -708,174 +705,232 @@ private fun GroupedChapterItem(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Date-grouped list
+// J2K date-grouped list (Komikku parity)
 // ─────────────────────────────────────────────────────────────────────────────
 
-private enum class UpdateDateBucket { TODAY, YESTERDAY, THIS_WEEK, THIS_MONTH, OLDER }
-
-private fun updateDateBucket(epochMs: Long): UpdateDateBucket {
-    if (epochMs <= 0L) return UpdateDateBucket.OLDER
-    val today = LocalDate.now()
-    val day = Instant.ofEpochMilli(epochMs).atZone(ZoneId.systemDefault()).toLocalDate()
-    return when {
-        day == today -> UpdateDateBucket.TODAY
-        day == today.minusDays(1) -> UpdateDateBucket.YESTERDAY
-        day >= today.minusDays(6) -> UpdateDateBucket.THIS_WEEK
-        day >= today.minusDays(29) -> UpdateDateBucket.THIS_MONTH
-        else -> UpdateDateBucket.OLDER
+/** Builds the flat J2K UI model list from the updates. */
+private fun buildJk2UiModel(
+    updates: List<MangaUpdate>,
+    dateFilterStart: Long?,
+    dateFilterEnd: Long?,
+): List<UpdatesUiModel> {
+    val filtered = if (dateFilterStart != null || dateFilterEnd != null) {
+        updates.filter { update ->
+            val ts = update.chapter.dateFetch
+            if (ts <= UNSET_FETCH_DATE) return@filter true // unset date: keep, falls into today's bucket
+            (dateFilterStart == null || ts >= dateFilterStart) && (dateFilterEnd == null || ts <= dateFilterEnd)
+        }
+    } else {
+        updates
     }
-}
+    val result = mutableListOf<UpdatesUiModel>()
+    val zoneId = ZoneId.systemDefault()
+    val today = LocalDate.now(zoneId)
+    val byDate = filtered
+        .groupBy { update ->
+            val ts = update.chapter.dateFetch
+            if (ts <= UNSET_FETCH_DATE) today else Instant.ofEpochMilli(ts).atZone(zoneId).toLocalDate()
+        }
+        .entries.sortedByDescending { it.key }
 
-private sealed interface UpdateListItem {
-    data class Header(val bucket: UpdateDateBucket) : UpdateListItem
-    data class Entry(val update: MangaUpdate) : UpdateListItem
-}
-
-@Composable
-private fun bucketLabel(bucket: UpdateDateBucket): String = when (bucket) {
-    UpdateDateBucket.TODAY -> stringResource(R.string.updates_date_today)
-    UpdateDateBucket.YESTERDAY -> stringResource(R.string.updates_date_yesterday)
-    UpdateDateBucket.THIS_WEEK -> stringResource(R.string.updates_date_this_week)
-    UpdateDateBucket.THIS_MONTH -> stringResource(R.string.updates_date_this_month)
-    UpdateDateBucket.OLDER -> stringResource(R.string.updates_date_older)
+    for ((date, dateUpdates) in byDate) {
+        val mangaGroups = dateUpdates
+            .groupBy { it.manga.id }
+            .entries
+            .sortedByDescending { (_, chapters) -> chapters.maxOf { it.chapter.dateFetch } }
+        result.add(UpdatesUiModel.Header(date = date, mangaCount = mangaGroups.size))
+        for ((mangaId, chapters) in mangaGroups) {
+            val isExpandable = chapters.size > 1
+            val key = "${date}_${mangaId}"
+            chapters.forEachIndexed { index, chapter ->
+                result.add(UpdatesUiModel.Item(
+                    update = chapter,
+                    isLeader = index == 0,
+                    isExpandable = isExpandable,
+                    groupKey = key,
+                ))
+            }
+        }
+    }
+    return result
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun UpdatesList(
-    updates: List<MangaUpdate>,
+private fun UpdatesJk2List(
+    uiModels: List<UpdatesUiModel>,
+    expandedGroups: Set<String>,
     selectedItems: Set<Long>,
     activeDownloads: Map<Long, DownloadItem>,
     lastRunSummary: app.otakureader.domain.model.UpdateRunSummary?,
+    onToggleGroup: (String) -> Unit,
     onChapterClick: (MangaUpdate) -> Unit,
     onChapterLongClick: (MangaUpdate) -> Unit,
     onDownloadClick: (MangaUpdate) -> Unit,
     onMarkAsRead: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val listItems = remember(updates) {
-        buildList {
-            var lastBucket: UpdateDateBucket? = null
-            updates.forEach { update ->
-                val bucket = updateDateBucket(update.chapter.dateFetch)
-                if (bucket != lastBucket) {
-                    add(UpdateListItem.Header(bucket))
-                    lastBucket = bucket
-                }
-                add(UpdateListItem.Entry(update))
-            }
-        }
-    }
-
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        if (lastRunSummary != null) {
-            item(key = "last_run_summary") {
-                LastRunSummaryCard(
-                    summary = lastRunSummary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+        // "Last updated X ago" — italic, matches Komikku's updatesLastUpdatedItem
+        if (lastRunSummary != null && lastRunSummary.timestamp > 0L) {
+            item(key = "last_updated") {
+                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    Text(
+                        text = stringResource(
+                            R.string.updates_last_updated,
+                            DateUtils.getRelativeTimeSpanString(
+                                lastRunSummary.timestamp,
+                                System.currentTimeMillis(),
+                                DateUtils.MINUTE_IN_MILLIS,
+                            ).toString(),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
-        items(listItems, key = { item ->
-            when (item) {
-                is UpdateListItem.Header -> "header_${item.bucket}"
-                is UpdateListItem.Entry -> item.update.chapter.id
-            }
-        }) { item ->
-            when (item) {
-                is UpdateListItem.Header -> UpdatesDateHeader(label = bucketLabel(item.bucket))
-                is UpdateListItem.Entry -> {
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            if (value == SwipeToDismissBoxValue.EndToStart) {
-                                onMarkAsRead(item.update.chapter.id)
-                                true
-                            } else false
-                        }
-                    )
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        enableDismissFromStartToEnd = false,
-                        backgroundContent = {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.tertiaryContainer),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = androidx.compose.ui.Modifier.padding(end = 16.dp)
-                                )
-                            }
-                        }
+        items(
+            items = uiModels,
+            contentType = { if (it is UpdatesUiModel.Header) "header" else "item" },
+            key = {
+                when (it) {
+                    is UpdatesUiModel.Header -> "header_${it.date}"
+                    is UpdatesUiModel.Item -> "item_${it.update.chapter.id}"
+                }
+            },
+        ) { uiModel ->
+            when (uiModel) {
+                is UpdatesUiModel.Header -> Jk2DateHeader(date = uiModel.date, mangaCount = uiModel.mangaCount)
+                is UpdatesUiModel.Item -> {
+                    val isExpanded = uiModel.groupKey in expandedGroups
+                    val visible = uiModel.isLeader || isExpanded
+                    AnimatedVisibility(
+                        visible = visible,
+                        enter = expandVertically(),
+                        exit = shrinkVertically(),
                     ) {
-                        UpdateItem(
-                            update = item.update,
-                            isSelected = selectedItems.contains(item.update.chapter.id),
-                            activeDownload = activeDownloads[item.update.chapter.id],
-                            onClick = { onChapterClick(item.update) },
-                            onLongClick = { onChapterLongClick(item.update) },
-                            onDownloadClick = { onDownloadClick(item.update) }
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                if (value == SwipeToDismissBoxValue.EndToStart) {
+                                    onMarkAsRead(uiModel.update.chapter.id)
+                                    true
+                                } else false
+                            }
                         )
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            enableDismissFromStartToEnd = false,
+                            backgroundContent = {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.padding(end = 16.dp),
+                                    )
+                                }
+                            },
+                        ) {
+                            Jk2UpdateItem(
+                                update = uiModel.update,
+                                isLeader = uiModel.isLeader,
+                                isExpandable = uiModel.isExpandable,
+                                isExpanded = isExpanded,
+                                isSelected = uiModel.update.chapter.id in selectedItems,
+                                activeDownload = activeDownloads[uiModel.update.chapter.id],
+                                onToggleGroup = { onToggleGroup(uiModel.groupKey) },
+                                onClick = { onChapterClick(uiModel.update) },
+                                onLongClick = { onChapterLongClick(uiModel.update) },
+                                onDownloadClick = { onDownloadClick(uiModel.update) },
+                            )
+                        }
+                        HorizontalDivider()
                     }
-                    HorizontalDivider()
                 }
             }
         }
     }
 }
 
-@Composable
-private fun UpdatesDateHeader(label: String, modifier: Modifier = Modifier) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
-    )
-}
+private val dateHeaderFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
 
 @Composable
-private fun UpdateItem(
-    update: MangaUpdate,
-    isSelected: Boolean,
-    activeDownload: DownloadItem?,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-    onDownloadClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+private fun Jk2DateHeader(date: LocalDate, mangaCount: Int, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Checkbox or cover thumbnail
+        Text(
+            text = date.format(dateHeaderFormatter),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        if (mangaCount > 1) {
+            Text(
+                text = "$mangaCount",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Jk2UpdateItem(
+    update: MangaUpdate,
+    isLeader: Boolean,
+    isExpandable: Boolean,
+    isExpanded: Boolean,
+    isSelected: Boolean,
+    activeDownload: DownloadItem?,
+    onToggleGroup: () -> Unit,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onDownloadClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val textAlpha = if (update.chapter.read) 0.38f else 1f
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick, // haptic handled by screen-level onChapterLongClick
+            )
+            .padding(
+                top = if (isLeader) 8.dp else 0.dp,
+                bottom = if (isLeader) 8.dp else 6.dp,
+                start = 12.dp,
+                end = 12.dp,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Cover (leader), checkbox (when selected), or spacer (follower)
         if (isSelected) {
             androidx.compose.material3.Checkbox(
                 checked = true,
                 onCheckedChange = { onClick() },
-                modifier = Modifier.size(40.dp)
+                modifier = Modifier.size(48.dp),
             )
-        } else {
-            // Manga cover thumbnail
+        } else if (isLeader) {
             Surface(
                 shape = MaterialTheme.shapes.small,
-                // Tonal backdrop so a failed/missing thumbnail shows a neutral block
-                // instead of an empty hole in the row.
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.size(width = 40.dp, height = 56.dp)
+                modifier = Modifier.size(width = 48.dp, height = 64.dp),
+                onClick = onClick,
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -885,64 +940,152 @@ private fun UpdateItem(
                     contentDescription = update.manga.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(5f / 7f)
-                        .clip(MaterialTheme.shapes.small)
+                        .fillMaxSize()
+                        .clip(MaterialTheme.shapes.small),
+                )
+            }
+        } else {
+            Spacer(modifier = Modifier.width(48.dp))
+        }
+
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+                .weight(1f),
+        ) {
+            if (isLeader) {
+                Text(
+                    text = update.manga.title,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LocalContentColor.current.copy(alpha = textAlpha),
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (!update.chapter.read) {
+                    Icon(
+                        imageVector = Icons.Filled.Circle,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(8.dp)
+                            .padding(end = 4.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                Text(
+                    text = update.chapter.name,
+                    maxLines = 1,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LocalContentColor.current.copy(alpha = textAlpha),
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(weight = 1f, fill = false),
+                )
+                if (update.chapter.lastPageRead > 0 && !update.chapter.read) {
+                    Text(
+                        text = stringResource(R.string.updates_chapter_progress, update.chapter.lastPageRead + 1),
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = LocalContentColor.current.copy(alpha = 0.38f),
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+
+        // Expand/collapse button for multi-chapter groups (leader only)
+        if (isLeader && isExpandable) {
+            IconButton(
+                onClick = onToggleGroup,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) {
+                        stringResource(R.string.updates_collapse_group)
+                    } else {
+                        stringResource(R.string.updates_expand_group)
+                    },
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
 
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = update.manga.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = update.chapter.name,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        if (!isSelected) {
-            if (update.chapter.dateFetch > UNSET_FETCH_DATE) {
-                Text(
-                    text = formatFetchDate(update.chapter.dateFetch),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.widthIn(max = 72.dp)
+        // Download indicator / button
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(48.dp)) {
+            when (activeDownload?.status) {
+                DownloadStatus.DOWNLOADING -> CircularProgressIndicator(
+                    progress = { (activeDownload.progress / 100f).coerceIn(0f, 1f) },
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
                 )
-            }
-            // Per-item download button / progress indicator
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(48.dp)
-            ) {
-                when (activeDownload?.status) {
-                    DownloadStatus.DOWNLOADING -> CircularProgressIndicator(
-                        progress = { (activeDownload.progress / 100f).coerceIn(0f, 1f) },
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
+                DownloadStatus.QUEUED, DownloadStatus.PAUSED -> CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                )
+                else -> IconButton(onClick = onDownloadClick) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringResource(R.string.updates_download_chapter),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    DownloadStatus.QUEUED, DownloadStatus.PAUSED -> CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp,
-                    )
-                    else -> IconButton(onClick = onDownloadClick) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = stringResource(R.string.updates_download_chapter),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }
     }
+}
+
+// Filter dialog for date range selection
+@Composable
+private fun UpdatesFilterDialog(
+    dateFilterStart: Long?,
+    dateFilterEnd: Long?,
+    onSetFilter: (Long?, Long?) -> Unit,
+    onClearFilter: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val today = remember { LocalDate.now() }
+    val zoneId = remember { ZoneId.systemDefault() }
+    val last7DaysStart = remember(today, zoneId) {
+        today.minusDays(7).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    }
+    val last30DaysStart = remember(today, zoneId) {
+        today.minusDays(30).atStartOfDay(zoneId).toInstant().toEpochMilli()
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.updates_filter)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    stringResource(R.string.updates_filter_last_7_days) to last7DaysStart,
+                    stringResource(R.string.updates_filter_last_30_days) to last30DaysStart,
+                ).forEach { (label, start) ->
+                    val isSelected = dateFilterStart == start && dateFilterEnd == null
+                    Surface(
+                        onClick = { if (isSelected) onClearFilter() else onSetFilter(start, null) },
+                        shape = MaterialTheme.shapes.small,
+                        color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer
+                                else MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.ok)) }
+        },
+        dismissButton = if (dateFilterStart != null || dateFilterEnd != null) {
+            { TextButton(onClick = { onClearFilter(); onDismiss() }) { Text(stringResource(R.string.updates_clear_filter)) } }
+        } else null,
+    )
 }
 
 private val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)

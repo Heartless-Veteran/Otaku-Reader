@@ -7,6 +7,28 @@ import app.otakureader.domain.model.DownloadItem
 import app.otakureader.domain.model.Manga
 import app.otakureader.domain.model.MangaUpdate
 import app.otakureader.domain.model.UpdateRunSummary
+import java.time.LocalDate
+
+/**
+ * J2K-style flat UI model for the date-grouped Updates list.
+ * Within each date header, chapters from the same manga are grouped:
+ * the first becomes the Leader (shows cover + manga title); subsequent
+ * chapters are followers that collapse until the user expands the group.
+ */
+sealed interface UpdatesUiModel {
+    data class Header(val date: LocalDate, val mangaCount: Int) : UpdatesUiModel
+    data class Item(
+        val update: MangaUpdate,
+        val isLeader: Boolean,
+        val isExpandable: Boolean,
+        /** Key = "{date}_{mangaId}", shared by all items in the same per-date manga group. */
+        val groupKey: String,
+    ) : UpdatesUiModel
+}
+
+/** True when any date filter is active. */
+val UpdatesState.hasActiveFilters: Boolean
+    get() = dateFilterStart != null || dateFilterEnd != null
 
 /**
  * A group of chapters from the same manga, used by the manga-grouped display mode.
@@ -69,8 +91,12 @@ data class UpdatesState(
     val dateFilterEnd: Long? = null,
     /** Chapters grouped by manga for the GROUPED_BY_MANGA display mode. */
     val groupedByManga: List<MangaUpdateGroup> = emptyList(),
-    /** Whether to render the list grouped by manga or by date bucket. Default is manga-grouped (Mihon style). */
-    val displayMode: UpdatesDisplayMode = UpdatesDisplayMode.GROUPED_BY_MANGA,
+    /** Whether to render the list grouped by manga or by date bucket. Default is date-grouped (Komikku parity). */
+    val displayMode: UpdatesDisplayMode = UpdatesDisplayMode.GROUPED_BY_DATE,
+    /** Per-date manga group keys that are currently expanded in the J2K date-grouped view. */
+    val expandedDateMangaGroups: Set<String> = emptySet(),
+    /** Whether the filter dialog is visible. */
+    val showFilterDialog: Boolean = false,
 ) : UiState
 
 sealed interface UpdatesEvent : UiEvent {
@@ -108,6 +134,11 @@ sealed interface UpdatesEvent : UiEvent {
     data object ToggleDisplayMode : UpdatesEvent
     /** Expand or collapse a manga's chapter group in GROUPED_BY_MANGA mode. */
     data class ToggleMangaGroupExpansion(val mangaId: Long) : UpdatesEvent
+    /** Expand or collapse a per-date manga group in the J2K date-grouped view. */
+    data class ToggleDateMangaGroup(val key: String) : UpdatesEvent
+    /** Show/hide the filter dialog. */
+    data object ShowFilterDialog : UpdatesEvent
+    data object HideFilterDialog : UpdatesEvent
 }
 
 sealed interface UpdatesEffect : UiEffect {

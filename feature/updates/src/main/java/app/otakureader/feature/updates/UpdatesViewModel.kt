@@ -97,6 +97,14 @@ class UpdatesViewModel @Inject constructor(
                                          else expanded + event.mangaId,
                 )
             }
+            is UpdatesEvent.ToggleDateMangaGroup -> _state.update { state ->
+                val exp = state.expandedDateMangaGroups
+                state.copy(
+                    expandedDateMangaGroups = if (event.key in exp) exp - event.key else exp + event.key,
+                )
+            }
+            UpdatesEvent.ShowFilterDialog -> _state.update { it.copy(showFilterDialog = true) }
+            UpdatesEvent.HideFilterDialog -> _state.update { it.copy(showFilterDialog = false) }
         }
     }
 
