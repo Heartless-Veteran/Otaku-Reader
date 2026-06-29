@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,8 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,6 +70,7 @@ fun ReaderContentOverlay(
     isVisible: Boolean,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    onTitleClick: (() -> Unit)? = null,
     onDownloadChapter: (() -> Unit)? = null,
     isCurrentChapterDownloaded: Boolean = false,
     onBookmarkPage: (() -> Unit)? = null,
@@ -102,7 +104,14 @@ fun ReaderContentOverlay(
                     tint = onSurface
                 )
             }
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (onTitleClick != null) Modifier.clickable(onClick = onTitleClick)
+                        else Modifier
+                    )
+            ) {
                 Text(
                     title,
                     style = MaterialTheme.typography.titleSmall,
@@ -131,7 +140,7 @@ fun ReaderContentOverlay(
                 IconButton(onClick = onBookmarkPage) {
                     Icon(
                         imageVector = if (isCurrentPageBookmarked) {
-                            Icons.Default.Bookmark
+                            Icons.Outlined.Bookmark
                         } else {
                             Icons.Outlined.BookmarkBorder
                         },

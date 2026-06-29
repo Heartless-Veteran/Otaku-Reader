@@ -295,4 +295,9 @@
     <string name="reader_tap_invert_vertical">Vertical</string>
     <string name="reader_tap_invert_both">Both</string>
     <string name="reader_smaller_tap_zone">Smaller tap zone</string>
+    <string name="reader_open_in_web_view">Open in web view</string>
+    <string name="reader_open_in_browser">Open in browser</string>
+    <string name="reader_share">Share</string>
+    <string name="reader_page_layout">Page layout</string>
+    <string name="reader_shift_double_pages">Shift double pages</string>
 </resources>
