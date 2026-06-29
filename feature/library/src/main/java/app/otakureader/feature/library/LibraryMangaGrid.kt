@@ -71,6 +71,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import java.util.Locale
 
 /** Layout constants for the compact list-mode row. */
 private object LibraryListRowDefaults {
@@ -736,7 +737,7 @@ internal fun LanguageBadge(
             .padding(horizontal = 4.dp, vertical = 2.dp),
     ) {
         Text(
-            text = language.uppercase(),
+            text = language.uppercase(Locale.ROOT),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onTertiary,
         )

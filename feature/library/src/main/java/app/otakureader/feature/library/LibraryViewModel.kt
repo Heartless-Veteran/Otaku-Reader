@@ -608,11 +608,12 @@ class LibraryViewModel @Inject constructor(
                     val downloadedMangaIds = downloadDeferred.awaitAll().filterNotNull().toSet()
 
                     mangaList.map { manga ->
+                        val meta = sourceMeta[manga.sourceId]
                         manga.toLibraryItem(
                             isDownloaded = manga.id in downloadedMangaIds,
                             hasTracking = manga.id in trackedMangaIds,
-                            sourceName = sourceMeta[manga.sourceId]?.first ?: "",
-                            sourceLanguage = sourceMeta[manga.sourceId]?.second ?: "",
+                            sourceName = meta?.first ?: "",
+                            sourceLanguage = meta?.second ?: "",
                         )
                     }
                 }

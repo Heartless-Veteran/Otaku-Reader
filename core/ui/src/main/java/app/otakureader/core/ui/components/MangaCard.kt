@@ -156,7 +156,7 @@ fun MangaCard(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(
-                            start = 8.dp,
+                            start = if (languageBadge != null) 40.dp else 8.dp,
                             end = if (onClickContinueReading != null) {
                                 MangaCardDefaults.TITLE_END_PADDING_WITH_BUTTON_DP.dp
                             } else {
