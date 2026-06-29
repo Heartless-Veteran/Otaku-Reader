@@ -71,6 +71,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.TextButton
 import coil3.compose.AsyncImage
 import java.util.Calendar
+import java.util.Locale
 
 /** Layout constants for the compact list-mode row. */
 private object LibraryListRowDefaults {
@@ -333,6 +334,7 @@ private fun LibraryMangaPageContent(
                     isSelected = manga.id in state.selectedManga,
                     unreadCount = if (state.showBadges) manga.unreadCount else 0,
                     downloadCount = if (state.showDownloadBadge) downloadCount else 0,
+                    showLanguageBadge = state.showBadges,
                     onClick = { onMangaTap(manga) },
                     onLongClick = { onMangaLongClick(manga.id) },
                 )
@@ -409,6 +411,9 @@ private fun LibraryMangaPageContent(
                                 manga.userDropped -> { { DroppedBadge() } }
                                 else -> null
                             },
+                            languageBadge = if (state.showBadges && manga.sourceLanguage.isNotBlank()) {
+                                { LanguageBadge(manga.sourceLanguage) }
+                            } else null,
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -493,6 +498,9 @@ private fun LibraryMangaPageContent(
                             manga.userDropped -> { { DroppedBadge() } }
                             else -> null
                         },
+                        languageBadge = if (state.showBadges && manga.sourceLanguage.isNotBlank()) {
+                            { LanguageBadge(manga.sourceLanguage) }
+                        } else null,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -565,6 +573,7 @@ private fun LibraryListRow(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showLanguageBadge: Boolean = true,
 ) {
     Row(
         modifier = modifier
@@ -603,6 +612,9 @@ private fun LibraryListRow(
         }
         if (unreadCount > 0) {
             UnreadBadge(count = unreadCount)
+        }
+        if (showLanguageBadge && manga.sourceLanguage.isNotBlank()) {
+            LanguageBadge(manga.sourceLanguage)
         }
     }
 }
@@ -707,6 +719,27 @@ internal fun LibraryGreetingHeader(
             text = stringResource(R.string.library_greeting_stats, mangaCount, unreadCount),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+internal fun LanguageBadge(
+    language: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .background(
+                color = MaterialTheme.colorScheme.tertiary,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = language.uppercase(Locale.ROOT),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onTertiary,
         )
     }
 }

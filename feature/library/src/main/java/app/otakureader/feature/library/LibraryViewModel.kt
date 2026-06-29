@@ -574,10 +574,12 @@ class LibraryViewModel @Inject constructor(
         getLibraryManga()
             .map { mangaList ->
                 coroutineScope {
-                    // Build source name lookup in parallel
-                    val sourceNamesDeferred = async {
+                    // Build source metadata (name + lang) lookup in parallel
+                    val sourceMetaDeferred = async {
                         sourceRepository.getSources().first()
-                            .mapNotNull { source -> source.id.toLongOrNull()?.let { it to source.name } }
+                            .mapNotNull { source ->
+                                source.id.toLongOrNull()?.let { id -> id to Pair(source.name, source.lang) }
+                            }
                             .toMap()
                     }
 
@@ -601,15 +603,17 @@ class LibraryViewModel @Inject constructor(
                         }
                     }
 
-                    val sourceNames = sourceNamesDeferred.await()
+                    val sourceMeta = sourceMetaDeferred.await()
                     val trackedMangaIds = trackingDeferred.awaitAll().filterNotNull().toSet()
                     val downloadedMangaIds = downloadDeferred.awaitAll().filterNotNull().toSet()
 
                     mangaList.map { manga ->
+                        val meta = sourceMeta[manga.sourceId]
                         manga.toLibraryItem(
                             isDownloaded = manga.id in downloadedMangaIds,
                             hasTracking = manga.id in trackedMangaIds,
-                            sourceName = sourceNames[manga.sourceId] ?: "",
+                            sourceName = meta?.first ?: "",
+                            sourceLanguage = meta?.second ?: "",
                         )
                     }
                 }

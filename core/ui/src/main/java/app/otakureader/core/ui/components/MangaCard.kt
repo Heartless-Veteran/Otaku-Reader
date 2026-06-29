@@ -86,6 +86,7 @@ fun MangaCard(
     onClickContinueReading: (() -> Unit)? = null,
     isNew: Boolean = false,
     sourceIcon: @Composable (() -> Unit)? = null,
+    languageBadge: @Composable (() -> Unit)? = null,
     showTitle: Boolean = true,
 ) {
     val context = LocalContext.current
@@ -155,7 +156,7 @@ fun MangaCard(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(
-                            start = 8.dp,
+                            start = if (languageBadge != null) 40.dp else 8.dp,
                             end = if (onClickContinueReading != null) {
                                 MangaCardDefaults.TITLE_END_PADDING_WITH_BUTTON_DP.dp
                             } else {
@@ -246,6 +247,17 @@ fun MangaCard(
                         .align(Alignment.BottomEnd)
                         .padding(4.dp)
                         .padding(bottom = if (readProgress != null) 10.dp else 4.dp)
+                ) {
+                    it()
+                }
+            }
+
+            // Language badge — bottom-start corner (Komikku coverBadgeEnd parity)
+            languageBadge?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(4.dp)
                 ) {
                     it()
                 }
